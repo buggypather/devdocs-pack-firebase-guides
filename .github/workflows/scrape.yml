@@ -1,0 +1,85 @@
+# Scrapes Firebase's guides with the DevDocs fork's Firebase scraper and
+# publishes the doc pack to the "pack" branch, whose address is what you paste
+# into DevDocs.
+name: Scrape Firebase guides
+
+on:
+  # Every Monday, to pick up changes to the guides.
+  schedule:
+    - cron: "41 5 * * 1"
+  # The "Run workflow" button on the Actions tab.
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/scrape.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scrape
+  cancel-in-progress: true
+
+env:
+  # The scraper needs neither the docs group's image tools nor the server's production gems.
+  BUNDLE_WITHOUT: docs:production
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: buggypather/devdocs
+          ref: main-custom-docs
+          path: devdocs
+
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          working-directory: devdocs
+          bundler-cache: true
+
+      - name: Scrape
+        working-directory: devdocs
+        run: |
+          bundle exec thor docs:generate firebase --force
+          bundle exec thor docs:manifest
+          ls -la public/docs public/docs/firebase | head -20
+          du -sh public/docs/firebase
+
+      # GitHub refuses files over 100 MB.
+      - name: Check the size
+        working-directory: devdocs/public/docs
+        run: |
+          size=$(stat -c %s firebase/db.json)
+          echo "db.json: $((size / 1024 / 1024)) MB"
+          if [ "$size" -gt 95000000 ]; then
+            echo "::error::db.json is too big for GitHub ($((size / 1024 / 1024)) MB). Split the doc or skip more pages."
+            exit 1
+          fi
+
+      - name: Publish to the pack branch
+        env:
+          REPO_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+        run: |
+          if git ls-remote --exit-code --heads "$REPO_URL" pack > /dev/null; then
+            git clone --depth 1 --branch pack "$REPO_URL" pack
+          else
+            git init -b pack pack
+          fi
+          cd pack
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -r ../devdocs/public/docs/firebase ../devdocs/public/docs/docs.json .
+          cp ../README.md README.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "The pack hasn't changed."
+          else
+            git commit -q -m "Scrape of $(date -u +%Y-%m-%d)"
+            git push "$REPO_URL" HEAD:pack
+          fi
+          echo "### Add this pack in DevDocs" >> "$GITHUB_STEP_SUMMARY"
+          echo "Preferences → Doc packs → paste \`https://github.com/${{ github.repository }}/tree/pack\`" >> "$GITHUB_STEP_SUMMARY"
