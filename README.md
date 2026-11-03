@@ -15,7 +15,7 @@ For the JavaScript SDK's API reference, add
 
 A GitHub Actions workflow (`.github/workflows/scrape.yml`) checks out the DevDocs fork, runs its
 Firebase scraper (`lib/docs/scrapers/firebase.rb`) and publishes the result to the `pack` branch.
-The scraper reads about four pages a second, to go easy on the site. To scrape now, open the
+The scraper reads at most four pages a second (it takes about ten minutes), to go easy on the site. To scrape now, open the
 **Actions** tab, choose **Scrape Firebase guides** and click **Run workflow**.
 
 ## Licence
