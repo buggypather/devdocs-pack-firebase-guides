@@ -1,0 +1,598 @@
+<h1>Manage sessions for the Live API</h1> <p>The Gemini Live API processes continuous streams of audio or text called <em><strong>sessions</strong></em>. You can manage the session lifecycle, from the initial handshake to graceful termination.</p> <h2 id="limits">Limits for sessions</h2> <p>For the Live API, a <em>session</em> refers to a persistent connection where input and output are streamed continuously over a connection.</p> <p>If the session exceeds <em><strong>any</strong></em> of the following limits, the connection is terminated. Note, though, the Live API provides some options (see below) to handle these session-related limits.</p> <ul> <li>
+<p><strong>Session context window</strong> is limited to 128k tokens.</p> <p>Due to this context window limit, here are the approximate maximum session lengths based on input modalities:</p> <ul> <li>Audio-only input sessions are limited to <nobr>15 minutes</nobr>.</li> <li>Video + audio input are limited to <nobr>2 minutes</nobr>.</li> </ul>
+</li> <li>
+<p><strong>Connection length</strong> is limited to about <nobr>10 minutes</nobr>.</p> <p>You'll receive a <a href="sessions#going-away-notification"><em>going away</em> notification</a> about <nobr>60 seconds</nobr> before the connection ends.</p>
+</li> </ul> <p>Here are some options for handling session-related limits:</p> <ul> <li><p><a href="sessions#compress-context">Compress the session context window</a> so that the server automatically maintains the context size within the limit.</p></li> <li><p><a href="sessions#resume-session">Resume a session</a> to prevent losing conversation context during brief network disconnects or after receiving a <em>going away</em> notification.</p></li> </ul> <h2 id="start-session">Start a session</h2> <p>Visit the <a href="../live-api#audio-in-audio-out">getting started guide for the Live API</a> for a full snippet showing how to start a session.</p> <h2 id="update-mid-session">Update mid-session</h2> <p>The Live API models support the following advanced capabilities for <em><strong>mid-session updates</strong></em>:</p> <ul> <li><p><a href="#add-incremental-content-updates">Add incremental content updates</a></p></li> <li><p><a href="#update-system-instructions-mid-session">Update system instructions</a> <em>(for <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> only)</em></p></li> </ul> <aside class="note"><strong>Note:</strong><span> <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support affective dialogue or proactive audio when using the Live API. Check back soon!</span></aside> <h3 id="add-incremental-content-updates">Add incremental content updates</h3> <p>You can add incremental updates during an active session. Use this to send text input, establish session context, or restore session context.</p> <ul> <li><p>For longer contexts, we recommend providing a single message summary to free up the context window for subsequent interactions.</p></li> <li><p>For short contexts, you can send turn-by-turn interactions to represent the exact sequence of events, like the snippet below.</p></li> </ul> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Define initial turns (history/context).
+let turns: [ModelContent] = [
+  ModelContent(role: "user", parts: [TextPart("What is the capital of France?")]),
+  ModelContent(role: "model", parts: [TextPart("Paris")]),
+]
+
+// Send history, keeping the conversational turn OPEN (false).
+await session.sendContent(turns, turnComplete: false)
+
+// Define the new user query.
+let newTurn: [ModelContent] = [
+  ModelContent(role: "user", parts: [TextPart("What is the capital of Germany?")]),
+]
+
+// Send the final query, CLOSING the turn (true) to trigger the model response.
+await session.sendContent(newTurn, turnComplete: true)
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Define initial turns (history/context).
+val turns = listOf(
+  content("user") {
+    text("What is the capital of France?")
+  },
+  content("model") {
+    text("Paris")
+  }
+)
+
+// Send history, keeping the conversational turn OPEN (false).
+turns.forEach {
+  session.send(
+    content = it,
+    turnComplete = false
+  )
+}
+
+// Define the new user query.
+val newTurn = content("user") {
+  text("What is the capital of Germany?")
+}
+
+// Send the final query, CLOSING the turn (true) to trigger the model response.
+session.send(
+  content = newTurn,
+  turnComplete = true
+)
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// Define initial turns (history/context).
+List turns =
+    Arrays.asList(
+        new Content.Builder().setRole("user").addText("What is the capital of France?").build(),
+        new Content.Builder().setRole("model").addText("Paris").build());
+
+for (Content turn : turns) {
+  session.send(
+    turn,
+    false // turnComplete: false
+  );
+}
+
+// Define the new user query.
+Content newTurn = new Content.Builder().addText("What is the capital of Germany?").build();
+
+// Send the final query, CLOSING the turn (true) to trigger the model response.
+session.send(
+  newTurn,
+  true // isTurnComplete: true
+);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">const turns = [{ type: "text", text: "Hello from the user!" }];
+
+await session.send(
+  turns,
+  false // turnComplete: false
+);
+
+console.log("Sent history. Waiting for next input...");
+
+// Define the new user query.
+const newTurn = [{ type: "text", text: "And what is the capital of Germany?" }];
+
+// Send the final query, CLOSING the turn (true) to trigger the model response.
+await session.send(
+    newTurn,
+    true // turnComplete: true
+);
+console.log("Sent final query. Model response expected now.");
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">// Define initial turns (history/context).
+final List turns = [
+  Content(
+    "user",
+    [TextPart("What is the capital of France?")],
+  ),
+  Content(
+    "model",
+    [TextPart("Paris")],
+  ),
+];
+
+// Send history, keeping the conversational turn OPEN (false).
+await session.send(
+  input: turns,
+  turnComplete: false,
+);
+
+// Define the new user query.
+final List newTurn = [
+  Content(
+    "user",
+    [TextPart("What is the capital of Germany?")],
+  ),
+];
+
+// Send the final query, CLOSING the turn (true) to trigger the model response.
+await session.send(
+  input: newTurn,
+  turnComplete: true,
+);
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">// Define initial turns (history/context).
+List turns = new List {
+    new ModelContent("user", new ModelContent.TextPart("What is the capital of France?") ),
+    new ModelContent("model", new ModelContent.TextPart("Paris") ),
+};
+
+// Send history, keeping the conversational turn OPEN (false).
+foreach (ModelContent turn in turns)
+{
+    await session.SendAsync(
+        content: turn,
+        turnComplete: false
+    );
+}
+
+// Define the new user query.
+ModelContent newTurn = ModelContent.Text("What is the capital of Germany?");
+
+// Send the final query, CLOSING the turn (true) to trigger the model response.
+await session.SendAsync(
+    content: newTurn,
+    turnComplete: true
+);
+</pre></section> </div> <h3 id="update-system-instructions-mid-session">Update system instructions mid-session</h3> 
+<table class="orange"> <tr class="alt"> <td> <em>Only available when using the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> as your API provider.</em> </td> </tr> </table> <p>You can update the system instructions during an active session. Use this to adapt the model's responses, for example to change the response language or modify the tone.</p> <p>To update the system instructions mid-session, you can send text content with the <code translate="no" dir="ltr">system</code> role. The updated system instructions will remain in effect for the remainder of the session.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">await session.sendContent(
+  [ModelContent(
+    role: "system",
+    parts: [TextPart("new system instruction")]
+  )],
+  turnComplete: false
+)
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// In a coroutine scope
+session.send(
+    content = content("system") {
+        text("new system instruction")
+    },
+    turnComplete = false
+)
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">session.send(
+    new Content.Builder()
+        .setRole("system")
+        .addText("new system instruction")
+        .build(),
+    /* turnComplete: */ false
+);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">Not yet supported for Web apps - check back soon!
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">try {
+  await _session.send(
+    input: Content(
+      'system',
+      [TextPart('new system instruction')],
+    ),
+    turnComplete: false,
+  );
+} catch (e) {
+  print('Failed to update system instructions: $e');
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">try
+{
+    await session.SendAsync(
+        content: new ModelContent(
+            "system",
+            new ModelContent.TextPart("new system instruction")
+        ),
+        turnComplete: false
+    );
+}
+catch (Exception e)
+{
+    Debug.LogError($"Failed to update system instructions: {e.Message}");
+}
+</pre></section> </div> <h2 id="manually-signal-user-activity">Manually signal user activity</h2> <p>By default, the Live API automatically detects the beginning and end of user speech using voice activity detection (VAD), which lets you interrupt the model at any time (learn how to <a href="configuration#vad-handle-interruptions">handle interruptions</a>).</p> <p>However, you can take complete manual control over conversational turns (such as for a push-to-talk interface) by disabling automatic voice activity detection (VAD).</p> <p>If you disable VAD, the server won't automatically detect user speech or trigger responses based on audio silence. In this scenario, you must manually demarcate the boundaries of each user activity turn.</p> <p>Learn how to <a href="configuration#vad-disable">disable automatic voice activity detection (VAD) and manually signal user activity</a>.</p> <h2 id="compress-context">Compress the context window</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>The Live API <em>session context window</em> stores real-time streamed data (25 tokens per second (TPS) for audio and 258 TPS for video) as well as other content, including text inputs and model outputs. All Live API models have a session context window limit of 128k tokens.</p> <p>By default, due to this context window limit, here are the approximate maximum session lengths based on input modalities:</p> <ul> <li>Audio-only input sessions are limited to <nobr>15 minutes</nobr>.</li> <li>Video + audio input are limited to <nobr>2 minutes</nobr>.</li> </ul> <p>In long-running sessions, as the conversation progresses, the history of audio and/or video tokens accumulates. If this history exceeds the model's limit, the model may hallucinate, slow down, or the session may be forcibly terminated.</p> <p>To enable longer sessions, you can enable <em>context window compression</em> by setting the <code translate="no" dir="ltr">contextWindowCompression</code> field as part of the <code translate="no" dir="ltr">LiveGenerationConfig</code>. When enabled, the server uses a <em>sliding-window</em> mechanism to automatically discard the oldest turns or summarize them to maintain the context size within the default or specified limits. System instructions are not discarded and will always stay at the beginning of context window.</p> <p>From the user's perspective, this allows for theoretically infinite session durations since the "memory" is constantly managed.</p> <p>You can configure the sliding-window mechanism as well as <em>optionally</em> the number of tokens that triggers compression: (see available settings and values below). Here are some high-level considerations about using these settings:</p> <ul> <li><p>Setting <code translate="no" dir="ltr">targetTokens</code> very low will free up more context room for continuous streams, but the model will rapidly "forget" older turns of the conversation.</p></li> <li><p>Setting <code translate="no" dir="ltr">targetTokens</code> closer to <code translate="no" dir="ltr">triggerTokens</code> preserves more memory but will trigger compression routines far more frequently.</p></li> </ul> <aside class="note"><strong>Note:</strong><span> Discarding parts of the context window causes temporary latency. Set these values so that they don't trigger compression frequently.</span></aside> <table> <thead> <tr> <th width="25%">Setting</th> <th>Default for sliding window if not set in the config</th> <th width="15%">Minimum value</th> <th width="15%">Maximum value</th> </tr> </thead> <tbody> <tr> <td> <code translate="no" dir="ltr">triggerTokens</code><br> the context length before compression is triggered </td> <td>80% of the model's context window limit</td> <td>5,000</td> <td>128,000</td> </tr> <tr> <td> <code translate="no" dir="ltr">targetTokens</code><br> the target number of tokens to keep </td> <td>50% of the <code translate="no" dir="ltr">triggerTokens</code> value <ul> <li> If <code translate="no" dir="ltr">triggerTokens</code> is not <em>explicitly</em> set, then <code translate="no" dir="ltr">targetTokens</code> defaults to 50% of the <em>default</em> <code translate="no" dir="ltr">triggerTokens</code> value. </li> <li> The <code translate="no" dir="ltr">targetTokens</code> value must be less than the <code translate="no" dir="ltr">triggerTokens</code> value. </li> </ul> </td> <td>0</td> <td>128,000</td> </tr> </tbody> </table> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+// ...
+
+let liveModel = FirebaseAI.firebaseAI(backend: .googleAI()).liveModel(
+  modelName: "GEMINI_LIVE_API_MODEL_NAME",
+  // Enable context window compression.
+  // (Optional) Configure the number of tokens in the context window that triggers the compression.
+  generationConfig: LiveGenerationConfig(
+    responseModalities: [.audio],
+    contextWindowCompression: ContextWindowCompressionConfig(
+      triggerTokens: 10000,
+      slidingWindow: SlidingWindow(
+        targetTokens: 2000,
+      )
+    )
+  )
+)
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// ...
+
+val liveModel = Firebase.ai(backend = GenerativeBackend.googleAI()).liveModel(
+    modelName = "GEMINI_LIVE_API_MODEL_NAME",
+    // Enable context window compression.
+    // (Optional) Configure the number of tokens in the context window that triggers the compression.
+    generationConfig = liveGenerationConfig {
+        responseModality = ResponseModality.AUDIO,
+        contextWindowCompression = ContextWindowCompressionConfig(
+            triggerTokens = 10000,
+            slidingWindow = SlidingWindow(targetTokens = 2000)
+        )
+    }
+)
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// ...
+
+LiveGenerativeModel lm = FirebaseAI.getInstance(GenerativeBackend.googleAI()).liveModel(
+        "GEMINI_LIVE_API_MODEL_NAME",
+        // Enable context window compression.
+        // (Optional) Configure the number of tokens in the context window that triggers the compression.
+        new LiveGenerationConfig.Builder()
+                .setResponseModality(ResponseModality.AUDIO)
+                .setContextWindowCompression(
+                        new ContextWindowCompressionConfig(10000, new SlidingWindow(2000))
+                )
+                .build()
+);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+// ...
+
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+const liveModel = getLiveGenerativeModel(ai, {
+  model: "GEMINI_LIVE_API_MODEL_NAME",
+  // Enable context window compression.
+  // (Optional) Configure the number of tokens in the context window that triggers the compression.
+  generationConfig: {
+    responseModalities: [ResponseModality.AUDIO],
+    contextWindowCompression: {
+      triggerTokens: 10000,
+      slidingWindow: {
+        targetTokens: 2000,
+      },
+    },
+  },
+});
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+// ...
+
+final _liveModel = FirebaseAI.googleAI().liveGenerativeModel(
+  model: 'GEMINI_LIVE_API_MODEL_NAME',
+  // Enable context window compression.
+  // (Optional) Configure the number of tokens in the context window that triggers the compression.
+  liveGenerationConfig: LiveGenerationConfig(
+    responseModalities: [ResponseModalities.audio],
+    contextWindowCompression: ContextWindowCompressionConfig(
+      triggerTokens: 10000,
+      slidingWindow: SlidingWindow(targetTokens: 2000),
+    ),
+  ),
+);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+// ...
+
+var liveModel = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI()).GetLiveModel(
+    modelName: "GEMINI_LIVE_API_MODEL_NAME",
+    // Enable context window compression.
+    // (Optional) Configure the number of tokens in the context window that triggers the compression.
+    liveGenerationConfig: new LiveGenerationConfig(
+        responseModalities: new[] { ResponseModality.Audio },
+        contextWindowCompression: new ContextWindowCompressionConfig(
+            triggerTokens: 10000,
+            slidingWindow: new SlidingWindow(targetTokens: 2000)
+        )
+    )
+);
+
+</pre></section> </div> <h2 id="going-away-notification">Detect when a session is going to end</h2> <p>The maximum duration of a single, continuous WebSocket connection is about <nobr>10 minutes</nobr>. A <em>going away</em> notification is sent to the client <nobr>60 seconds</nobr> before the connection ends, which can help you take further actions (for example, by <a href="#resume-session">resuming a session</a>).</p> <p>The following example shows how to detect an impending connection termination by listening for a <em>going away</em> notification:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">for try await response in session.responses {
+  switch response.payload {
+
+  case .goingAwayNotice(let goingAwayNotice):
+    // Prepare for the session to close soon
+    if let timeLeft = goingAwayNotice.timeLeft {
+        print("Server going away in \(timeLeft) seconds")
+    }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">for (response in session.responses) {
+    when (val message = response.payload) {
+        is LiveServerGoAway -&gt; {
+            // Prepare for the session to close soon
+            val remaining = message.timeLeft
+            logger.info("Server going away in $remaining")
+        }
+    }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">session.getResponses().forEach(response -&gt; {
+    if (response.getPayload() instanceof LiveServerResponse.GoingAwayNotice) {
+        LiveServerResponse.GoingAwayNotice notice = (LiveServerResponse.GoingAwayNotice) response.getPayload();
+        // Prepare for the session to close soon
+        Duration timeLeft = notice.getTimeLeft();
+    }
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">for await (const message of session.receive()) {
+  switch (message.type) {
+
+  ...
+  case "goingAwayNotice":
+    console.log("Server going away. Time left:", message.timeLeft);
+    break;
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">Future _handleLiveServerMessage(LiveServerResponse response) async {
+  final message = response.message;
+  if (message is GoingAwayNotice) {
+     // Prepare for the session to close soon
+     developer.log('Server going away. Time left: ${message.timeLeft}');
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">foreach (var response in session.Responses) {
+    if (response.Payload is LiveSessionGoingAway notice) {
+        // Prepare for the session to close soon
+        TimeSpan timeLeft = notice.TimeLeft;
+        Debug.Log($"Server going away notice received. Remaining: {timeLeft}");
+    }
+}
+</pre></section> </div> <h2 id="resume-session">Resume a session</h2> <p>The Live API supports session resumption to prevent losing conversation context. Every session has a handle, and it can be used in the following ways:</p> <ul> <li>
+<p><strong>Maintaining a session before reaching the connection time limit</strong></p> <p>The maximum duration of a single, continuous WebSocket connection is about <nobr>10 minutes</nobr>. You can detect when a connection is about to end by <a href="#going-away-notification">listening for a <em>going away</em> notification</a>, and then extending the session by establishing a new connection using the session handle.</p>
+</li> <li>
+<p><strong>Resuming a session just after a connection drop</strong></p> <p>If a connection terminates or drops before the maximum connection time limit (for example, switching from WiFi to 5G), the server keeps the session state for about <nobr>10 minutes</nobr>. During this window, you can resume the session by establishing a new connection using the session handle.</p>
+</li> <li>
+<p><strong>Resuming a session after an extended time period</strong></p> <p>After a connection ends, the server keeps the session state for a few hours. During this window, you can resume the session by establishing a new connection using the session handle. Note that this window is different for the two <span class='\"notranslate\"'>Gemini API</span> providers: <span class='\"notranslate\"'>Gemini Developer API</span> is <nobr>2 hours</nobr> | <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> is <nobr>24 hours</nobr>.</p>
+</li> </ul> <p>By default, session resumption is disabled. To enable session resumption, pass an empty resumption configuration when establishing a new connection. When enabled, the server periodically sends updates containing a session resumption handle. If the session is disconnected, you can reconnect and pass this handle to resume the session with its context intact.</p> <p>The following examples show two options for resuming the session:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Local variable to save the active session handle
+var activeSessionHandle: String?
+
+// Initialize the session. Passing an empty config requests the server to send SessionResumptionUpdate
+var session = try await liveModel.connect(
+  sessionResumption: SessionResumptionConfig()
+)
+
+// Start receiving responses
+for try await message in session.responses {
+  // Check for new session handles inside your message handling loop
+  switch message.payload {
+  case let .sessionResumptionUpdate(updateMessage):
+    guard let newHandle = updateMessage.newHandle, updateMessage.resumable else {
+      continue
+    }
+    activeSessionHandle = newHandle
+    print("SessionResumptionUpdate: handle \(newHandle)")
+  // ... handle other LiveServerMessage types ...
+  default:
+    break
+  }
+}
+
+// The following are alternative options to resume a session. Choose only one.
+
+// Option 1: Create and connect a session to resume with the saved handle
+if let handle = activeSessionHandle {
+  session = try await liveModel.connect(
+    sessionResumption: SessionResumptionConfig(handle: handle)
+  )
+}
+
+// Option 2: Resume the session directly on an existing session object
+if let handle = activeSessionHandle {
+  try await session.resumeSession(
+    sessionResumption: SessionResumptionConfig(handle: handle)
+  )
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Local variable to save the active session handle
+var activeSessionHandle: String? = null
+
+// Initialize the session. Passing an empty config requests the server to send SessionResumptionUpdate
+var session = liveModel.connect(
+    sessionResumption = SessionResumptionConfig()
+)
+
+// Start receiving responses
+session.receive().collect { message -&gt;
+    // Process other received response types...
+
+    // Check for new session handles inside your message handling loop
+    if (message is LiveSessionResumptionUpdate) {
+        if (message.resumable == true &amp;&amp; message.newHandle != null) {
+            activeSessionHandle = message.newHandle
+            Log.d("TAG", "SessionResumptionUpdate: handle ${message.newHandle}")
+        }
+    }
+}
+
+// The following are alternative options to resume a session. Choose only one.
+
+// Option 1: Create and connect a session to resume with the saved handle
+activeSessionHandle?.let { handle -&gt;
+    session = liveModel.connect(
+        sessionResumption = SessionResumptionConfig(handle = handle)
+    )
+}
+
+// Option 2: Resume the session directly on an existing session object
+activeSessionHandle?.let { handle -&gt;
+    session.resumeSession(
+        sessionResumption = SessionResumptionConfig(handle = handle)
+    )
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">For Java, session resumption is not yet supported. Check back soon!
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// Local variable to save the active session handle
+let activeSessionHandle = null;
+
+// Initialize the session. Passing an empty object requests the server to send SessionResumptionUpdate
+let session = await liveModel.connect({});
+
+// Start receiving responses
+for await (const message of session.receive()) {
+  // Process other received response types...
+
+  // Check for new session handles inside your message handling loop
+  if (message.type === 'sessionResumptionUpdate') {
+    if (message.resumable &amp;&amp; message.newHandle) {
+      activeSessionHandle = message.newHandle;
+      console.log(`SessionResumptionUpdate: handle ${activeSessionHandle}`);
+    }
+  }
+}
+
+// The following are alternative options to resume a session. Choose only one.
+
+// Option 1: Create and connect a session to resume with the saved handle
+if (activeSessionHandle) {
+  session = await liveModel.connect({
+    handle: activeSessionHandle
+  });
+}
+
+// Option 2: Resume the session directly on an existing session object
+if (activeSessionHandle) {
+  await session.resumeSession({
+    handle: activeSessionHandle
+  });
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">// Local variable to save the active session handle
+String? _activeSessionHandle;
+
+// Initialize the session. Passing an empty config requests the server to send SessionResumptionUpdate
+var _session = await _liveModel.connect(
+  sessionResumption: SessionResumptionConfig(),
+);
+
+// Start receiving responses
+await for (final response in _session.receive()) {
+  // Process other received response types...
+
+  // Check for new session handles inside your message handling loop
+  final message = response.message;
+  if (message is SessionResumptionUpdate &amp;&amp;
+      message.resumable != null &amp;&amp;
+      message.resumable!) {
+    _activeSessionHandle = message.newHandle;
+    log('SessionResumptionUpdate: handle ${message.newHandle}');
+  }
+}
+
+// The following are alternative options to resume a session. Choose only one.
+
+// Option 1: Create and connect a session to resume with the saved handle
+if (_activeSessionHandle != null) {
+  _session = await _liveModel.connect(
+    sessionResumption: SessionResumptionConfig.resume(_activeSessionHandle!),
+  );
+}
+
+// Option 2: Alternatively, resume the session directly on an existing session object
+if (_activeSessionHandle != null) {
+  await _session.resumeSession(
+    sessionResumption: SessionResumptionConfig.resume(_activeSessionHandle!),
+  );
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">// Local variable to save the active session handle
+string activeSessionHandle = null;
+
+// Initialize the session. Passing an empty config requests the server to send SessionResumptionUpdate
+var session = await liveModel.ConnectAsync(
+    sessionResumption: new SessionResumptionConfig()
+);
+
+// Start receiving responses
+await foreach (var response in session.ReceiveAsync())
+{
+  // Process other received response types...
+
+  // Check for new session handles inside your message handling loop
+  if (response.Message is LiveSessionResumptionUpdate updateMessage)
+  {
+    if (updateMessage.Resumable == true &amp;&amp; !string.IsNullOrEmpty(updateMessage.NewHandle))
+    {
+      activeSessionHandle = updateMessage.NewHandle;
+      Debug.Log($"SessionResumptionUpdate: handle {activeSessionHandle}");
+    }
+  }
+}
+
+// The following are alternative options to resume a session. Choose only one.
+
+// Option 1: Create and connect a session to resume with the saved handle
+if (!string.IsNullOrEmpty(activeSessionHandle)) {
+  session = await liveModel.ConnectAsync(
+      sessionResumption: new SessionResumptionConfig(activeSessionHandle)
+  );
+}
+
+// Option 2: Resume the session directly on an existing session object
+if (!string.IsNullOrEmpty(activeSessionHandle)) {
+  await session.ResumeSessionAsync(
+      sessionResumption: new SessionResumptionConfig(activeSessionHandle)
+  );
+}
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/live-api/sessions" class="_attribution-link">https://firebase.google.com/docs/ai-logic/live-api/sessions</a>
+  </p>
+</div>

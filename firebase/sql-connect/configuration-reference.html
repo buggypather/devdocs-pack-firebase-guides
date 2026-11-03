@@ -1,0 +1,194 @@
+<h1>SQL Connect configuration file reference</h1> <p>The Firebase CLI lets you manage your Firebase projects in a local, version-controllable project directory. This includes SQL Connect services in your projects, connectors for those services, and resources like schema, query and mutation sources for each connector. The CLI also lets you install and operate the Firebase SQL Connect emulator. The CLI is an efficient alternative to working in the Firebase console.</p> <p>For instructions on installing the Firebase CLI experiment for Private Preview program, and SQL Connect-related CLI commands, see the <a href="cli-reference">Firebase CLI reference</a>.</p> <aside class="note"><strong>Note:</strong><span> Project configuration changes you make in the Firebase console are not automatically synchronized with configurations stored in a local project directory.</span></aside> <p>This reference guide documents:</p> <ul> <li>SQL Connect-specific entries in your <code translate="no" dir="ltr">firebase.json</code> project configuration file.</li> <li>SQL Connect configurations in <code translate="no" dir="ltr">dataconnect.yaml</code> and <code translate="no" dir="ltr">connector.yaml</code>.</li> </ul> <h2 id="firebase-project">Firebase project configuration files</h2> <h3 id="firebase.json-configuration">firebase.json configuration reference</h3> <p>Use the <code translate="no" dir="ltr">dataconnect</code> keys to configure one or more SQL Connect services in your project.</p> 
+<pre>dataconnect: {
+   source: string // Path to the directory containing the dataconnect.yaml service file.
+}
+
+</pre> <h3 id="dataconnect.yaml-configuration">dataconnect.yaml configuration reference</h3> <p>The <code translate="no" dir="ltr">dataconnect.yaml</code> file stores configuration information about the locations of application schema sources, connector sources, and data source connection information. The file also serves as a project directory signifier for the Firebase CLI.</p> <p>The <code translate="no" dir="ltr">schemaValidation</code> key controls the level of schema validation performed when schemas are migrated during deployment. With no value set, the behavior of the <code translate="no" dir="ltr">dataconect:sql:migrate</code> command is to apply compatible changes and prompt you before executing any strict changes. When set, the behavior is as follows:</p> <ul> <li>
+<code translate="no" dir="ltr">STRICT</code> mode. The database schema must exactly match the application schema before the application schema can be deployed. Any tables or columns that are not used in your SQL Connect schema will be deleted from the database.</li> <li>
+<code translate="no" dir="ltr">COMPATIBLE</code> mode. The database schema must be compatible with the application schema before the application schema can be deployed; any additional changes are considered optional. Compatible means that schema migrations are based on the application schema you write. Elements in your database that are not used by your application schema are left unmodified. Therefore, after deployment, your backend may contain unused schemas, tables, and columns.</li> </ul> <p>Values for other keys in this file are explained in the comments below.</p> 
+<pre># The top-level Firebase SQL Connect YAML file.
+
+# The Firebase SQL Connect API version to target.
+# Optional. Defaults to the latest version.
+specVersion: string
+
+# The ID of the Firebase SQL Connect service resource.
+# Required.
+serviceId: string
+
+# The location of the Firebase SQL Connect service.
+# Required.
+location: string
+
+# Required.
+schema:
+  # Relative path to directory for schema definitions.
+  # Recursively loads all .gql files in this directory.
+  # Optional. If not present, defaults to ./schema.
+  source: string
+  # Datasource connection information.
+  # Required.
+  datasource:
+    # Required.
+    postgresql:
+      # The name of the PostgreSQL database.
+      # Required.
+      database: string
+      cloudSql:
+        # The ID of the Cloud SQL instance resource.
+        # Required.
+        instanceId: string
+        # Schema validation mode for schema migrations.
+        # Defaults to unspecified/commented out, meaning you are prompted to
+        # review all changes during migration.
+        # If desired, uncomment and indicate one of "STRICT" or "COMPATIBLE".
+        schemaValidation: string
+
+# Required.
+# Relative paths to directories for connector definitions.
+# Recursively loads all .gql files in the listed directories.
+# All directories specified MUST contain a connector.yaml file.
+connectorDirs: [string]
+</pre> <p>The YAML file assumes a default (but configurable) directory structure of:</p> 
+<pre>./(project root)
+   /dataconnect
+      dataconnect.yaml
+      /schema
+        *.gql
+      /example
+        connector.yaml
+        *.gql
+</pre> <h3 id="connector.yaml-configuration">connector.yaml configuration reference</h3> <p>Use <code translate="no" dir="ltr">connector.yaml</code> to configure default authentication mode and SDK generation options.</p> 
+<pre># The connector-level YAML file.
+
+# Required. The connector name of the Firebase SQL Connect connector resource.
+connectorId: string
+
+# Optional. If not specified, no generated libraries (i.e. type-safe SDKs) will
+# be generated.
+generate:
+    # Optional.
+    javascriptSdk:
+        # Path to the directory that will be updated with the latest generated
+        # web TypeScript SDK.
+        # Required.
+        outputDir: string
+        # Name of the Javascript package to be created.
+        # Required. Example: @dataconnect/generated
+        package: string
+        # Path to your package.json directory. If specified, the new generated
+        # SDK will be installed in this path.
+        # Optional. If not provided, the package will not be auto-installed for
+        # you.
+        packageJsonDir: string
+        # Enable React framework bindings.
+        # Optional. Default to false.
+        react: Boolean
+        # Enable Angular framework bindings.
+        # Optional. Default to false.
+        angular: Boolean
+        # Enable and configure client-side caching for the generated SDK.
+        # Optional. If the `clientCache` key is not present, caching is disabled.
+        clientCache:
+            # The maximum age allowed for cached results before fetching fresh
+            # values. A value of "0" means that responses are cached, but the
+            # client SDK will always fetch fresh values; the cached values are
+            # only used when CACHE_ONLY is specified to executeQuery() and as the
+            # initial result returned from subscribe().
+            # Examples: "0", "30s", "1h30m"
+            # Optional. Default: "0"
+            maxAge: string
+            # Configures how results are to be cached.
+            # Optional. Only "memory" is allowed for JavaScript SDKs.
+            storage: string
+    # Optional.
+    dartSdk:
+        # Path to the directory that will be updated with the latest generated
+        # Flutter Dart SDK.
+        # Required.
+        outputDir: string
+        # Name of the Dart package to be created.
+        # Required. Example: "dataconnect_generated"
+        package: string
+        # Enable and configure client-side caching for the generated SDK.
+        # Optional. If the `clientCache` key is not present, caching is disabled.
+        clientCache:
+            # The maximum age allowed for cached results before fetching fresh
+            # values. A value of "0" means that responses are cached, but the
+            # client SDK will always fetch fresh values; the cached values are
+            # only used when CACHE_ONLY is specified to execute() and as the
+            # initial result returned from subscribe().
+            # Examples: "0", "30s", "1h30m"
+            # Optional. Default: "0"
+            maxAge: string
+            # Configures whether results are to be cached in persistent storage
+            # or in memory ("persistent" or "memory").
+            # Optional.
+            # Default: "persistent" for Android and iOS targets, "memory" for web.
+            storage: string
+    # Optional.
+    kotlinSdk:
+        # Path to the directory that will be updated with the latest generated
+        # Android SDK.
+        # Required.
+        outputDir: string
+        # Name of the package to be created.
+        # Required. Example: com.google.firebase.dataconnect.generated
+        package: string
+        # Enable and configure client-side caching for the generated SDK.
+        # Optional. If the `clientCache` key is not present, caching is disabled.
+        clientCache:
+            # The maximum age allowed for cached results before fetching fresh
+            # values. A value of "0" means that responses are cached, but the
+            # client SDK will always fetch fresh values; the cached values are
+            # only used when CACHE_ONLY is specified to execute().
+            # Examples: "0", "30s", "1h30m"
+            # Optional. Default: "0"
+            maxAge: string
+            # Configures whether results are to be cached in persistent storage
+            # or in memory ("persistent" or "memory").
+            # Optional. Default: persistent
+            storage: string
+    # Optional.
+    adminNodeSdk:
+        # Path to the directory that will be updated with the latest generated
+        # Node Admin SDK.
+        # Required.
+        outputDir: string
+        # Path to your package.json directory. If specified, the new generated
+        # SDK will be installed in this path.
+        # Optional. If not provided, the package will not be auto-installed for
+        # you.
+        packageJsonDir: string
+        # Name of the package to be created (for example: @dataconnect/admin-generated).
+        # Required.
+        package: string
+    # Optional.
+    swiftSdk:
+        # Path to the directory that will be updated with the latest generated
+        # iOS Swift SDK.
+        # Required.
+        outputDir: string
+        # Name of the Swift package to be created.
+        # Required. Example: "FirebaseDataConnectGenerated"
+        package: string
+        # Enable and configure client-side caching for the generated SDK.
+        # Optional. If the `clientCache` key is not present, caching is disabled.
+        clientCache:
+            # The maximum age allowed for cached results before fetching fresh
+            # values. A value of "0" means that responses are cached, but the
+            # client SDK will always fetch fresh values; the cached values are
+            # only used when CACHE_ONLY is specified to execute().
+            # Examples: "0", "30s", "1h30m"
+            # Optional. Default: "0"
+            maxAge: string
+            # Configures whether results are to be cached in persistent storage
+            # or in memory ("persistent" or "memory").
+            # Optional. Default: persistent
+            storage: string
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/configuration-reference" class="_attribution-link">https://firebase.google.com/docs/sql-connect/configuration-reference</a>
+  </p>
+</div>

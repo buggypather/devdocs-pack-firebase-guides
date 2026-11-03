@@ -1,0 +1,211 @@
+<h1>Read and Write Data on the Web</h1> <h2 id="optional_prototype_and_test_with">(Optional) Prototype and test with Firebase Local Emulator Suite</h2> <p>Before talking about how your app reads from and writes to Realtime Database, let's introduce a set of tools you can use to prototype and test Realtime Database functionality: Firebase Local Emulator Suite. If you're trying out different data models, optimizing your security rules, or working to find the most cost-effective way to interact with the back-end, being able to work locally without deploying live services can be a great idea.</p> <p>A Realtime Database emulator is part of the Local Emulator Suite, which enables your app to interact with your emulated database content and config, as well as optionally your emulated project resources (functions, other databases, and security rules).</p> <p>Using the Realtime Database emulator involves just a few steps:</p> <ol> <li>Adding a line of code to your app's test config to connect to the emulator.</li> <li>From the root of your local project directory, running <code translate="no" dir="ltr">firebase emulators:start</code>.</li> <li>Making calls from your app's prototype code using a Realtime Database platform SDK as usual, or using the Realtime Database REST API.</li> </ol> <p>A detailed <a href="../../emulator-suite/connect_and_prototype">walkthrough involving Realtime Database and Cloud Functions</a> is available. You should also have a look at the <a href="../../emulator-suite">Local Emulator Suite introduction</a>.</p> <h2 id="get_a_database_reference">Get a database reference</h2> <p>To read or write data from the database, you need an instance of <code translate="no" dir="ltr">firebase.database.Reference</code>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getDatabase } from "firebase/database";
+
+const database = getDatabase();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">var database = firebase.database();</pre> </section> </div> <aside class="note"><strong>Note:</strong><span> If you're using the older namespaced API <code translate="no" dir="ltr">firebase.database()</code>, you must include the <code translate="no" dir="ltr">firebase-database.js</code> script alongside <code translate="no" dir="ltr">firebase-app.js</code>. This step isn't needed when using the newer modular API <code translate="no" dir="ltr">import { getDatabase } from
+"firebase/database"</code>.</span></aside> <h2 id="write_data">Write data</h2> <p>This document covers the basics of retrieving data and how to order and filter Firebase data.</p> <p>Firebase data is retrieved by attaching an asynchronous listener to a <code translate="no" dir="ltr">firebase.database.Reference</code>. The listener is triggered once for the initial state of the data and again anytime the data changes.</p> <aside class="note"><strong>Note:</strong><span> By default, read and write access to your database is restricted so only authenticated users can read or write data. To get started without setting up <a href="../../auth">Authentication</a>, you can <a href="../../rules/basics#default_rules_locked_mode" target="_blank">configure your rules for public access</a>. This does make your database open to anyone, even people not using your app, so be sure to restrict your database again when you set up authentication.</span></aside> <h3 id="basic_write">Basic write operations</h3> <p>For basic write operations, you can use <code translate="no" dir="ltr">set()</code> to save data to a specified reference, replacing any existing data at that path. For example a social blogging application might add a user with <code translate="no" dir="ltr">set()</code> as follows:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getDatabase, ref, set } from "firebase/database";
+
+function writeUserData(userId, name, email, imageUrl) {
+  const db = getDatabase();
+  set(ref(db, 'users/' + userId), {
+    username: name,
+    email: email,
+    profile_picture : imageUrl
+  });
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">function writeUserData(userId, name, email, imageUrl) {
+  firebase.database().ref('users/' + userId).set({
+    username: name,
+    email: email,
+    profile_picture : imageUrl
+  });
+}</pre> </section> </div> <p>Using <code translate="no" dir="ltr">set()</code> overwrites data at the specified location, including any child nodes.</p> <h2 id="read_data">Read data</h2> <h3 id="web_value_events">Listen for value events</h3> <p>To read data at a path and listen for changes, use <code translate="no" dir="ltr">onValue()</code> to observe events. You can use this event to read static snapshots of the contents at a given path, as they existed at the time of the event. This method is triggered once when the listener is attached and again every time the data, including children, changes. The event callback is passed a snapshot containing all data at that location, including child data. If there is no data, the snapshot will return <code translate="no" dir="ltr">false</code> when you call <code translate="no" dir="ltr">exists()</code> and <code translate="no" dir="ltr">null</code> when you call <code translate="no" dir="ltr">val()</code> on it.</p> <aside class="special"><strong>Important:</strong><span> <code translate="no" dir="ltr">onValue()</code> is called every time data is changed at the specified database reference, including changes to children. To limit the size of your snapshots, attach only at the lowest level needed for watching changes. For example, attaching a listener to the root of your database is not recommended.</span></aside> <p>The following example demonstrates a social blogging application retrieving the star count of a post from the database:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getDatabase, ref, onValue } from "firebase/database";
+
+const db = getDatabase();
+const starCountRef = ref(db, 'posts/' + postId + '/starCount');
+onValue(starCountRef, (snapshot) =&gt; {
+  const data = snapshot.val();
+  updateStarCount(postElement, data);
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">var starCountRef = firebase.database().ref('posts/' + postId + '/starCount');
+starCountRef.on('value', (snapshot) =&gt; {
+  const data = snapshot.val();
+  updateStarCount(postElement, data);
+});</pre> </section> </div> <p>The listener receives a <code translate="no" dir="ltr">snapshot</code> that contains the data at the specified location in the database at the time of the event. You can retrieve the data in the <code translate="no" dir="ltr">snapshot</code> with the <code translate="no" dir="ltr">val()</code> method.</p> <h3 id="read_data_once">Read data once</h3> <h4 id="read_data_once_with_get">Read data once with get()</h4> <p>The SDK is designed to manage interactions with database servers whether your app is online or offline.</p> <p>Generally, you should use the value event techniques described above to read data to get notified of updates to the data from the backend. The listener techniques reduce your usage and billing, and are optimized to give your users the best experience as they go online and offline.</p> <p>If you need the data only once, you can use <code translate="no" dir="ltr">get()</code> to get a snapshot of the data from the database. If for any reason <code translate="no" dir="ltr">get()</code> is unable to return the server value, the client will probe the local storage cache and return an error if the value is still not found.</p> <p>Unnecessary use of <code translate="no" dir="ltr">get()</code> can increase use of bandwidth and lead to loss of performance, which can be prevented by using a realtime listener as shown above.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getDatabase, ref, child, get } from "firebase/database";
+
+const dbRef = ref(getDatabase());
+get(child(dbRef, `users/${userId}`)).then((snapshot) =&gt; {
+  if (snapshot.exists()) {
+    console.log(snapshot.val());
+  } else {
+    console.log("No data available");
+  }
+}).catch((error) =&gt; {
+  console.error(error);
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">const dbRef = firebase.database().ref();
+dbRef.child("users").child(userId).get().then((snapshot) =&gt; {
+  if (snapshot.exists()) {
+    console.log(snapshot.val());
+  } else {
+    console.log("No data available");
+  }
+}).catch((error) =&gt; {
+  console.error(error);
+});</pre> </section> </div> <h4 id="read_data_once_with_an_observer">Read data once with an observer</h4> <p>In some cases you may want the value from the local cache to be returned immediately, instead of checking for an updated value on the server. In those cases you can use <code translate="no" dir="ltr">once()</code> to get the data from the local disk cache immediately.</p> <p>This is useful for data that only needs to be loaded once and isn't expected to change frequently or require active listening. For instance, the blogging app in the previous examples uses this method to load a user's profile when they begin authoring a new post:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getDatabase, ref, onValue } from "firebase/database";
+import { getAuth } from "firebase/auth";
+
+const db = getDatabase();
+const auth = getAuth();
+
+const userId = auth.currentUser.uid;
+return onValue(ref(db, '/users/' + userId), (snapshot) =&gt; {
+  const username = (snapshot.val() &amp;&amp; snapshot.val().username) || 'Anonymous';
+  // ...
+}, {
+  onlyOnce: true
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">var userId = firebase.auth().currentUser.uid;
+return firebase.database().ref('/users/' + userId).once('value').then((snapshot) =&gt; {
+  var username = (snapshot.val() &amp;&amp; snapshot.val().username) || 'Anonymous';
+  // ...
+});</pre> </section> </div> <h2 id="updating_or_deleting_data">Updating or deleting data</h2> <h3 id="update_specific_fields">Update specific fields</h3> <p>To simultaneously write to specific children of a node without overwriting other child nodes, use the <code translate="no" dir="ltr">update()</code> method.</p> <p> When calling <code translate="no" dir="ltr">update()</code>, you can update lower-level child values by specifying a path for the key. If data is stored in multiple locations to scale better, you can update all instances of that data using <a href="structure-data#fanout">data fan-out</a>.</p> <p>For example, a social blogging app might create a post and simultaneously update it to the recent activity feed and the posting user's activity feed using code like this:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getDatabase, ref, child, push, update } from "firebase/database";
+
+function writeNewPost(uid, username, picture, title, body) {
+  const db = getDatabase();
+
+  // A post entry.
+  const postData = {
+    author: username,
+    uid: uid,
+    body: body,
+    title: title,
+    starCount: 0,
+    authorPic: picture
+  };
+
+  // Get a key for a new Post.
+  const newPostKey = push(child(ref(db), 'posts')).key;
+
+  // Write the new post's data simultaneously in the posts list and the user's post list.
+  const updates = {};
+  updates['/posts/' + newPostKey] = postData;
+  updates['/user-posts/' + uid + '/' + newPostKey] = postData;
+
+  return update(ref(db), updates);
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">function writeNewPost(uid, username, picture, title, body) {
+  // A post entry.
+  var postData = {
+    author: username,
+    uid: uid,
+    body: body,
+    title: title,
+    starCount: 0,
+    authorPic: picture
+  };
+
+  // Get a key for a new Post.
+  var newPostKey = firebase.database().ref().child('posts').push().key;
+
+  // Write the new post's data simultaneously in the posts list and the user's post list.
+  var updates = {};
+  updates['/posts/' + newPostKey] = postData;
+  updates['/user-posts/' + uid + '/' + newPostKey] = postData;
+
+  return firebase.database().ref().update(updates);
+}</pre> </section> </div> <p>This example uses <code translate="no" dir="ltr">push()</code> to create a post in the node containing posts for all users at <code translate="no" dir="ltr">/posts/$postid</code> and simultaneously retrieve the key. The key can then be used to create a second entry in the user's posts at <code translate="no" dir="ltr">/user-posts/$userid/$postid</code>.</p> <p>Using these paths, you can perform simultaneous updates to multiple locations in the JSON tree with a single call to <code translate="no" dir="ltr">update()</code>, such as how this example creates the new post in both locations. Simultaneous updates made this way are atomic: either all updates succeed or all updates fail.</p> <h3 id="add_a_completion_callback">Add a Completion Callback</h3> <p>If you want to know when your data has been committed, you can add a completion callback. Both <code translate="no" dir="ltr">set()</code> and <code translate="no" dir="ltr">update()</code> take an optional completion callback that is called when the write has been committed to the database. If the call was unsuccessful, the callback is passed an error object indicating why the failure occurred.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getDatabase, ref, set } from "firebase/database";
+
+const db = getDatabase();
+set(ref(db, 'users/' + userId), {
+  username: name,
+  email: email,
+  profile_picture : imageUrl
+})
+.then(() =&gt; {
+  // Data saved successfully!
+})
+.catch((error) =&gt; {
+  // The write failed...
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.database().ref('users/' + userId).set({
+  username: name,
+  email: email,
+  profile_picture : imageUrl
+}, (error) =&gt; {
+  if (error) {
+    // The write failed...
+  } else {
+    // Data saved successfully!
+  }
+});</pre> </section> </div> <h3 id="delete_data">Delete data</h3> <p>The simplest way to delete data is to call <code translate="no" dir="ltr">remove()</code> on a reference to the location of that data.</p> <p>You can also delete by specifying <code translate="no" dir="ltr">null</code> as the value for another write operation such as <code translate="no" dir="ltr">set()</code> or <code translate="no" dir="ltr">update()</code>. You can use this technique with <code translate="no" dir="ltr">update()</code> to delete multiple children in a single API call.</p> <h3 id="receive_a_promise">Receive a <code translate="no" dir="ltr">Promise</code>
+</h3> <p>To know when your data is committed to the Firebase Realtime Database server, you can use a <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"><code translate="no" dir="ltr">Promise</code></a>. Both <code translate="no" dir="ltr">set()</code> and <code translate="no" dir="ltr">update()</code> can return a <code translate="no" dir="ltr">Promise</code> you can use to know when the write is committed to the database.</p> <h2 id="detach_listeners">Detach listeners</h2> <p>Callbacks are removed by calling the <code translate="no" dir="ltr">off()</code> method on your Firebase database reference.</p> <p>You can remove a single listener by passing it as a parameter to <code translate="no" dir="ltr">off()</code>. Calling <code translate="no" dir="ltr">off()</code> on the location with no arguments removes all listeners at that location.</p> <p>Calling <code translate="no" dir="ltr">off()</code> on a parent listener does not automatically remove listeners registered on its child nodes; <code translate="no" dir="ltr">off()</code> must also be called on any child listeners to remove the callback.</p> <h2 id="save_data_as_transactions">Save data as transactions</h2> <p>When working with data that could be corrupted by concurrent modifications, such as incremental counters, you can use a <a href="https://firebase.google.com/docs/reference/js/database#runtransaction">transaction operation</a>. You can give this operation an update function and an optional completion callback. The update function takes the current state of the data as an argument and returns the new desired state you would like to write. If another client writes to the location before your new value is successfully written, your update function is called again with the new current value, and the write is retried.</p> <p>For instance, in the example social blogging app, you could allow users to star and unstar posts and keep track of how many stars a post has received as follows:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getDatabase, ref, runTransaction } from "firebase/database";
+
+function toggleStar(uid) {
+  const db = getDatabase();
+  const postRef = ref(db, '/posts/foo-bar-123');
+
+  runTransaction(postRef, (post) =&gt; {
+    if (post) {
+      if (post.stars &amp;&amp; post.stars[uid]) {
+        post.starCount--;
+        post.stars[uid] = null;
+      } else {
+        post.starCount++;
+        if (!post.stars) {
+          post.stars = {};
+        }
+        post.stars[uid] = true;
+      }
+    }
+    return post;
+  });
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">function toggleStar(postRef, uid) {
+  postRef.transaction((post) =&gt; {
+    if (post) {
+      if (post.stars &amp;&amp; post.stars[uid]) {
+        post.starCount--;
+        post.stars[uid] = null;
+      } else {
+        post.starCount++;
+        if (!post.stars) {
+          post.stars = {};
+        }
+        post.stars[uid] = true;
+      }
+    }
+    return post;
+  });
+}</pre> </section> </div> <p>Using a transaction prevents star counts from being incorrect if multiple users star the same post at the same time or the client had stale data. If the transaction is rejected, the server returns the current value to the client, which runs the transaction again with the updated value. This repeats until the transaction is accepted or you abort the transaction.</p> <aside class="note"><strong>Note:</strong><span> Because your update function is called multiple times, it must be able to handle <code translate="no" dir="ltr">null</code> data. Even if there is existing data in your remote database, it may not be locally cached when the transaction function is run, resulting in <code translate="no" dir="ltr">null</code> for the initial value.</span></aside> <h3 id="atomic_server-side_increments">Atomic server-side increments</h3> <p>In the above use case we're writing two values to the database: the ID of the user who stars/unstars the post, and the incremented star count. If we already know that user is starring the post, we can use an atomic increment operation instead of a transaction.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">function addStar(uid, key) {
+  import { getDatabase, increment, ref, update } from "firebase/database";
+  const dbRef = ref(getDatabase());
+
+  const updates = {};
+  updates[`posts/${key}/stars/${uid}`] = true;
+  updates[`posts/${key}/starCount`] = increment(1);
+  updates[`user-posts/${key}/stars/${uid}`] = true;
+  updates[`user-posts/${key}/starCount`] = increment(1);
+  update(dbRef, updates);
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">function addStar(uid, key) {
+  const updates = {};
+  updates[`posts/${key}/stars/${uid}`] = true;
+  updates[`posts/${key}/starCount`] = firebase.database.ServerValue.increment(1);
+  updates[`user-posts/${key}/stars/${uid}`] = true;
+  updates[`user-posts/${key}/starCount`] = firebase.database.ServerValue.increment(1);
+  firebase.database().ref().update(updates);
+}</pre> </section> </div> <p>This code does not use a transaction operation, so it does not automatically get re-run if there is a conflicting update. However, since the increment operation happens directly on the database server, there is no chance of a conflict.</p> <p>If you want to detect and reject application-specific conflicts, such as a user starring a post that they already starred before, you should write custom security rules for that use case.</p> <h2 id="work_with_data_offline">Work with data offline</h2> <p>If a client loses its network connection, your app will continue functioning correctly.</p> <p>Every client connected to a Firebase database maintains its own internal version of any active data. When data is written, it's written to this local version first. The Firebase client then synchronizes that data with the remote database servers and with other clients on a "best-effort" basis.</p> <p>As a result, all writes to the database trigger local events immediately, before any data is written to the server. This means your app remains responsive regardless of network latency or connectivity.</p> <p>Once connectivity is reestablished, your app receives the appropriate set of events so that the client syncs with the current server state, without having to write any custom code.</p> <aside class="note"><strong>Note:</strong><span> The Firebase Realtime Database web APIs do not persist data offline outside of the session. In order for writes to be persisted to the server, the web page must not be closed before the data is written to the server</span></aside> <p>We'll talk more about offline behavior in <a href="offline-capabilities">Learn more about online and offline capabilities</a>..</p> <h2 id="next_steps">Next steps</h2> <ul> <li><a href="lists-of-data">Working with lists of data</a></li> <li><a href="structure-data">Learn how to structure data</a></li> <li><a href="offline-capabilities">Learn more about online and offline capabilities</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/web/read-and-write" class="_attribution-link">https://firebase.google.com/docs/database/web/read-and-write</a>
+  </p>
+</div>

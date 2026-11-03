@@ -1,0 +1,151 @@
+<h1>Get started with AdMob in your C++ project</h1> <p>consider using the iOS and Android SDKs from AdMob.</p> <aside class="warning"> <b>DEPRECATED:</b> The Google Mobile Ads C++ SDK is <i>deprecated</i> as of June 17, 2024 and should not be adopted in projects that don't already use it. It will enter <i>End-of-Maintenance (EoM)</i> on June 17, 2025. Note that versions of the SDK released before the EoM date will continue to function, but no further bug fixes or changes will be released after the EoM date. <p>Instead of the Google Mobile Ads C++ SDK, consider using the <a href="../ios/quick-start">iOS</a> and <a href="../android/quick-start">Android</a> SDKs from AdMob. For support, reach out to the <a href="https://groups.google.com/g/google-admob-ads-sdk">Google Mobile Ads SDK Technical Forum</a>. </p> </aside> <p><br></p> <p>This quickstart guide is for publishers and developers who want to use AdMob to monetize an app that's built with Firebase. If you don't plan to include Firebase in your app, visit the <a href="https://developers.google.com/admob/cpp/quick-start" class="external">standalone AdMob guide</a> instead. </p>
+<p>If you haven't yet, learn about all the <a href="../analytics-and-firebase">benefits</a> of using AdMob, Firebase, and Google Analytics together.</p> <p>If this is your first time going through this guide, we recommend that you download and follow along using the <a href="https://github.com/firebase/quickstart-cpp/tree/main/gma/testapp" class="external">Google Mobile Ads C++ SDK test app</a>.</p> <h2 id="before-you-begin">Before you begin</h2> <ul> <li><p>If you don't already have a Firebase project and a Firebase app, follow the Firebase getting started guide: <a href="../../cpp/setup">Add Firebase to your C++ project</a>. </p></li> <li>
+<p>Make sure that Google Analytics is enabled in your Firebase project:</p> <ul> <li><p>If you're creating a new Firebase project, enable Google Analytics during the project creation workflow.</p></li> <li><p>If you have an existing Firebase project that doesn't have Google Analytics enabled, you can enable Google Analytics from the <a href="https://console.firebase.google.com/project/_/settings/integrations" class="external"><em>Integrations</em></a> tab of your <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> &gt; <em>Project settings</em></nobr>.</p></li> </ul> <aside class="note"><strong>Note:</strong><span> Adding the Firebase SDK for Google Analytics to your app is optional but strongly recommended. Learn more about the <a href="../analytics-and-firebase">benefits of adding the Firebase SDK for Google Analytics</a>.</span></aside>
+</li> </ul> <h2 id="set-up-app-in-admob">
+<strong>Step 1:</strong> Set up your app in your AdMob account</h2> <ol> <li>
+<p>Register each platform variant of your app as an AdMob app.</p> <ol> <li><p><a href="https://admob.google.com/home/" class="external">Sign into</a> or <a href="https://support.google.com/admob/answer/7356219" class="external">sign up</a> for an AdMob account.</p></li> <li><p><a href="https://support.google.com/admob/answer/2773509" class="external">Register each platform variant of your app with AdMob</a>. This step creates an AdMob app with a unique <a href="https://support.google.com/admob/answer/7356431" class="external">AdMob App ID</a> that you'll need later in this guide.</p></li> </ol> <p>You'll be asked to add the Mobile Ads SDK to your app. Find detailed instructions for this task later in this guide.</p>
+</li> <li>
+<p>Link your each of your AdMob apps to the corresponding Firebase app.</p> <p>This step is optional but strongly recommended. Learn more about the <a href="../analytics-and-firebase">benefits</a> of enabling user metrics and linking your AdMob apps to Firebase.</p> <p>For each platform variant, complete the following two steps in the <em>Apps</em> dashboard of your AdMob account:</p> <ol> <li><p><a href="https://support.google.com/admob/answer/9263723" class="external">Enable <em>User Metrics</em></a> to allow AdMob to process and display curated analytics data in your AdMob account. It's also a required setting for you to link your AdMob app to Firebase.</p></li> <li>
+<p><a href="https://support.google.com/admob/answer/6383165" class="external">Link your AdMob app</a> to your existing Firebase project and corresponding Firebase app.</p> <p>Make sure that you enter the same package name (Android) or bundle ID (iOS) as you entered for your Firebase app. Find your Firebase app's package name or bundle ID in the <em>Your apps</em> card of your <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> &gt; <a href="https://console.firebase.google.com/project/_/settings/general" class="external"><em>Project settings</em></a></nobr>.</p>
+</li> </ol>
+</li> </ol> <h2 id="add-app-id-to-app">
+<strong>Step 2:</strong> Add your AdMob App ID to your app</h2> <h3 id="add-app-id-android">Android</h3> <p>Add your <a href="https://support.google.com/admob/answer/7356431" class="external">AdMob App ID</a> to your app's <code translate="no" dir="ltr">AndroidManifest.xml</code> file by adding the <code translate="no" dir="ltr">&lt;meta-data&gt;</code> tag as shown below.</p> 
+<pre>&lt;manifest&gt;
+    &lt;application&gt;
+        &lt;!-- Sample AdMob App ID: ca-app-pub-3940256099942544~3347511713 --&gt;
+        &lt;meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ADMOB_APP_ID"/&gt;
+    &lt;/application&gt;
+&lt;/manifest&gt;</pre> <h3 id="add-app-id-ios">iOS</h3> <p>In your app's <code translate="no" dir="ltr">Info.plist</code> file, add a <code translate="no" dir="ltr">GADApplicationIdentifier</code> key with a string value of your <a href="https://support.google.com/admob/answer/7356431" class="external">AdMob App ID</a>.</p> <p>You can make this change programmatically:</p> 
+<pre>&lt;!-- Sample AdMob App ID: ca-app-pub-3940256099942544~1458002511 --&gt;
+&lt;key&gt;GADApplicationIdentifier&lt;/key&gt;
+&lt;string&gt;ADMOB_APP_ID&lt;/string&gt;</pre> <p>Or, edit it in the property list editor:</p> <p><img src="https://developers.google.com/admob/images/ios/admob_app_id_plist.png" alt="Property List Editor"></p> <h2 id="add-sdk">
+<strong>Step 3:</strong> Add the Google Mobile Ads SDK</h2> <p>Since the Google Mobile Ads C++ SDK resides in the <code translate="no" dir="ltr">firebase::gma</code> namespace, download the <a href="https://firebase.google.com/download/cpp" class="download">Firebase C++ SDK</a>, and then unzip it to a directory of your choice.</p> <p>The Firebase C++ SDK is not platform-specific, but it does require platform-specific library configurations.</p> <h3 id="add-sdk-android">Android</h3> <aside class="note"><strong>Note:</strong><span> We recommend using CMake, but you can find instructions for ndk-build in our general <a href="../../cpp/setup">Firebase C++ SDK Get Started Guide</a> to link <code translate="no" dir="ltr">libfirebase_app.a</code> and <code translate="no" dir="ltr">libfirebase_gma.a</code> to your app.</span></aside> <ol> <li>
+<p>In your project's <code translate="no" dir="ltr">gradle.properties</code> file, specify the location of the unzipped SDK:</p> 
+<pre>systemProp.firebase_cpp_sdk.dir=FULL/PATH/TO/SDK</pre>
+</li> <li>
+<p>To your project's <code translate="no" dir="ltr">settings.gradle</code> file, add the following content:</p> 
+<pre>def firebase_cpp_sdk_dir = System.getProperty('firebase_cpp_sdk.dir')
+
+gradle.ext.firebase_cpp_sdk_dir = "$firebase_cpp_sdk_dir"
+includeBuild "$firebase_cpp_sdk_dir"</pre>
+</li> <li>
+<p>To your module (app-level) Gradle file (usually <code translate="no" dir="ltr">app/build.gradle</code>), add the following content, which includes the library dependency for the Google Mobile Ads C++ SDK.</p> 
+<pre>android.defaultConfig.externalNativeBuild.cmake {
+  arguments "-DFIREBASE_CPP_SDK_DIR=$gradle.firebase_cpp_sdk_dir"
+}
+
+# Add the dependency for the Google Mobile Ads C++ SDK
+apply from: "$gradle.firebase_cpp_sdk_dir/Android/firebase_dependencies.gradle"
+firebaseCpp.dependencies {
+  gma
+}</pre>
+</li> <li>
+<p>To your project's <code translate="no" dir="ltr">CMakeLists.txt</code> file, add the following content.</p> 
+<pre># Add Firebase libraries to the target using the function from the SDK.
+add_subdirectory(${FIREBASE_CPP_SDK_DIR} bin/ EXCLUDE_FROM_ALL)
+
+# Add the Google Mobile Ads C++ SDK.
+
+# The Firebase C++ library `firebase_app` is required,
+# and it must always be listed last.
+
+set(firebase_libs
+  firebase_gma
+  firebase_app
+)
+
+target_link_libraries(${target_name} "${firebase_libs}")</pre>
+</li> <li><p>Sync your app to ensure that all dependencies have the necessary versions.</p></li> </ol> <p>You're all set! Your C++ app is configured to use the Google Mobile Ads C++ SDK.</p> <h3 id="add-sdk-ios">iOS</h3> <p>The steps in this section are an example of how to add the Google Mobile Ads C++ SDK to your iOS project.</p> <ol> <li>
+<p>Get CocoaPods version 1 or later by running:</p> 
+<pre>sudo gem install cocoapods --pre</pre>
+</li> <li>
+<p>Add Google Mobile Ads pod from the unzipped SDK.</p> <ol> <li>
+<p>Create a Podfile if you don't already have one:</p> 
+<pre>cd YOUR_APP_DIRECTORY
+pod init</pre>
+</li> <li>
+<p>To your Podfile, add the pod for the Google Mobile Ads C++ SDK:</p> 
+<pre>pod 'Google-Mobile-Ads-SDK'</pre>
+</li> <li>
+<p>Install the pod, then open the <code translate="no" dir="ltr">.xcworkspace</code> file in Xcode.</p> 
+<pre>pod install
+open YOUR_APP.xcworkspace</pre>
+</li> <li>
+<p>Add the following frameworks from the Firebase C++ SDK to the project:</p> <ul> <li><code translate="no" dir="ltr">xcframeworks/firebase.xcframework</code></li> <li><code translate="no" dir="ltr">xcframeworks/firebase_gma.xcframework</code></li> </ul>
+</li> </ol>
+</li> </ol> <p>You're all set! Your C++ app is configured to use the Google Mobile Ads C++ SDK.</p> <h2 id="initialize-sdk">
+<strong>Step 4:</strong> Initialize the Google Mobile Ads SDK</h2> <aside class="note"><strong>Note:</strong><span> If you're using the Google Mobile Ads C++ SDK test app, the following steps have already been done for you. You should now be able to run the test app.</span></aside> <p>Before loading ads, initialize the Mobile Ads SDK by calling <code translate="no" dir="ltr">firebase::gma::Initialize()</code>.</p> <p>This call returns a <code translate="no" dir="ltr">firebase::Future</code> that completes once initialization finishes (or after a 30-second timeout). Call this method only once and as early as possible, ideally at app launch.</p> <aside class="warning"><b>Warning:</b> Ads may be preloaded by the Mobile Ads SDK or mediation partner SDKs upon calling <code translate="no" dir="ltr">Initialize()</code>. If you do need to take action before loading ads, ensure you do so by invoking <code translate="no" dir="ltr">firebase::gma::SetRequestConfiguration()</code> <em>before</em> initializing the Mobile Ads SDK. Here are some examples of actions that might be needed prior to initialization: <ul> <li>Obtain consent from users in the European Economic Area (EEA) </li>
+<li>Set any request-specific flags (such as <code translate="no" dir="ltr">tag_for_child_directed_treatment</code> or <code translate="no" dir="ltr">tag_for_under_age_of_consent</code>) </li>
+</ul> <p>For more information, see our <a href="https://developers.google.com/admob/cpp/targeting" class="external">Targeting guide</a>. </p> </aside> <p>Here's an example of how to call <code translate="no" dir="ltr">Initialize()</code>:</p> <div class="ds-selector-tabs">
+<section> <p class="_firebase-tab"><strong>Android</strong></p> 
+<pre data-language="java">// Initialize the Google Mobile Ads library
+firebase::InitResult result;
+Future&lt;AdapterInitializationStatus&gt; future =
+  firebase::gma::Initialize(jni_env, j_activity, &amp;result);
+
+if (result != kInitResultSuccess) {
+  // Initialization immediately failed, most likely due to a missing dependency.
+  // Check the device logs for more information.
+  return;
+}
+
+// Monitor the status of the future.
+// See "Use a Future to monitor the completion status of a method call" below.
+if (future.status() == firebase::kFutureStatusComplete &amp;&amp;
+    future.error() == firebase::gma::kAdErrorCodeNone) {
+  // Initialization completed.
+} else {
+  // Initialization on-going, or an error has occurred.
+}</pre> </section> <section> <p class="_firebase-tab"><strong>iOS</strong></p> 
+<pre data-language="">// Initialize the Google Mobile Ads library.
+firebase::InitResult result;
+Future&lt;AdapterInitializationStatus&gt; future =
+  firebase::gma::Initialize(&amp;result);
+
+if (result != kInitResultSuccess) {
+  // Initialization immediately failed, most likely due to a missing dependency.
+  // Check the device logs for more information.
+  return;
+}
+
+// Monitor the status of the future.
+// See "Use a Future to monitor the completion status of a method call" below.
+if (future.status() == firebase::kFutureStatusComplete &amp;&amp;
+    future.error() == firebase::gma::kAdErrorCodeNone) {
+  // Initialization completed.
+} else {
+  // Initialization on-going, or an error has occurred.
+}</pre> </section>
+</div> <h3 id="futures">Use a <code translate="no" dir="ltr">Future</code> to monitor the completion status of a method call</h3> <p>A <code translate="no" dir="ltr">Future</code> provides you a way to determine the completion status of your asynchronous method calls.</p> <p>For example, when your app calls <code translate="no" dir="ltr">firebase::gma::Initialize()</code>, a new <code translate="no" dir="ltr">firebase::Future</code> is created and returned. Your app can then poll the <code translate="no" dir="ltr">status()</code> of the <code translate="no" dir="ltr">Future</code> to determine when the initialization has completed. Once complete, your app can invoke <code translate="no" dir="ltr">result()</code> to obtain the resulting <code translate="no" dir="ltr">AdapterInitializationStatus</code>.</p> <p>Methods that return a <code translate="no" dir="ltr">Future</code> have a corresponding "last result" method that apps can use to retrieve the most recent <code translate="no" dir="ltr">Future</code> for a given action. For example, <code translate="no" dir="ltr">firebase::gma::Initialize()</code> has a corresponding method called <code translate="no" dir="ltr">firebase::gma::InitializeLastResult()</code>, which returns a <code translate="no" dir="ltr">Future</code> that your app can use to check the status of the last call to <code translate="no" dir="ltr">firebase::gma::Initialize()</code>.</p> <p>If the status of the <code translate="no" dir="ltr">Future</code> is complete and its error code is <code translate="no" dir="ltr">firebase::gma::kAdErrorCodeNone</code>, then the operation has completed successfully.</p> <p>You can also register callbacks to be invoked when a <code translate="no" dir="ltr">Future</code> is completed. In some cases, the callback will be running in a different thread, so make sure your code is thread-safe. This code snippet uses a function pointer for the callback:</p> 
+<pre>// Registers the OnCompletion callback. user_data is a pointer that is passed verbatim
+// to the callback as a void*. This allows you to pass any custom data to the callback
+// handler. In this case, the app has no data, so you must pass nullptr.
+firebase::gma::InitializeLastResult().OnCompletion(OnCompletionCallback,
+  /*user_data=*/nullptr);
+
+// The OnCompletion callback function.
+static void OnCompletionCallback(
+  const firebase::Future&lt;AdapterInitializationStatus&gt;&amp; future, void* user_data) {
+  // Called when the Future is completed for the last call to firebase::gma::Initialize().
+  // If the error code is firebase::gma::kAdErrorCodeNone,
+  // then the SDK has been successfully initialized.
+  if (future.error() == firebase::gma::kAdErrorCodeNone) {
+    // success!
+  } else {
+    // failure.
+  }
+}
+</pre> <h2 id="choose-ad-format">
+<strong>Step 5:</strong> Choose an ad format to implement in your app</h2> <p>AdMob offers a number of different ad formats, so you can choose the format that best fits the user experience of your app. Click a button for an ad format to view detailed implementation instructions in the AdMob documentation.</p> <h3 id="banner">Banner</h3> <p><img style="float:left;max-height:200px;margin:2px 10px 10px 0;" src="https://developers.google.com/admob/images/format-banner.svg"></p> <p>Rectangular ads that appear at the top or bottom of the device screen</p> <p>Banner ads stay on screen while users are interacting with the app, and can refresh automatically after a certain period of time. If you're new to mobile advertising, they're a great place to start.</p>  <a href="https://developers.google.com/admob/cpp/banner" class="button-blue button external">Implement banner ads</a> <h3 id="interstitial">Interstitial</h3> <p><img style="float:left;max-height:200px;margin:2px 10px 10px 0;" src="https://developers.google.com/admob/images/format-interstitial.svg"></p> <p>Full-screen ads that cover the interface of an app until closed by the user</p> <p>Interstitial ads are best used at natural pauses in the flow of an app's execution, such as between levels of a game or just after a task is completed.</p>  <a href="https://developers.google.com/admob/cpp/interstitial" class="button-blue button external">Implement interstitial ads</a> <h3 id="rewarded">Rewarded</h3> <p><img style="float:left;max-height:200px;margin:2px 10px 10px 0;" src="https://developers.google.com/admob/images/format-rewarded.svg"></p> <p>Ads that reward users for watching short videos and interacting with playable ads and surveys</p> <p>Rewarded (or "reward-based") ads can help monetize free-to-play users.</p>  <p><a href="https://developers.google.com/admob/cpp/rewarded" class="button-blue button external">Implement rewarded ads</a> </p> <h2 id="other-topics-of-interest">Other topics of interest</h2> <p>Explore additional ways to measure metrics and integrate Firebase features with AdMob.</p> <h3 id="view-user-metrics-analytics-data">View user metrics and analytics data</h3> <p>After its initialization, the Mobile Ads SDK automatically starts logging analytics <a href="https://support.google.com/admob/answer/9755157" class="external">events</a> and <a href="https://support.google.com/admob/answer/9755590" class="external">user properties</a> from your app. You can view this data without adding any additional code to your app or implementing any ads. Here's where you can see this analytics data:</p> <ul> <li><p>In the <em>User metrics</em> card of your AdMob account (<em>Home</em> or <em>Apps</em> dashboard), you can view curated <a href="https://support.google.com/admob/answer/9281746" class="external">user metrics</a> derived from the collected analytics data, like average session duration, <abbr data-title="average revenue per user">ARPU</abbr>, and retention.</p></li> <li><p>In the <a href="https://console.firebase.google.com/project/_/analytics/" class="external"><em>Analytics</em> dashboard</a> of the Firebase console, you can view aggregated statistics and <a href="https://support.google.com/firebase/answer/6317517" class="external">summaries of key metrics</a>. If you <a href="../analytics-and-firebase">add the Firebase SDK for Google Analytics</a>, you can also <a href="https://support.google.com/analytics/answer/9267568" class="external">mark conversions for ad campaigns</a> and <a href="https://support.google.com/analytics/answer/9267572" class="external">build custom audiences</a> in the Firebase console.</p></li> </ul> <p>Note that to better represent <abbr data-title="average revenue per user">ARPU</abbr> and <abbr data-title="average revenue per paying user">ARPPU</abbr> metrics, you might want to include data from an analytics <em>custom</em> event called <a href="https://support.google.com/firebase/answer/6317517#revenue"><code translate="no" dir="ltr">ecommerce_purchase</code></a> in the revenue calculation for these metrics (<a href="../analytics-and-firebase#arpu-and-arppu">learn how</a>).</p> <aside class="note">Data typically appears within an hour but can take up to 48 hours to appear.</aside> <h3 id="analytics-and-firebase">
+<em>(Optional)</em> Use more features of Google Analytics and Firebase</h3> <p>Take advantage of more opportunities and features to improve app monetization and user engagement:</p> <ul> <li>
+<p><strong>Add and use the Firebase SDK for Google Analytics</strong></p> <ul> <li><p> Implement <a href="../../analytics/cpp/events">custom event logging</a> in your app. </p></li> <li><p>Mark conversions for <a href="https://support.google.com/firebase/answer/6317518#custom" class="external">custom ad campaigns</a>.</p></li> <li><p><a href="../analytics-and-firebase#arpu-and-arppu">Include <code translate="no" dir="ltr">ecommerce_purchase</code> event data</a> in the revenue calculation for <abbr data-title="average revenue per user">ARPU</abbr> and <abbr data-title="average revenue per paying user">ARPPU</abbr> metrics.</p></li> </ul> <p>To learn more, visit the guide for <a href="../analytics-and-firebase">using Google Analytics and Firebase with AdMob apps</a>.</p>
+</li> <li>
+<p><strong>Use other Firebase products in your app</strong></p> <p>After you add the Firebase SDK for Google Analytics, use other Firebase products to optimize ads in your app.</p> <ul> <li><p><a href="../../remote-config">Remote Config</a> enables you to change the behavior and appearance of your app without publishing an app update.</p></li> <li><p><a href="../../ab-testing">A/B Testing</a> gives you the power to test changes to your app’s UI, features, or engagement campaigns to learn if they make an impact on your key metrics (like revenue and retention) before rolling the changes out widely.</p></li> </ul>
+</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/admob/cpp/quick-start" class="_attribution-link">https://firebase.google.com/docs/admob/cpp/quick-start</a>
+  </p>
+</div>

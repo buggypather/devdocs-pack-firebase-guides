@@ -1,0 +1,49 @@
+<h1>Manage project configurations with the Extensions manifest</h1> <p>An <em>extensions manifest</em> is a list of extension instances and their configurations. With the manifest, you can:</p> <ul> <li>Share your extensions configuration with others</li> <li>Copy your extensions configuration between different projects (such as from your staging project to your production project)</li> <li>Deploy all your extensions at once</li> <li>Test how your extensions work with your app using the Firebase Local Emulator Suite</li> <li>Commit your extensions configuration to source control</li> <li>Include extensions in your CI/CD pipeline</li> </ul> <p>An extensions manifest has two parts:</p> <ul> <li>
+<p>The <code translate="no" dir="ltr">extensions</code> section of your <code translate="no" dir="ltr">firebase.json</code>, which is a map of instance ID to extension version reference. For example:</p> 
+<pre>{
+ "extensions": {
+   "my-bigquery-extension": "firebase/firestore-bigquery-export@^0.1.18",
+   "my-image-resizer": "firebase/storage-resize-images@^0.1.22",
+ }
+}
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">.env</code> files containing the configuration for each of your extension instances, in the <code translate="no" dir="ltr">extensions/</code> subdirectory of your Firebase project directory. For example, an instance of the <code translate="no" dir="ltr">storage-resize-images</code> might have an <code translate="no" dir="ltr">.env</code> file like the following:</p> 
+<pre>
+IMAGE_TYPE=jpeg
+LOCATION=us-central1
+IMG_BUCKET=${param:PROJECT_ID}.firebasestorage.app
+IMG_SIZES=100x100
+DELETE_ORIGINAL_FILE=false</pre>
+</li> </ul> <p><aside class="objective"> If you don't want to save configuration data for every extension instance, you can edit the <code translate="no" dir="ltr">firebase.json</code> file and remove the unneeded entries from the <code translate="no" dir="ltr">extensions</code> section. </aside></p> <h2 id="create">Create an extensions manifest</h2> <p>There are three ways to build an extensions manifest:</p> <ul> <li>Manage your extensions manifest with the Firebase CLI</li> <li>Export a project’s extensions configuration</li> <li>Edit the manifest files manually</li> </ul> <p>The first two methods are explained below.</p> <h3 id="cli-local">Manage your extensions manifest with the Firebase CLI</h3> <p>You can run most of the Firebase CLI's <code translate="no" dir="ltr">ext:</code> commands with the <code translate="no" dir="ltr">--local</code> option to update the extensions manifest without actually changing the project's current configuration.</p> <p>For example:</p> 
+<pre>firebase ext:install --local firebase/firestore-bigquery-export</pre> <p>Running the above command will prompt you to configure the latest version of <code translate="no" dir="ltr">firebase/firestore-bigquery-export</code> extension and save the configuration to the manifest, but it won't deploy the configuration to your project.</p> <p>Here are some more examples of commands that modify the extensions manifest:</p> 
+<pre># ext:configure changes the params for an extension instance in your extensions manifest
+$ firebase ext:configure my-bigquery-extension --local
+
+# ext:update --local updates an instance in your extensions manifest
+# to the latest version of that extension
+$ firebase ext:update my-bigquery-extension --local
+
+# You can also specify a version if you don't want to update to the latest version
+$ firebase ext:update my-bigquery-extension firebase/firestore-bigquery-export@0.1.10 --local 
+
+# ext:uninstall --local removes an instance from your extensions manifest
+$ firebase ext:uninstall my-bigquery-extension --local
+</pre> <h3 id="export">Export a project's extensions configuration</h3> <p>To save a project's current extensions configuration to the manifest, do the following:</p> <ol> <li>If you haven't already done so, <a href="../cli#setup_update_cli">set up the Firebase CLI</a>
+</li> <li>From a shell prompt, change to the project directory. (Your project directory contains the file <code translate="no" dir="ltr">firebase.json</code>).</li> <li>Run the <code translate="no" dir="ltr">ext:export</code> command: 
+<pre>firebase ext:export</pre>
+</li> </ol> <p>The <code translate="no" dir="ltr">ext:export</code> command will add an <code translate="no" dir="ltr">extensions</code> section to the <code translate="no" dir="ltr">firebase.json</code> file. Additionally, the <code translate="no" dir="ltr">ext:export</code> command creates an <code translate="no" dir="ltr">extensions</code> directory containing an <code translate="no" dir="ltr">.env</code> file for each extension instance you've installed. These files contain the configuration parameters for each instance.</p> <h2 id="deploy">Test an extensions configuration with the Firebase Local Emulator Suite</h2> <p>Once you've added some extension instances to your extensions manifest, you can test them out using the Local Emulator Suite.</p> <ol> <li><p><a href="../emulator-suite/install_and_configure">Install and configure the Local Emulator Suite</a>.</p></li> <li>
+<p><a href="../emulator-suite/install_and_configure#startup">Start the Local Emulator Suite</a>:</p> <ul> <li>To run the Emulator Suite interactively, run: <code translate="no" dir="ltr">firebase emulators:start</code>
+</li> <li>To run the Emulator Suite and execute a test script, run: <code translate="no" dir="ltr">firebase emulators:exec my-test.sh</code>
+</li> </ul>
+</li> </ol> <p>Now, if you have extension instances listed in your manifest, the Local Emulator Suite will download the source code of those extensions to <code translate="no" dir="ltr">~/.cache/firebase/extensions</code>. Once they have been downloaded, the Local Emulator Suite will start and you'll be able to trigger any of the extensions' background triggered functions and connect your app to the Emulator suite to test their integration with your app.</p> <p><aside class="warning"> Emulated extension instances can potentially make live calls to third party APIs and unemulated Google APIs. Review each extension's post-install instructions before testing to make sure you are aware of any external calls it makes. </aside></p> <h2 id="deploy">Deploy an extensions configuration to a project</h2> <p>Once you've added some extension instances to your extension manifest, you can deploy it to a project using the Firebase CLI. When you deploy with an extensions manifest, you install, update, and configure all the extension instances in the manifest into a project at once.</p> <p>To deploy an extensions manifest:</p> <ol> <li>From a shell prompt, change to the directory that contains the saved extensions configuration. (This is the directory that contains <code translate="no" dir="ltr">firebase.json</code>. If you just ran <code translate="no" dir="ltr">ext:export</code>, you're already in the right directory.)</li> <li>Run the <code translate="no" dir="ltr">deploy</code> command. If you want to deploy the extensions to a project other than the current one, also specify <code translate="no" dir="ltr">--project=</code>: 
+<pre>firebase deploy --only extensions –-project=YOUR_PROJECT_ID</pre>
+</li> </ol> <p>The <code translate="no" dir="ltr">deploy</code> command will validate each instance configuration, ask if you want to delete any extension instances from your destination project that are not listed in <code translate="no" dir="ltr">firebase.json</code>, and then deploy all of your extension instances.</p> <h2 id="projectspecific">Project-specific extension configurations</h2> <p>Saved extensions configurations can be used to deploy to multiple different projects: for example, a staging project and a production project. When doing this, some parameter values may need to be different for each project. Project-specific <code translate="no" dir="ltr">.env</code> files make this possible:</p> <ul> <li>Put parameter values that differ between projects in <code translate="no" dir="ltr">extensions/<var translate="no">EXTENSION_INSTANCE_ID</var>.env.<var translate="no">YOUR_PROJECT_ID</var></code>
+</li> <li>Put shared parameter values in <code translate="no" dir="ltr">extensions/<var translate="no">EXTENSION_INSTANCE_ID</var>.env</code>.</li> </ul> <p>Sometimes, you may want to use a different parameter value when emulating your extensions: for example, you may want to provide a test API key instead of a production one. Put these parameters in a <code translate="no" dir="ltr">.local</code> file:</p> <ul> <li>Put non-secret parameters you want to use during emulation in <code translate="no" dir="ltr">extensions/<var translate="no">EXTENSION_INSTANCE_ID</var>.env.local</code>
+</li> <li>Put secret parameter values in <code translate="no" dir="ltr">extensions/<var translate="no">EXTENSION_INSTANCE_ID</var>.secret.local</code>
+</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/manifest" class="_attribution-link">https://firebase.google.com/docs/extensions/manifest</a>
+  </p>
+</div>

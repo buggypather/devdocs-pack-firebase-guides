@@ -1,0 +1,48 @@
+<h1>Use file metadata with Cloud Storage on Flutter</h1> <p>After uploading a file to Cloud Storage reference, you can also get and update the file metadata, for example to view or update the content type. Files can also store custom key/value pairs with additional file metadata.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside> <h2 id="get_file_metadata">Get File Metadata</h2> <p>File metadata contains common properties such as <code translate="no" dir="ltr">name</code>, <code translate="no" dir="ltr">size</code>, and <code translate="no" dir="ltr">contentType</code> (often referred to as MIME type) in addition to some less common ones like <code translate="no" dir="ltr">contentDisposition</code> and <code translate="no" dir="ltr">timeCreated</code>. This metadata can be retrieved from a Cloud Storage reference using the <code translate="no" dir="ltr">getMetadata()</code> method.</p> 
+<pre>// Create reference to the file whose metadata we want to retrieve
+final forestRef = storageRef.child("images/forest.jpg");
+
+// Get metadata properties
+final metadata = await forestRef.getMetadata();
+
+// Metadata now contains the metadata for 'images/forest.jpg'
+</pre> <h2 id="update_file_metadata">Update File Metadata</h2> <p>You can update file metadata at any time after the file upload completes by using the <code translate="no" dir="ltr">updateMetadata()</code> method. Refer to the <a href="#file-metadata-properties">full list</a> for more information on what properties can be updated. Only the properties specified in the metadata are updated, all others are left unmodified.</p> 
+<pre>// Create reference to the file whose metadata we want to change
+final forestRef = storageRef.child("images/forest.jpg");
+
+// Create file metadata to update
+final newMetadata = SettableMetadata(
+  cacheControl: "public,max-age=300",
+  contentType: "image/jpeg",
+);
+
+// Update metadata properties
+final metadata = await forestRef.updateMetadata(newMetadata);
+
+// Updated metadata for 'images/forest.jpg' is returned
+</pre> <p>You can delete writable metadata properties by passing <code translate="no" dir="ltr">null</code>:</p> 
+<pre>// Delete the cacheControl property
+final newMetadata = SettableMetadata(cacheControl: null);
+final metadata = await forestRef.updateMetadata(newMetadata);
+</pre> <h2 id="handle_errors">Handle Errors</h2> <p>There are a number of reasons why errors may occur on getting or updating metadata, including the file not existing, or the user not having permission to access the desired file. More information on errors can be found in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="custom_metadata">Custom Metadata</h2> <p>You can specify custom metadata using the <code translate="no" dir="ltr">customMetadata</code> parameter of the <code translate="no" dir="ltr">SettableMetadata</code> constructor:</p> 
+<pre>// Create reference to the file whose metadata we want to change
+final forestRef = storageRef.child("images/forest.jpg");
+
+// Create file metadata to update
+final newCustomMetadata = SettableMetadata(
+  customMetadata: {
+    "location": "Yosemite, CA, USA",
+    "activity": "Hiking",
+  },
+);
+
+// Update metadata properties
+final metadata = await forestRef.updateMetadata(newCustomMetadata);
+
+// Updated metadata for 'images/forest.jpg' is returned
+</pre> <p>You can store app-specific data for each file in custom metadata, but we highly recommend using a database (such as the <a href="../../database/overview">Firebase Realtime Database</a>) to store and synchronize this type of data.</p> <h2 id="file-metadata-properties">File Metadata Properties</h2> <p>A full list of metadata properties on a file is available below:</p> <table> <thead> <tr> <th>Property</th> <th>Type</th> <th>Settable?</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">bucket</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">generation</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">metageneration</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">metadataGeneration</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">fullPath</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">name</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">size</code></td> <td><code translate="no" dir="ltr">int</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">timeCreated</code></td> <td><code translate="no" dir="ltr">DateTime</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">updated</code></td> <td><code translate="no" dir="ltr">DateTime</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">md5Hash</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>No</td> </tr> <tr> <td><code translate="no" dir="ltr">cacheControl</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>Yes</td> </tr> <tr> <td><code translate="no" dir="ltr">contentDisposition</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>Yes</td> </tr> <tr> <td><code translate="no" dir="ltr">contentEncoding</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>Yes</td> </tr> <tr> <td><code translate="no" dir="ltr">contentLanguage</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>Yes</td> </tr> <tr> <td><code translate="no" dir="ltr">contentType</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>Yes</td> </tr> <tr> <td><code translate="no" dir="ltr">customMetadata</code></td> <td><code translate="no" dir="ltr">Map&lt;String, String&gt;</code></td> <td>Yes</td> </tr> </tbody> </table> <p>Uploading, downloading, and updating files is important, but so is being able to remove them. Let's learn how to <a href="delete-files">delete files</a> from Cloud Storage.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/storage/flutter/file-metadata" class="_attribution-link">https://firebase.google.com/docs/storage/flutter/file-metadata</a>
+  </p>
+</div>

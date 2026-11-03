@@ -1,0 +1,42 @@
+<h1>Index your data</h1> <p>Firebase allows you to do ad-hoc queries on your data using an arbitrary child key. If you know in advance what your indexes will be, you can define them via the <code translate="no" dir="ltr">.indexOn</code> rule in your Firebase Realtime Database Security Rules to improve query performance.</p> <h2 id="defining_data_indexes">Defining Data Indexes</h2> <p>Firebase provides powerful tools for <a href="../web/lists-of-data#sorting_and_filtering_data">ordering</a> and <a href="../web/lists-of-data#data-order">querying</a> your data. Specifically, Firebase allows you to do ad-hoc queries on a collection of nodes using any common child key. As your app grows, the performance of this query degrades. However, if you tell Firebase about the keys you will be querying, Firebase will index those keys at the servers, improving the performance of your queries.</p> <aside class="special"> A node's key is indexed automatically, so there is no need to index it explicitly. </aside> <h2 id="section-indexing-order-by-child">Indexing with orderByChild</h2> <p>The easiest way to explain this is through an example. All of us at Firebase agree that dinosaurs are pretty cool. Here's a snippet from a sample database of dinosaur facts. We will use it to explain how <code translate="no" dir="ltr">.indexOn</code> works with <code translate="no" dir="ltr">orderByChild()</code>.</p> 
+<pre>{
+  "lambeosaurus": {
+    "height" : 2.1,
+    "length" : 12.5,
+    "weight": 5000
+  },
+  "stegosaurus": {
+    "height" : 4,
+    "length" : 9,
+    "weight" : 2500
+  }
+}</pre> <p>Let's imagine that in our app, we often need to order the dinosaurs by name, height, and length, but never by weight. We can improve the performance of our queries by telling Firebase this information. Since the name of the dinosaurs are just the keys, Firebase already optimizes for queries by dinosaur name, since this is the key of the record. We can use <code translate="no" dir="ltr">.indexOn</code> to tell Firebase to optimize queries for height and length as well:</p> 
+<pre>{
+  "rules": {
+    "dinosaurs": {
+      ".indexOn": ["height", "length"]
+    }
+  }
+}</pre> <p>Like other rules, you can specify an <code translate="no" dir="ltr">.indexOn</code> rule at any level in your rules. We placed it at the root level for the example above because all the dinosaur data is stored at the root of the database.</p> <h2 id="section-indexing-order-by-value">Indexing with orderByValue</h2> <p>In this example, we'll demonstrate how <code translate="no" dir="ltr">.indexOn</code> works with <code translate="no" dir="ltr">orderByValue()</code>. Let's say we're making a leaderboard of dino sports scores with the following data:</p> 
+<pre>{
+  "scores": {
+    "bruhathkayosaurus" : 55,
+    "lambeosaurus" : 21,
+    "linhenykus" : 80,
+    "pterodactyl" : 93,
+    "stegosaurus" : 5,
+    "triceratops" : 22
+  }
+}</pre> <p>Since we're using orderByValue() to create the leaderboard, we can optimize our queries by adding a <code translate="no" dir="ltr">.value</code> rule at our <code translate="no" dir="ltr">/scores</code> node:</p> 
+<pre>{
+  "rules": {
+    "scores": {
+      ".indexOn": ".value"
+    }
+  }
+}</pre> <aside class="note"> <strong>Indexes are not required for development</strong>: <p> Indexes are not required for development unless you are using the REST API. The realtime client libraries can execute ad-hoc queries without specifying indexes. Performance will degrade as the data you query grows, so it is important to add indexes before you launch your app if you anticipate querying a large set of data. </p> </aside><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/security/indexing-data" class="_attribution-link">https://firebase.google.com/docs/database/security/indexing-data</a>
+  </p>
+</div>

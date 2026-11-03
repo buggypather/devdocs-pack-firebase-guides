@@ -1,0 +1,53 @@
+<h1>Link multiple auth providers to an account</h1> <p>You can allow users to sign in to your app using multiple authentication providers by linking auth provider credentials to an existing user account. Users are identifiable by the same Firebase user ID regardless of the authentication provider they used to sign in. For example, a user who signed in with a password can link a Google account and sign in with either method in the future. Or, an anonymous user can link a Facebook account and then, later, sign in with Facebook to continue using your app.</p> <h2 id="before_you_begin">Before you begin</h2> <p>Add support for two or more authentication providers (possibly including anonymous authentication) to your app.</p> <h2 id="link_auth_provider_credentials_to_a_user_account">Link auth provider credentials to a user account</h2> <p>To link auth provider credentials to an existing user account:</p> <ol> <li><p>Sign in the user using any authentication provider or method.</p></li> <li><p>Complete the sign-in flow for the new authentication provider up to, but not including, calling one of the <code translate="no" dir="ltr">signInWith</code>- methods. For example, get the user's Google ID token, Facebook access token, or email and password.</p></li> <li>
+<p>Get a <code translate="no" dir="ltr">Credential</code> object for the new authentication provider:</p> 
+<pre>// Google Sign-in
+final credential = GoogleAuthProvider.credential(idToken: idToken);
+
+// Email and password sign-in
+final credential =
+    EmailAuthProvider.credential(email: emailAddress, password: password);
+
+// Etc.
+</pre>
+</li> <li>
+<p>Pass the <code translate="no" dir="ltr">Credential</code> object to the sign-in user's <code translate="no" dir="ltr">linkWithCredential()</code> method:</p> 
+<pre>try {
+  final userCredential = await FirebaseAuth.instance.currentUser
+      ?.linkWithCredential(credential);
+} on FirebaseAuthException catch (e) {
+  switch (e.code) {
+    case "provider-already-linked":
+      print("The provider has already been linked to the user.");
+      break;
+    case "invalid-credential":
+      print("The provider's credential is not valid.");
+      break;
+    case "credential-already-in-use":
+      print("The account corresponding to the credential already exists, "
+          "or is already linked to a Firebase User.");
+      break;
+    // See the API reference for the full list of error codes.
+    default:
+      print("Unknown error.");
+  }
+  ```
+</pre>
+</li> </ol> <p>If the call to <code translate="no" dir="ltr">linkWithCredential()</code> succeeds, the user can now sign in using any linked authentication provider and access the same Firebase data.</p> <h2 id="unlink_an_auth_provider_from_a_user_account">Unlink an auth provider from a user account</h2> <p>You can unlink an auth provider from an account, so that the user can no longer sign in with that provider.</p> <p>To unlink an auth provider from a user account, pass the provider ID to the <code translate="no" dir="ltr">unlink()</code> method. You can get the provider IDs of the auth providers linked to a user from the <code translate="no" dir="ltr">User</code> object's <code translate="no" dir="ltr">providerData</code> property.</p> 
+<pre>try {
+  await FirebaseAuth.instance.currentUser?.unlink(providerId);
+} on FirebaseAuthException catch (e) {
+  switch (e.code) {
+    case "no-such-provider":
+      print("The user isn't linked to the provider or the provider "
+          "doesn't exist.");
+      break;
+    default:
+      print("Unknown error.");
+  }
+}
+</pre> <h2 id="troubleshooting">Troubleshooting</h2> <p>If you encounter errors when trying to link multiple accounts, see the <a href="../users#verified_email_addresses">documentation on verified email addresses</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/flutter/account-linking" class="_attribution-link">https://firebase.google.com/docs/auth/flutter/account-linking</a>
+  </p>
+</div>

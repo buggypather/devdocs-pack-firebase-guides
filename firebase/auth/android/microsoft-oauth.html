@@ -1,0 +1,252 @@
+<h1>Authenticate Using Microsoft on Android</h1> <p>You can let your users authenticate with Firebase using OAuth providers like Microsoft Azure Active Directory by integrating web-based generic OAuth Login into your app using the Firebase SDK to carry out the end to end sign-in flow.</p> <h2 id="before_you_begin">Before you begin</h2> <p>To sign in users using Microsoft accounts (Azure Active Directory and personal Microsoft accounts), you must first enable Microsoft as a sign-in provider for your Firebase project:</p> <ol> <li><p><a href="../../android/setup">Add Firebase to your Android project</a>. </p></li>
+<li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Microsoft</b> sign-in provider. </li> <li> Add the <b>Client ID</b> and <b>Client Secret</b> from that provider's developer console to the provider configuration: <ol> <li> To register a Microsoft OAuth client, follow the instructions in <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-v2-register-an-app" class="external">Quickstart: Register an app with the Azure Active Directory v2.0 endpoint</a>. Note that this endpoint supports sign-in using Microsoft personal accounts as well as Azure Active Directory accounts. Learn more about <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-overview" class="external">Azure Active Directory v2.0</a>. </li> <li> When registering apps with these providers, be sure to register the <code translate="no" dir="ltr">*.firebaseapp.com</code> domain for your project as the redirect domain for your app. </li> </ol> </li> <li> Click <b>Save</b>. </li> <li>
+<p>Specify your app's SHA-1 fingerprint if you haven't already.</p> <ol> <li><p>In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><strong>General</strong> tab</a>.</p></li> <li><p>Scroll down to the <strong>Your apps</strong> card, select your Android app, and add your SHA-1 fingerprint in the <strong>SHA certificate fingerprints</strong> field.</p></li> </ol> <p>See <a href="https://developers.google.com/android/guides/client-auth">Authenticating Your Client</a> for details on how to get your app's SHA fingerprint.</p>
+</li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building an Android app, the easiest way to authenticate your users with Firebase using their Microsoft accounts is to handle the entire sign-in flow with the Firebase Android SDK.</p> <p>To handle the sign-in flow with the Firebase Android SDK, follow these steps:</p> <ol> <li>
+<p>Construct an instance of an <strong>OAuthProvider</strong> using its <strong>Builder</strong> with the provider ID <strong>microsoft.com</strong>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+
+<pre data-language="kotlin">val provider = OAuthProvider.newBuilder("microsoft.com")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+
+<pre data-language="java">OAuthProvider.Builder provider = OAuthProvider.newBuilder("microsoft.com");</pre></section> </div>
+</li> <li>
+<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+
+<pre data-language="kotlin">// Target specific email with login hint.
+// Force re-consent.
+provider.addCustomParameter("prompt", "consent")
+
+// Target specific email with login hint.
+provider.addCustomParameter("login_hint", "user@firstadd.onmicrosoft.com")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+
+<pre data-language="java">// Target specific email with login hint.
+// Force re-consent.
+provider.addCustomParameter("prompt", "consent");
+
+// Target specific email with login hint.
+provider.addCustomParameter("login_hint", "user@firstadd.onmicrosoft.com");</pre></section> </div> <p>For the parameters Microsoft supports, see the <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v1-protocols-oauth-code">Microsoft OAuth documentation</a>. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters()</code>. These parameters are <strong>client_id</strong>, <strong>response_type</strong>, <strong>redirect_uri</strong>, <strong>state</strong>, <strong>scope</strong> and <strong>response_mode</strong>.</p> <p>To allow only users from a particular Azure AD tenant to sign into the application, either the friendly domain name of the Azure AD tenant or the tenant's GUID identifier can be used. This can be done by specifying the "tenant" field in the custom parameters object.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+
+<pre data-language="kotlin">// Optional "tenant" parameter in case you are using an Azure AD tenant.
+// eg. '8eaef023-2b34-4da1-9baa-8bc8c9d6a490' or 'contoso.onmicrosoft.com'
+// or "common" for tenant-independent tokens.
+// The default value is "common".
+provider.addCustomParameter("tenant", "TENANT_ID")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+
+<pre data-language="java">// Optional "tenant" parameter in case you are using an Azure AD tenant.
+// eg. '8eaef023-2b34-4da1-9baa-8bc8c9d6a490' or 'contoso.onmicrosoft.com'
+// or "common" for tenant-independent tokens.
+// The default value is "common".
+provider.addCustomParameter("tenant", "TENANT_ID");</pre></section> </div>
+</li> <li>
+<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond basic profile that you want to request from the authentication provider.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+
+<pre data-language="kotlin">// Request read access to a user's email addresses.
+// This must be preconfigured in the app's API permissions.
+provider.scopes = listOf("mail.read", "calendars.read")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+
+<pre data-language="java">// Request read access to a user's email addresses.
+// This must be preconfigured in the app's API permissions.
+List&lt;String&gt; scopes =
+        new ArrayList&lt;String&gt;() {
+            {
+                add("mail.read");
+                add("calendars.read");
+            }
+        };
+provider.setScopes(scopes);</pre></section> </div> <p>To learn more, refer to the <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent">Microsoft permissions and consent documentation</a>.</p>
+</li> <li>
+<p>Authenticate with Firebase using the OAuth provider object. Note that unlike other FirebaseAuth operations, this will take control of your UI by popping up a <a href="https://developer.chrome.com/multidevice/android/customtabs">Custom Chrome Tab</a>. As a result, do not reference your Activity in the <code translate="no" dir="ltr">OnSuccessListener</code> and <code translate="no" dir="ltr">OnFailureListener</code> that you attach as they will immediately detach when the operation starts the UI.</p> <p>You should first check if you've already received a response. Signing in via this method puts your Activity in the background, which means that it can be reclaimed by the system during the sign in flow. In order to make sure that you don't make the user try again if this happens, you should check if a result is already present.</p> <p>To check if there is a pending result, call <code translate="no" dir="ltr">getPendingAuthResult</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+
+<pre data-language="kotlin">val pendingResultTask = firebaseAuth.pendingAuthResult
+if (pendingResultTask != null) {
+    // There's something already here! Finish the sign-in for your user.
+    pendingResultTask
+        .addOnSuccessListener {
+            // User is signed in.
+            // IdP data available in
+            // authResult.getAdditionalUserInfo().getProfile().
+            // The OAuth access token can also be retrieved:
+            // ((OAuthCredential)authResult.getCredential()).getAccessToken().
+            // The OAuth secret can be retrieved by calling:
+            // ((OAuthCredential)authResult.getCredential()).getSecret().
+        }
+        .addOnFailureListener {
+            // Handle failure.
+        }
+} else {
+    // There's no pending result so you need to start the sign-in flow.
+    // See below.
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+
+<pre data-language="java">Task&lt;AuthResult&gt; pendingResultTask = firebaseAuth.getPendingAuthResult();
+if (pendingResultTask != null) {
+    // There's something already here! Finish the sign-in for your user.
+    pendingResultTask
+            .addOnSuccessListener(
+                    new OnSuccessListener&lt;AuthResult&gt;() {
+                        @Override
+                        public void onSuccess(AuthResult authResult) {
+                            // User is signed in.
+                            // IdP data available in
+                            // authResult.getAdditionalUserInfo().getProfile().
+                            // The OAuth access token can also be retrieved:
+                            // ((OAuthCredential)authResult.getCredential()).getAccessToken().
+                            // The OAuth secret can be retrieved by calling:
+                            // ((OAuthCredential)authResult.getCredential()).getSecret().
+                        }
+                    })
+            .addOnFailureListener(
+                    new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            // Handle failure.
+                        }
+                    });
+} else {
+    // There's no pending result so you need to start the sign-in flow.
+    // See below.
+}</pre></section> </div> <p>To start the sign in flow, call <code translate="no" dir="ltr">startActivityForSignInWithProvider</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+
+<pre data-language="kotlin">firebaseAuth
+    .startActivityForSignInWithProvider(activity, provider.build())
+    .addOnSuccessListener {
+        // User is signed in.
+        // IdP data available in
+        // authResult.getAdditionalUserInfo().getProfile().
+        // The OAuth access token can also be retrieved:
+        // ((OAuthCredential)authResult.getCredential()).getAccessToken().
+        // The OAuth secret can be retrieved by calling:
+        // ((OAuthCredential)authResult.getCredential()).getSecret().
+    }
+    .addOnFailureListener {
+        // Handle failure.
+    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+
+<pre data-language="java">firebaseAuth
+        .startActivityForSignInWithProvider(/* activity= */ this, provider.build())
+        .addOnSuccessListener(
+                new OnSuccessListener&lt;AuthResult&gt;() {
+                    @Override
+                    public void onSuccess(AuthResult authResult) {
+                        // User is signed in.
+                        // IdP data available in
+                        // authResult.getAdditionalUserInfo().getProfile().
+                        // The OAuth access token can also be retrieved:
+                        // ((OAuthCredential)authResult.getCredential()).getAccessToken().
+                        // The OAuth secret can be retrieved by calling:
+                        // ((OAuthCredential)authResult.getCredential()).getSecret().
+                    }
+                })
+        .addOnFailureListener(
+                new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // Handle failure.
+                    }
+                });</pre></section> </div> <p>On successful completion, the OAuth access token associated with the provider can be retrieved from the <code translate="no" dir="ltr">OAuthCredential</code> object returned.</p> <p>Using the OAuth access token, you can call the <a href="https://docs.microsoft.com/en-us/graph/overview">Microsoft Graph API</a>.</p> <p>Unlike other providers supported by Firebase Auth, Microsoft does not provide a photo URL and instead, the binary data for a profile photo has to be requested via <a href="https://docs.microsoft.com/en-us/graph/api/profilephoto-get">Microsoft Graph API</a>.</p> <p>In addition to the OAuth access token, the user's OAuth <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/id-tokens">ID token</a> can also be retrieved from the <code translate="no" dir="ltr">OAuthCredential</code> object. The <code translate="no" dir="ltr">sub</code> claim in the ID token is app-specific and will not match the federated user identifier used by Firebase Auth and accessible via <code translate="no" dir="ltr">user.getProviderData().get(0).getUid()</code>. The <code translate="no" dir="ltr">oid</code> claim field should be used instead. When using a Azure AD tenant to sign-in, the <code translate="no" dir="ltr">oid</code> claim will be an exact match. However for the non-tenant case, the <code translate="no" dir="ltr">oid</code> field is padded. For a federated ID <code translate="no" dir="ltr">4b2eabcdefghijkl</code>, the <code translate="no" dir="ltr">oid</code> will have have a form <code translate="no" dir="ltr">00000000-0000-0000-4b2e-abcdefghijkl</code>.</p>
+</li> <li>
+<p>While the above examples focus on sign-in flows, you also have the ability to link a Microsoft provider to an existing user using <code translate="no" dir="ltr">startActivityForLinkWithProvider</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+
+<pre data-language="kotlin">// The user is already signed-in.
+val firebaseUser = firebaseAuth.currentUser!!
+firebaseUser
+    .startActivityForLinkWithProvider(activity, provider.build())
+    .addOnSuccessListener {
+        // Provider credential is linked to the current user.
+        // IdP data available in
+        // authResult.getAdditionalUserInfo().getProfile().
+        // The OAuth access token can also be retrieved:
+        // authResult.getCredential().getAccessToken().
+        // The OAuth secret can be retrieved by calling:
+        // authResult.getCredential().getSecret().
+    }
+    .addOnFailureListener {
+        // Handle failure.
+    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+
+<pre data-language="java">// The user is already signed-in.
+FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
+
+firebaseUser
+        .startActivityForLinkWithProvider(/* activity= */ this, provider.build())
+        .addOnSuccessListener(
+                new OnSuccessListener&lt;AuthResult&gt;() {
+                    @Override
+                    public void onSuccess(AuthResult authResult) {
+                        // Provider credential is linked to the current user.
+                        // IdP data available in
+                        // authResult.getAdditionalUserInfo().getProfile().
+                        // The OAuth access token can also be retrieved:
+                        // authResult.getCredential().getAccessToken().
+                        // The OAuth secret can be retrieved by calling:
+                        // authResult.getCredential().getSecret().
+                    }
+                })
+        .addOnFailureListener(
+                new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // Handle failure.
+                    }
+                });</pre></section> </div>
+</li> <li>
+<p>The same pattern can be used with <code translate="no" dir="ltr">startActivityForReauthenticateWithProvider</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+
+<pre data-language="kotlin">// The user is already signed-in.
+val firebaseUser = firebaseAuth.currentUser!!
+firebaseUser
+    .startActivityForReauthenticateWithProvider(activity, provider.build())
+    .addOnSuccessListener {
+        // User is re-authenticated with fresh tokens and
+        // should be able to perform sensitive operations
+        // like account deletion and email or password
+        // update.
+    }
+    .addOnFailureListener {
+        // Handle failure.
+    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+
+<pre data-language="java">// The user is already signed-in.
+FirebaseUser firebaseUser = firebaseAuth.getCurrentUser();
+
+firebaseUser
+        .startActivityForReauthenticateWithProvider(/* activity= */ this, provider.build())
+        .addOnSuccessListener(
+                new OnSuccessListener&lt;AuthResult&gt;() {
+                    @Override
+                    public void onSuccess(AuthResult authResult) {
+                        // User is re-authenticated with fresh tokens and
+                        // should be able to perform sensitive operations
+                        // like account deletion and email or password
+                        // update.
+                    }
+                })
+        .addOnFailureListener(
+                new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // Handle failure.
+                    }
+                });</pre></section> </div>
+</li> </ol> <section class="expandable"> <h2 class="showalways" id="advanced:-handle-the-sign-in-flow-manually">Advanced: Handle the sign-in flow manually</h2> <p>Unlike other OAuth providers supported by Firebase such as Google, Facebook, and Twitter, where sign-in can directly be achieved with OAuth access token based credentials, Firebase Auth does not support the same capability for providers such as Microsoft due to the inability of the Firebase Auth server to verify the audience of Microsoft OAuth access tokens. This is a critical security requirement and could expose applications and websites to replay attacks where a Microsoft OAuth access token obtained for one project (attacker) can be used to sign in to another project (victim). Instead, Firebase Auth offers the ability to handle the entire OAuth flow and the authorization code exchange using the OAuth client ID and secret configured in the Firebase Console. As the authorization code can only be used in conjunction with a specific client ID/secret, an authorization code obtained for one project cannot be used with another. </p> <p>If these providers are required to be used in unsupported environments, a third party OAuth library and <a href="../admin/create-custom-tokens">Firebase custom authentication</a> would need to be used. The former is needed to authenticate with the provider and the latter to exchange the provider's credential for a custom token.</p> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseUser"> <code translate="no" dir="ltr">FirebaseUser</code></a> object. See <a href="manage-users"> Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#signOut()"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">Firebase.auth.signOut()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">FirebaseAuth.getInstance().signOut();</pre> </section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/android/microsoft-oauth" class="_attribution-link">https://firebase.google.com/docs/auth/android/microsoft-oauth</a>
+  </p>
+</div>

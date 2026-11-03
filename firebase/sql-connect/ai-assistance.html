@@ -1,0 +1,116 @@
+<h1>Use AI assistance for SQL Connect</h1>  <p>Use Gemini in Firebase to help craft schemas, queries, and mutations for your client-side code.</p> <p>Describe your app, data model, or a desired query or mutation in natural language, and Gemini in Firebase generates the SQL Connect equivalent.</p> <p>This AI assistance is available in the following development contexts:</p> <ul> <li>In the Firebase console, you can generate, test, and deploy your schemas and operations.</li> <li>In your local environment, you can use the Firebase CLI and SQL Connect VS Code extension to generate, test, and develop on your app with the emulator.</li> <li>AI-powered development tools can use Firebase MCP server to generate, test, develop your app. </li> </ul> <p>Learn more about SQL Connect <a href="schemas-guide">schema</a>, <a href="queries-guide">query</a> and <a href="mutations-guide">mutation</a> syntax in guides.</p> <h2 id="governance">How AI assistance for SQL Connect uses your data</h2> <p>For more information, see <a href="../gemini-in-firebase#how-gemini-in-firebase-uses-your-data">How Gemini in Firebase uses your data</a>.</p> <h2 id="set-up-gemini">Set up AI assistance for SQL Connect</h2> <p>To use AI assistance with SQL Connect, enable Gemini in Firebase as described in <a href="../ai-assistance/gemini-in-firebase/set-up-gemini">Set up Gemini in Firebase</a>.</p> <aside class="special"><strong>Important:</strong><span> Project members must have the <em>Firebase SQL Connect API Viewer</em> role (<code translate="no" dir="ltr">roles/firebasedataconnect.viewer</code>) to generate SQL Connect operations with Gemini in Firebase. You'll need the <em>Firebase SQL Connect API Data Admin</em> role (<code translate="no" dir="ltr">roles/firebasedataconnect.dataAdmin</code>) to run generated queries in the Firebase console.</span></aside> <h2 id="generate-graphql-queries-and-mutations">Generate schema, queries, and mutations with Gemini in Firebase</h2> <p>You can use AI assistance for SQL Connect in many of your workflows.</p> <aside class="special"><strong>Important:</strong><span> AI assistance for SQL Connect is an early-stage technology that can sometimes generate output that seems plausible but is, in fact, incorrect. It may respond with inaccurate information that doesn't represent Google's views. Validate all output from Gemini before you use it and do not use untested generated code in production. Do not enter personally-identifiable information (PII) or user data into a <strong>Help me write GraphQL</strong> prompt. For more information, see <a href="ai-assistance#governance">How AI assistance for SQL Connect uses your data</a> and <a href="https://cloud.google.com/duet-ai/docs/discover/responsible-ai">Gemini in Google Cloud and responsible AI</a>.</span></aside> <h3 id="in_the">In the Firebase console</h3> <p>When you create a SQL Connect service, the Firebase console offers a "Getting started with Gemini" experience.</p> <p>You can describe an app idea, and AI assistance generates the following:</p> <ul> <li>A complete schema based on your app idea.</li> <li>Example operations and data mutations.</li> </ul> <p>From the data page, you can use the <strong>Help me write GraphQL</strong><span class="google-symbols">pen_spark</span> button to generate and execute operations based on natural language. Check out <a href="#use-cases">some example use cases</a>.</p> <p>This workflow is described in our <a href="quickstart">Get started guide</a>. You can continue in your local development environment with the deployed schema and operations.</p> <h3 id="in_your_local_environment">In your local environment</h3> <p>You can also get AI assistance from the Firebase CLI and the SQL Connect VS Code extension.</p> <p>You can provide your app idea to <code translate="no" dir="ltr">firebase init dataconnect</code>, and it generates the following:</p> <ul> <li>A complete schema based on your app idea.</li> <li>Example operations and a seed data mutation.</li> </ul> <p>The SQL Connect VS Code extension provides the following features:</p> <ul> <li>
+<strong>Generates/Refine Operations Code Lens</strong> to convert GraphQL comments into SQL Connect operations.</li> <li>Seamless integration with the Firebase MCP server.</li> </ul> <p>This workflow is described in our <a href="quickstart-local">Get started guide for local prototyping</a>.</p> <h3 id="mcp-server">Use the Firebase MCP server with AI-powered development tools</h3> <p>The Firebase MCP server works with any AI assistant tools that can act as an MCP client, including Antigravity, Claude Code and Claude Desktop, Cline, Cursor, VS Code Copilot, Windsurf, and more.</p> <p>The Firebase MCP server provides additional context and capabilities to help AI-powered development tools work better with SQL Connect. It can do the following:</p> <ul> <li>Set up new project directories and generated SDKs.</li> <li>Build and iterate on schemas, operations based on compile errors.</li> <li>Execute operations against local emulator or backend services.</li> <li>Gather information on existing services.</li> </ul> <p>To use Firebase MCP server:</p> <ol> <li>Set up your MCP client <a href="../cli/mcp-server#setup">following this guide</a>.</li> <li>Ask for help related to SQL Connect. Examples prompts: <ol> <li>"Set up a SQL Connect project for a pizza delivery app."</li> <li>"Fix SQL Connect compile errors."</li> <li>"In the home page, I need to show active chat rooms and friend list. Generate a SQL Connect query."</li> <li>"What users are in my local SQL Connect emulator?"</li> <li>"What Google Cloud regions are my SQL Connect services in?"</li> </ol>
+</li> </ol> <h2 id="use-cases">Example use cases for generating operations</h2> <p>The following sections describe sample use cases:</p> <ul> <li><a href="#create-top-five-movie">Return the top five movies in descending order by rating</a></li> <li><a href="#create-a-mutation">Create a mutation that adds a movie to the database based on user input</a></li> <li><a href="#create-a-query">Create a query that lists reviews based on user-provided genre and ratings</a></li> </ul> <h3 id="create-top-five-movie">Return the top five movies in descending order by rating</h3> <p>To use AI assistance for SQL Connect to generate GraphQL based on natural language:</p> <ol> <li><p>In the Firebase console, go to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/dataconnect" class="external"><strong>SQL Connect</strong></a>.</p></li> <li><p>Select your service and data source, then open the <strong>Data</strong> tab.</p></li> <li>
+<p>Click the <strong>Help me write GraphQL</strong><span class="google-symbols">pen_spark</span> icon. Describe in natural language the <a href="queries-guide">query</a> or <a href="mutations-guide">mutation</a> you want to generate, and click <strong>Generate</strong>.</p> <p>For example, if you're using the Movies data source referenced in the <a href="https://firebase.google.com/codelabs/firebase-dataconnect-web">"Build with SQL Connect (web)" codelab</a>, you could ask, "<strong>Return the top five movies of 2022, in descending order by rating</strong>," which might return a result like the following:</p> 
+<pre>query TopMovies2022 {
+  movies(where: {releaseYear: {eq: 2022}}, orderBy: [{rating: DESC}], limit: 5) {
+    id
+    title
+    rating
+    releaseYear
+  }
+}
+</pre>
+</li> <li>
+<p>Review the response:</p> <ul> <li>If the response looks correct, click <strong>Insert</strong> to insert the response into the code editor.</li> <li>If the response could be refined, click <strong>Edit</strong>, update the prompt, and click <strong>Regenerate</strong>.</li> </ul>
+</li> <li>
+<p>After you've accepted the response, set the following in the <strong>Parameters</strong> section, if applicable:</p> <ul> <li>
+<strong>Variables</strong>: If your query or mutation contains variables, define them here. Use JSON to define them, for example, <code translate="no" dir="ltr">{"title":"The
+Matrix", "releaseYear":"1999"}</code>.</li> <li>
+<strong>Authorization</strong>: Choose the <a href="authorization-and-security">Authorization context</a> (Administrator, Authenticated, or Unauthenticated) with which to run the query or mutation.</li> </ul> <aside class="warning"><strong>Warning:</strong><span> If you're running a <a href="schemas-queries-mutations#mutations-movie">mutation</a>, review it carefully before running it. Running a mutation in the data editor will execute the request.</span></aside>
+</li> <li><p>Click <strong>Run</strong> in the code editor and review results.</p></li> </ol> <p>To test multiple queries or mutations in the code editor, ensure they are named. For example, the following query is named <code translate="no" dir="ltr">GetMovie</code>. Move your cursor into the first line of the query or mutation to activate the <strong>Run</strong> button.</p> 
+<pre>query GetMovie($myKey: Movie_Key!) {
+  movie(key: $myKey) { title }
+}
+</pre>
+<aside class="note"><strong>Note:</strong><span> If you've just created a SQL Connect project and requested a new PostgreSQL instance, SQL Connect will create a temporary database for you to use while your permanent PostgreSQL database is being provisioned, then migrate all data when provisioning is done. This temporary database is great for exploring your schema and CRUD operations. The temporary database is not a PostgreSQL database. It has <a href="manage-services-and-databases#ephemeral-limitations">some limitations</a>.</span></aside> <h3 id="create-a-mutation">Create a mutation that adds a movie to the database based on user input</h3> <p>This example shows how to use natural language to generate a GraphQL mutation that populates your database. This example assumes that you're using the movie database schema used in the <a href="../sql-connect">Firebase SQL Connect documentation</a> and <a href="https://firebase.google.com/codelabs/firebase-dataconnect-web">"Build with SQL Connect (web)" codelab</a>.</p> <aside class="warning"><strong>Warning:</strong><span> Running a mutation in the data editor will execute the mutation and may change your data.</span></aside> <ol> <li><p>In the Firebase console, go to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/dataconnect" class="external"><strong>SQL Connect</strong></a>.</p></li> <li><p>Select your service and data source, then open the <strong>Data</strong> tab.</p></li> <li>
+<p>Click the <strong>Help me write GraphQL</strong><span class="google-symbols">pen_spark</span> icon and describe your mutation:</p> 
+<pre>Create a movie based on user input.
+</pre>
+</li> <li>
+<p>Click <strong>Generate</strong>. The mutation is returned. For example, Gemini might return a mutation like:</p> 
+<pre>mutation CreateMovie($title: String!, $releaseYear: Int!, $genre: String!, $rating: Float!, $description: String!, $imageUrl: String!, $tags: [String!] = []) @auth(level: USER) {
+  movie_insert(data: {
+    title: $title,
+    releaseYear: $releaseYear,
+    genre: $genre,
+    rating: $rating,
+    description: $description,
+    imageUrl: $imageUrl,
+    tags: $tags
+  })
+}
+</pre>
+</li> <li><p>Review the output. If needed, click <strong>Edit</strong> to refine the prompt and click <strong>Regenerate</strong>.</p></li> <li><p>Next, click <strong>Insert</strong> to insert the mutation into the data editor.</p></li> <li>
+<p>To execute the mutation, you'll need to add variables. From the <strong>Parameters</strong> section, open <strong>Variables</strong> and include some test variables:</p> 
+<pre>{"title":"My amazing movie", "releaseYear":2024, "genre": "Comedy",
+"rating": 8, "description": "A new movie to test mutations",
+"imageUrl": "", "tags": ["comedy","space travel"]}
+</pre>
+</li> <li>
+<p>Click <strong>Run</strong>.</p> <aside class="tip"><strong>Tip:</strong><span> You can also ask Gemini to expand the output. For example, to include comments and your source prompt in the output, you might use "Create a movie based on user input. Be sure to document the mutation and include this prompt in your response".</span></aside>
+</li> <li>
+<p>Next, create a query that verifies that your movie was added. Click the <strong>Help me write GraphQL</strong> <span class="google-symbols">pen_spark</span> and, in the box that appears, type your prompt:</p> 
+<pre>List all movies from 2024 that include all of these tags: 'space travel', 'comedy'.
+</pre> <p>Gemini might return a response like the following:</p> 
+<pre>query ComedySpaceTravelMovies2024 @auth(level: PUBLIC) {
+  movies(
+    where: {
+    releaseYear: { eq: 2024 },
+    tags: { includesAll: ["space travel", "comedy"] }
+    }
+  ) {
+      id
+      title
+      imageUrl
+      releaseYear
+      genre
+      rating
+      description
+      tags
+    }
+}
+</pre>
+</li> <li><p>Insert and run the query. The movie you added should appear in the <strong>History</strong> field.</p></li> </ol> <aside class="note"><strong>Note:</strong><span> If you've just created a SQL Connect project and requested a new PostgreSQL instance, SQL Connect will create a temporary database for you to use while your permanent PostgreSQL database is being provisioned, then migrate all data when provisioning is done. This temporary database is great for exploring your schema and CRUD operations. The temporary database is not a PostgreSQL database. It has <a href="manage-services-and-databases#ephemeral-limitations">some limitations</a>.</span></aside> <h3 id="create-a-query">Create a query that lists reviews based on user-provided genre and ratings</h3> <p>This example shows how to use natural language to generate a GraphQL query. This example assumes that you're using the movie database used in the <a href="../sql-connect"> Firebase SQL Connect documentation</a> and <a href="https://firebase.google.com/codelabs/firebase-dataconnect-web">"Build with SQL Connect (web)" codelab</a>.</p> <ol> <li><p>In the Firebase console, go to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/dataconnect" class="external"><strong>SQL Connect</strong></a>.</p></li> <li><p>Select your service and data source, then open the <strong>Data</strong> tab.</p></li> <li>
+<p>Click the <strong>Help me write GraphQL</strong><span class="google-symbols">pen_spark</span> icon and describe your query:</p> 
+<pre>List all movie reviews, based on user-configurable genre and ratings.
+</pre>
+</li> <li>
+<p>Click <strong>Generate</strong>. The query is returned. For example, Gemini might return a query like:</p> 
+<pre>query ListReviewsByGenreAndRating($genre: String, $minRating: Int, $maxRating: Int) @auth(level: PUBLIC) {
+  reviews(where: {
+    movie: {
+      genre: {eq: $genre}
+    },
+    rating: {ge: $minRating, le: $maxRating}
+  }) {
+    id
+    user {
+      username
+    }
+    movie {
+      title
+      genre
+    }
+    rating
+    reviewText
+    reviewDate
+  }
+}
+</pre>
+</li> <li><p>Review the output. If needed, click <strong>Edit</strong> to refine the prompt and click <strong>Regenerate</strong>.</p></li> <li><p>Next, click <strong>Insert</strong> to insert the mutation into the data editor.</p></li> <li>
+<p>To test this query, you'll need to add variables. From the <strong>Parameters</strong> section, open <strong>Variables</strong> and include variables to use for testing:</p> 
+<pre>{"genre":"sci-fi", "minRating":4, "maxRating":9}
+</pre>
+</li> <li><p>Click <strong>Run</strong>.</p></li> </ol> <aside class="tip"><strong>Tip:</strong><span> You can also ask Gemini to expand the output. For example, to include comments and your source prompt in the output, you might use "List all movie reviews, based on user-configurable genre and ratings. Be sure to document the query and include this prompt in your response."</span></aside><aside class="note"><strong>Note:</strong><span> If you've just created a SQL Connect project and requested a new PostgreSQL instance, SQL Connect will create a temporary database for you to use while your permanent PostgreSQL database is being provisioned, then migrate all data when provisioning is done. This temporary database is great for exploring your schema and CRUD operations. The temporary database is not a PostgreSQL database. It has <a href="manage-services-and-databases#ephemeral-limitations">some limitations</a>.</span></aside> <h2 id="prompt-design">Design prompts for third-party AI assistance tools</h2> <p>As with all AI assistance tools, better prompts yield more useful outputs.</p> <p>When you provide natural language prompts to Gemini in Firebase, behind the scenes, the assistant translates your inputs to a more fully-developed prompt.</p> <p>If you're working with third-party AI tools like Cursor or Windsurf, you can get better SQL Connect recommendations by using similar, more detailed prompts.</p> <p>We've published prompt templates for you to download, adapt, and copy into your IDE:</p> <ul> <li>A template prompt for <a href="https://github.com/firebase/firebase-tools/blob/main/templates/dataconnect-prompts/schema-generation-cursor-windsurf-rule.txt">schema generation</a>
+</li> <li>A template prompt for <a href="https://github.com/firebase/firebase-tools/blob/main/templates/dataconnect-prompts/operation-generation-cursor-windsurf-rule.txt">operation generation</a>
+</li> </ul> <p>After downloading and modifying, create a prompt in familiar tooling (for example Cursor or Windsurf) as follows:</p> <ul> <li>
+<p>In Cursor (be sure to review the latest <a href="https://docs.cursor.com/context/rules#creating-a-rule">instructions from Cursor</a>):</p> <ol> <li>Click the settings icon on top right.</li> <li>Select the <strong>Rules</strong> tab.</li> <li>Under the <strong>Project Rules</strong>, click <strong>Add a new rule</strong> button.</li> <li>Copy and paste the rule.</li> </ol>
+</li> <li>
+<p>In Windsurf (be sure to review the latest <a href="https://docs.windsurf.com/windsurf/cascade/memories#rules">instructions from Windsurf</a>):</p> <ol> <li>Open the Cascade window by clicking the <strong>Cascade</strong> button in the top right corner.</li> <li>Click the <strong>Customizations</strong> icon in the top right slider menu in Cascade, then navigate to the <strong>Rules</strong> panel.</li> <li>Click the <strong>+ Global</strong> or <strong>+ Workspace</strong> button to create new rules at either the global or workspace level, respectively.</li> <li>Copy and paste the rule.</li> </ol>
+</li> </ul> <h2 id="troubleshoot">Troubleshoot AI assistance for SQL Connect</h2> <p>See <a href="../gemini-in-firebase/set-up-gemini#troubleshoot-gemini-in-firebase">Troubleshoot Gemini in Firebase</a>.</p> <h2 id="pricing">Pricing</h2> <p>AI assistance for SQL Connect is available as part of Gemini in Firebase and is included for individual users.</p> <p>See <a href="../gemini-in-firebase#pricing">Gemini in Firebase pricing</a> for more information.</p> <h2 id="next-steps">Next steps</h2> <ul> <li>Learn more about <a href="schemas-guide">schema</a>, <a href="queries-guide">query</a> and <a href="mutations-guide">mutation</a>.</li> <li>Learn more about <a href="../gemini-in-firebase">Gemini in Firebase</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/ai-assistance" class="_attribution-link">https://firebase.google.com/docs/sql-connect/ai-assistance</a>
+  </p>
+</div>

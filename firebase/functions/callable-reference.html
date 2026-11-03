@@ -1,0 +1,88 @@
+<h1>Protocol specification for https.onCall</h1> <p>An <code translate="no" dir="ltr">https.onCall</code> trigger for Cloud Functions is an HTTPS trigger with a specific format for the request and response. This section provides a specification for the HTTPS request and response formats used by the client SDKs to implement the API. This information may be useful to you if your requirements can't be met using the Android, Apple platforms, or web SDKs.</p> <aside class="note"><strong>Note:</strong><span> If you <em>are</em> able to use the Android, Apple, or web SDKs, you're recommended to do that instead of directly implementing this protocol. The SDKs provide features to save coding time and effort, as detailed in <a href="callable">Call Functions from Your App</a>.</span></aside> <h2 id="request_format_headers">Request format: headers</h2> <p>The HTTP request to a callable trigger endpoint must be a <code translate="no" dir="ltr">POST</code> with the following headers:</p> <ul> <li>Required: <code translate="no" dir="ltr">Content-Type: application/json</code> <ul> <li>An optional <code translate="no" dir="ltr">; charset=utf-8</code> is allowed.</li> </ul>
+</li> <li>Optional: <code translate="no" dir="ltr">Authorization: Bearer &lt;token&gt;</code> <ul> <li>A Firebase Authentication user ID token for the logged-in user making the request. The backend automatically <a href="../auth/admin/verify-id-tokens">verifies</a> this token and makes it available in the handler's <code translate="no" dir="ltr">context</code>. If the token is not valid, the request is rejected.</li> </ul>
+</li> <li>Optional: <code translate="no" dir="ltr">Firebase-Instance-ID-Token: &lt;iid&gt;</code> <ul> <li>The FCM registration token from the Firebase client SDK. This must be a string. This is available in the handler's <code translate="no" dir="ltr">context</code>. It is used for targeting push notifications.</li> </ul>
+</li> <li>Optional: <code translate="no" dir="ltr">X-Firebase-AppCheck: &lt;token&gt;</code> <ul> <li>The Firebase App Check token provided by the client app making the request. The backend automatically verifies this token and decodes it, injecting the <code translate="no" dir="ltr">appId</code> in the handler's <code translate="no" dir="ltr">context</code>. If the token cannot be verified, the request is rejected. (Available for SDK &gt;=3.14.0)</li> </ul>
+</li> </ul> <p>If any other headers are included, the request is rejected, as described in the response documentation below.</p> <p><strong>Note:</strong> In JavaScript clients, these requests trigger a CORS <code translate="no" dir="ltr">OPTIONS</code> preflight, because:</p> <ul> <li>
+<code translate="no" dir="ltr">application/json</code> is not allowed. It must be <code translate="no" dir="ltr">text/plain</code> or <code translate="no" dir="ltr">application/x-www-form-urlencoded</code>.</li> <li>The <code translate="no" dir="ltr">Authorization</code> header is not a <a href="https://fetch.spec.whatwg.org/#cors-safelisted-request-header">CORS-safelisted request-header</a>.</li> <li>Other headers are similarly not allowed.</li> </ul> <p>The callable trigger automatically handles these <code translate="no" dir="ltr">OPTIONS</code> requests.</p> <h2 id="request_body">Request body</h2> <p>The body of the HTTP request should be a JSON object with any of the following fields:</p> <ul> <li>Required: <code translate="no" dir="ltr">data</code> - The argument passed to the function. This can be any valid JSON value. This is automatically decoded into native JavaScript types according to the serialization format described below.</li> </ul> <p>If there are any other fields present in the request, the backend considers the request malformed, and it is rejected.</p> <h3 id="response_format_status_codes">Response format: status codes</h3> <p>There are several cases that could result in different HTTP status codes and string status codes for <a href="https://cloud.google.com/apis/design/errors">errors</a> in the response.</p> <ol> <li><p>In the case of an HTTP error before the <code translate="no" dir="ltr">client</code> trigger is invoked, the response is not handled as a client function. For example, if a client tries to invoke a non-existent function, it receives a <code translate="no" dir="ltr">404 Not Found</code> response.</p></li> <li><p>If the client trigger is invoked, but the request is in the wrong format, such as not being JSON, having invalid fields, or missing the <code translate="no" dir="ltr">data</code> field, the request is rejected with <code translate="no" dir="ltr">400 Bad Request</code>, with an error code of <code translate="no" dir="ltr">INVALID_ARGUMENT</code>.</p></li> <li><p>If the auth token supplied in the request is invalid, the request is rejected with <code translate="no" dir="ltr">401 Unauthorized</code>, with an error code of <code translate="no" dir="ltr">UNAUTHENTICATED</code>.</p></li> <li><p>If the FCM registration token supplied in the request is invalid, the behavior is undefined. The token is not checked on every request, except when it is used to send a push notification with FCM.</p></li> <li><p>If the callable trigger is invoked, but fails with an unhandled exception or returns a failed promise, the request is rejected with <code translate="no" dir="ltr">500 Internal Server Error</code>, with an error code of <code translate="no" dir="ltr">INTERNAL</code>. This prevents coding errors from accidentally being exposed to end users.</p></li> <li><p>If the callable is invoked and returns an explicit error condition using the API provided for callable functions, then the request fails. The HTTP status code returned is based on the official mapping of error status to HTTP status, as defined in <a href="https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto">code.proto</a>. The specific error code, message, and details returned are encoded in the response body as detailed below. This means that if the function returns an explicit error with status <code translate="no" dir="ltr">OK</code>, then the response has status <code translate="no" dir="ltr">200 OK</code>, but the <code translate="no" dir="ltr">error</code> field is set in the response.</p></li> <li><p>If the client trigger is successful, the response status is <code translate="no" dir="ltr">200 OK</code>.</p></li> </ol> <h3 id="response_format_headers">Response format: headers</h3> <p>The response has the following headers:</p> <ul> <li><code translate="no" dir="ltr">Content-Type: application/json</code></li> <li>An optional <code translate="no" dir="ltr">; charset=utf-8</code> is allowed.</li> </ul> <h2 id="response_body">Response body</h2> <p>The response from a client endpoint is always a JSON object. At a minimum it contains either <code translate="no" dir="ltr">result</code> or <code translate="no" dir="ltr">error</code>, along with any optional fields. If the response is not a JSON object, or does not contain <code translate="no" dir="ltr">data</code> or <code translate="no" dir="ltr">error</code>, the client SDK should treat the request as failed with Google error code <code translate="no" dir="ltr">INTERNAL (13)</code>.</p> <ul> <li>
+<code translate="no" dir="ltr">error</code> - If this field is present, then the request is considered failed, regardless of the HTTP status code or whether <code translate="no" dir="ltr">data</code> is also present. The value of this field should be a JSON object in the standard <a href="https://cloud.google.com/apis/design/errors#http_mapping">Google Cloud HTTP Mapping</a> format for errors, with fields for <code translate="no" dir="ltr">status</code>, <code translate="no" dir="ltr">message</code>, and (optionally) <code translate="no" dir="ltr">details</code>. The <code translate="no" dir="ltr">code</code> field shall not be included. If the <code translate="no" dir="ltr">status</code> field is unset, or is an invalid value, the client should treat the status as <code translate="no" dir="ltr">INTERNAL</code>, in accordance with <a href="https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto#L33">code.proto</a>. If <code translate="no" dir="ltr">details</code> is present, it is included in any user info attached to the error in the client SDK, if applicable. <br> <strong>Note:</strong> The <code translate="no" dir="ltr">details</code> field here is a user-supplied value. It is not necessarily a list of values keyed by proto type as in the Google <code translate="no" dir="ltr">Status</code> format.</li> <li>
+<code translate="no" dir="ltr">result</code> - The value returned by the function. This can be any valid JSON value. The firebase-functions SDK automatically encodes the value returned by the user into this JSON format. The client SDKs automatically decode these params into native types according to the serialization format described below.</li> </ul> <p>If other fields are present, they should be ignored.</p> <h2 id="serialization">Serialization</h2> <p>The serialization format for arbitrary data payloads is the same for both the request and the response.</p> <p>For platform consistency, these are encoded in JSON as though they are the value of an <code translate="no" dir="ltr">Any</code> field in a proto3 protocol buffer, using the <a href="https://developers.google.com/protocol-buffers/docs/proto3#json">standard JSON mapping</a>. Values of simple types such as <code translate="no" dir="ltr">null</code>, <code translate="no" dir="ltr">int</code>, <code translate="no" dir="ltr">double</code>, or <code translate="no" dir="ltr">string</code> are encoded directly, and do not include their explicit type. So, a <code translate="no" dir="ltr">float</code> and <code translate="no" dir="ltr">double</code> are encoded the same way, and you may not know which is received on the other end of the call. For types that are not native to JSON, the typed proto3 encoding for the value is used. For more information, see the <a href="https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#google.protobuf.Any">documentation for Any JSON encoding</a>.</p> <p>The following types are allowed:</p> <ul> <li>null - <code translate="no" dir="ltr">null</code>
+</li> <li>int (signed or unsigned, up to 32 bit) - e.g. <code translate="no" dir="ltr">3</code> or <code translate="no" dir="ltr">-30</code>.</li> <li>float - e.g. <code translate="no" dir="ltr">3.14</code>
+</li> <li>double - e.g. <code translate="no" dir="ltr">3.14</code>
+</li> <li>boolean - <code translate="no" dir="ltr">true</code> or <code translate="no" dir="ltr">false</code>
+</li> <li>string - e.g. <code translate="no" dir="ltr">"hello world"</code>
+</li> <li>map<string any> - e.g. <code translate="no" dir="ltr">{"x": 3}</code></string>
+</li> <li>list<any> - e.g. <code translate="no" dir="ltr">[1, 2, 3]</code></any>
+</li> <li>long (signed or unsigned, up to 64 bits) - [see below for details]</li> </ul> <p><code translate="no" dir="ltr">NaN</code> and <code translate="no" dir="ltr">Infinity</code> values for <code translate="no" dir="ltr">float</code> and <code translate="no" dir="ltr">double</code> are not supported.</p> <p>Note that <code translate="no" dir="ltr">long</code> is a special type not normally allowed in JSON, but is covered by the proto3 specification. For example, these are encoded as:</p> <p>long</p> 
+<pre>{
+    '@type': 'type.googleapis.com/google.protobuf.Int64Value',
+    'value': '-123456789123456'
+}
+</pre> <p>unsigned long</p> 
+<pre>{
+    '@type': 'type.googleapis.com/google.protobuf.UInt64Value',
+    'value': '123456789123456'
+}
+</pre> <p>In general, the <code translate="no" dir="ltr">@type</code> key should be considered reserved, and not used for maps passed in.</p> <p>Because the type is not specified for simple types, some values will change type after passing over the wire. A <code translate="no" dir="ltr">float</code> passed in becomes a <code translate="no" dir="ltr">double</code>. A <code translate="no" dir="ltr">short</code> becomes an <code translate="no" dir="ltr">int</code>, and so on. In Android, both <code translate="no" dir="ltr">List</code> and <code translate="no" dir="ltr">JSONArray</code> are supported for list values. In those cases, passing in a JSONArray will yield a <code translate="no" dir="ltr">List</code>.</p> <p>If a map with an unknown <code translate="no" dir="ltr">@type</code> field is deserialized, it is left as a map. This allows developers to add fields with new types to their return values without breaking older clients.</p> <h2 id="code_samples">Code samples</h2> <p>The samples in this section illustrate how to encode the following:</p> <ul> <li>A callable.call example in Swift</li> <li>A success response for the call</li> <li>A failure response for the call</li> </ul> <h3 id="callablecall_example_in_swift_to_encode">Callable.call example in Swift to encode</h3> 
+<pre>callable.call([
+    "aString": "some string",
+    "anInt": 57,
+    "aFloat": 1.23,
+    "aLong": -123456789123456 as Int64
+])
+</pre> <p>Request header:</p> 
+<pre>Method: POST
+Content-Type: application/json; charset=utf-8
+Authorization: Bearer some-auth-token
+Firebase-Instance-ID-Token: some-iid-token
+</pre> <p>Request body:</p> 
+<pre>{
+    "data": {
+        "aString": "some string",
+        "anInt": 57,
+        "aFloat": 1.23,
+        "aLong": {
+            "@type": "type.googleapis.com/google.protobuf.Int64Value",
+            "value": "-123456789123456"
+        }
+    }
+}
+</pre> <h3 id="response_to_encode">Response to encode</h3> 
+<pre>return {
+    "aString": "some string",
+    "anInt": 57,
+    "aFloat": 1.23
+};
+</pre> <p>Successful response header:</p> 
+<pre>200 OK
+Content-Type: application/json; charset=utf-8
+</pre> <p>Successful response body:</p> 
+<pre>{
+    "response": {
+        "aString": "some string",
+        "anInt": 57,
+        "aFloat": 1.23
+    }
+}
+</pre> <h3 id="failure_response_to_encode">Failure response to encode</h3> 
+<pre>throw new HttpsError("unauthenticated", "Request had invalid credentials.", {
+  "some-key": "some-value"
+});
+</pre> <p>Failed response header:</p> 
+<pre>401 UNAUTHENTICATED
+Content-Type: application/json; charset=utf-8
+</pre> <p>Failed response body:</p> 
+<pre>{
+    "error": {
+        "message": "Request had invalid credentials.",
+        "status": "UNAUTHENTICATED",
+        "details": {
+            "some-key": "some-value"
+        }
+    }
+}
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/callable-reference" class="_attribution-link">https://firebase.google.com/docs/functions/callable-reference</a>
+  </p>
+</div>

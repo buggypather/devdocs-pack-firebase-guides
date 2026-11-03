@@ -1,0 +1,176 @@
+<h1>Authenticate Using Google Play Games Services with C++</h1> <p>You can use Google Play Games services to sign in players to an Android game built on Firebase and written in C++. To use Google Play Games services sign-in with Firebase, first sign in the player with Google Play Games, and request an OAuth 2.0 auth code when you do so. Then, pass the auth code to <code translate="no" dir="ltr">PlayGamesAuthProvider</code> to generate a Firebase credential, which you can use to authenticate with Firebase.</p> <aside class="special"><strong>Important:</strong><span> You can use Google Play Games services sign-in only on Android.</span></aside> <h2 id="before-you-begin">Before you begin</h2> <p>Before you can use <a href="https://firebase.google.com/docs/reference/unity/namespace/firebase/auth">Firebase Authentication</a>, you need to:</p> <ul> <li>
+<p>Register your C++ project and configure it to use Firebase.</p> <p>If your C++ project already uses Firebase, then it's already registered and configured for Firebase.</p>
+</li> <li><p>Add the <a href="https://firebase.google.com/download/cpp">Firebase C++ SDK</a> to your C++ project.</p></li> </ul> <aside class="objective"><strong>Find detailed instructions for these initial setup tasks in <a href="../../cpp/setup#note-select-platform">Add Firebase to your C++ project</a>.</strong> </aside> <p>Note that adding Firebase to your C++ project involves tasks both in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a> and in your open C++ project (for example, you download Firebase config files from the console, then move them into your C++ project).</p> <h3 id="set-up-firebase-project">Set up your Firebase project</h3> <ol> <li>
+<p>Specify your app's SHA-1 fingerprint if you haven't already.</p> <ol> <li><p>In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><strong>General</strong> tab</a>.</p></li> <li><p>Scroll down to the <strong>Your apps</strong> card, select your Android app, and add your SHA-1 fingerprint in the <strong>SHA certificate fingerprints</strong> field.</p></li> </ol> <p>You can get the SHA hash of your signing certificate with the gradle <code translate="no" dir="ltr">signingReport</code> command: </p>
+
+<pre>./gradlew signingReport</pre> <p>See <a href="https://developers.google.com/android/guides/client-auth">Authenticating Your Client</a> for details on how to get your app's SHA fingerprint.</p>
+</li> <li>
+<p>Enable Google Play Games as a sign-in provider:</p> <ol> <li><p>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><strong>Authentication</strong></a>.</p></li> <li>
+<p>Generate and obtain your project's web server client ID and client secret:</p> <ol> <li><p>In the <strong>Sign in method</strong> tab, enable the <strong>Google</strong> sign-in provider.</p></li> <li><p>Copy the web server client ID and secret from the <strong>Google</strong> sign-in provider.</p></li> </ol>
+</li> <li><p>In the <strong>Sign in method</strong> tab, enable the <strong>Play Games</strong> sign-in provider, and specify your project's web server client ID and client secret, which you got in the last step.</p></li> </ol>
+</li> </ol> <h3 id="configure-play-games-with-firebase-info">Configure Play Games services with your Firebase app information</h3> <ol> <li><p>In the <a href="https://play.google.com/console/developers" class="external">Google Play Console</a>, open your Google Play app or create one.</p></li> <li><p>In the <em>Grow</em> section, click <strong>Play Games services &gt; Setup &amp; Management &gt; Configuration</strong>.</p></li> <li><p>Click <strong>Yes, my game already uses Google APIs</strong>, select your Firebase project from the list, and then click <strong>Use</strong>.</p></li> <li>
+<p>On the Play Games services configuration page, click <strong>Add Credential</strong>.</p> <ol> <li>Select the <strong>Game server</strong> type.</li> <li>In the <strong>OAuth client</strong> field, select your project's web client ID. Be sure this is the same client ID you specified when you enabled Play Games sign-in.</li> <li>Save your changes.</li> </ol>
+</li> <li>
+<p>Still on the Play Games services configuration page, click <strong>Add Credential</strong> again.</p> <ol> <li>Select the <strong>Android</strong> type.</li> <li>In the <strong>OAuth client</strong> field, select your project's Android client ID. (If you don't see your Android client ID, be sure you set your game's SHA-1 fingerprint in the Firebase console.)</li> <li>Save your changes.</li> </ol>
+</li> <li><p>On the <strong>Testers</strong> page, add the email addresses of any users who need to be able to sign in to your game before you release it on the Play Store.</p></li> </ol> <h2 id="integrate_play_games_sign-in_into_your_game">Integrate Play Games sign-in into your game</h2> <p>Before you can sign players in to your game, you must integrate Google Play Games sign-in.</p> <p>The easiest and recommended way to add support for Play Games sign-in to a C++ Android project is to use the <a href="https://github.com/googlesamples/google-signin-unity/tree/master/staging/native">Google Sign-in C++ SDK</a>.</p> <p>To add Play Games sign-in to your game using the Google Sign-in C++ SDK, do the following:</p> <ol> <li><p>Clone or download the <a href="https://github.com/googlesamples/google-signin-unity">Google Sign-in Unity plugin repository</a>, which also contains the C++ SDK.</p></li> <li>
+<p>Build the project contained in the <code translate="no" dir="ltr">staging/native/</code> directory, either using Android Studio or <code translate="no" dir="ltr">gradlew build</code>. </p> <p>The build copies its output to a directory named <code translate="no" dir="ltr">google-signin-cpp</code>.</p>
+</li> <li>
+<p>Include the Google Sign-in C++ SDK in your game's native code make file: </p>
+<div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>CMake</strong></p> <p>In your top-level <code translate="no" dir="ltr">CMakeLists.txt</code> file:</p> 
+<pre data-language="">set(GSI_PACKAGE_DIR "/path/to/google-signin-cpp")
+add_library(lib-google-signin-cpp STATIC IMPORTED)
+set_target_properties(lib-google-signin-cpp PROPERTIES IMPORTED_LOCATION
+    ${GSI_PACKAGE_DIR}/lib/${ANDROID_ABI}/libgoogle-signin-cpp.a )
+...
+target_link_libraries(
+    ...
+    lib-google-signin-cpp)</pre> </section> <section> <p class="_firebase-tab"><strong>ndk-build</strong></p> <p>In your <code translate="no" dir="ltr">Android.mk</code> file:</p> 
+<pre data-language="">include $(CLEAR_VARS)
+LOCAL_MODULE := google-signin-cpp
+GSI_SDK_DIR := /path/to/google-signin-cpp
+LOCAL_SRC_FILES := $(GSI_SDK_DIR)/lib/$(TARGET_ARCH_ABI)/libgoogle-signin-cpp.a
+LOCAL_EXPORT_C_INCLUDES := $(GSI_SDK_DIR)/include
+include $(PREBUILT_STATIC_LIBRARY)</pre> </section> </div>
+</li> <li>
+<p>Next, include the Java helper component, which is required by the C++ SDK.</p> <p>To do so, in your project-level <code translate="no" dir="ltr">build.gradle</code> file, add the SDK build output directory as a local repository:</p> 
+<pre>allprojects {
+    repositories {
+        // ...
+        flatDir {
+            dirs 'path/to/google-signin-cpp'
+        }
+    }
+}
+</pre> <p>And, in your module-level <code translate="no" dir="ltr">build.gradle</code> file, declare the helper component as a dependency:</p> 
+<pre>dependencies {
+    implementation 'com.google.android.gms:play-services-auth:22.0.0'
+    // Depend on the AAR built with the Google Sign-in SDK in order to add
+    // the Java helper classes, which are used by the C++ library.
+    compile(name:'google-signin-cpp-release', ext:'aar')
+}
+</pre>
+</li> <li>
+<p>Then, in your game, configure a <code translate="no" dir="ltr">GoogleSignIn</code> object to use Play Games sign-in and to retrieve a server auth code:</p> 
+<pre>#include "google_signin.h"
+#include "future.h"
+
+using namespace google::signin;
+
+// ...
+
+GoogleSignIn::Configuration config = {};
+config.web_client_id = "YOUR_WEB_CLIENT_ID_HERE";
+config.request_id_token = false;
+config.use_game_signin = true;
+config.request_auth_code = true;
+
+GoogleSignIn gsi = GoogleSignIn(GetActivity(), GetJavaVM());
+gsi.Configure(config);
+</pre>
+</li> <li>
+<p>Finally, call <code translate="no" dir="ltr">SignIn()</code> to sign the player in to Play Games:</p> 
+<pre>Future&lt;GoogleSignIn::SignInResult&gt; &amp;future = gsi.SignIn();
+</pre> <p>When the Future returned by <code translate="no" dir="ltr">SignIn()</code> resolves, you can get the server auth code from the result:</p> 
+<pre>if (!future.Pending()) {
+    const GoogleSignIn::StatusCode status =
+            static_cast&lt;GoogleSignIn::StatusCode&gt;(future.Status());
+    if (status == GoogleSignIn::kStatusCodeSuccess) {
+        // Player successfully signed in to Google Play! Get auth code to
+        //   pass to Firebase
+        const GoogleSignIn::SignInResult result =
+                static_cast&lt;GoogleSignIn::SignInResult&gt;(future.Result());
+        const char* server_auth_code = result.User.GetServerAuthCode();
+    }
+}
+</pre>
+</li> </ol> <h2 id="authenticate_with_firebase">Authenticate with Firebase</h2> <p>After the player signs in with Play Games, you can use the auth code to authenticate with Firebase.</p> <ol> <li><p>After the player has successfully signed in using Play Games, get an auth code for the player's account.</p></li> <li>
+<p>Then, exchange the auth code from Play Games services for a Firebase credential, and use the Firebase credential to authenticate the player:</p> 
+<pre>firebase::auth::Credential credential =
+    firebase::auth::PlayGamesAuthProvider::GetCredential(server_auth_code);
+firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;SignInAndRetrieveDataWithCredential(credential);
+</pre>
+</li> <li>
+<p>If your program has an update loop that runs regularly (say at 30 or 60 times per second), you can check the results once per update with <code translate="no" dir="ltr">Auth::SignInAndRetrieveDataWithCredentialLastResult</code>: </p>
+
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;SignInAndRetrieveDataWithCredentialLastResult();
+if (result.status() == firebase::kFutureStatusComplete) {
+  if (result.error() == firebase::auth::kAuthErrorNone) {
+    firebase::auth::AuthResult auth_result = *result.result();
+    printf("Sign in succeeded for `%s`\n",
+           auth_result.user.display_name().c_str());
+  } else {
+    printf("Sign in failed with error '%s'\n", result.error_message());
+  }
+}</pre> <p>Or, if your program is event driven, you may prefer to <a href="#register_callback_on_future">register a callback on the Future</a>.</p>
+</li> </ol> <h2 id="register_a_callback_on_a_future">Register a callback on a Future
+</h2> Some programs have <code translate="no" dir="ltr">Update</code> functions that are called 30 or 60 times per second. For example, many games follow this model. These programs can call the <code translate="no" dir="ltr">LastResult</code> functions to poll asynchronous calls. However, if your program is event driven, you may prefer to register callback functions. A callback function is called upon completion of the Future. 
+<pre>void OnCreateCallback(const firebase::Future&lt;firebase::auth::User*&gt;&amp; result,
+                      void* user_data) {
+  // The callback is called when the Future enters the `complete` state.
+  assert(result.status() == firebase::kFutureStatusComplete);
+
+  // Use `user_data` to pass-in program context, if you like.
+  MyProgramContext* program_context = static_cast&lt;MyProgramContext*&gt;(user_data);
+
+  // Important to handle both success and failure situations.
+  if (result.error() == firebase::auth::kAuthErrorNone) {
+    firebase::auth::User* user = *result.result();
+    printf("Create user succeeded for email %s\n", user-&gt;email().c_str());
+
+    // Perform other actions on User, if you like.
+    firebase::auth::User::UserProfile profile;
+    profile.display_name = program_context-&gt;display_name;
+    user-&gt;UpdateUserProfile(profile);
+
+  } else {
+    printf("Created user failed with error '%s'\n", result.error_message());
+  }
+}
+
+void CreateUser(firebase::auth::Auth* auth) {
+  // Callbacks work the same for any firebase::Future.
+  firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+      auth-&gt;CreateUserWithEmailAndPasswordLastResult();
+
+  // `&amp;my_program_context` is passed verbatim to OnCreateCallback().
+  result.OnCompletion(OnCreateCallback, &amp;my_program_context);
+}</pre> The callback function can also be a lambda, if you prefer. 
+<pre>void CreateUserUsingLambda(firebase::auth::Auth* auth) {
+  // Callbacks work the same for any firebase::Future.
+  firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+      auth-&gt;CreateUserWithEmailAndPasswordLastResult();
+
+  // The lambda has the same signature as the callback function.
+  result.OnCompletion(
+      [](const firebase::Future&lt;firebase::auth::User*&gt;&amp; result,
+         void* user_data) {
+        // `user_data` is the same as &amp;my_program_context, below.
+        // Note that we can't capture this value in the [] because std::function
+        // is not supported by our minimum compiler spec (which is pre C++11).
+        MyProgramContext* program_context =
+            static_cast&lt;MyProgramContext*&gt;(user_data);
+
+        // Process create user result...
+        (void)program_context;
+      },
+      &amp;my_program_context);
+}</pre> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to their Play Games ID. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project.</p> <p>In your game, you can get the user's Firebase UID from the <code translate="no" dir="ltr">firebase::auth::User</code> object:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  std::string playerName = user.displayName();
+
+  // The user's ID, unique to the Firebase project.
+  // Do NOT use this value to authenticate with your backend server,
+  // if you have one. Use firebase::auth::User::Token() instead.
+  std::string uid = user.uid();
+}
+</pre> <p>In your Firebase Realtime Database and Cloud Storage Security Rules, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p> <p>To get a user's Play Games player information or to access Play Games services, use the APIs provided by the <a href="https://developers.google.com/games/services/cpp/GettingStartedNativeClient">Google Play Games services C++ SDK</a>.</p> <p>To sign out a user, call <code translate="no" dir="ltr">SignOut()</code>:</p> 
+<pre>auth-&gt;SignOut();
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/cpp/play-games" class="_attribution-link">https://firebase.google.com/docs/auth/cpp/play-games</a>
+  </p>
+</div>

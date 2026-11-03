@@ -1,0 +1,91 @@
+<h1>Common Expression Language syntax reference for SQL Connect</h1> <p>This reference guides covers Common Expression Language (CEL) syntax relevant to creating expressions for the <code translate="no" dir="ltr">@auth(expr:)</code>, <code translate="no" dir="ltr">@check(expr:)</code>, and <code translate="no" dir="ltr">@refresh(onMutationExecuted:)</code> directives.</p> <p>Complete reference information for CEL is provided in the <a href="https://github.com/google/cel-spec">CEL specification</a>.</p> <h3 id="test_variables_passed_in_queries_and_mutations">Test variables passed in queries and mutations</h3> <p><code translate="no" dir="ltr">@auth(expr)</code> syntax allows you access and test variables from queries and mutations.</p> <p>For example, you can include an operation variable, such as <code translate="no" dir="ltr">$status</code>, using <code translate="no" dir="ltr">vars.status</code>.</p> 
+<pre>mutation Update($id: UUID!, $status: Any) @auth(expr: "has(vars.status)")
+</pre> <h3 id="data_available_to_expressions_request_response_this">Data available to expressions: request, response, this</h3> <p>You use data for:</p> <ul> <li>Evaluation with CEL expressions in <code translate="no" dir="ltr">@auth(expr:)</code> and <code translate="no" dir="ltr">@check(expr:)</code> directives</li> <li>Assignment using server expressions, <code translate="no" dir="ltr">&lt;field&gt;_expr</code>.</li> </ul> <p>The <code translate="no" dir="ltr">@auth(expr:)</code>, <code translate="no" dir="ltr">@check(expr:)</code>, <code translate="no" dir="ltr">@refresh(onMutationExecuted:)</code> CEL expressions can evaluate the following:</p> <ul> <li><code translate="no" dir="ltr">request.operationName</code></li> <li>
+<code translate="no" dir="ltr">vars</code> (alias for <code translate="no" dir="ltr">request.variables</code>)</li> <li>
+<code translate="no" dir="ltr">auth</code> (alias for <code translate="no" dir="ltr">request.auth</code>)</li> </ul> <p>In mutations, you can access and assign the contents of:</p> <ul> <li>
+<code translate="no" dir="ltr">response</code> (to check partial results in multi-step logic)</li> </ul> <p>Additionally, <code translate="no" dir="ltr">@check(expr:)</code> expressions can evaluate:</p> <ul> <li>
+<code translate="no" dir="ltr">this</code> (the value of the current field)</li> <li>
+<code translate="no" dir="ltr">response</code> (to check partial results in multi-step logic)</li> </ul> <p>And <code translate="no" dir="ltr">@refresh(onMutationExecuted:)</code> expressions have the following binding:</p> <ul> <li><code translate="no" dir="ltr">mutation.variables</code></li> <li><code translate="no" dir="ltr">mutation.auth</code></li> </ul> <h4 id="the_requestoperationname_binding">The request.operationName binding</h4> <p>The <code translate="no" dir="ltr">request.operarationName</code> binding stores the type of operation, either query or mutation.</p> <h4 id="the_vars_binding_requestvars">The <code translate="no" dir="ltr">vars</code> binding (request.vars)</h4> <p>The <code translate="no" dir="ltr">vars</code> binding allows your expressions to access all variables passed in your query or mutation.</p> <p>You can use <code translate="no" dir="ltr">vars.&lt;variablename&gt;</code> in an expression as an alias for the fully-qualified <code translate="no" dir="ltr">request.variables.&lt;variablename&gt;</code>:</p> 
+<pre># The following are equivalent
+mutation StringType($v: String!) @auth(expr: "vars.v == 'hello'")
+mutation StringType($v: String!) @auth(expr: "request.variables.v == 'hello'")
+</pre> <h4 id="the_auth_binding_requestauth">The <code translate="no" dir="ltr">auth</code> binding (request.auth)</h4> <p>Authentication identifies users requesting access to your data and provides that information as a binding you can build on in your expressions.</p> <p>In your filters and expressions, you can use <code translate="no" dir="ltr">auth</code> as an alias for <code translate="no" dir="ltr">request.auth</code>.</p> <p>The auth binding contains the following information:</p> <ul> <li>
+<code translate="no" dir="ltr">uid</code>: A unique user ID, assigned to the requesting user.</li> <li>
+<code translate="no" dir="ltr">token</code>: A map of values collected by Authentication.</li> </ul> <p>For more details on the contents of <code translate="no" dir="ltr">auth.token</code> see <a href="#auth-token-contents">Data in auth tokens</a></p> <h4 id="the_response_binding">The <code translate="no" dir="ltr">response</code> binding</h4> <p>The <code translate="no" dir="ltr">response</code> binding contains the data being assembled by the server in response to a query or mutation <em>as that data is being assembled</em>.</p> <p>As the operation proceeds, as each step is completed successfully, <code translate="no" dir="ltr">response</code> contains response data from successfully-completed steps.</p> <p>The <code translate="no" dir="ltr">response</code> binding is structured according the shape of its associated operation, including (multiple) nested fields and (if applicable) embedded queries.</p> <p>Note that when you access <strong>embedded query response data</strong>, fields can contain any data type, depending on the data requested in the embedded query; when you access data returned by mutation fields like <code translate="no" dir="ltr">_insert</code>s and <code translate="no" dir="ltr">_delete</code>s, they may contain UUID keys, number of deletes, nulls (see the <a href="https://firebase.google.com/docs/reference/sql-connect/gql/mutation">mutations reference</a>).</p> <p>For example:</p> <ul> <li>In a mutation that contains an embedded query, the <code translate="no" dir="ltr">response</code> binding contains lookup data at <code translate="no" dir="ltr">response.query.&lt;fieldName&gt;.&lt;fieldName&gt;....</code>, in this case, <code translate="no" dir="ltr">response.query.todoList</code> and <code translate="no" dir="ltr">response.query.todoList.priority</code>.</li> </ul> 
+<pre>mutation CheckTodoPriority(
+  $uniqueListName: String!
+) {
+  # This query is identified as `response.query`
+  query @check(expr: "response.query.todoList.priority == 'high'", message: "This list is not for high priority items!") {
+    # This field is identified as `response.query.todoList`
+    todoList(where: { name: $uniqueListName }) {
+      # This field is identified as `response.query.todoList.priority`
+      priority
+    }
+  }
+}
+</pre> <ul> <li>In a multi-step mutation, for example with multiple <code translate="no" dir="ltr">_insert</code> fields, the <code translate="no" dir="ltr">response</code> binding contains partial data at <code translate="no" dir="ltr">response.&lt;fieldName&gt;.&lt;fieldName&gt;....</code>, in this case, <code translate="no" dir="ltr">response.todoList_insert.id</code>.</li> </ul> 
+<pre>mutation CreateTodoListWithFirstItem(
+  $listName: String!,
+  $itemContent: String!
+) @transaction {
+  # Step 1
+  todoList_insert(data: {
+    id_expr: "uuidV4()",
+    name: $listName,
+  })
+  # Step 2:
+  todo_insert(data: {
+    listId_expr: "response.todoList_insert.id" # &lt;-- Grab the newly generated ID from the partial response so far.
+    content: $itemContent,
+  })
+}
+</pre> <h4 id="cel-this-binding">The <code translate="no" dir="ltr">this</code> binding</h4> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">this</code> binding is valid for <code translate="no" dir="ltr">@check</code> expressions, not <code translate="no" dir="ltr">@auth</code> expressions.</span></aside> <p>The binding <code translate="no" dir="ltr">this</code> evaluates to the field that the <code translate="no" dir="ltr">@check</code> directive is attached to. In a basic case, you might evaluate single-valued query results.</p> 
+<pre>mutation UpdateMovieTitle (
+  $movieId: UUID!,
+  $newTitle: String!)
+  @auth(level: USER)
+  @transaction {
+  # Step 1: Query and check
+  query @redact {
+    moviePermission( # Look up a join table called MoviePermission with a compound key.
+      key: {movieId: $movieId, userId_expr: "auth.uid"}
+    ) {
+      # Check if the user has the editor role for the movie. `this` is the string value of `role`.
+      # If the parent moviePermission is null, the @check will also fail automatically.
+      role @check(expr: "this == 'editor'", message: "You must be an editor of this movie to update title")
+    }
+  }
+  # Step 2: Act
+  movie_update(id: $movieId, data: {
+    title: $newTitle
+  })
+}
+</pre> <p>If the returned field occurs multiple times because any ancestor is a list, each occurrence is tested with <code translate="no" dir="ltr">this</code> bound to each value.</p> <p>For any given path, if an ancestor is <code translate="no" dir="ltr">null</code> or <code translate="no" dir="ltr">[]</code>, the field won't be reached and the CEL evaluation will be skipped for that path. In other words, evaluation only takes place when <code translate="no" dir="ltr">this</code> is <code translate="no" dir="ltr">null</code> or non-<code translate="no" dir="ltr">null</code>, but never <code translate="no" dir="ltr">undefined</code>.</p> <p>When the field itself is a list or object, <code translate="no" dir="ltr">this</code> follows the same structure (including all descendants selected in case of objects), as illustrated in the following example.</p> 
+<pre>mutation UpdateMovieTitle2($movieId: UUID!, $newTitle: String!) @auth(level: USER) @transaction {
+  # Step 1: Query and check
+  query {
+    moviePermissions( # Now we query for a list of all matching MoviePermissions.
+      where: {movieId: {eq: $movieId}, userId: {eq_expr: "auth.uid"}}
+    # This time we execute the @check on the list, so `this` is the list of objects.
+    # We can use the `.exists` macro to check if there is at least one matching entry.
+    ) @check(expr: "this.exists(p, p.role == 'editor')", message: "You must be an editor of this movie to update title") {
+      role
+    }
+  }
+  # Step 2: Act
+  movie_update(id: $movieId, data: {
+    title: $newTitle
+  })
+}
+</pre> <h3 id="complex_expression_syntax">Complex expression syntax</h3> <p>You can write more complex expressions by combining with the <code translate="no" dir="ltr">&amp;&amp;</code> and <code translate="no" dir="ltr">||</code> operators.</p> 
+<pre>mutation UpsertUser($username: String!) @auth(expr: "(auth != null) &amp;&amp; (vars.username == 'joe')")
+</pre> <p>The following section describes all available operators.</p> <h3 id="operators_and_operator_precedence">Operators and operator precedence</h3> <p>Use the following table as a reference for operators and their corresponding precedence.</p> <p>Given arbitrary expressions <code translate="no" dir="ltr">a</code> and <code translate="no" dir="ltr">b</code>, a field <code translate="no" dir="ltr">f</code>, and an index <code translate="no" dir="ltr">i</code>.</p> <table> <thead> <tr> <th>Operator</th> <th>Description</th> <th>Associativity</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">a[i] a() a.f</code></td> <td>Index, call, field access</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">!a -a</code></td> <td>Unary negation</td> <td>right to left</td> </tr> <tr> <td><code translate="no" dir="ltr">a/b a%b a*b</code></td> <td>Multiplicative operators</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a+b a-b</code></td> <td>Additive operators</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a&gt;b a&gt;=b a&lt;b a&lt;=b</code></td> <td>Relational operators</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a in b</code></td> <td>Existence in list or map</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">type(a) == t</code></td> <td>Type comparison, where <code translate="no" dir="ltr">t</code> can be bool, int, float, number, string, list, map, timestamp, or duration</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a==b a!=b</code></td> <td>Comparison operators</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a &amp;&amp; b</code></td> <td>Conditional AND</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a || b</code></td> <td>Conditional OR</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a ? true_value : false_value</code></td> <td>Ternary expression</td> <td>left to right</td> </tr> </tbody> </table> <h3 id="auth-token-contents">Data in auth tokens</h3> <p>The <code translate="no" dir="ltr">auth.token</code> object may contain the following values:</p> <table> <thead> <tr> <th>Field</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">email</code></td> <td>The email address associated with the account, if present.</td> </tr> <tr> <td><code translate="no" dir="ltr">email_verified</code></td> <td>
+<code translate="no" dir="ltr">true</code> if the user has verified they have access to the <code translate="no" dir="ltr">email</code> address. Some providers automatically verify email addresses they own.</td> </tr> <tr> <td><code translate="no" dir="ltr">phone_number</code></td> <td>The phone number associated with the account, if present.</td> </tr> <tr> <td><code translate="no" dir="ltr">name</code></td> <td>The user's display name, if set.</td> </tr> <tr> <td><code translate="no" dir="ltr">sub</code></td> <td>The user's Firebase UID. This is unique within a project.</td> </tr> <tr> <td><code translate="no" dir="ltr">firebase.identities</code></td> <td>Dictionary of all the identities that are associated with this user's account. The keys of the dictionary can be any of the following: <code translate="no" dir="ltr">email</code>, <code translate="no" dir="ltr">phone</code>, <code translate="no" dir="ltr">google.com</code>, <code translate="no" dir="ltr">facebook.com</code>, <code translate="no" dir="ltr">github.com</code>, <code translate="no" dir="ltr">twitter.com</code>. The values of the dictionary are arrays of unique identifiers for each identity provider associated with the account. For example, <code translate="no" dir="ltr">auth.token.firebase.identities["google.com"][0]</code> contains the first Google user ID associated with the account.</td> </tr> <tr> <td><code translate="no" dir="ltr">firebase.sign_in_provider</code></td> <td>The sign-in provider used to obtain this token. Can be one of the following strings: <code translate="no" dir="ltr">custom</code>, <code translate="no" dir="ltr">password</code>, <code translate="no" dir="ltr">phone</code>, <code translate="no" dir="ltr">anonymous</code>, <code translate="no" dir="ltr">google.com</code>, <code translate="no" dir="ltr">facebook.com</code>, <code translate="no" dir="ltr">github.com</code>, <code translate="no" dir="ltr">twitter.com</code>.</td> </tr> <tr> <td><code translate="no" dir="ltr">firebase.tenant</code></td> <td>The tenantId associated with the account, if present. For example, <code translate="no" dir="ltr">tenant2-m6tyz</code>
+</td> </tr> </tbody> </table> <h4 id="additional_fields_in_jwt_id_tokens">Additional fields in JWT ID tokens</h4> <p>You can also access the following <code translate="no" dir="ltr">auth.token</code> fields:</p> <table class="responsive"> <tr><th colspan="3">Custom Token Claims</th></tr> <tr> <td><code translate="no" dir="ltr">alg</code></td> <td>Algorithm</td> <td><code translate="no" dir="ltr">"RS256"</code></td> </tr> <tr> <td><code translate="no" dir="ltr">iss</code></td> <td>Issuer</td> <td>Your project's service account email address</td> </tr> <tr> <td><code translate="no" dir="ltr">sub</code></td> <td>Subject</td> <td>Your project's service account email address</td> </tr> <tr> <td><code translate="no" dir="ltr">aud</code></td> <td>Audience</td> <td><code translate="no" dir="ltr">"https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit"</code></td> </tr> <tr> <td><code translate="no" dir="ltr">iat</code></td> <td>Issued-at time</td> <td>The current time, in seconds since the UNIX epoch</td> </tr> <tr> <td><code translate="no" dir="ltr">exp</code></td> <td>Expiration time</td> <td> The time, in seconds since the UNIX epoch, at which the token expires. It can be a <b>maximum of 3600 seconds later</b> than the <code translate="no" dir="ltr">iat</code>. <br> Note: this only controls the time when the <i>custom token</i> itself expires. But once you sign a user in using <code translate="no" dir="ltr">signInWithCustomToken()</code>, they will remain signed in into the device until their session is invalidated or the user signs out. </td> </tr> <tr> <td>
+<code translate="no" dir="ltr">&lt;claims&gt;</code> (optional)</td> <td></td> <td> Optional custom claims to include in token, which can be accessed through <code translate="no" dir="ltr">auth.token</code> (or <code translate="no" dir="ltr">request.auth.token</code>) in expressions. For example, if you create a custom claim <code translate="no" dir="ltr">adminClaim</code>, you can access it with <code translate="no" dir="ltr">auth.token.adminClaim</code>. </td> </tr> </table><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/cel-reference" class="_attribution-link">https://firebase.google.com/docs/sql-connect/cel-reference</a>
+  </p>
+</div>

@@ -1,0 +1,252 @@
+<h1>Upgrade 1st gen Node.js functions to 2nd gen</h1> <p>Apps using 1st gen functions should consider migrating to 2nd gen using the instructions in this guide. 2nd gen functions use Cloud Run to provide better performance, better configuration, better monitoring, and more.</p> <aside class="note"><strong>Note:</strong><span> Cloud Functions for Firebase (2nd gen) also provides Python support. You can <a href="get-started">get started</a> with Python using our basic tutorial's snippets and instructions.</span></aside> <p>The examples in this document assume you're using JavaScript with CommonJS modules (<code translate="no" dir="ltr">require</code> style imports), but the same principles apply to JavaScript with ESM (<code translate="no" dir="ltr">import … from</code> style imports) and TypeScript.</p> <h2 id="migration-process">The migration process</h2> <p>1st gen and 2nd gen functions can coexist side-by-side in the same source file. This lets you migrate your codebase piece by piece, as you're ready. Note, however, that this mixing of packages does <em>not</em> work within a single, discrete <em>function</em>.</p> <p>We recommend migrating one function at a time, performing testing and verification before proceeding.</p> <h2 id="verify-versions">Verify Firebase CLI and <code translate="no" dir="ltr">firebase-functions</code> versions</h2> <p>Make sure you're using at least Firebase CLI version <code translate="no" dir="ltr">12.00</code> and <code translate="no" dir="ltr">firebase-functions</code> version <code translate="no" dir="ltr">4.3.0</code>. Any newer version will support 2nd gen as well as 1st gen.</p> <h2 id="update-imports">Update imports</h2> <p>2nd gen functions import from the <code translate="no" dir="ltr">v2</code> subpackage in the <code translate="no" dir="ltr">firebase-functions</code> SDK. This different import path is all the Firebase CLI needs to determine whether to deploy your function code as a 1st or 2nd gen function.</p> <p>The <code translate="no" dir="ltr">v2</code> subpackage is modular, and we recommend only importing the specific module that you need.</p> <p><strong>Before: 1st gen</strong></p> 
+<pre>const functions = require("firebase-functions/v1");
+</pre> <p><strong>After: 2nd gen</strong></p> 
+<pre>// explicitly import each trigger
+const {onRequest} = require("firebase-functions/v2/https");
+const {onDocumentCreated} = require("firebase-functions/v2/firestore");
+</pre>
+<aside class="note"><strong>Note:</strong><span> Remember, it is not possible to mix imports within a function. Features that are supported only by 2nd gen will not work with a v1 import, and the other way around.</span></aside> <h2 id="update-trigger">Update trigger definitions</h2> <p>Since the 2nd gen SDK favors modular imports, update trigger definitions to reflect the changed imports from the previous step.</p> <p>The arguments passed to callbacks for some triggers have changed. In this example, note that the arguments to the <code translate="no" dir="ltr">onDocumentCreated</code> callback have been consolidated into a single <code translate="no" dir="ltr">event</code> object. Additionally, some triggers have convenient new configuration features, like the <code translate="no" dir="ltr">onRequest</code> trigger's <code translate="no" dir="ltr">cors</code> option.</p> <p><strong>Before: 1st gen</strong></p> 
+<pre>const functions = require("firebase-functions/v1");
+
+exports.date = functions.https.onRequest((req, res) =&gt; {
+  // ...
+});
+
+exports.uppercase = functions.firestore
+  .document("my-collection/{docId}")
+  .onCreate((change, context) =&gt; {
+    // ...
+  });
+</pre> <p><strong>After: 2nd gen</strong></p> 
+<pre>const {onRequest} = require("firebase-functions/v2/https");
+const {onDocumentCreated} = require("firebase-functions/v2/firestore");
+
+exports.date = onRequest({cors: true}, (req, res) =&gt; {
+  // ...
+});
+
+exports.uppercase = onDocumentCreated("my-collection/{docId}", (event) =&gt; {
+  /* ... */
+});
+</pre> <h2 id="minimize-rewrite-efforts-with-javascript-destructuring">Minimize rewrite efforts with JavaScript destructuring</h2> <p>If your functions have complex bodies that rely heavily on 1st gen context or provider-specific parameters (like <code translate="no" dir="ltr">message</code> or <code translate="no" dir="ltr">snapshot</code>), you can use the 1st gen compatibility helpers built into the 2nd gen SDK.</p> <p>The 2nd gen SDK automatically patches the event object with getters that match 1st gen signatures. This lets you use JavaScript destructuring to extract these properties directly in the handler signature, minimizing the need to rewrite your function logic.</p> <h3 id="provider-mapping-reference">Provider mapping reference</h3> <table> <tr> <td style="background-color: #f3f3f3">
+<strong>Provider</strong> </td> <td style="background-color: #f3f3f3">
+<strong>1st gen Arguments</strong> </td> <td style="background-color: #f3f3f3">
+<strong>2nd gen Patched Event Destructuring</strong> </td> </tr> <tr> <td style="background-color: null">Pub/Sub </td> <td style="background-color: null">
+<code translate="no" dir="ltr">(message, context)</code> </td> <td style="background-color: null">
+<code translate="no" dir="ltr">({ message, context }) =&gt; { ... }</code> </td> </tr> <tr> <td style="background-color: null">Cloud Firestore </td> <td style="background-color: null">
+<code translate="no" dir="ltr">(snapshot, context)</code> </td> <td style="background-color: null">
+<code translate="no" dir="ltr">({ snapshot, context }) =&gt; { ... }</code> </td> </tr> <tr> <td style="background-color: null">Cloud Storage </td> <td style="background-color: null">
+<code translate="no" dir="ltr">(object, context)</code> </td> <td style="background-color: null">
+<code translate="no" dir="ltr">({ object, context }) =&gt; { ... }</code> </td> </tr> <tr> <td style="background-color: null">Realtime Database </td> <td style="background-color: null">
+<code translate="no" dir="ltr">(snapshot, context)</code> </td> <td style="background-color: null">
+<code translate="no" dir="ltr">({ snapshot, context }) =&gt; { ... }</code> </td> </tr> <tr> <td style="background-color: null">Remote Config </td> <td style="background-color: null">
+<code translate="no" dir="ltr">(version, context)</code> </td> <td style="background-color: null">
+<code translate="no" dir="ltr">({ version, context }) =&gt; { ... }</code> </td> </tr> <tr> <td style="background-color: null">Cloud Scheduler </td> <td style="background-color: null">
+<code translate="no" dir="ltr">(context)</code> </td> <td style="background-color: null">
+<code translate="no" dir="ltr">({ context }) =&gt; { ... }</code> </td> </tr> <tr> <td style="background-color: null">Task Queue </td> <td style="background-color: null">
+<code translate="no" dir="ltr">(data, context)</code> </td> <td style="background-color: null">
+<code translate="no" dir="ltr">({ data, context }) =&gt; { ... }</code> </td> </tr> </table> <p><strong>Before (1st gen):</strong></p> 
+<pre>export const myPubSubV1 = functions.pubsub.topic("my-topic").onPublish((message, context) =&gt; {
+  const data = message.json;
+  const eventId = context.eventId;
+  // ... rest of the logic
+});
+</pre> <p><strong>New Alternative (2nd gen with Destructuring):</strong></p> 
+<pre>import { onMessagePublished } from "firebase-functions/v2/pubsub";
+
+export const myPubSubV2 = onMessagePublished("my-topic", ({ message, context }) =&gt; {
+  // No need to change the function body!
+  const data = message.json;      // Uses v1 Message wrapper
+  const eventId = context.eventId; // Uses v1 EventContext map
+  // ... rest of the logic
+});
+</pre> <h2 id="use-parameterized">Use parameterized configuration</h2> <p>2nd gen functions drop support for <code translate="no" dir="ltr">functions.config</code> in favor of a more secure interface for <a href="config-env#params">defining configuration parameters declaratively</a> inside your codebase. With the new <code translate="no" dir="ltr">params</code> module, the CLI blocks deployment unless all parameters have a valid value, ensuring that a function isn't deployed with missing configuration.</p> <p><strong>Before: 1st gen</strong></p> 
+<pre>const functions = require("firebase-functions/v1");
+
+exports.getQuote = functions.https.onRequest(async (req, res) =&gt; {
+  const quote = await fetchMotivationalQuote(functions.config().apiKey);
+  // ...
+});
+</pre> <p><strong>After: 2nd gen</strong></p> 
+<pre>const {onRequest} = require("firebase-functions/v2/https");
+const {defineSecret} = require("firebase-functions/params");
+
+// Define the secret parameter
+const apiKey = defineSecret("API_KEY");
+
+exports.getQuote = onRequest(
+  // make the secret available to this function
+  { secrets: [apiKey] },
+  async (req, res) =&gt; {
+    // retrieve the value of the secret
+    const quote = await fetchMotivationalQuote(apiKey.value());
+    // ...
+  }
+);
+</pre> <p>If you have existing environment configuration with <code translate="no" dir="ltr">functions.config</code>, migrate this configuration as part of your upgrade to 2nd gen.</p> <p>The <code translate="no" dir="ltr">functions.config</code> API is deprecated will be decommissioned in March 2027. <strong>After that date, deployments with <code translate="no" dir="ltr">functions.config</code> will fail.</strong></p> <p>To prevent deployment failures, migrate your configuration to Cloud Secret Manager using the Firebase CLI. This is strongly recommended as the most efficient and secure way to migrate your configuration.</p> <ol> <li>
+<p><strong>Export configuration with the Firebase CLI</strong></p> <p>Use the <code translate="no" dir="ltr">config export</code> command to export your existing environment config to a new secret in Cloud Secret Manager:</p> 
+<pre>$ firebase functions:config:export
+i  This command retrieves your Runtime Config values (accessed via functions.config())
+   and exports them as a Secret Manager secret.
+
+i  Fetching your existing functions.config() from your project...  ✔
+   Fetched your existing functions.config().
+
+i  Configuration to be exported:
+⚠  This may contain sensitive data. Do not share this output.
+
+{
+   ...
+}
+
+✔ What would you like to name the new secret for your configuration? RUNTIME_CONFIG
+
+✔  Created new secret version projects/project/secrets/RUNTIME_CONFIG/versions/1```
+</pre>
+</li> <li>
+<p><strong>Update function code to bind secrets</strong></p> <p>To use configuration stored in the new secret in Cloud Secret Manager, use the <code translate="no" dir="ltr">defineJsonSecret</code> API in your function source. Also, make sure that secrets are bound to all functions that need them.</p> <p><strong>Before</strong></p> 
+<pre>const functions = require("firebase-functions/v1");
+
+exports.myFunction = functions.https.onRequest((req, res) =&gt; {
+  const apiKey = functions.config().someapi.key;
+  // ...
+});
+</pre> <p><strong>After</strong></p> 
+<pre>const { onRequest } = require("firebase-functions/v2/https");
+const { defineJsonSecret } = require("firebase-functions/params");
+
+const config = defineJsonSecret("RUNTIME_CONFIG");
+
+exports.myFunction = onRequest(
+  // Bind secret to your function
+  { secrets: [config] },
+  (req, res) =&gt; {
+    // Access secret values via .value()
+    const apiKey = config.value().someapi.key;
+    // ...
+});
+</pre>
+</li> <li>
+<p><strong>Deploy Functions</strong></p> <p>Deploy your updated functions to apply the changes and bind the secret permissions.</p> 
+<pre>firebase deploy --only functions:&lt;your-function-name&gt;
+</pre>
+</li> </ol> <h2 id="set-runtime">Set runtime options</h2> <p>Configuration of <a href="manage-functions#set-runtime-options">runtime options</a> has changed between 1st and 2nd gen. 2nd gen also adds a new capability to set options for all functions.</p> <p><strong>Before: 1st gen</strong></p> 
+<pre>const functions = require("firebase-functions/v1");
+
+exports.date = functions
+  .runWith({
+    // Keep 5 instances warm for this latency-critical function
+    minInstances: 5,
+  })
+  // locate function closest to users
+  .region("asia-northeast1")
+  .https.onRequest((req, res) =&gt; {
+    // ...
+  });
+
+exports.uppercase = functions
+  // locate function closest to users and database
+  .region("asia-northeast1")
+  .firestore.document("my-collection/{docId}")
+  .onCreate((change, context) =&gt; {
+    // ...
+  });
+</pre> <p><strong>After: 2nd gen</strong></p> 
+<pre>const {onRequest} = require("firebase-functions/v2/https");
+const {onDocumentCreated} = require("firebase-functions/v2/firestore");
+const {setGlobalOptions} = require("firebase-functions/v2");
+
+// locate all functions closest to users
+setGlobalOptions({ region: "asia-northeast1" });
+
+exports.date = onRequest({
+    // Keep 5 instances warm for this latency-critical function
+    minInstances: 5,
+  }, (req, res) =&gt; {
+  // ...
+});
+
+exports.uppercase = onDocumentCreated("my-collection/{docId}", (event) =&gt; {
+  /* ... */
+});
+</pre> <h2 id="update-default">Update default service account (optional)</h2> <p>While 1st gen functions use the Google App Engine default service account to authorize access to Firebase APIs, 2nd gen functions use the Compute Engine default service account. This difference can lead to permissions issues for functions migrated to 2nd gen in cases where you have granted special permissions to the 1st gen service account. If you haven't changed any service account permissions, you can skip this step.</p> <p>The recommended solution is to explicitly assign the existing 1st gen App Engine default service account to functions that you want to migrate to 2nd gen, overriding the 2nd gen default. You can do this by making sure each migrated function sets the correct value for <code translate="no" dir="ltr">serviceAccountEmail</code>:</p> 
+<pre>const {onRequest} = require("firebase-functions/https");
+const {onDocumentCreated} = require("firebase-functions/v2/firestore");
+const {setGlobalOptions} = require("firebase-functions");
+
+// Use the App Engine default service account for all functions
+setGlobalOptions({serviceAccountEmail: '&lt;my-project-number&gt;@&lt;wbr&gt;appspot.gserviceaccount.com'});
+
+// Now I use the App Engine default service account.
+exports.date = onRequest({cors: true}, (req, res) =&gt; {
+  // ...
+});
+
+// I do too!
+exports.uppercase = onDocumentCreated("my-collection/{docId}", (event) =&gt; {
+  // ...
+});
+</pre> <p>Alternatively, you could make sure to modify the service account details to match all the necessary permissions on both the App Engine default service account (for 1st Gen) and the Compute Engine default service account (for 2nd Gen).</p> <h2 id="use-concurrency">Use concurrency</h2> <p>A significant advantage of 2nd gen functions is the ability of a single function instance to serve more than one request at once. This can dramatically reduce the number of cold starts experienced by end users. By default, concurrency is set at 80, but you can set it to any value from 1 to 1000:</p> 
+<pre>const {onRequest} = require("firebase-functions/v2/https");
+
+exports.date = onRequest({
+    // set concurrency value
+    concurrency: 500
+  },
+  (req, res) =&gt; {
+    // ...
+});
+</pre> <p>Tuning concurrency can improve performance and reduce cost of functions. Learn more about concurrency in <a href="manage-functions#allow_concurrent_requests">Allow concurrent requests</a>.</p> <h3 id="audit-global">Audit global variable usage</h3> <p>1st gen functions written without concurrency in mind might use global variables that are set and read on each request. When concurrency is enabled and a single instance starts handling multiple requests at once, this may introduce bugs in your function as concurrent requests start setting and reading global variables simultaneously.</p> <p>While upgrading, you can set your function's CPU to <code translate="no" dir="ltr">gcf_gen1</code> and set <code translate="no" dir="ltr">concurrency</code> to 1 to restore 1st gen behavior:</p> 
+<pre>const {onRequest} = require("firebase-functions/v2/https");
+
+exports.date = onRequest({
+    // TEMPORARY FIX: remove concurrency
+    cpu: "gcf_gen1",
+    concurrency: 1
+  },
+  (req, res) =&gt; {
+    // ...
+});
+</pre> <p>However, this is not recommended as a long-term fix, because it forfeits the performance advantages of 2nd gen functions. Instead, audit usage of global variables in your functions, and remove these temporary settings when you're ready.</p> <h2 id="migrate-traffic">Migrate traffic to the new 2nd gen functions</h2> <p>Just as when <a href="manage-functions#modify">changing a function's region or trigger type</a>, you'll need to give the 2nd gen function a new name and slowly migrate traffic to it.</p> <p>It is not possible to upgrade a function from 1st to 2nd gen with the same name and run <code translate="no" dir="ltr">firebase deploy</code>. Doing so will result in the error:</p> 
+<pre>Upgrading from GCFv1 to GCFv2 is not yet supported. Please delete your old function or wait for this feature to be ready.
+</pre> <p>The migration strategy depends on the type of trigger your function uses.</p> <h3 id="callable-task-queue-http-triggers">Migrate Callable, Task Queue, and HTTP triggers</h3> <p>These triggers are direct invocations. Because the 2nd gen function will have a new name (and a new URL for HTTP triggers), you can migrate traffic by updating the clients.</p> <ol> <li>Rename the function in your code (for example, rename <code translate="no" dir="ltr">myCallable</code> to <code translate="no" dir="ltr">myCallableV2</code>).</li> <li>Deploy the function. Both the 1st gen and 2nd gen functions are now running.</li> <li>Update your client code or caller to point to the new 2nd gen function's name or URL.</li> <li>Once all traffic has shifted to the new function, delete the 1st gen function using the Firebase CLI's <code translate="no" dir="ltr">firebase functions:delete</code> command.</li> </ol> <h3 id="background-triggers">Migrate background triggers</h3> <p>Background triggers (such as Pub/Sub, Cloud Firestore, and Cloud Storage triggers) respond to events in your project. To avoid missing any events during the transition, you must temporarily run both the 1st gen and 2nd gen functions side-by-side.</p> <p>During the transition period, both functions will trigger on the same event. This means your business logic will run twice per event. Ensure your function is <a href="tips#write_idempotent_functions">idempotent</a> before proceeding.</p> <ol> <li>
+<p>Add the 2nd gen function alongside the 1st gen function, keeping the existing 1st gen function in your code, and adding the 2nd gen function listening to the same event source.</p> <aside class="tip"><strong>Tip:</strong><span> Use a passthrough for verification. To avoid duplicating your business logic in your codebase during the transition, or to verify that the 2nd gen function is correctly receiving events before fully trusting it, make the 2nd gen function a passthrough that calls the 1st gen function using the <code translate="no" dir="ltr">run</code> method.</span></aside>
+<pre>import * as functions from "firebase-functions/v1";
+import { onMessagePublished } from "firebase-functions/v2/pubsub";
+
+// --- Existing 1st gen function ---
+export const myPubSub = functions.pubsub.topic("my-topic").onPublish((message, context) =&gt; {
+  console.log("V1 handler running for event:", context.eventId);
+  // ... existing v1 function logic ...
+});
+
+// --- New v2 passthrough function ---
+export const myPubSubV2 = onMessagePublished("my-topic", async ({ message, context }) =&gt; {
+  console.log("v2 handler triggering V1 for event:", context.eventId);
+  // Call the v1 function's handler
+  await myPubSub.run(message, context);
+});
+</pre>
+</li> <li><p>Run <code translate="no" dir="ltr">firebase deploy</code>. Both functions are now active and listening to the same events.</p></li> <li><p>Verify the 2nd gen function is receiving traffic. Monitor the logs for both functions. Ensure that the 2nd gen function is invoked for all events and that calls are succeeding.</p></li> <li>
+<p>Once you're confident that the function is performing correctly, move the actual business logic from the 1st gen function into the 2nd gen function's body. If you used the passthrough method, remove the call to <code translate="no" dir="ltr">myPubSub.run()</code>.</p> 
+<pre>import * as functions from "firebase-functions/v1";
+import { onMessagePublished } from "firebase-functions/v2/pubsub";
+
+// --- Existing v1 function (to be removed next) ---
+export const myPubSub = functions.pubsub.topic("my-topic").onPublish((message, context) =&gt; {
+  console.log("v1 handler running for event:", context.eventId);
+  // ... existing v1 function logic ...
+});
+
+// --- New v2 function with full logic ---
+export const myPubSubV2 = onMessagePublished("my-topic", ({ message, context }) =&gt; {
+  console.log("v2 handler running for event:", context.eventId);
+  // ... existing v1 function logic WAS MOVED HERE ...
+});
+</pre> <p>Deploy this change.</p>
+</li> <li><p>Remove the 1st gen function definition from your code and redeploy. The CLI will prompt you to delete the 1st gen function from Google Cloud.</p></li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/2nd-gen-upgrade" class="_attribution-link">https://firebase.google.com/docs/functions/2nd-gen-upgrade</a>
+  </p>
+</div>

@@ -1,0 +1,199 @@
+<h1>Configure and manage App Hosting backends</h1> <p>App Hosting has been designed for ease of use and low maintenance, with default settings optimized for most use cases. At the same time, App Hosting provides tools for you to manage and configure backends for your specific needs. This guide describes those tools and processes.</p> <h2 id="user-defined-environment">Set and update environment variables and secrets</h2> <p>App Hosting lets you use <strong>environment variables</strong> for non-sensitive configuration values and <strong>secrets</strong> for sensitive parameters like API keys, database credentials, and service tokens.</p> <ul> <li>
+<strong>Standard environment variables</strong>: Used for non-sensitive, plain-text configurations (such as public API URLs, feature flags, or build targets). Values are visible to all project members.</li> <li>
+<strong>Secrets</strong>: Used for sensitive parameters (such as OAuth client secrets, API tokens, or database passwords). Secrets are backed by <a href="https://cloud.google.com/security/products/secret-manager">Cloud Secret Manager</a>. Secret values are protected and never displayed in plain text in the Firebase console; instead, the console provides deep links to view and manage secret values directly in Cloud Secret Manager.</li> </ul> <aside class="note"><strong>Note:</strong><span> To create new secret resources or rotate secret values, use the <a href="https://console.cloud.google.com/security/secret-manager">Cloud Secret Manager console</a>, the Firebase CLI (<code translate="no" dir="ltr">firebase apphosting:secrets:set</code>), or the <code translate="no" dir="ltr">gcloud</code> CLI. App Hosting lets you attach existing Cloud Secret Manager secrets to your backend. For details on secret management commands and permissions, see <a href="#secret-parameters">Store and access secret parameters</a>.</span></aside> <p>You can define and manage environment parameters using two complementary approaches:</p> <ul> <li>
+<strong>Firebase console</strong>: Quickly add, edit, and attach secrets or variables dynamically during initial backend creation or post-deployment in backend settings.</li> <li><p><strong>Code-first (<code translate="no" dir="ltr">apphosting.yaml</code>)</strong>: Declare environment variables and secret references in your repository's configuration file for version-controlled deployments, or use <code translate="no" dir="ltr">apphosting.&lt;env&gt;.yaml</code> to <a href="multiple-environments#step-2">set different values for different environments</a>.</p></li> </ul> <div> <section><p class="_firebase-tab"><strong>Firebase console</strong></p>
+<p><img alt="A screen capture of the Firebase console dialog for adding environment variables" src="https://firebase.google.com/static/docs/app-hosting/images/env-vars.png" width="75%"></p></section> <section><p class="_firebase-tab"><strong>apphosting.yaml</strong></p>
+
+<pre data-language="">env:
+  - variable: STORAGE_BUCKET
+    value: mybucket.firebasestorage.app
+  - variable: API_KEY
+    secret: myApiKeySecret
+</pre></section> </div>
+<aside class="caution"><strong>Caution:</strong><span> Console-based and file-based configuration have a few key differences, so make sure to review this section carefully. Most importantly: <strong>values set in the Firebase console always override, or take precedence over, values set in <code translate="no" dir="ltr">apphosting.yaml</code></strong>. See <a href="#variable-hierarchy">Variable hierarchy</a>.</span></aside> <h3 id="update-variables">Manage variables and secrets in the Firebase console</h3> <p>You can configure environment variables and secrets in the Firebase console when creating a backend or at any time from your backend settings. Changes saved without deploying take effect on your next rollout and don't affect the current one.</p> <h4 id="set_up_variables_and_secrets_during_backend_creation">Set up variables and secrets during backend creation</h4> <p>When creating a new App Hosting backend in the Firebase console, you can configure standard environment variables and secrets during the <strong>Configure your backend</strong> step of the setup wizard:</p> <ol> <li>In the Firebase console, navigate to <strong>Hosting &amp; Serverless</strong> &gt; <a href="https://console.firebase.google.com/project/_/apphosting/" class="external"><strong>App Hosting</strong></a> and click <strong>Create backend</strong>.</li> <li>Complete the initial wizard steps to select your primary region and code repository.</li> <li>In the <strong>Configure your backend</strong> section, locate the collapsible cards for <strong>Environment variables</strong> and <strong>Secrets</strong>, where you can add standard variables and attach secrets.</li> <li>Complete the backend creation wizard and click <strong>Finish &amp; deploy</strong>.</li> </ol> <aside class="tip"><strong>Tip:</strong><span> You can also click <strong>Add, delete, and edit secrets in the Google Cloud Console</strong> inside the drop-down menu to open Cloud Secret Manager directly. If you recently created a secret in the Google Cloud console, click <strong>Refresh list</strong> above the <strong>Secret</strong> drop-down to update the options.</span></aside> <h4 id="manage_variables_and_secrets_in_backend_settings">Manage variables and secrets in backend settings</h4> <p>You can view, add, edit, or delete environment variables and secrets for active backends from the backend settings dashboard:</p> <ol> <li>In the Firebase console, select your App Hosting backend and open <strong>Settings</strong> &gt; <strong>Environment</strong>.</li> <li>Review existing configurations in the <strong>Environment variables</strong> table: <ul> <li>
+<strong>Standard variables</strong>: Values are displayed as plain text in copyable code blocks.</li> <li>
+<strong>Secrets</strong>: Displayed as a clickable link showing the secret name (which opens Cloud Secret Manager in the Google Cloud console) alongside its targeted version (such as <code translate="no" dir="ltr">latest</code> or a specific version number like <code translate="no" dir="ltr">2</code>).</li> </ul>
+</li> <li>To add a variable or secret: <ol> <li>Click <strong>Add new</strong>.</li> <li>In <strong>Step 1: Select type</strong>, choose <strong>Standard environment variable</strong> (for non-sensitive data visible to all project members) or <strong>Secret</strong> (for API keys and sensitive credentials with restricted access), and then click <strong>Next</strong>.</li> <li>In <strong>Step 2: Configure settings</strong>, enter the <strong>Key</strong> name and either the plain-text <strong>Value</strong> (for standard variables) or select the <strong>Secret</strong> ID and <strong>Version</strong> (for secrets).</li> <li>Save your changes using one of the following options: <ul> <li>
+<strong>Save and deploy</strong>: Immediately updates the backend configuration and triggers a new build and rollout.</li> <li>
+<strong>Just save</strong> (from the drop-down arrow next to <strong>Save and deploy</strong>): Saves the configuration changes without triggering an immediate rollout. The updated settings take effect on your next deployment.</li> </ul>
+</li> </ol>
+</li> <li>To edit or delete an existing entry, click the <strong>More actions</strong> (<code translate="no" dir="ltr">...</code>) menu at the end of the row: <ul> <li>Select <strong>Edit</strong> to modify the key, value, secret mapping, or version, and then click <strong>Save and deploy</strong> or <strong>Just save</strong>.</li> <li>Select <strong>Delete</strong> and confirm removal in the dialog.</li> </ul>
+</li> </ol> <h4 id="dotenv-files">Transfer variables from <code translate="no" dir="ltr">dotenv</code> files</h4> <p>For Next.js apps, <a href="https://nextjs.org/docs/pages/building-your-application/configuring/environment-variables"><code translate="no" dir="ltr">dotenv</code> files containing environment variables</a> work with App Hosting.</p> <p>When creating or updating a backend, you can transfer environment variables from your <code translate="no" dir="ltr">dotenv</code> file to the Firebase console by copying and pasting the entire contents of the <code translate="no" dir="ltr">dotenv</code> file into the first <strong>Key</strong> field in the <strong>Add new</strong> form in <strong>Settings</strong> &gt; <strong>Environment</strong>.</p> <p>All the environment variables copied this way are automatically formatted into the form without needing to enter each one individually, as long as the input uses standard <code translate="no" dir="ltr">KEY=value</code> formatting:</p> 
+<pre>KEY1=value1
+KEY2=value2
+KEY3=value3
+</pre> <p>For complex or granular environment variable control with any framework, we recommend using <a href="configure#configure-backend"><code translate="no" dir="ltr">apphosting.yaml</code></a>.</p> <h3 id="set-variable">Manage variables and secrets in <code translate="no" dir="ltr">apphosting.yaml</code>
+</h3> <p>For code-first workflows, declare standard environment variables and secret references under the <code translate="no" dir="ltr">env:</code> key in your project repository's <code translate="no" dir="ltr">apphosting.yaml</code> configuration file (see <a href="#configure-backend">Create and edit <code translate="no" dir="ltr">apphosting.yaml</code></a>).</p> 
+<pre>env:
+  # Standard environment variables
+  - variable: PUBLIC_API_URL
+    value: https://api.example.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FEATURE_FLAG_NEW_UI
+    value: "true"
+
+  # Secret references backed by Cloud Secret Manager
+  - variable: DATABASE_URL
+    secret: projects/PROJECT_ID/secrets/db-connection-string/versions/latest
+  - variable: GEMINI_API_KEY
+    secret: myGeminiApiKeySecret@1
+</pre> <p>Each entry in <code translate="no" dir="ltr">env:</code> supports the following fields:</p> <ul> <li>
+<strong><code translate="no" dir="ltr">variable</code></strong>: The environment variable name exposed to your application process.</li> <li>
+<strong><code translate="no" dir="ltr">value</code></strong>: The plain-text string value (for standard environment variables).</li> <li>
+<strong><code translate="no" dir="ltr">secret</code></strong>: The Cloud Secret Manager secret reference (for secrets). You can use the short secret name (such as <code translate="no" dir="ltr">myGeminiApiKeySecret</code> or pinned <code translate="no" dir="ltr">myGeminiApiKeySecret@1</code>) or the full resource path (<code translate="no" dir="ltr">projects/<var translate="no">PROJECT_ID</var>/secrets/<var translate="no">SECRET_ID</var>/versions/<var translate="no">VERSION</var></code>). See <a href="#secret-parameters">Store and access secret parameters</a> for more details.</li> <li>
+<strong><code translate="no" dir="ltr">availability</code></strong>: Controls whether the variable or secret is accessible during the <code translate="no" dir="ltr">BUILD</code> phase, at <code translate="no" dir="ltr">RUNTIME</code>, or both.</li> </ul> <h4 id="set_variable_availability">Set variable availability</h4> <p>Environment variables and secrets configured in the Firebase console are available at both build time and run time. This is also the default behavior for entries defined in <code translate="no" dir="ltr">apphosting.yaml</code> unless you narrow the scope using the <code translate="no" dir="ltr">availability</code> property. In <code translate="no" dir="ltr">apphosting.yaml</code> (but not in the console), you can restrict a variable or secret to only the build environment (<code translate="no" dir="ltr">BUILD</code>) or only the runtime environment (<code translate="no" dir="ltr">RUNTIME</code>).</p> <h3 id="access-in-code">Access variables and secrets in application code</h3> <p>Whether configured in the Firebase console or <code translate="no" dir="ltr">apphosting.yaml</code>, environment variables and secrets are exposed to your application runtime as standard environment variables (for example, <code translate="no" dir="ltr">process.env</code> in Node.js).</p> 
+<pre>// Accessing a standard environment variable
+const apiUrl = process.env.PUBLIC_API_URL;
+
+// Accessing a secret
+const apiKey = process.env.GEMINI_API_KEY;
+
+export async function fetchData() {
+  const response = await fetch(`${apiUrl}/data`, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`
+    }
+  });
+  return response.json();
+}
+</pre> <ul> <li>
+<strong>Server-side access</strong>: All environment variables and secrets are securely accessible in server-side execution contexts (such as Next.js Server Components, API routes, or Node.js backend handlers).</li> <li>
+<p><strong>Client-side exposure</strong>: To expose standard environment variables to the browser in frameworks like Next.js, ensure the variable key follows framework conventions (for example, prefixed with <code translate="no" dir="ltr">NEXT_PUBLIC_</code>).</p> 
+<pre>env:
+  - variable: NEXT_PUBLIC_STORAGE_BUCKET
+    value: mybucket.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+</pre>
+<aside class="caution"><strong>Caution:</strong><span> <strong>Never expose secrets to client-side bundles.</strong> Do not prefix secret variable keys with public browser prefixes such as <code translate="no" dir="ltr">NEXT_PUBLIC_</code>.</span></aside>
+</li> </ul> <h3 id="variable-hierarchy">Variable hierarchy</h3> <p>Firebase App Hosting applies your environment variables and secrets in an order of precedence based on their source. Configurations set in the Firebase console always override parameters declared in <code translate="no" dir="ltr">apphosting.yaml</code> and <code translate="no" dir="ltr">dotenv</code> files. If an environment variable or secret key with the same name exists in both <code translate="no" dir="ltr">apphosting.yaml</code> and the Firebase console, the console value takes precedence during build and runtime execution.</p> <aside class="tip"><strong>Tip:</strong><span> In the Firebase console, you can select a specific rollout to view its details. Navigate to <strong>Environment variables in this build</strong> at the bottom of the rollout details panel to review the list of environment variables and secrets used during the rollout and their sources.</span></aside> <p>Here is the full order of precedence:</p> <ol> <li>
+<strong>Firebase console</strong> → variables and secrets set in the console</li> <li>
+<strong><code translate="no" dir="ltr">apphosting.&lt;env&gt;.yaml</code></strong> → variables and secrets specified in an environment-specific YAML file such as <code translate="no" dir="ltr">apphosting.staging.yaml</code> (see <a href="multiple-environments#step-2">Deploy multiple environments</a>)</li> <li>
+<strong><code translate="no" dir="ltr">apphosting.yaml</code></strong> → variables and secrets specified in the <code translate="no" dir="ltr">apphosting.yaml</code> file</li> <li>
+<strong>Firebase system</strong> → variables set by Firebase that contain values for <code translate="no" dir="ltr">FIREBASE_CONFIG</code> or <code translate="no" dir="ltr">FIREBASE_WEBAPP_CONFIG</code>, as well as environment variables that set the hostnames and ports for SSR apps (set by App Hosting adapters in <a href="https://github.com/FirebaseExtended/firebase-framework-tools/tree/main"><code translate="no" dir="ltr">bundle.yaml</code></a>)</li> </ol> <h3 id="automatically-populated">Automatically populated environment variables</h3> <p>There are environment variables that are automatically populated by App Hosting. These include <a href="https://cloud.google.com/run/docs/reference/container-contract#env-vars">those populated by Google Cloud</a>, as well as Firebase-specific environment variables when <a href="https://firebase.google.com/docs/reference/apphosting/rest/v1/projects.locations.backends"><code translate="no" dir="ltr">appId</code></a> is set on the backend during setup:</p> <ul> <li>
+<p><code translate="no" dir="ltr">FIREBASE_CONFIG</code>: (available in the build &amp; runtime environments) Provides the following Firebase project config info:</p> 
+<pre>{
+  "databaseURL": "https://DATABASE_NAME.firebaseio.com",
+  "storageBucket": "PROJECT_ID.firebasestorage.app",
+  "projectId": "PROJECT_ID"
+}
+</pre> <p>This configuration is applied automatically when you <a href="../admin/setup#initialize-sdk">initialize the Firebase Admin SDK</a> with no arguments.</p>
+</li> <li>
+<p><code translate="no" dir="ltr">FIREBASE_WEBAPP_CONFIG</code>: (available in the build environment only) Provides the following Firebase project config info:</p> 
+<pre>{
+  "apiKey": "API_KEY",
+  "appId": "APP_ID",
+  "authDomain": "AUTH_DOMAIN.firebaseapp.com",
+  "databaseURL": "https://DATABASE_NAME.firebaseio.com",
+  "messagingSenderId": "PROJECT_NUMBER",
+  "projectId": "PROJECT_ID",
+  "storageBucket": "PROJECT_ID.firebasestorage.app"
+}&lt;/span&gt;
+</pre> <p>The Firebase JS SDK automatically checks for this <code translate="no" dir="ltr">FIREBASE_WEBAPP_CONFIG</code> environment variable in a <a href="firebase-sdks#using-automatic-initialization-in-other-environments">postinstall script</a> during build, allowing you to also initialize the client SDK without any arguments.</p>
+</li> </ul> <p>See <a href="firebase-sdks#initialize-with-no-arguments">Automatically initialize Firebase Admin SDK and web SDKs</a> for more details on how to use these environment variables to initialize the SDKs.</p> <p>Note that the values in your actual Firebase configuration will correspond to the particular resources you've provisioned in your project.</p> <h3 id="variable-hierarchy">Variable hierarchy</h3> <p>Firebase App Hosting applies your variables in an order of precedence based on their source. For example, values set in the Firebase console always override, or take precedence over, values set in <code translate="no" dir="ltr">apphosting.yaml</code> and <code translate="no" dir="ltr">dotenv</code> files.</p> <aside class="tip"><strong>Tip:</strong><span> In the Firebase console, you can select a specific rollout to view the details of the rollout. Navigate to <strong>Environment variables in this build</strong> at the bottom of the rollout details panel to review the list of environment variables used during the rollout and their sources.</span></aside> <p>Here is the full order of precedence:</p> <ol> <li>
+<strong>Firebase console</strong> → variables set in the console</li> <li>
+<strong><code translate="no" dir="ltr">apphosting.&lt;env&gt;.yaml</code></strong> → variables specified in an environment specific yaml file such as <code translate="no" dir="ltr">apphosting.staging.yaml</code> (see <a href="multiple-environments#step-2">Deploy multiple environments</a>)</li> <li>
+<code translate="no" dir="ltr">apphosting.yaml</code> → variables specified in the <code translate="no" dir="ltr">apphosting.yaml</code> file</li> <li>
+<strong>Firebase system</strong> → variables set by Firebase that contain values for <code translate="no" dir="ltr">firebase_config json</code> or <code translate="no" dir="ltr">firebase_webapp_config</code>, as well as environment variables that set the hostnames and ports for SSR apps (set by App Hosting adapters in <a href="https://github.com/firebase/apphosting-adapters#app-hosting-output-bundle"><code translate="no" dir="ltr">bundle.yaml</code></a>)</li> </ol> <h3 id="reserved-names">Reserved names and limitations</h3> <p>The environment variables defined in the <a href="https://cloud.google.com/run/docs/reference/container-contract#env-vars">Cloud Run container runtime contract</a> are reserved and can't be set.</p> <p>Environment variables that are provided by the environment, other than the ones that are set automatically, might change in future runtime versions. As a best practice, we recommend that you don't depend on or modify any environment variables that you haven't set explicitly, and consider prefixing any environment variables with a unique key to avoid conflicts.</p> <p>Some environment variable keys are reserved for internal use. Don't use any of these keys in your configuration files:</p>  <ul> <li>Empty strings ("")</li> <li>Keys that contain "="</li> <li>Keys beginning with <code translate="no" dir="ltr">X_FIREBASE_</code>, <code translate="no" dir="ltr">X_GOOGLE_</code>, or <code translate="no" dir="ltr">CLOUD_RUN_</code>
+</li> <li><code translate="no" dir="ltr">PORT</code></li> <li><code translate="no" dir="ltr">K_SERVICE</code></li> <li><code translate="no" dir="ltr">K_REVISION</code></li> <li><code translate="no" dir="ltr">K_CONFIGURATION</code></li> <li>Duplicate Keys</li> </ul> <h2 id="configure-backend">Create and edit <code translate="no" dir="ltr">apphosting.yaml</code>
+</h2> <p>For advanced configuration such as secrets or runtime settings such as concurrency, CPU, and memory limits, you'll need to create and edit the <code translate="no" dir="ltr">apphosting.yaml</code> file in your app's root directory. This file supports references to secrets managed with Cloud Secret Manager, making it safe to check into source control.</p> <p>To create <code translate="no" dir="ltr">apphosting.yaml</code>, run the following command:</p> 
+<pre>firebase init apphosting
+</pre> <p>This creates a basic starter <code translate="no" dir="ltr">apphosting.yaml</code> file with example (commented) configuration. After editing, a typical <code translate="no" dir="ltr">apphosting.yaml</code> file might look like the following, with settings for the backend's Cloud Run service, some environment variables, and some references to secrets managed by Cloud Secret Manager:</p> 
+<pre># Settings for Cloud Run
+runConfig:
+  minInstances: 2
+  maxInstances: 100
+  concurrency: 100
+  cpu: 2
+  memoryMiB: 1024
+
+# Environment variables and secrets
+env:
+  - variable: STORAGE_BUCKET
+    value: mybucket.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: API_KEY
+    secret: myApiKeySecret
+
+    # Same as API_KEY above but with a pinned version.
+  - variable: PINNED_API_KEY
+    secret: myApiKeySecret@5
+
+    # Same as API_KEY above but with the long form secret reference as defined by Cloud Secret Manager.
+  - variable: VERBOSE_API_KEY
+    secret: projects/test-project/secrets/secretID
+
+    # Same as API_KEY above but with the long form secret reference with pinned version.
+  - variable: PINNED_VERBOSE_API_KEY
+    secret: projects/test-project/secrets/secretID/versions/5
+</pre> <p>The rest of this guide provides more information and context for these example settings.</p> <h2 id="cloud-run">Configure Cloud Run service settings</h2> <p>With <code translate="no" dir="ltr">apphosting.yaml</code> settings, you can configure how your <a href="https://cloud.google.com/run/docs/configuring">Cloud Run service</a> is provisioned. The available settings for the Cloud Run service are provided in the <code translate="no" dir="ltr">runConfig</code> object:</p> <ul> <li>
+<code translate="no" dir="ltr">cpu</code> – <a href="https://cloud.google.com/run/docs/configuring/services/cpu">Number of CPUs</a> used for each serving instance (default <code translate="no" dir="ltr">1</code>).</li> <li>
+<code translate="no" dir="ltr">memoryMiB</code> – <a href="https://cloud.google.com/run/docs/configuring/services/memory-limits">Amount of memory</a> allocated for each serving instance in MiB (default <code translate="no" dir="ltr">512</code>).</li> <li>
+<code translate="no" dir="ltr">maxInstances</code> – <a href="https://cloud.google.com/run/docs/configuring/max-instances">Maximum number of containers</a> to ever run at a time (default <code translate="no" dir="ltr">100</code> and managed by quota).</li> <li>
+<code translate="no" dir="ltr">minInstances</code> – <a href="https://cloud.google.com/run/docs/configuring/min-instances">Number of containers</a> to always keep alive (default <code translate="no" dir="ltr">0</code>).</li> <li>
+<code translate="no" dir="ltr">concurrency</code> – <a href="https://cloud.google.com/run/docs/configuring/concurrency">Maximum number of requests</a> that each serving instance can receive (default <code translate="no" dir="ltr">80</code>).</li> <li>
+<code translate="no" dir="ltr">cpuAlwaysAllocated</code> – Whether <a href="https://cloud.google.com/run/docs/configuring/billing-settings">CPU is always allocated</a> even when no requests are being processed (default <code translate="no" dir="ltr">false</code>).</li> </ul> <p>Note that <code translate="no" dir="ltr">cpu</code>, <code translate="no" dir="ltr">memoryMiB</code>, and <code translate="no" dir="ltr">concurrency</code> have interdependent limits (for example, higher memory configurations require higher minimum CPU limits, and fractional CPUs require a concurrency of <code translate="no" dir="ltr">1</code>). See the Cloud Run documentation on <a href="https://cloud.google.com/run/docs/configuring/services/cpu#cpu-memory">CPU limits</a> and <a href="https://cloud.google.com/run/docs/configuring/services/memory-limits#cpu-minimum">memory limits</a> for valid ranges and required combinations.</p> <h2 id="override-scripts">Override build and run scripts</h2> <p>App Hosting infers your app's build and start command based on the detected framework. If you want to use a custom build or start command, you can override App Hosting's defaults in <code translate="no" dir="ltr">apphosting.yaml</code>.</p> 
+<pre>scripts:
+  buildCommand: next build --no-lint
+  runCommand: node dist/index.js
+</pre> <p>The build command override takes precedence over any other build commands and opts your app out of the framework adapters and disables any framework specific optimizations that App Hosting provides. It's best used when your app features aren't well supported by the adapters. If you want to change your build command but still use the provided adapters, set your build script in <code translate="no" dir="ltr">package.json</code> instead as described in <a href="frameworks-tooling#app-hosting-framework-adapters">App Hosting framework adapters</a>.</p> <p>Use the run command override when there is a specific command you want to use to start your app that's different from the App Hosting-inferred command.</p> <h2 id="configure-build-output">Configure build output</h2> <p>App Hosting optimizes your app deploys by default by deleting unused output files as indicated by the framework. If you want to further optimize your app deploy size or ignore the default optimizations, you can override this in <code translate="no" dir="ltr">apphosting.yaml</code>.</p> 
+<pre>outputFiles:
+  serverApp:
+    include: [dist, server.js]
+</pre> <p>The <code translate="no" dir="ltr">include</code> parameter takes in a list of directories and files relative to the app root directory that are necessary to deploy your app. If you want to make sure that all files are kept, set include to <code translate="no" dir="ltr">[.]</code> and all files will be deployed.</p> <h2 id="secret-parameters">Store and access secret parameters</h2> <p>Sensitive information such as API keys should be stored as secrets. You can attach secrets to your backend in the <a href="#update-variables">Firebase console</a> or reference them in <code translate="no" dir="ltr">apphosting.yaml</code> to avoid checking sensitive information into source control.</p> <p>Parameters of type <code translate="no" dir="ltr">secret</code> represent string parameters that have a value stored in <a href="https://cloud.google.com/security/products/secret-manager">Cloud Secret Manager</a>. Instead of deriving the value directly, secret parameters check against existence in Cloud Secret Manager and load the values during rollout.</p> 
+<pre>env:
+  - variable: API_KEY
+    secret: myApiKeySecret
+</pre> <p>Secrets in Cloud Secret Manager can have multiple versions. By default, the value of a secret parameter available to your live backend is pinned to the latest available version of the secret at the time the backend was built. If you have requirements for versioning and lifecycle management of parameters, you can pin to specific versions in the Firebase console or in <code translate="no" dir="ltr">apphosting.yaml</code>. For example, to pin to version 5 in <code translate="no" dir="ltr">apphosting.yaml</code>:</p> 
+<pre>env:
+  - variable: PINNED_API_KEY
+    secret: myApiKeySecret@5
+</pre> <p>You can create secrets with the Firebase CLI command <code translate="no" dir="ltr">firebase apphosting:secrets:set</code>, and you'll be prompted to add necessary permissions. This flow gives you the option to automatically add the secret reference to <code translate="no" dir="ltr">apphosting.yaml</code>.</p> <h3 id="grant-secret-access">Grant access to Cloud Secret Manager</h3> <p>For App Hosting to fetch secret values during build and runtime rollouts, the App Hosting backend service account must have permission to access Cloud Secret Manager.</p> <p>If you create secrets using the Cloud Secret Manager console or <code translate="no" dir="ltr">gcloud</code> CLI instead of <code translate="no" dir="ltr">firebase apphosting:secrets:set</code>, grant access to your backend using the Firebase CLI:</p> 
+<pre>firebase apphosting:secrets:grantaccess SECRET_NAME
+</pre> <p>Alternatively, you can grant the <strong>Secret Manager Secret Accessor</strong> role (<code translate="no" dir="ltr">roles/secretmanager.secretAccessor</code>) to the App Hosting service agent (<code translate="no" dir="ltr">service-<var translate="no">PROJECT_NUMBER</var>@gcp-sa-apphosting.iam.gserviceaccount.com</code>) or your backend's runtime service account using the <code translate="no" dir="ltr">gcloud</code> CLI:</p> 
+<pre>gcloud secrets add-iam-policy-binding SECRET_NAME \
+    --member="serviceAccount:service-PROJECT_NUMBER@gcp-sa-apphosting.iam.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor"
+</pre> <h3 id="console-permissions">Console access and role-based permissions</h3> <p>The Firebase console dynamically restricts environment and secret management features based on user IAM permissions:</p> <ul> <li>
+<strong>Viewer role</strong>: Users with read-only project permissions can view existing configuration settings but cannot make changes. <ul> <li>During backend creation, the <strong>Create backend</strong> button is disabled.</li> <li>In backend <strong>Settings</strong> &gt; <strong>Environment</strong>, the <strong>Add new</strong> button is disabled and the <strong>More actions</strong> (<code translate="no" dir="ltr">...</code>) row menus are hidden.</li> </ul>
+</li> <li>
+<strong>Missing Secret Manager permissions</strong>: Users who do not have IAM permissions to interact with Cloud Secret Manager see a warning message in the console (<em>Ask a project owner for permission to add secrets</em>): <ul> <li>During backend creation, the <strong>Secrets</strong> card is disabled.</li> <li>In backend <strong>Settings</strong> &gt; <strong>Environment</strong>, the <strong>Secret</strong> option is disabled when clicking <strong>Add new</strong>, and some of the options in the <strong>More actions</strong> (<code translate="no" dir="ltr">...</code>) row menu are hidden on existing secret entries.</li> </ul>
+</li> </ul> <h2 id="config-vpc">Configure VPC access</h2> <p>Your App Hosting backend can connect to a <a href="https://cloud.google.com/vpc/docs">Virtual Private Cloud (VPC)</a> network. For more information and an example, see <a href="vpc-network">Connect Firebase App Hosting to a VPC network</a>.</p> <p>Use the <code translate="no" dir="ltr">vpcAccess</code> mapping in your <code translate="no" dir="ltr">apphosting.yaml</code> file to configure access. Use either a fully qualified network/connector name or an ID. Using IDs allows for portability between staging and production environments with different connectors/networks.</p> <h3 id="direct-vpc">Direct VPC Egress Configuration (<code translate="no" dir="ltr">apphosting.yaml</code>):</h3> 
+<pre>runConfig:
+  vpcAccess:
+    egress: PRIVATE_RANGES_ONLY # Default value
+    networkInterfaces:
+      # Specify at least one of network and/or subnetwork
+      - network: my-network-id
+        subnetwork: my-subnetwork-id
+</pre> <h3 id="serverless-connector">Serverless Connector Configuration (<code translate="no" dir="ltr">apphosting.yaml</code>):</h3> 
+<pre>runConfig:
+  vpcAccess:
+    egress: ALL_TRAFFIC
+    connector: connector-id
+</pre> <h2 id="manage-backends">Manage backends</h2> <p>Commands for basic management of App Hosting backends are provided in the Firebase console and the <a href="../cli#apphosting-commands">Firebase CLI</a>. This section describes some of the more common management tasks, including creating and deleting backends.</p> <h3 id="create-backend">Create a backend</h3> <p>An App Hosting backend is the collection of managed resources that App Hosting creates to build and run your web app.</p> <aside class="caution">A project Owner must create the <em>first</em> App Hosting backend. After this initial setup, App Hosting Admins can also create and manage additional backends. To see all your organization's repositories, ensure you have the <strong>Organization Admin</strong> role in GitHub. A standard member role only shows repositories you've personally created. For details, see <a href="../projects/iam/roles-predefined-product#app-hosting">Firebase App Hosting IAM roles</a>. </aside> <p><strong>Firebase console</strong>: Navigate to <strong>Hosting &amp; Serverless</strong> &gt; <a href="https://console.firebase.google.com/project/_/apphosting/" class="external"><strong>App Hosting</strong></a>, and then click <strong>Create backend</strong> (if this is the first backend in your Firebase project, click <strong>Get started</strong>).</p> <p><strong>Firebase CLI:</strong> (v13.15.4 or later) To create a backend, run the following command from the root of your local project directory, supplying your <a href="../projects/learn-more#project-id">project ID</a> as an argument:</p> 
+<pre>firebase apphosting:backends:create --project PROJECT_ID
+</pre> <p>For both console or CLI, follow the prompts to choose a <a href="about-app-hosting#locations">region</a>, set up a <a href="about-app-hosting#repo-integration">GitHub connection</a>, and configure these basic deployment settings:</p> <ul> <li>
+<p>Set <strong>your app's root directory</strong> (defaults to <code translate="no" dir="ltr">/</code>)</p> <p>This is usually where your <code translate="no" dir="ltr">package.json</code> file is located. </p>
+</li> </ul> <ul> <li>
+<p>Set the <strong>live branch</strong></p> <p>This is the branch of your GitHub repository that gets deployed to your live URL. Often, it's the branch into which feature branches or development branches are merged.</p>
+</li> <li>
+<p>Accept or decline <strong>automatic rollouts</strong></p> <p>Automatic rollouts are enabled by default. At completion of backend creation, you can choose for your app to be deployed to App Hosting immediately.</p>
+</li> <li><p>Assign a name to your backend.</p></li> <li>
+<p>Select your runtime environment. By default, the newest recommended Node.js version is pre-selected for you.</p> <ul> <li>Configure <a href="frameworks-tooling#abiu">Automatic Base Image Updates (ABIU)</a>. ABIU is enabled by default and automatically applies security patches to your underlying environment. You can opt out of ABIU by selecting "Not specified" for your runtime.</li> </ul>
+</li> </ul> <h3 id="delete-backend">Delete a backend</h3> <p>To fully remove a backend, first use the Firebase console or the Firebase CLI to delete it, and then manually remove related assets, taking special care not to delete any resources that might be used by other backends or other aspects of your Firebase project.</p> <p><strong>Firebase console</strong>: From the <strong>Settings</strong> menu, select <strong>Delete backend</strong>.</p> <p><strong>Firebase CLI:</strong> (v13.15.4 or later)</p> <ol> <li>
+<p>Run the following command to delete the App Hosting backend. This disables all domains for your backend and deletes the associated Cloud Run service:</p> 
+<pre>firebase apphosting:backends:delete BACKEND_ID --project PROJECT_ID
+</pre>
+</li> <li><p>(Optional) In the Google Cloud console tab for <a href="https://console.cloud.google.com/artifacts">Artifact Registry</a>, delete the image for your backend in "firebaseapphosting-images".</p></li> <li><p>In <a href="https://cloud.google.com/security/products/secret-manager">Cloud Secret Manager</a>, delete any secrets with "apphosting" in the secret name, <strong>taking special care to make sure these secrets aren't used by other backends or other aspects of your Firebase project</strong>.</p></li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-hosting/configure" class="_attribution-link">https://firebase.google.com/docs/app-hosting/configure</a>
+  </p>
+</div>

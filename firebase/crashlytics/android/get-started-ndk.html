@@ -1,0 +1,230 @@
+<h1>Get started with Crashlytics for Android NDK</h1>      <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/get-started">iOS+</a> <a class="button" href="get-started">Android</a> <a class="button button-primary" href="get-started-ndk">Android NDK</a> <a class="button" href="../flutter/get-started">Flutter</a> <a class="button" href="../unity/get-started">Unity</a> </td> </tr> </table> <p><br></p>    <p>If you use <a href="https://developer.android.com/ndk" class="external">native libraries</a> in your Android app, you can enable full stack traces and detailed crash reports for your native code from Firebase Crashlytics with a few small updates to your app's build configuration.</p> <p>This guide describes how to configure crash reporting with the Firebase Crashlytics SDK for NDK.</p> <p>If you're looking for how to get started with Crashlytics in your Unity projects, check out the <a href="../unity/get-started">Unity Getting Started guide</a>.</p> <h2 id="before-begin">Before you begin</h2> <ol> <li><p>If you haven't already, <a href="../../android/setup">add Firebase</a> to your Android project. If you don't have an Android app, you can download a <a href="../../samples">sample app</a>.</p></li> <li>
+<p><strong>Recommended</strong>: To automatically get <a href="customize-crash-reports#get-breadcrumb-logs">breadcrumb logs</a> to understand user actions leading up to a crash, non-fatal, or ANR event, you need to enable Google Analytics in your Firebase project.</p> <ul> <li><p>If you're creating a new Firebase project, enable Google Analytics during the project creation workflow.</p></li> <li><p>If you're using an existing Firebase project that doesn't have Google Analytics enabled, you can enable it in the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/integrations" class="external"><strong>Integrations</strong> page</a> of the Firebase console.</p></li> </ul>
+</li> <li>
+<p>Make sure your app has the following <em><strong>minimum</strong></em> required versions:</p> <ul> <li>Gradle 8.0</li> <li>Android Gradle plugin 8.1.0</li> <li>Google services Gradle plugin 4.4.1</li> </ul>
+</li> </ol> <h2 id="add-sdk">
+<strong>Step 1</strong>: Add the Crashlytics SDK for NDK to your app</h2> In your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the dependency for the Crashlytics NDK library for Android. We recommend using the <a href="../../android/learn-more#bom">Firebase Android BoM</a> to control library versioning. <p> For an optimal experience with Crashlytics, we recommend <a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">enabling Google Analytics</a> in your Firebase project and adding the Firebase SDK for Google Analytics to your app. </p> 
+<pre>dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Add the dependencies for the Crashlytics NDK and Analytics libraries
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-crashlytics-ndk")
+    implementation("com.google.firebase:firebase-analytics")
+}</pre> <p>By using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, your app will always use compatible versions of Firebase Android libraries. </p>  <p class="showalways"><em>(Alternative)</em> Add Firebase library dependencies <em>without</em> using the BoM </p> <p>If you choose not to use the Firebase BoM, you must specify each Firebase library version in its dependency line.</p> <p><strong>Note that if you use <em>multiple</em> Firebase libraries in your app, we strongly recommend using the BoM to manage library versions, which ensures that all versions are compatible.</strong> </p> 
+<pre>dependencies {
+    // Add the dependencies for the Crashlytics NDK and Analytics libraries
+    // When NOT using the BoM, you must specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-crashlytics-ndk:21.0.1")
+    implementation("com.google.firebase:firebase-analytics:24.0.0")
+}</pre>  <h2 id="add-plugin">
+<strong>Step 2</strong>: Add the Crashlytics Gradle plugin to your app</h2> <ol> <li>
+<p>In your <strong>root-level (project-level)</strong> Gradle file (<code translate="no" dir="ltr">&lt;project&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/build.gradle</code>), add the Crashlytics Gradle plugin to the <code translate="no" dir="ltr">plugins</code> block:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+<aside class="note">Are you still using the <code translate="no" dir="ltr">buildscript</code> syntax? Learn how to <a href="../../android/troubleshooting-faq#add-plugins-using-buildscript-syntax">add Firebase plugins</a> using that syntax. </aside> 
+<pre data-language="kotlin">plugins {
+    // Make sure that you have the AGP plugin 8.1+ dependency
+    id("com.android.application") version "8.1.4" apply false
+    // ...
+
+    // Make sure that you have the Google services Gradle plugin 4.4.1+ dependency
+    id("com.google.gms.google-services") version "4.5.0" apply false
+
+    // Add the dependency for the Crashlytics Gradle plugin
+    id("com.google.firebase.crashlytics") version "3.0.8" apply false
+}</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+<aside class="note">Are you still using the <code translate="no" dir="ltr">buildscript</code> syntax? Learn how to <a href="../../android/troubleshooting-faq#add-plugins-using-buildscript-syntax">add Firebase plugins</a> using that syntax. </aside> 
+<pre data-language="">plugins {
+    // Make sure that you have the AGP plugin 8.1+ dependency
+    id 'com.android.application' version '8.1.4' apply false
+    // ...
+
+    // Make sure that you have the Google services Gradle plugin 4.4.1+ dependency
+    id 'com.google.gms.google-services' version '4.5.0' apply false
+
+    // Add the dependency for the Crashlytics Gradle plugin
+    id 'com.google.firebase.crashlytics' version '3.0.8' apply false
+}</pre></section> </div> <aside class="note">Is your app using a lower version of Gradle? Consider <a href="../troubleshooting#android-upgrade-to-gradle-plugin-v3">upgrading</a>; otherwise, you should use v2.9.9 of the Crashlytics Gradle plugin. </aside>
+</li> <li>
+<p>In your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the Crashlytics Gradle plugin:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+
+<pre data-language="kotlin">plugins {
+  id("com.android.application")
+  // ...
+
+  // Make sure that you have the Google services Gradle plugin
+  id("com.google.gms.google-services")
+
+  // Add the Crashlytics Gradle plugin
+  id("com.google.firebase.crashlytics")
+}</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+
+<pre data-language="">plugins {
+  id 'com.android.application'
+  // ...
+
+  // Make sure that you have the Google services Gradle plugin
+  id 'com.google.gms.google-services'
+
+  // Add the Crashlytics Gradle plugin
+  id 'com.google.firebase.crashlytics'
+}</pre></section> </div>
+</li> </ol> <h2 id="add-extension">
+<strong>Step 3</strong>: Add the Crashlytics extension to your build</h2> <p>In your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), configure the Crashlytics extension.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+
+<pre data-language="kotlin">import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
+
+// ...
+
+android {
+  // ...
+  buildTypes {
+      getByName("release") {
+          // Add this extension
+          configure&lt;CrashlyticsExtension&gt; {
+              // Enable processing and uploading of native symbols to Firebase servers.
+              // By default, this is disabled to improve build speeds.
+              // This flag must be enabled to see properly-symbolicated native
+              // stack traces in the Crashlytics dashboard.
+              nativeSymbolUploadEnabled = true
+          }
+      }
+  }
+}</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+
+<pre data-language="">// ...
+
+android {
+  // ...
+  buildTypes {
+      release {
+          // Add this extension
+          firebaseCrashlytics {
+              // Enable processing and uploading of native symbols to Firebase servers.
+              // By default, this is disabled to improve build speeds.
+              // This flag must be enabled to see properly-symbolicated native
+              // stack traces in the Crashlytics dashboard.
+              nativeSymbolUploadEnabled true
+          }
+      }
+  }
+}</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> The Crashlytics NDK distribution includes native binaries for all <a href="https://developer.android.com/ndk/guides/abis.html">architectures</a> supported by Android NDK. If your app targets a specific subset, you can use <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/apk-splits#TOC-ABIs-Splits">ABI splits</a> to exclude unnecessary architectures.</span></aside> <h2 id="set-up-automatic-native-symbols-upload">
+<strong>Step 4</strong>: Set up automatic uploading of native symbols</h2> <p>To produce readable stack traces from NDK crashes, Crashlytics needs to know about the symbols in your native binaries. The Crashlytics Gradle plugin includes the <code translate="no" dir="ltr">uploadCrashlyticsSymbolFile<var translate="no">BUILD_VARIANT</var></code> task to automate this process.</p> <aside class="note"><strong>Note:</strong><span> Crashlytics supports <a href="#alternative-options-symbol-uploading">alternative options for uploading symbols</a> depending on your app's configuration and tooling, such as non-Gradle builds.</span></aside> <ol> <li><p>So that you can access the task for automated symbol uploading, make sure that <code translate="no" dir="ltr">nativeSymbolUploadEnabled</code> is set to <code translate="no" dir="ltr">true</code> in your module (app-level) Gradle file.</p></li> <li>
+<p>For method names to appear in your stack traces, you must explicitly invoke the <code translate="no" dir="ltr">uploadCrashlyticsSymbolFile<var translate="no">BUILD_VARIANT</var></code> task after each build of your NDK library. For example:</p> 
+<pre>&gt;./gradlew app:assembleBUILD_VARIANT\
+           app:uploadCrashlyticsSymbolFileBUILD_VARIANT</pre>
+</li> <li>
+<p>Both the Crashlytics SDK for NDK and the Crashlytics Gradle plugin depend on the presence of the GNU build ID within the native shared objects.</p> <p>You can verify the presence of this ID by running <nobr><code translate="no" dir="ltr">readelf -n</code></nobr> on each binary. If the build ID is absent, add <nobr><code translate="no" dir="ltr">-Wl,--build-id</code></nobr> to your build system's flags to fix the problem.</p>
+</li> </ol> <h2 id="force-test-crash">
+<strong>Step 5</strong>: Force a test crash to finish setup</h2> <p>To finish setting up Crashlytics and see initial data in the Crashlytics dashboard of the Firebase console, you need to force a test crash.</p> <ol> <li>
+<p>Add code to your app that you can use to force a test crash.</p> <p>You can use the following code in your app's <code translate="no" dir="ltr">MainActivity</code> to add a button to your app that, when pressed, causes a crash. The button is labeled "Test Crash".</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val crashButton = Button(this)
+crashButton.text = "Test Crash"
+crashButton.setOnClickListener {
+   throw RuntimeException("Test Crash") // Force a crash
+}
+
+addContentView(crashButton, ViewGroup.LayoutParams(
+       ViewGroup.LayoutParams.MATCH_PARENT,
+       ViewGroup.LayoutParams.WRAP_CONTENT))</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">Button crashButton = new Button(this);
+crashButton.setText("Test Crash");
+crashButton.setOnClickListener(new View.OnClickListener() {
+   public void onClick(View view) {
+       throw new RuntimeException("Test Crash"); // Force a crash
+   }
+});
+
+addContentView(crashButton, new ViewGroup.LayoutParams(
+       ViewGroup.LayoutParams.MATCH_PARENT,
+       ViewGroup.LayoutParams.WRAP_CONTENT));</pre></section> </div>
+</li> <li><p>Build and run your app.</p></li> <li>
+<p>Force the test crash in order to send your app's first crash report:</p> <ol> <li><p>Open your app from your test device or emulator.</p></li> <li><p>In your app, press the "Test Crash" button that you added using the code above.</p></li> <li><p>After your app crashes, restart it so that your app can send the crash report to Firebase.</p></li> </ol>
+</li> <li>
+<p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> to check for your test crash report.</p> <p>If you've refreshed the console and you're still not seeing the test crash after five minutes, <a href="test-implementation#enable-debug-logging">enable debug logging</a> to see if your app is sending crash reports.</p>
+</li> </ol> <p><br> And that's it! Crashlytics is now monitoring your app for crashes, and you can view and investigate crash reports and statistics in the Crashlytics dashboard.</p> <h2 id="next-steps">Next steps</h2> <ul> <li><p> <i><b>(Recommended)</b></i> Get help debugging crashes caused by native memory errors by <a href="customize-crash-reports#gwp-asan">collecting GWP-ASan reports</a>. These memory-related errors can be associated with memory corruption within your app, which is the leading cause of app security vulnerabilities. To take advantage of this debugging feature, make sure your app has <a href="https://developer.android.com/ndk/guides/gwp-asan#opt-in" class="external">GWP-ASan explicitly enabled</a> and uses the latest Crashlytics SDK for NDK (v18.3.6+ or Firebase BoM v31.3.0+). </p></li> <li><p><a href="customize-crash-reports#metadata-in-ndk-reports">Customize your crash report setup</a> by adding opt-in reporting, logs, keys, and tracking of non-fatal errors.</p></li> <li><p> <a href="../integrate-with-google-play">Integrate with Google Play</a> so that you can filter your Android app's crash reports by Google Play track directly in the Crashlytics dashboard. This allows you to better focus your dashboard on specific builds. </p></li> </ul> <h2 id="troubleshoot">Troubleshooting</h2> <p>If you're seeing different stack traces in the Firebase console and in the logcat, refer to the <a href="../troubleshooting#mismatch-report">Troubleshooting guide</a>.</p> <p><br></p> <hr> <h2 id="alternative-options-symbol-uploading">Alternative options for uploading symbols</h2> <p>The main workflow on this page above is applicable for standard Gradle builds. However, some apps use a different configuration or tooling (for example a build process other than Gradle). In these situations, the following options might be helpful for successfully uploading symbols.</p> <h3 id="upload-symbols-external-dependencies">
+<strong>Option</strong>: Upload symbols for library modules and external dependencies</h3> <p>This option can be helpful in the following situations:</p> <ul> <li>If you use a customized NDK build process within Gradle</li> <li>If your native libraries are built in a library/feature module or provided by a third-party</li> <li>If the <a href="#set-up-automatic-native-symbols-upload">automatic symbol uploading task</a> is failing or you're seeing unsymbolicated crashes in the Crashlytics dashboard</li> </ul> <p><section class="expandable"> <p class="showalways">View instructions for this option</p></section></p> <p>The standard Crashlytics symbol upload task assumes that you're building your native libraries as part of your app module's Gradle build, using standard NDK build tools such as CMake.</p> <p>However, if you're using a customized NDK build process within Gradle, or your native libraries are built in a library/feature module or provided by a third-party, you may need to explicitly specify the path to your unstripped libraries. To accomplish this, you can add the <code translate="no" dir="ltr">unstrippedNativeLibsDir</code> property within the Crashlytics extension in your Gradle build file.</p> <ol> <li>
+<p>Make sure that you've completed the following initial tasks from the main workflow earlier on this page:</p> <ol> <li><p><a href="#enable-in-console">Enabled Crashlytics in the Firebase console.</a></p></li> <li><p>Added the <a href="#add-sdk">Crashlytics SDK for NDK</a> and the <a href="#add-plugin">Crashlytics Gradle plugin</a>.</p></li> <li><p><a href="#add-extension">Added the Crashlytics extension to your build.</a></p></li> <li><p><a href="#set-up-automatic-native-symbols-upload">Set up automatic uploading of native symbols.</a></p></li> </ol>
+</li> <li>
+<p>So that the automatic symbol uploading task can find your symbol information, add the following to your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>):</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+
+<pre data-language="kotlin">import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
+
+// ...
+
+android {
+    // ...
+    buildTypes {
+        release {
+            configure&lt;CrashlyticsExtension&gt; {
+                nativeSymbolUploadEnabled = true
+                unstrippedNativeLibsDir = file("PATH/TO/UNSTRIPPED/DIRECTORY")
+            }
+        }
+    }
+}</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+
+<pre data-language="">// ...
+
+android {
+    // ...
+    buildTypes {
+        release {
+            firebaseCrashlytics {
+                nativeSymbolUploadEnabled true
+                unstrippedNativeLibsDir file("PATH/TO/UNSTRIPPED/DIRECTORY")
+            }
+        }
+    }
+}</pre></section> </div> <p>The Crashlytics plugin will recursively search the specified directory for native libraries with a <code translate="no" dir="ltr">.so</code> extension. Crashlytics then extracts debugging symbols from all such libraries and uploads them to the Firebase servers.</p> <p>Here's what you can specify in the <code translate="no" dir="ltr">unstrippedNativeLibsDir</code> property:</p> <ul> <li><p>Any argument allowable for <a href="https://docs.gradle.org/current/javadoc/org/gradle/api/Project.html#files-java.lang.Object...-" class="external"><code translate="no" dir="ltr">org.gradle.api.Project#files(Object...)</code></a>, including: <nobr><code translate="no" dir="ltr">java.lang.String</code></nobr>, <nobr><code translate="no" dir="ltr">java.io.File</code></nobr>, or <nobr><code translate="no" dir="ltr">org.gradle.api.file.FileCollection</code></nobr></p></li> <li><p>Multiple directories for a single build flavor by providing a list or <code translate="no" dir="ltr">FileCollection</code> instance</p></li> <li><p><em>(Starting with Crashlytics Gradle plugin v3.0.0)</em> Accumulate multiple directories in individual products and build flavors.</p></li> </ul> <div class="expandable" id="upload-symbols-multiple-directories"> <p class="showalways" id="upload-symbols-multiple-directories"> View an example with multiple directories </p> 
+<pre>buildTypes {
+  release {
+    configure&lt;CrashlyticsExtension&gt; {
+      nativeSymbolUploadEnabled = true
+      unstrippedNativeLibsDir = file("MY/NATIVE/LIBS")
+    }
+  }
+  productFlavors {
+    flavorDimensions += "feature"
+    create("basic") {
+      dimension = "feature"
+      // ...
+    }
+    create("featureX") {
+      dimension = "feature"
+      configure&lt;CrashlyticsExtension&gt; {
+        unstrippedNativeLibsDir = file("MY/FEATURE_X/LIBS")
+      }
+    }
+  }
+}</pre> <p> The <nobr><code translate="no" dir="ltr">uploadCrashlyticsSymbolFilesBasicRelease</code></nobr> task will only upload the symbols in <code translate="no" dir="ltr"><var class="readonly" translate="no">MY/NATIVE/LIBS</var></code>, but <nobr><code translate="no" dir="ltr">uploadCrashlyticsSymbolFilesFeatureXRelease</code></nobr> will upload symbols in both <code translate="no" dir="ltr"><var class="readonly" translate="no">MY/NATIVE/LIBS</var></code> and <code translate="no" dir="ltr"><var class="readonly" translate="no">MY/FEATURE_X/LIBS</var></code>. </p> </div>
+</li> <li><p>Finally, <a href="#force-test-crash">force a test crash</a> to finish setting up Crashlytics and to see initial data in the Crashlytics dashboard of the Firebase console.</p></li> </ol>  <h3 id="upload-symbols-non-gradle-builds">
+<strong>Option</strong>: Upload symbols for non-Gradle builds or inaccessible unstripped native libraries</h3> <p>This option can be helpful in the following situations:</p> <ul> <li><p>If you use a build process other than Gradle</p></li> <li><p>If your unstripped native libraries are provided to you in some way that they're not accessible during Gradle builds</p></li> </ul> <p><section class="expandable"> <p class="showalways">View instructions for this option</p></section></p> <p>This option requires that you run a Firebase CLI command when you create a release build or any build for which you want to see symbolicated stack traces in the Firebase console.</p> <ol> <li>
+<p>Make sure that you've completed the following initial tasks from the main workflow earlier on this page:</p> <ol> <li><p><a href="#enable-in-console%7D">Enabled Crashlytics in the Firebase console.</a></p></li> <li><p>Added the <a href="#add-sdk">Crashlytics SDK for NDK</a> and the <a href="#add-plugin">Crashlytics Gradle plugin</a>.</p></li> </ol> <p>Note that with this option, you don't need to add the <code translate="no" dir="ltr">firebaseCrashlytics</code> extension or set up automatic symbol uploading because you'll instead use the Firebase CLI (next steps below) to generate and upload your symbol files.</p>
+</li> <li>
+<p>Set up your environment and project for symbol uploading:</p> <ol> <li>
+<p>Follow the instructions to <a href="../../cli">install the Firebase CLI</a>.</p> <p>If you've already installed the CLI, make sure to <a href="../../cli#update-cli">update to its latest version</a>.</p> <aside class="note"><b>Note:</b> You can also run Firebase CLI commands in Cloud Shell. <a href="../../cloud-shell">Cloud Shell</a> is a browser-based, pre-authenticated command-line environment, accessible from the Firebase console, and comes with the Firebase CLI pre-installed. This makes it a convenient option for getting started quickly, provided you add your project files to the Cloud Shell environment.</aside>
+</li> <li>
+<p><em>(only for apps using Android API level 30+)</em> Update your app's <code translate="no" dir="ltr">AndroidManifest.xml</code> template to disable Pointer Tagging:</p> <ol> <li><p>Check the box for <strong>Android Player Settings &gt; Publishing Settings &gt; Build &gt; Custom Main Manifest</strong>.</p></li> <li><p>Open the manifest template located at <code translate="no" dir="ltr">Assets/Plugins/Android/AndroidManifest.xml</code>.</p></li> <li><p>Add the following attribute to the application tag: <nobr><code translate="no" dir="ltr">&lt;application android:allowNativeHeapPointerTagging="false" ... /&gt;</code></nobr></p></li> </ol>
+</li> </ol>
+</li> <li><p>Build your project.</p></li> <li>
+<p>Upload your symbols information.</p> <aside class="note"><strong>Note:</strong><span> Complete this step to get started. Then, in the future, complete this step each time that you create a release build or any build for which you want to see symbolicated stack traces in the Firebase console.</span></aside> <p>Once your build has finished, generate a Crashlytics-compatible symbol file and upload it to Firebase servers by running the following Firebase CLI command:</p> 
+<pre>firebase crashlytics:symbols:upload --app=FIREBASE_APP_ID PATH/TO/SYMBOLS</pre> <ul> <li>
+<p><var translate="no">FIREBASE_APP_ID</var>: Your Firebase Android App ID (not your package name)<br> Example Firebase Android App ID: <code translate="no" dir="ltr">1:567383003300:android:17104a2ced0c9b9b</code></p> <p><section class="expandable"> <p class="showalways">Need to find your Firebase App ID?</p></section></p> <blockquote> <p>Here are two ways to find your Firebase App ID:</p> <ul> <li><p>In your <code translate="no" dir="ltr">google-services.json</code> file, your App ID is the <code translate="no" dir="ltr">mobilesdk_app_id</code> value; or</p></li> <li><p>In the Firebase console, go to your <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><em>Project settings</em></a>. Go to the <em>Your apps</em> card, then click the intended Firebase App to find its App ID.</p></li> </ul> </blockquote> 
+</li> <li>
+<p><var translate="no">PATH/TO/SYMBOLS</var>: The path to the symbol file generated by the CLI</p> <ul> <li><p>Exported to an Android Studio project — <var translate="no">PATH/TO/SYMBOLS</var> can be any directory. The Firebase CLI will recursively search the specified directory for native libraries with a <code translate="no" dir="ltr">.so</code> extension.</p></li> <li><p>Built the APK directly from within Unity — <var translate="no">PATH/TO/SYMBOLS</var> is the path of the zipped symbol file generated in the project root directory when your build finished (for example: <nobr><code translate="no" dir="ltr">myproject/myapp-1.0-v100.symbols.zip</code></nobr>).</p></li> </ul>
+</li> </ul> <div>  <p class="showalways">View advanced options for using the Firebase CLI command for symbol file generation and upload </p> <table> <thead> <tr> <th><b>Flag</b></th> <th><b>Description</b></th> </tr> </thead> <tbody> <tr> <td><nobr><code translate="no" dir="ltr">--generator=csym</code></nobr></td> <td>
+<p>Uses the legacy cSYM symbol file generator instead of the default Breakpad generator </p> <p>Not recommended for use. We recommend using the default Breakpad symbol file generator. </p> </td> </tr> <tr> <td><nobr><code translate="no" dir="ltr">--generator=breakpad</code></nobr></td> <td>
+<p>Uses the Breakpad symbol file generator</p> <p>Note that the default for symbol file generation is Breakpad. Only use this flag if you've added <nobr><code translate="no" dir="ltr">symbolGenerator { csym() }</code></nobr> in your build configuration and you want to override it to use Breakpad instead. </p> </td> </tr> <tr> <td><nobr><code translate="no" dir="ltr">--dry-run</code></nobr></td> <td>
+<p>Generates the symbol files but does not upload them</p> <p>This flag is useful if you want to inspect the content of the files that are sent. </p> </td> </tr> <tr> <td><nobr><code translate="no" dir="ltr">--debug</code></nobr></td> <td>Provides additional debugging information</td> </tr> </tbody> </table>  </div>
+</li> <li>
+<p>Finally, <a href="#force-test-crash">force a test crash</a> to finish setting up Crashlytics and to see initial data in the Crashlytics dashboard of the Firebase console.</p> <p>After you build your app as part of forcing a crash, make sure to run the Firebase CLI <code translate="no" dir="ltr">crashlytics:symbols:upload</code> command to upload your symbol file.</p>
+</li> </ol>  <p><br></p> <hr><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/crashlytics/android/get-started-ndk" class="_attribution-link">https://firebase.google.com/docs/crashlytics/android/get-started-ndk</a>
+  </p>
+</div>

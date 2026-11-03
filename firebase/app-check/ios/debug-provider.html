@@ -1,0 +1,48 @@
+<h1>Use App Check with the debug provider on Apple platforms</h1> <p>After App Check is enforced for a backend service, your app's features that depend on that backend service won't run in a simulator or from a continuous integration (CI) environment because these environments don't qualify as valid devices. To run your app in these environments during development and testing, you need to create a debug build of your app that uses the App Check <em>debug provider</em> instead of a production attestation provider.</p> <aside class="warning"><strong>Warning:</strong><span> <strong>Keep your debug token and debug build private.</strong> A valid debug token and the debug provider in your debug build allow access to your backend services from unverified devices. Do <strong><em>not</em></strong> commit your debug token to a public repository, and do <strong><em>not</em></strong> ship your debug token or debug build in production builds of your app. If a registered token is ever compromised, delete it immediately in the Firebase console.</span></aside> <h2 id="simulator">Use the debug provider in a simulator</h2> <p>Here's how to use the debug provider while running your app in a simulator interactively (for example, during local development):</p> <ol> <li>
+<p>In your debug build, before using any Firebase backend services, create and set the App Check debug provider factory:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">let providerFactory = AppCheckDebugProviderFactory()
+AppCheck.setAppCheckProviderFactory(providerFactory)
+
+FirebaseApp.configure()</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">FIRAppCheckDebugProviderFactory *providerFactory =
+      [[FIRAppCheckDebugProviderFactory alloc] init];
+[FIRAppCheck setAppCheckProviderFactory:providerFactory];
+
+// Use Firebase library to configure APIs
+[FIRApp configure];</pre></section> </div>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Launch your app in the simulator or on your test device.</p></li> <li>
+<p>Open the Xcode console and look for the App Check debug token. For example:</p> 
+<pre>&lt;Warning&gt; [AppCheckCore][I-GAC004001] App Check debug token: '123a4567-b89c-12d3-e456-789012345678'.
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the three-dot overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol> <p><img src="https://firebase.google.com/static/docs/app-check/manage-debug-tokens.png" alt="Screenshot of the Manage Debug Tokens menu item in the Firebase console" class="screenshot"></p>
+</li> </ol> <p>After you register the token with App Check, your backend services will accept it as valid.</p> <p>This token allows access to your backend services without a valid device, so it's crucial that you keep it private. Do <em><strong>not</strong></em> commit it to a public repository or ship it in production builds of your app. If a registered token is ever compromised, delete it immediately using <strong>Manage debug tokens</strong> in the Firebase console.</p> <aside class="tip"><strong>Tip:</strong><span> <strong>Need a new debug token?</strong> If you need to regenerate a debug token (for example, if you deleted your previous token in the Firebase console), then uninstall and reinstall the app on your device or emulator. This clears the local storage and a fresh token will be generated on the next launch that you can register in the Firebase console.</span></aside> <h2 id="ci">Use the debug provider in a CI environment</h2> <p>Here's how to use the debug provider for unit testing in a continuous integration (CI) environment:</p> <ol> <li>
+<p>In the Firebase console, create a debug token:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the three-dot overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to create a new debug token.</p></li> </ol> <p>This token allows access to your backend services without a valid device, so it's crucial that you keep it private. Do <em><strong>not</strong></em> commit it to a public repository or ship it in production builds of your app. If a registered token is ever compromised, delete it immediately using <strong>Manage debug tokens</strong> in the Firebase console.</p> <p><img src="https://firebase.google.com/static/docs/app-check/manage-debug-tokens.png" alt="Screenshot of the Manage Debug Tokens menu item" class="screenshot"></p>
+</li> <li><p>Add the debug token you just created to your CI system's secure key store (for example, GitHub Actions' <a href="https://docs.github.com/en/actions/reference/encrypted-secrets" class="external">encrypted secrets</a> or Travis CI's <a href="https://docs.travis-ci.com/user/environment-variables/#defining-encrypted-variables-in-travisyml" class="external">encrypted variables</a>).</p></li> <li><p>If necessary, configure your CI system to make your debug token available within the CI environment as an environment variable. Name the variable something like <code translate="no" dir="ltr">APP_CHECK_DEBUG_TOKEN_FROM_CI</code>.</p></li> <li><p>In Xcode, add an environment variable to your testing scheme with the name <code translate="no" dir="ltr">AppCheckDebugToken</code> and something like <code translate="no" dir="ltr">$(APP_CHECK_DEBUG_TOKEN)</code> as the value.</p></li> <li>
+<p>Configure your CI test script to pass the debug token as an environment variable. For example:</p> 
+<pre>xcodebuild test -scheme YOUR_TEST_SCHEME -workspace YOUR_PROJECT.xcworkspace \
+APP_CHECK_DEBUG_TOKEN=$(APP_CHECK_DEBUG_TOKEN_FROM_CI)</pre>
+</li> <li>
+<p>In your debug build, before using any Firebase backend services, create and set the App Check debug provider factory:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">let providerFactory = AppCheckDebugProviderFactory()
+AppCheck.setAppCheckProviderFactory(providerFactory)
+
+FirebaseApp.configure()</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">FIRAppCheckDebugProviderFactory *providerFactory =
+      [[FIRAppCheckDebugProviderFactory alloc] init];
+[FIRAppCheck setAppCheckProviderFactory:providerFactory];
+
+// Use Firebase library to configure APIs
+[FIRApp configure];</pre></section> </div>
+</li> </ol> <p>When your app runs in a CI environment, your backend services will accept the token it sends as valid.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/ios/debug-provider" class="_attribution-link">https://firebase.google.com/docs/app-check/ios/debug-provider</a>
+  </p>
+</div>

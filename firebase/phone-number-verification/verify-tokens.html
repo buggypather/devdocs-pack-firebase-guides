@@ -1,0 +1,68 @@
+<h1>Verify Firebase PNV tokens</h1> <p>When the Firebase PNV library successfully verifies the phone number of a device, it returns the verified phone number and a signed token containing it. If you use the verified phone number outside the app client, you should pass around the token instead of the phone number itself so you can verify its integrity when you use it. To verify the token, you can use any JWT verification library. Use the library to verify all of the following:</p> <ul> <li><p>The <code translate="no" dir="ltr">typ</code> header is set to <code translate="no" dir="ltr">JWT</code>.</p></li> <li>
+<p>The token is signed using one of the keys published at the Firebase PNV JWKS endpoint with <code translate="no" dir="ltr">ES256</code> algorithm:</p> 
+<pre>https://fpnv.googleapis.com/v1beta/jwks
+</pre>
+</li> <li>
+<p>The issuer claims contains your Firebase project number and is in the following format:</p> 
+<pre>https://fpnv.googleapis.com/projects/FIREBASE_PROJECT_NUMBER
+</pre> <p>You can find your Firebase project number on the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><strong>General</strong> tab</a> of the Firebase console.</p>
+</li> <li>
+<p>The audience claim is a list that contains your Firebase project number and project ID and is in the following format:</p> 
+<pre>[
+  https://fpnv.googleapis.com/projects/FIREBASE_PROJECT_NUMBER,
+  https://fpnv.googleapis.com/projects/FIREBASE_PROJECT_ID,
+]
+</pre>
+</li> <li><p>The token has not expired.</p></li> </ul> <h3 id="example">Example</h3> <p>As a brief example, the following Express.js app receives an Firebase PNV token from an HTTP <code translate="no" dir="ltr">POST</code> request and uses a JWT verification library to check the signature and claims of the token:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">import express from "express";
+import { JwtVerifier } from "aws-jwt-verify";
+
+// Find your Firebase project number in the Firebase console.
+const FIREBASE_PROJECT_NUMBER = "123456789";
+
+// The issuer and audience claims of the FPNV token are specific to your
+// project.
+const issuer = `https://fpnv.googleapis.com/projects/${FIREBASE_PROJECT_NUMBER}`;
+const audience = `https://fpnv.googleapis.com/projects/${FIREBASE_PROJECT_NUMBER}`;
+
+// The JWKS URL contains the current public signing keys for FPNV tokens.
+const jwksUri = "https://fpnv.googleapis.com/v1beta/jwks";
+
+// Configure a JWT verifier to check the following:
+// - The token is signed by Google
+// - The issuer and audience claims match your project
+// - The token has not yet expired (default behavior)
+const fpnvVerifier = JwtVerifier.create({ issuer, audience, jwksUri });
+
+const app = express();
+
+app.post('/verifiedPhoneNumber', async (req, res) =&gt; {
+    if (!req.body) return res.sendStatus(400);
+    // Get the token from the body of the request.
+    const fpnvToken = req.body;
+    try {
+        // Attempt to verify the token using the verifier configured
+        previously.
+        const verifiedPayload = await fpnvVerifier.verify(fpnvToken);
+
+        // If verification succeeds, the subject claim of the token contains the
+        // verified phone number. You can use this value however it's needed by
+        // your app.
+        const verifiedPhoneNumber = verifiedPayload.sub;
+        // (Do something with it...)
+
+        return res.sendStatus(200);
+    } catch {
+        // If verification fails, reject the token.
+        return res.sendStatus(400);
+    }
+});
+
+app.listen(3000);
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/phone-number-verification/verify-tokens" class="_attribution-link">https://firebase.google.com/docs/phone-number-verification/verify-tokens</a>
+  </p>
+</div>

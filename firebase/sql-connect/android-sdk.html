@@ -1,0 +1,139 @@
+<h1>Use generated Android SDKs</h1> <p>Firebase SQL Connect client SDKs let you call your server-side queries and mutations directly from a Firebase app. You generate a custom client SDK in parallel as you design the schemas, queries and mutations you deploy to your SQL Connect service. Then, you integrate methods from this SDK into your client logic.</p> <p>As we've mentioned elsewhere, it's important to note that SQL Connect queries and mutations are not submitted by client code and executed on the server. Instead, when deployed, SQL Connect operations are stored on the server like Cloud Functions. This means you need to deploy corresponding client-side changes to avoid breaking existing users (for example, on older app versions).</p> <p>That's why SQL Connect provides you with a developer environment and tooling that lets you prototype your server-deployed schemas, queries and mutations. It also generates client-side SDKs automatically, while you prototype.</p> <p>When you've iterated updates to your service and client apps, both server- and client-side updates are ready to deploy.</p> <h2 id="summarize-workflow">What is the client development workflow?</h2> <p>If you followed the <a href="quickstart">Get started</a>, you were introduced to the overall development flow for SQL Connect. In this guide, you'll find more detailed information about generating Android SDKs from your schema and working with client queries and mutations.</p> <aside class="objective">You can learn client development with a quickstart app repository and build a fully-featured SQL Connect app by following our <a href="https://firebase.google.com/codelabs/firebase-dataconnect-android">codelab for Android</a>. </aside> <p>To summarize, to use generated Android SDKs in your client apps, you'll follow these prerequisite steps:</p> <ol> <li>Add Firebase to your <a href="../android/setup">Android</a> app.</li> <li>Configure SQL Connect as a dependency in Gradle.</li> <li>Add the Kotlin Serialization Gradle plugin and Gradle dependency.</li> </ol> <p>Then:</p> <ol> <li>Develop your app schema.</li> <li>
+<p>Set up SDK generation:</p> <ul> <li>With the <strong>Add SDK to app</strong> button in our SQL Connect VS Code extension</li> <li>By <a href="#generate-kotlin">updating your <code translate="no" dir="ltr">connector.yaml</code></a>
+</li> </ul>
+</li> <li><p><a href="#set-client">Initialize your client code and import libraries</a>.</p></li> <li><p><a href="#queries-mutations">Implement calls to queries and mutations</a>.</p></li> <li><p><a href="#prototype-and">Set up and use the SQL Connect emulator</a> and iterate.</p></li> </ol> <h2 id="generate-kotlin">Generate your Kotlin SDK</h2> <p>Use the Firebase CLI to set up SQL Connect generated SDKs in your apps. The <code translate="no" dir="ltr">init</code> command should detect all apps in the current folder and install generated SDKs automatically.</p> 
+<pre>firebase init dataconnect:sdk
+</pre> <h3 id="update_sdks_while_prototyping">Update SDKs while prototyping</h3> <p>If you have SQL Connect VS Code extension installed, it will always keep generated SDKs up to date.</p> <p>If you don't use SQL Connect VS Code extension, you can use Firebase CLI to keep generated SDKs up to date.</p> 
+<pre>firebase dataconnect:sdk:generate --watch</pre> <h3 id="generate_sdks_in_build_pipelines">Generate SDKs in build pipelines</h3> <p>You can use the Firebase CLI to generate SQL Connect SDKs in CI/CD build processes.</p> 
+<pre>firebase dataconnect:sdk:generate</pre> <h2 id="set-client">Set up client code</h2> <h3 id="incorporate-sdk">Incorporate SQL Connect into your client code</h3> <p>To set up your client code to use SQL Connect and your generated SDK, first follow the <a href="../android/setup">standard Firebase setup instructions</a>.</p> <p>Then, add the following into the <code translate="no" dir="ltr">plugins</code> section in <code translate="no" dir="ltr">app/build.gradle.kts</code>:</p> 
+<pre>// The Firebase team tests with version 1.8.22; however, other 1.8 versions,
+// and all newer versions are expected work too.
+kotlin("plugin.serialization") version "1.8.22" // MUST match the version of the Kotlin compiler
+</pre> <p>Then, add the following into the <code translate="no" dir="ltr">dependencies</code> section in <code translate="no" dir="ltr">app/build.gradle.kts</code>:</p> 
+<pre>implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+implementation("com.google.firebase:firebase-dataconnect")
+implementation("com.google.firebase:firebase-auth") // Optional
+implementation("com.google.firebase:firebase-appcheck") // Optional
+implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3") // Newer versions should work too
+implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.5.1") // Newer versions should work too
+</pre> <h3 id="initialize-sdk">Initialize the SQL Connect Android SDK</h3> <p>Initialize your SQL Connect instance using the information you used to set up SQL Connect. Find this information in the <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/dataconnect" class="external"><strong>SQL Connect</strong> page</a> of the Firebase console.</p> <h4 id="the_connectorconfig_object">The ConnectorConfig object</h4> <p>The SDK requires a connector configuration object.</p> <p>This object is automatically generated from <code translate="no" dir="ltr">serviceId</code> and <code translate="no" dir="ltr">location</code> in <code translate="no" dir="ltr">dataconnect.yaml</code>, and <code translate="no" dir="ltr">connectorId</code> in <code translate="no" dir="ltr">connector.yaml</code>.</p> <h4 id="getting_a_connector_instance">Getting a connector instance</h4> <p>Now that you've set up a configuration object, get a SQL Connect connector instance. The code for your connector will be generated by the SQL Connect emulator. If your connector name is <code translate="no" dir="ltr">movies</code> and the Kotlin package is <code translate="no" dir="ltr">com.myapplication</code>, as specified in <code translate="no" dir="ltr">connector.yaml</code>, then retrieve the connector object by calling:</p> 
+<pre>val connector = com.myapplication.MoviesConnector.instance
+</pre> <h2 id="queries-mutations">Use queries and mutations from your Android SDK</h2> <p>With the connector object, you can run queries and mutations as defined in the GraphQL source code. Suppose your connector has these operations defined:</p> 
+<pre>mutation createMovie($title: String!, $releaseYear: Int!, $genre: String!, $rating: Int!) {
+  movie_insert(data: {
+    title: $title
+    releaseYear: $releaseYear
+    genre: $genre
+    rating: $rating
+  })
+}
+
+query getMovieByKey($key: Movie_Key!) {
+  movie(key: $key) { id title }
+}
+
+query listMoviesByGenre($genre: String!) {
+  movies(where: {genre: {eq: $genre}}) {
+    id
+    title
+  }
+}
+</pre> <p>then you could create and retrieve a movie as follows:</p> 
+<pre>val connector = MoviesConnector.instance
+
+val addMovieResult1 = connector.createMovie.execute(
+  title = "Empire Strikes Back",
+  releaseYear = 1980,
+  genre = "Sci-Fi",
+  rating = 5
+)
+
+val movie1 = connector.getMovieByKey.execute(addMovieResult1.data.key)
+
+println("Empire Strikes Back: ${movie1.data.movie}")
+</pre> <p>You can also retrieve multiple movies:</p> 
+<pre>val connector = MoviesConnector.instance
+
+val addMovieResult2 = connector.createMovie.execute(
+  title="Attack of the Clones",
+  releaseYear = 2002,
+  genre = "Sci-Fi",
+  rating = 5
+)
+
+val listMoviesResult = connector.listMoviesByGenre.execute(genre = "Sci-Fi")
+
+println(listMoviesResult.data.movies)
+</pre> <p>You can also collect a <code translate="no" dir="ltr">Flow</code> that will only produce a result when a new query result is retrieved using a call to the query's <code translate="no" dir="ltr">execute()</code> method.</p> <aside class="note"><strong>Note:</strong><span> This Flow is not updated in real time. For realtime Flows, see <a href="realtime">Get realtime updates from SQL Connect</a>.</span></aside>
+<pre>val connector = MoviesConnector.instance
+
+connector.listMoviesByGenre.flow(genre = "Sci-Fi").collect { data -&gt;
+  println(data.movies)
+}
+
+connector.createMovie.execute(
+  title="A New Hope",
+  releaseYear = 1977,
+  genre = "Sci-Fi",
+  rating = 5
+)
+
+connector.listMoviesByGenre.execute(genre = "Sci-Fi") // will cause the Flow to get notified
+</pre> <h3 id="subscribing-changes">Subscribe to realtime changes</h3> <p>See <a href="realtime">Get realtime updates from SQL Connect</a>.</p> <h3 id="enum-queries">Handle changes to enumeration fields</h3> <p>An app's schema can <a href="schemas-guide#enumeration-fields">contain enumerations</a>, which can be accessed by your <a href="queries-guide#query-enumerations">GraphQL queries</a>.</p> <p>As an app's design changes, you may add new enum supported values. For example, imagine that later in your application’s lifecycle you decide to add a FULLSCREEN value to the <code translate="no" dir="ltr">AspectRatio</code> enum.</p> <p>In the SQL Connect workflow, you can use local development tooling to update your queries and SDKs.</p> <p>However, before you release an updated version of your clients, older deployed clients may break.</p> <h4 id="example_resilient_implementation">Example resilient implementation</h4> <p>The generated SDK forces handling of unknown values as the customer's code must unwrap the <code translate="no" dir="ltr">EnumValue</code> object, which is either <code translate="no" dir="ltr">EnumValue.Known</code> for known enum values or <code translate="no" dir="ltr">EnumValue.Unknown</code> for unknown values.</p> 
+<pre>val result = connector.listMoviesByAspectRatio.execute(AspectRatio.WIDESCREEN)
+val encounteredAspectRatios = mutableSetOf&lt;String&gt;()
+
+result.data.movies
+  .mapNotNull { it.otherAspectRatios }
+  .forEach { otherAspectRatios -&gt;
+    otherAspectRatios
+      .filterNot { it.value == AspectRatio.WIDESCREEN }
+      .forEach {
+        when (it) {
+          is EnumValue.Known -&gt; encounteredAspectRatios.add(it.value.name)
+          is EnumValue.Unknown -&gt;
+            encounteredAspectRatios.add("[unknown ratio: ${it.stringValue}]")
+        }
+      }
+  }
+
+println(
+  "Widescreen movies also include additional aspect ratios: " +
+    encounteredAspectRatios.sorted().joinToString()
+)
+</pre> <h2 id="caching">Enable client-side caching</h2> <p>SQL Connect has an optional client-side caching feature, which you can enable by editing the <code translate="no" dir="ltr">connector.yaml</code> file. When this feature is enabled, the generated client SDKs will locally cache query responses, which can reduce the number of database requests your app makes and enables the database-dependent portions of your app to work when network availability is interrupted.</p> <p>To enable client-side caching, add a client caching configuration to your connector configuration:</p> 
+
+<pre>generate:
+  kotlinSdk:
+    outputDir: "../android"
+    package: "com.google.firebase.dataconnect.generated"
+    clientCache:
+      maxAge: 5s
+      storage: persistent
+</pre> <p>This configuration has two parameters, both optional:</p> <ul> <li>
+<p><code translate="no" dir="ltr">maxAge</code>: The maximum age a cached response can be before the client SDK fetches fresh values. Examples: "0", "30s", "1h30m".</p> <p>The default value for <code translate="no" dir="ltr">maxAge</code> is <code translate="no" dir="ltr">0</code>, which means that responses are cached, but the client SDK will always fetch fresh values. The cached values will only be used when <code translate="no" dir="ltr">CACHE_ONLY</code> is specified to <code translate="no" dir="ltr">execute()</code>.</p>
+</li> <li><p><code translate="no" dir="ltr">storage</code>: The client SDK can be configured to cache responses either in <code translate="no" dir="ltr">persistent</code> storage or in <code translate="no" dir="ltr">memory</code>. Results cached in <code translate="no" dir="ltr">persistent</code> storage will persist across app restarts. In Android SDKs, the default is <code translate="no" dir="ltr">persistent</code>.</p></li> </ul> <p>After you update your connector's caching configuration, regenerate your client SDKs and rebuild your app. Once you have done so, <code translate="no" dir="ltr">execute()</code> will cache responses and use cached values according to the policy you configured. This generally happens automatically, without any additional steps on your part; however, note the following:</p> <ul> <li>
+<p>The default behavior of <code translate="no" dir="ltr">execute()</code> is as described above: if a result is cached for a query and the cached value is not older than <code translate="no" dir="ltr">maxAge</code>, then use the cached value. This default behavior is called the <code translate="no" dir="ltr">PREFER_CACHE</code> policy.</p> <p>You can also specify to individual invocations of <code translate="no" dir="ltr">execute()</code> to either only serve cached values (<code translate="no" dir="ltr">CACHE_ONLY</code>) or to unconditionally fetch fresh values from the server (<code translate="no" dir="ltr">SERVER_ONLY</code>).</p> 
+
+<pre>val queryResult = queryRef.execute(QueryRef.FetchPolicy.CACHE_ONLY)
+</pre>
+
+<pre>val queryResult = queryRef.execute(QueryRef.FetchPolicy.SERVER_ONLY)
+</pre> <h2 id="prototype-and">Prototype and test your Android application</h2> <h3 id="instrument-clients">Instrument clients to use a local emulator</h3> <p>You can use the SQL Connect emulator, whether from the SQL Connect VS Code extension or from the CLI.</p> <p>Instrumenting the app to connect to the emulator is the same for both scenarios.</p> 
+<pre>val connector = MoviesConnector.instance
+
+// Connect to the emulator on "10.0.2.2:9399"
+connector.dataConnect.useEmulator()
+
+// (alternatively) if you're running your emulator on non-default port:
+connector.dataConnect.useEmulator(port = 9999)
+
+// Make calls from your app
+
+</pre> <p>To switch to production resources, comment out lines for connecting to the emulator.</p> <h2 id="data-types">SQL types in SQL Connect SDKs</h2> <p>The SQL Connect server represents common and custom GraphQL data types. These are represented in the SDK as follows.</p> <table> <thead> <tr> <th>SQL Connect Type</th> <th>Kotlin</th> </tr> </thead> <tbody> <tr> <td>String</td> <td>String</td> </tr> <tr> <td>Int</td> <td>Int (32-bit integer)</td> </tr> <tr> <td>Float</td> <td>Double (64-bit float)</td> </tr> <tr> <td>Boolean</td> <td>Boolean</td> </tr> <tr> <td>UUID</td> <td>java.util.UUID</td> </tr> <tr> <td>Date</td> <td>com.google.firebase.dataconnect.LocalDate (was java.util.Date until 16.0.0-beta03)</td> </tr> <tr> <td>Timestamp</td> <td>com.google.firebase.Timestamp</td> </tr> <tr> <td>Int64</td> <td>Long</td> </tr> <tr> <td>Any</td> <td>com.google.firebase.dataconnect.AnyValue</td> </tr> </tbody> </table>  </li>
+</ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/android-sdk" class="_attribution-link">https://firebase.google.com/docs/sql-connect/android-sdk</a>
+  </p>
+</div>

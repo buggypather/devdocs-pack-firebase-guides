@@ -1,0 +1,478 @@
+<h1>Grounding with Google Maps</h1> <p>Grounding with <nobr>Google Maps</nobr> connects a <span class='\"notranslate\"'>Gemini</span> model to geospatial data from <nobr>Google Maps</nobr> so that you can build location-aware functionality into your apps.</p>  <p>Grounding with <nobr>Google Maps</nobr> has the following benefits:</p> <ul> <li>
+<strong>Increase factual accuracy</strong>: Reduce model hallucinations by basing responses on Google's database of over 250 million real-world places and businesses.</li> <li>
+<strong>Access real-time information</strong>: Answer questions using live data, such as current business hours and the real-time status of EV charging stations.</li> <li>
+<strong>Provide sources</strong>: Build user trust by showing <nobr>Google Maps</nobr> place sources and links directly alongside the model's location-based claims. </li> </ul> <aside class="note"><b>Note:</b> The <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs do <em>not yet</em> support Routing, Search Along Route, or Place Answer Sources (like for getting reviews). <p> For web apps, the contextual widget features are no longer supported (as of Firebase JS SDK v13.0.0) due to their shutdown by <nobr>Google Maps</nobr>. </p> </aside> <h3 id="supported-models" class="hide-from-toc">Supported models</h3> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li><code translate="no" dir="ltr">gemini-3.8-flash</code></li> <li>
+<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> and <span class='\"notranslate\"'>Gemini 2.5</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <h3 id="supported-languages" class="hide-from-toc">Supported languages</h3> <p>See <a href="models#languages">supported languages</a> for <span class='\"notranslate\"'>Gemini</span> models.</p> <h2 id="ground-the-model">Ground the model with <nobr>Google Maps</nobr>
+</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <aside class="special"><strong>Important:</strong><span> If a response contains a <code translate="no" dir="ltr">groundingMetadata</code> object, then that response is a <em><nobr>Google Maps</nobr> Grounded Result</em> so <strong>you're required to comply with the Grounding with <nobr>Google Maps</nobr> usage requirements, which includes how you display the result</strong>. Learn how to <a href="#service-usage-requirements">meet service usage requirements</a> later on this page.</span></aside> <p>When you create the <code translate="no" dir="ltr">GenerativeModel</code> instance, provide <code translate="no" dir="ltr">GoogleMaps</code> as a <code translate="no" dir="ltr">tool</code> that the model can use to generate its response.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import CoreLocation
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Example: Coordinates for New York City
+let latAndLong = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+
+// (Optional) Define a RetrievalConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+let retrievalConfig = RetrievalConfig(
+    location: latAndLong,
+    // Example: Language code for English (US).
+    languageCode: "en-US"
+)
+
+// Wrap the RetrievalConfig inside a ToolConfig.
+let toolConfig = ToolConfig(retrievalConfig: retrievalConfig)
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+let model = ai.generativeModel(
+    modelName: "GEMINI_MODEL_NAME",
+    // Provide Google Maps as a tool that the model can use to generate its response.
+    tools: [.googleMaps()],
+    // Add the configuration for the Grounding with Google Maps tool
+    // (if this optional config was defined above).
+    toolConfig: toolConfig
+)
+
+let response = try await model.generateContent("restaurants near me?")
+print(response.text ?? "No text in response.")
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements,
+// which includes how you meet service usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// (Optional) Define a RetrievalConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+val retrievalConfig = RetrievalConfig(
+    // Example: Coordinates for New York City
+    latLng = LatLng(latitude = 40.7128, longitude = -74.0060),
+    // Example: Language code for English (US)
+    languageCode = "en-US"
+)
+
+// Wrap the RetrievalConfig inside a ToolConfig.
+val toolConfig = ToolConfig(
+    retrievalConfig = retrievalConfig
+)
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = "GEMINI_MODEL_NAME",
+    // Add the configuration for the Grounding with Google Maps tool
+    // (if this optional config was defined above).
+    toolConfig = toolConfig,
+    // Provide Google Maps as a tool that the model can use to generate its response.
+    tools = listOf(Tool.googleMaps())
+)
+
+val response = model.generateContent("restaurants near me?")
+print(response.text)
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements,
+// which includes how you meet service usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// (Optional) Define a ToolConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+ToolConfig toolConfig = new ToolConfig(
+    null,
+    new RetrievalConfig(
+        // Example: Coordinates for New York City.
+        new LatLng(40.7128, -74.0060),
+        // Example: Language code for English (US).
+       "en-US"
+    )
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+                .generativeModel("GEMINI_MODEL_NAME",
+                        null,
+                        null,
+                        // Provide Google Maps as a tool that the model can use to generate its response.
+                        List.of(Tool.googleMaps()),
+                        // Add the configuration for the Grounding with Google Maps tool
+                        // (if this optional config was defined above).
+                        toolConfig);
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs.
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+ListenableFuture response = model.generateContent("restaurants near me?");
+  Futures.addCallback(response, new FutureCallback() {
+      @Override
+      public void onSuccess(GenerateContentResponse result) {
+          String resultText = result.getText();
+          System.out.println(resultText);
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+          t.printStackTrace();
+      }
+  }, executor);
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements,
+// which includes how you meet service usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// (Optional) Define a toolConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+const toolConfig = {
+  retrievalConfig: {
+    // Example: Coordinates for New York City
+    latLng: {
+      latitude: 40.7128,
+      longitude: -74.0060
+    },
+    // Example: Language code for English (US)
+    languageCode: 'en-US'
+  }
+};
+
+// Create a `GenerativeModel` instance with a model that supports your use case
+const model = getGenerativeModel(
+  ai,
+  {
+    model: "GEMINI_MODEL_NAME",
+    // Provide Google Maps as a tool that the model can use to generate its response.
+    tools: [ { googleMaps: {} } ],
+    // Add the configuration for the Grounding with Google Maps tool
+    // (if this optional config was defined above).
+    toolConfig
+  }
+);
+
+const result = await model.generateContent("restaurants near me?");
+
+console.log(result.response.text());
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements,
+// which includes how you meet service usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_ai/firebase_ai.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp.
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// (Optional) Define a ToolConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+final toolConfig = ToolConfig(
+  retrievalConfig: RetrievalConfig(
+    // Example: Coordinates for New York City.
+    latLng: LatLng(latitude: 40.712728, longitude: -74.006015),
+    // Example: Language code for English (US).
+    languageCode: 'en-US',
+  ),
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'GEMINI_MODEL_NAME',
+  // Provide Google Maps as a tool that the model can use to generate its response.
+  tools: [
+    Tool.googleMaps(),
+  ],
+  // Add the configuration for the Grounding with Google Maps tool
+  // (if this optional config was defined above).
+  toolConfig: toolConfig,
+);
+
+final response = await model.generateContent([Content.text("restaurants near me?")]);
+print(response.text);
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements,
+// which includes how you meet service usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Example: Coordinates for New York City
+var latLng = new LatLng(40.7128, -74.0060);
+
+// (Optional) Define a RetrievalConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+var retrievalConfig = new RetrievalConfig(latLng, languageCode: "en");
+
+// Wrap the RetrievalConfig inside a ToolConfig.
+var toolConfig = new ToolConfig(retrievalConfig: retrievalConfig);
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  // Provide Google Maps as a tool that the model can use to generate its response.
+  tools: new[] { new Tool(new GoogleMaps()) },
+  // Add the configuration for the Grounding with Google Maps tool
+  // (if this optional config was defined above).
+  toolConfig: toolConfig
+);
+
+var response = await model.GenerateContentAsync("restaurants near me?");
+UnityEngine.Debug.Log(response.Text ?? "No text in response.");
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements,
+// which includes how you meet service usage requirements
+
+</pre></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p> <h2 id="best-practices-and-tips">Best practices and tips to improve results</h2> <p>This section describes some general best practices for using Grounding with <nobr>Google Maps</nobr>, as well as how to take advantage of <em>place properties</em> to improve results.</p> <h3 id="general-best-practices">General best practices</h3> <ul> <li><p><strong>Only provide the tool when needed</strong>: To optimize performance and cost, provide the model with access to the Grounding with <nobr>Google Maps</nobr> tool only when the use case has a clear geographical context.</p></li> <li><p><strong>Provide user location</strong>: For the most relevant and personalized responses (and when the user's location is known), include the user's location (using latitude and longitude via <code translate="no" dir="ltr">latLng</code>) in the Grounding with <nobr>Google Maps</nobr> tool configuration.</p></li> <li><p><strong>Inform end users</strong>: Clearly inform your end users that <nobr>Google Maps</nobr> data is being used to answer their queries. Providing end users with the sources from <nobr>Google Maps</nobr> is a <a href="#service-usage-requirements">service usage requirement</a> for the Grounding with <nobr>Google Maps</nobr> tool.</p></li> </ul> <h3 id="use-place-properties">Use place properties in prompts</h3> <p>This section lists <em><strong>place properties</strong></em> that are used to describe locations and used by Grounding with <nobr>Google Maps</nobr> to generate responses. These properties are used to determine the types of questions that Grounding with <nobr>Google Maps</nobr> can answer.</p> <h4 id="sample-place-properties">Sample place properties</h4> <p>This list provides an alphabetized sampling of properties about places that can be used by your model to generate responses.</p> <ul> <li>Address</li> <li>Curbside pickup</li> <li>Debit card</li> <li>Distance</li> <li>Free parking lot</li> <li>Live music</li> <li>Menu for children</li> <li>Opening hours</li> <li>Payment options (such as <em>cash</em> or <em>credit card</em>)</li> <li>Place answer</li> <li>Pet friendly</li> <li>Serves beer</li> <li>Serves vegetarian food</li> <li>Wheelchair accessible</li> <li>Wifi</li> </ul> <p><strong>Place answers</strong> are a response from Grounding with <nobr>Google Maps</nobr> based on information derived from user reviews.</p> <h4 id="example-prompts">Example prompts that use place properties</h4> <p>The following examples use <a href="#use-place-properties">place properties</a> in prompts about different types of places. Grounding with <nobr>Google Maps</nobr> uses the properties to understand your intent and then provides relevant answers based on the data associated with places in <nobr>Google Maps</nobr>.</p> <ul> <li>
+<p><strong>Plan a family dinner</strong>: Determine if a restaurant is suitable for a family and if the restaurant offers a convenient service.</p> <ul> <li>Example prompt: <em>Is "The Italian Place" good for children, and do they offer takeout? What is their rating?</em>
+</li> </ul>
+</li> <li>
+<p><strong>Check accessibility for a friend</strong>: Determine if the location meets specific accessibility needs.</p> <ul> <li>Example prompt: <em>I need a restaurant that has a wheelchair accessible entrance.</em>
+</li> </ul>
+</li> <li>
+<p><strong>Find a location for a late-night snack</strong>: Find an open establishment serving a specific meal during a particular time.</p> <ul> <li>Example prompt: <em>Is "Burger Joint" open now? Do they serve dinner? What are their opening hours for Friday?</em>
+</li> </ul>
+</li> <li>
+<p><strong>Meet a client for coffee</strong>: Assess the suitability of a cafe for a business meeting based on amenities, offerings, and payment options.</p> <ul> <li>Example prompt: <em>Does "Cafe Central" have Wifi? Do they serve coffee? What is their price level, and do they accept credit cards?</em>
+</li> </ul>
+</li> </ul> <p>Note that information in the <strong><nobr>Google Maps</nobr> Grounded Results</strong> might differ from actual conditions of the road.</p> <h2 id="how-it-works">How Grounding with <nobr>Google Maps</nobr> works</h2> <p>When you provide the model with the <code translate="no" dir="ltr">GoogleMaps</code> tool, the model handles the entire workflow of searching, processing, and citing information automatically.</p> <p>Here's the <strong>workflow of the <em>model</em></strong>:</p> <ol> <li><p><strong>Receives prompt</strong>: Your app sends a prompt to the Gemini model with the <code translate="no" dir="ltr">GoogleMaps</code> tool enabled.</p></li> <li><p><strong>Analyzes prompt</strong>: The model analyzes the prompt and determines if <nobr>Google Maps</nobr> can improve its response, for example, if the prompt contains geographical context (like "coffee shops near me," "museums in San Francisco").</p></li> <li><p><strong>Invokes the tool</strong>: The model, recognizing the geographical intent, invokes the Grounding with <nobr>Google Maps</nobr> tool.</p></li> <li>
+<p><strong>Sends queries to <nobr>Google Maps</nobr></strong>: The Grounding with <nobr>Google Maps</nobr> service queries <nobr>Google Maps</nobr> for relevant information (for example, places, reviews, photos, addresses, opening hours).</p> <p>You can optionally include latitude and longitude in the tool's config (or even just in the prompt directly) for more relevant and personalized <nobr>Google Maps</nobr> results. The tool is a textual search tool and behaves similarly to searching on <nobr>Google Maps</nobr>, in that local queries ("near me") will use the coordinates, while specific or non-local queries are unlikely to be influenced by the explicit location.</p>
+</li> <li><p><strong>Processes the <nobr>Google Maps</nobr> results</strong>: The model processes the <nobr>Google Maps</nobr> results and formulates a response to the original prompt.</p></li> <li>
+<p><strong>Returns a <em><nobr>Google Maps</nobr> Grounded Result</em></strong>: The model returns a final, user-friendly response that is grounded in the <nobr>Google Maps</nobr> results. This response includes:</p> <ul> <li>The model's text answer.</li> <li>A <code translate="no" dir="ltr">groundingMetadata</code> object with the <nobr>Google Maps</nobr> results and sources.</li> </ul>
+</li> </ol> <p>Note that providing <nobr>Google Maps</nobr> as a tool to the model <em><strong>does not require</strong></em> the model to always use the <nobr>Google Maps</nobr> tool to generate its response. In these cases, the response won't contain a <code translate="no" dir="ltr">groundingMetadata</code> object and thus it's <em>not</em> a <em><nobr>Google Maps</nobr> Grounded Result</em>.</p>  <h2 id="understand-grounded-result">Understand the grounded result</h2> <p>If the model grounds its response in <nobr>Google Maps</nobr> results, then the response includes a <code translate="no" dir="ltr">groundingMetadata</code> object that contains structured data that's essential for verifying claims and building a rich source experience in your application.</p> <aside class="special"><strong>Important:</strong><span> If a response contains a <strong><code translate="no" dir="ltr">groundingMetadata</code></strong> object, then that response is a <em><nobr>Google Maps</nobr> Grounded Result</em> so <strong>you're required to comply with the Grounding with <nobr>Google Maps</nobr> usage requirements, which includes how you display the result</strong>. Learn how to <a href="#service-usage-requirements">meet service usage requirements</a> later on this page.</span></aside> <p>The <code translate="no" dir="ltr">groundingMetadata</code> object in a <em><nobr>Google Maps</nobr> Grounded Result</em> contains the following information:</p> <ul> <li>
+<strong><code translate="no" dir="ltr">groundingChunks</code></strong>: An array of objects containing the <code translate="no" dir="ltr">maps</code> sources (<code translate="no" dir="ltr">uri</code>, <code translate="no" dir="ltr">placeId</code>, and <code translate="no" dir="ltr">title</code>).</li> <li>
+<strong><code translate="no" dir="ltr">groundingSupports</code></strong>: An array of chunks to connect model response <code translate="no" dir="ltr">text</code> to the sources in <code translate="no" dir="ltr">groundingChunks</code>. Each chunk links a text <code translate="no" dir="ltr">segment</code> (defined by <code translate="no" dir="ltr">startIndex</code> and <code translate="no" dir="ltr">endIndex</code>) to one or more <code translate="no" dir="ltr">groundingChunkIndices</code>. This field helps you build inline source links. Learn how to <a href="#service-usage-requirements">meet service usage requirements</a> later on this page.</li> </ul> <p>Here's an example response that includes a <code translate="no" dir="ltr">groundingMetadata</code> object:</p> 
+<pre>{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "CanteenM is an American restaurant with..."
+          }
+        ],
+        "role": "model"
+      },
+      "groundingMetadata": {
+        "groundingChunks": [
+          {
+            "maps": {
+              "uri": "https://maps.google.com/?cid=13100894621228039586",
+              "title": "Heaven on 7th Marketplace",
+              "placeId": "places/ChIJ0-zA1vBZwokRon0fGj-6z7U"
+            }
+          }
+        ],
+        "groundingSupports": [
+          {
+            "segment": {
+              "startIndex": 0,
+              "endIndex": 79,
+              "text": "CanteenM is an American restaurant with a 4.6-star rating and is open 24 hours."
+            },
+            "groundingChunkIndices": [0]
+          }
+        ]
+      }
+    }
+  ]
+}
+</pre> <h2 id="service-usage-requirements">Service usage requirements</h2> <p>This section describes the service usage requirements for Grounding with <nobr>Google Maps</nobr> for your chosen <span class='\"notranslate\"'>Gemini API</span> provider: <a href="https://ai.google.dev/gemini-api/terms#grounding-with-google-maps" class="external"><span class='\"notranslate\"'>Gemini Developer API</span></a> or <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> (see <a href="https://cloud.google.com/terms/service-terms" class="external">Service Terms</a> section within the Service Specific Terms).</p> <h3 id="inform-users-of-sources">Inform users of <nobr>Google Maps</nobr> sources</h3> <p>With each <em><nobr>Google Maps</nobr> Grounded Result</em>, you'll receive sources in <code translate="no" dir="ltr">groundingChunks</code> that support each response. The following metadata is also returned:</p> <ul> <li>source uri</li> <li>title</li> <li>ID</li> </ul> <p>In your app, when presenting results from Grounding with <nobr>Google Maps</nobr>, you must specify the associated <nobr>Google Maps</nobr> sources, and inform your users of the following:</p> <ul> <li><p>The <nobr>Google Maps</nobr> sources must immediately follow the generated content that the sources support. This generated content is also referred to as <em><nobr>Google Maps</nobr> Grounded Result</em>.</p></li> <li><p>The <nobr>Google Maps</nobr> sources must be viewable within one user interaction.</p></li> </ul> <p>Here's how to get values for displaying sources from the <em><nobr>Google Maps</nobr> Grounded Result</em>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// ...
+
+// Get the model's response
+let text = response.text
+
+// Get the grounding metadata
+if let candidate = response.candidates.first,
+   let groundingMetadata = candidate.groundingMetadata {
+
+  // Get sources
+  let groundingChunks = groundingMetadata.groundingChunks
+  for chunk in groundingChunks {
+    if let maps = chunk.maps {
+      let title = maps.title  // for example, "Heaven on 7th Marketplace"
+      let url = maps.url  // for example, "https://maps.google.com/?cid=13100894621228039586"
+      let placeID = maps.placeID  // for example, "places/ChIJ0-zA1vBZwokRon0fGj-6z7U"
+      // TODO(developer): show source in the UI
+    }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// ...
+
+// Get the model's response
+val text = response.text
+
+// Get the grounding metadata
+val groundingMetadata = response.candidates.firstOrNull()?.groundingMetadata
+
+// Get sources
+val groundingChunks = groundingMetadata?.groundingChunks
+groundingChunks?.let { chunks -&gt;
+  for (chunk in chunks) {
+    val title = chunk.maps?.title  // for example, "Heaven on 7th Marketplace"
+    val uri = chunk.maps?.uri  // for example, "https://maps.google.com/?cid=13100894621228039586"
+    val placeId = chunk.maps?.placeId  // for example, "places/ChIJ0-zA1vBZwokRon0fGj-6z7U"
+    // TODO(developer): show source in the UI
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// ...
+
+Futures.addCallback(response, new FutureCallback() {
+  @Override
+  public void onSuccess(GenerateContentResponse result) {
+    // Get the model's response
+    String text = result.getText();
+
+    // Get the grounding metadata
+    GroundingMetadata groundingMetadata =
+        result.getCandidates()[0].getGroundingMetadata();
+
+    if (groundingMetadata != null) {
+      // Get sources
+      List chunks = groundingMetadata.getGroundingChunks();
+      if (chunks != null) {
+        for(GroundingChunk chunk : chunks) {
+          GoogleMapsGroundingChunk maps = chunk.getMaps();
+          if (maps != null) {
+            String title = maps.getTitle();  // for example, "Heaven on 7th Marketplace"
+            String uri = maps.getUri();  // for example, "https://maps.google.com/?cid=13100894621228039586"
+            String placeId = maps.getPlaceId();  // for example, "places/ChIJ0-zA1vBZwokRon0fGj-6z7U"
+            // TODO(developer): show sources in the UI
+          }
+        }
+      }
+    }
+  }
+
+  @Override
+  public void onFailure(Throwable t) {
+    t.printStackTrace();
+  }
+}, executor);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// ...
+
+// Get the model's text response
+const text = result.response.text();
+
+// Get the grounding metadata
+const groundingMetadata = result.response.candidates?.[0]?.groundingMetadata;
+
+// Get sources
+const groundingChunks = groundingMetadata?.groundingChunks;
+if (groundingChunks) {
+  for (const chunk of groundingChunks) {
+    const title = chunk.maps?.title;  // for example, "Heaven on 7th Marketplace"
+    const uri = chunk.maps?.uri;  // for example, "https://maps.google.com/?cid=13100894621228039586"
+    const placeId = chunk.maps?.placeId;  // for example, "places/ChIJ0-zA1vBZwokRon0fGj-6z7U"
+    // TODO(developer): show sources in the UI
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">// ...
+
+// Get the model's response
+final text = response.text;
+
+// Get the grounding metadata
+final groundingMetadata = response.candidates.first.groundingMetadata;
+
+// Get sources
+final groundingChunks = groundingMetadata?.groundingChunks;
+if (groundingChunks != null) {
+  for (var chunk in groundingChunks) {
+    final title = chunk.maps?.title;  // for example, "Heaven on 7th Marketplace"
+    final uri = chunk.maps?.uri;  // for example, "https://maps.google.com/?cid=13100894621228039586"
+    final placeId = chunk.maps?.placeId;  // for example, "places/ChIJ0-zA1vBZwokRon0fGj-6z7U"
+    // TODO(developer): show sources in the UI
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">// ...
+
+// Get the model's response.
+var text = response.Text;
+
+// Get the grounding metadata.
+var groundingMetadata = response.Candidates.First().GroundingMetadata;
+
+// Get sources.
+if (groundingMetadata != null) {
+  foreach(GroundingChunk chunk in groundingMetadata?.GroundingChunks) {
+    if (chunk.Maps != null) {
+      var title = chunk.Maps?.Title;  // for example, "Heaven on 7th Marketplace"
+      var uri = chunk.Maps?.Uri;  // for example, "https://maps.google.com/?cid=13100894621228039586"
+      var placeId = chunk.Maps?.PlaceId;  // for example, "places/ChIJ0-zA1vBZwokRon0fGj-6z7U"
+      // TODO(developer): show sources in the UI
+    }
+  }
+}
+</pre></section> </div> <h3 id="display-sources-with-links">Display <nobr>Google Maps</nobr> sources with <nobr>Google Maps</nobr> links</h3> <p>For each source in <code translate="no" dir="ltr">groundingChunks</code>, a link preview must be generated following these requirements:</p>  <ul> <li>Attribute each source to <nobr>Google Maps</nobr> following the <a href="#text-attribution-guidelines"><nobr>Google Maps</nobr> text attribution guidelines</a>.</li> <li>Display the source title provided in the response.</li> <li>Link to the source using the <code translate="no" dir="ltr">uri</code> from the response.</li> </ul> <p><img src="https://firebase.google.com/static/docs/ai-logic/images/grounding-google-maps_Sources-Expanded.jpg" alt="Prompt with response showing sources" width="40%" style="display:block;margin:auto"> </p> <p>You can collapse the view of the sources.</p> <p><img src="https://firebase.google.com/static/docs/ai-logic/images/grounding-google-maps_Sources-Collapsed.jpg" alt="Prompt with response and sources collapsed" width="40%" style="display:block;margin:auto"> </p> <p>Optionally, you can enhance the link preview with additional content, such as:</p> <ul> <li>A <a href="https://www.google.com/images/branding/product/ico/web_maps_icon_32dp.ico" class="external"><nobr>Google Maps</nobr> favicon</a> inserted before the <nobr>Google Maps</nobr> text attribution.</li> <li>A photo from the source URL (<code translate="no" dir="ltr">og:image</code>).</li> </ul> <p>For more information about some of the <nobr>Google Maps</nobr> data providers and their license terms, see the <a href="https://www.google.com/help/legalnotices_maps/" class="external">Google Maps and Google Earth legal notices</a>.</p> <h3 id="text-attribution-guidelines">
+<nobr>Google Maps</nobr> text attribution guidelines</h3> <p>When you attribute sources to <nobr>Google Maps</nobr> within text, follow these guidelines:</p> <ul> <li>
+<p>Don't modify the text <code translate="no" dir="ltr">Google Maps</code> in any way:</p> <ul> <li>Don't change the capitalization of the text <code translate="no" dir="ltr">Google Maps</code>.</li> <li>Don't wrap the text <code translate="no" dir="ltr">Google Maps</code> onto multiple lines.</li> <li>Don't localize the text <code translate="no" dir="ltr">Google Maps</code> into another language.</li> <li>Prevent browsers from translating the text <code translate="no" dir="ltr">Google Maps</code> by using the HTML attribute <code translate="no" dir="ltr">translate="no"</code>.</li> </ul>
+</li> <li>
+<p>Style the text <code translate="no" dir="ltr">Google Maps</code> as described in the following table:</p> <table> <thead> <tr> <th>Property</th> <th>Style</th> </tr> </thead> <tbody> <tr> <td>Font family</td> <td>Roboto. Loading the font is optional.</td> </tr> <tr> <td>Fallback font family</td> <td> Any sans serif body font already used in your product or "Sans-Serif" to invoke the default system font </td> </tr> <tr> <td>Font style</td> <td>Normal</td> </tr> <tr> <td>Font weight</td> <td>400</td> </tr> <tr> <td>Font color</td> <td> White, black (#1F1F1F), or gray (#5E5E5E). Maintain accessible (4.5:1) contrast against the background. </td> </tr> <tr> <td>Font size</td> <td> Minimum font size: 12sp<br> Maximum font size: 16sp<br> To learn about sp, see Font size units on the <a href="https://m3.material.io/styles/typography/type-scale-tokens#3f4488e7-3b74-45b0-a143-9d6afa4d62dc" class="external">Material Design website</a>. </td> </tr> <tr> <td>Spacing</td> <td>Normal</td> </tr> </tbody> </table>
+</li> </ul> <h4 id="text-attribution-guidelines-example-css">Example CSS</h4> <p>The following CSS renders the text <code translate="no" dir="ltr">Google Maps</code> with the appropriate typographic style and color on a white or light background.</p> 
+<pre>@import url('https://fonts.googleapis.com/css2?family=Roboto&amp;display=swap');
+
+.GMP-attribution {
+  font-family: Roboto, Sans-Serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 1rem;
+  letter-spacing: normal;
+  white-space: nowrap;
+  color: #5e5e5e;
+}
+</pre> <h3 id="caching-some-data-in-grounded-result">Caching of place ID</h3>  <p>The <em><nobr>Google Maps</nobr> Grounded Result</em> might include a place ID. You can cache, store, and export the following response data:</p> <ul> <li>
+<code translate="no" dir="ltr">placeId</code> </li> </ul> <p>The restrictions against caching in the Grounding with Google Maps Terms don't apply to this data.</p> <h3 id="prohibited-activity-and-territories">Prohibited activity and territories</h3> <p>Grounding with <nobr>Google Maps</nobr> has additional restrictions for certain content and activities to maintain a safe and reliable platform. In addition to the usage restrictions in the Terms for your chosen <span class='\"notranslate\"'>Gemini API</span> provider: <a href="https://ai.google.dev/gemini-api/terms#grounding-with-google-maps" class="external"><span class='\"notranslate\"'>Gemini Developer API</span></a> or <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> (see <a href="https://cloud.google.com/terms/service-terms" class="external">Service Terms</a> section within the Service Specific Terms).</p> <ul> <li><p>You won't use Grounding with <nobr>Google Maps</nobr> for high risk activities including emergency response services.</p></li> <li><p>You won't distribute or market your application that offers Grounding with <nobr>Google Maps</nobr> in a Prohibited Territory. For more information, see <a href="https://cloud.google.com/maps-platform/terms/maps-prohibited-territories" class="external">Google Maps Platform Prohibited Territories</a>. The list of Prohibited Territories may be updated from time to time.</p></li> </ul> <h3 id="ai-monitoring">Grounded results and AI monitoring in the Firebase console</h3> <p>If you've enabled <a href="monitoring#ai-monitoring-in-console">AI monitoring in the Firebase console</a>, responses are stored in Cloud Logging. By default, this data has a 30-day retention period.</p> <p>It's your responsibility to ensure that this retention period, or any custom period you set, fully aligns with your specific use case and any additional compliance requirements for your chosen <span class='\"notranslate\"'>Gemini API</span> provider: <a href="https://ai.google.dev/gemini-api/terms#grounding-with-google-maps" class="external"><span class='\"notranslate\"'>Gemini Developer API</span></a> or <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> (see <a href="https://cloud.google.com/terms/service-terms" class="external">Service Terms</a> section within the Service Specific Terms). You may need to <a href="https://cloud.google.com/logging/docs/buckets" class="external">adjust the retention period in Cloud Logging</a> to meet these requirements.</p> <h2 id="pricing-and-limits">Pricing and rate limits</h2> <p>Grounding with <nobr>Google Maps</nobr> pricing is based on queries. A request is only counted towards the <nobr>Google Maps</nobr> quota when a prompt successfully returns at least one <em><nobr>Google Maps</nobr> Grounded Result</em> (meaning the response contains at least one <nobr>Google Maps</nobr> source). If multiple queries are sent to <nobr>Google Maps</nobr> from a single request, it counts as one request towards the rate limit.</p> <p>Make sure to review details about pricing, model availability, and limits for Grounding with <nobr>Google Maps</nobr> in your chosen <span class='\"notranslate\"'>Gemini API</span> provider documentation: <a href="https://ai.google.dev/gemini-api/docs/pricing" class="external"><span class='\"notranslate\"'>Gemini Developer API</span></a> | <a href="https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing" class="external"><span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span></a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/grounding-google-maps" class="_attribution-link">https://firebase.google.com/docs/ai-logic/grounding-google-maps</a>
+  </p>
+</div>

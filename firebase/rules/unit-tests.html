@@ -1,0 +1,169 @@
+<h1>Build unit tests</h1>  <p>The Firebase Local Emulator Suite make it easier to fully validate your app's <a href="../emulator-suite/connect_and_prototype">features and behavior</a>. It's also a great tool for verifying your Firebase Security Rules configurations. Use the Firebase Emulators to run and automate unit tests in a local environment. The methods outlined in this document should help you as you build and automate unit tests for your app that validate your Security Rules.</p> <p>If you haven't already, <a href="emulator-setup">set up the Firebase Emulators</a>.</p> <h2 id="before_you_run_the_emulator">Before you run the emulator</h2> <p>Before you start using the emulator, keep in mind the following:</p> <ul> <li>The emulator will initially load the rules specified in the <code translate="no" dir="ltr">firestore.rules</code> or <code translate="no" dir="ltr">storage.rules</code> field of your <code translate="no" dir="ltr">firebase.json</code> file. If the file does not exist and you don't use the <code translate="no" dir="ltr">loadFirestoreRules</code> or <code translate="no" dir="ltr">loadStorageRules</code> method as described below, the emulator treats all projects as having open rules.</li> <li>While <a href="../emulator-suite#which_firebase_features_and_platforms_are_supported">most Firebase SDKs</a> work with the emulators directly, only the <code translate="no" dir="ltr">@firebase/rules-unit-testing</code> library supports mocking <code translate="no" dir="ltr">auth</code> in Security Rules, making unit tests much easier. In addition, the library supports a few emulator-specific features like clearing all data, as listed below.</li> <li>The emulators will also accept production Firebase Auth tokens provided through Client SDKs and evaluate rules accordingly, which allows connecting your application directly to the emulators in integration and manual tests.</li> </ul> <h3 id="differences_between_the_database_emulators_and_production">Differences between the database emulators and production</h3> <ul> <li>You do not have to explicitly create a database instance. The emulator will automatically create any database instance that is accessed.</li> <li>Each new database is started with closed rules, so non-admin users will not be able to read or write.</li> <li>Each emulated database applies the <a href="https://firebase.google.com/pricing/">Spark plan</a> limits and quotas (most notably, this limits each instance to 100 concurrent connections).</li> <li>Any database will accept the string <code translate="no" dir="ltr">"owner"</code> as an admin auth token.</li> <li>The emulators do not currently have working interactions with other Firebase products. Notably, the normal Firebase Authentication flow does not work. Instead, you can use the <code translate="no" dir="ltr">initializeTestApp()</code> method in the <code translate="no" dir="ltr">rules-unit-testing</code> library, which takes an <code translate="no" dir="ltr">auth</code> field. The Firebase object created using this method behaves as if it has successfully authenticated as whatever entity you provide. If you pass in <code translate="no" dir="ltr">null</code>, it will behave as an unauthenticated user (<code translate="no" dir="ltr">auth != null</code> rules will fail, for example).</li> </ul> <h3 id="interacting_with_the_emulator">Interacting with the Realtime Database emulator</h3> <p>A production Firebase Realtime Database instance is accessible at a subdomain of <code translate="no" dir="ltr">firebaseio.com</code>, and you can access the REST api like this:</p> <p><code translate="no" dir="ltr">https://&lt;database_name&gt;.firebaseio.com/path/to/my/data.json</code></p> <p>The emulator runs locally, and is available at <code translate="no" dir="ltr">localhost:9000</code>. To interact with a specific database instance, you will have to use the <code translate="no" dir="ltr">ns</code> query parameter to specify the database name.</p> <p><code translate="no" dir="ltr">http://localhost:9000/path/to/my/data.json?ns=&lt;database_name&gt;</code></p> <h2 id="run_local_unit_tests_with_the_version_9_javascript_sdk">Run local unit tests with the version 9 JavaScript SDK</h2> <p>Firebase distributes a Security Rules unit testing library with both its version 9 JavaScript SDK and its version 8 SDK. The library APIs are significantly different. We recommend the v9 testing library, which is more streamlined and requires less setup to connect to emulators and thus safely avoid accidental use of production resources. For backwards compatibility, we continue to make the <a href="unit-tests#rut-v1-testing">v8 testing library available</a>.</p> <ul> <li><a href="#rut-v2-common-methods">Common test methods and utility functions in the v9 SDK</a></li> <li><a href="#rut-v2-specific-methods">Emulator-specific test methods in the v9 SDK</a></li> </ul> <p>Use the <code translate="no" dir="ltr">@firebase/rules-unit-testing</code> module to interact with the emulator that runs locally. If you get timeouts or <code translate="no" dir="ltr">ECONNREFUSED</code> errors, double-check that the emulator is actually running.</p> <p>We strongly recommend using a recent version of Node.js so you can use <code translate="no" dir="ltr">async/await</code> notation. Almost all of the behavior you might want to test involves asynchronous functions, and the testing module is designed to work with Promise-based code.</p> <p>The v9 Rules Unit Testing library is always aware of the emulators and never touches your production resources.</p> <p>You import the library using v9 modular import statements. For example:</p> 
+<pre>import {
+  assertFails,
+  assertSucceeds,
+  initializeTestEnvironment
+} from "@firebase/rules-unit-testing"
+
+// Use `const { … } = require("@firebase/rules-unit-testing")` if imports are not supported
+// Or we suggest `const testing = require("@firebase/rules-unit-testing")` if necessary.
+</pre> <p>Once imported, implementing unit tests involves:</p> <ul> <li>Creating and configuring a <code translate="no" dir="ltr">RulesTestEnvironment</code> with a call to <code translate="no" dir="ltr">initializeTestEnvironment</code>.</li> <li>Setting up test data without triggering Security Rules, using a convenience method that allows you to temporarily bypass them, <code translate="no" dir="ltr">RulesTestEnvironment.withSecurityRulesDisabled</code>.</li> <li>Setting up test suite and per-test before/after hooks with calls to clean up test data and environment, like <code translate="no" dir="ltr">RulesTestEnvironment.cleanup()</code> or <code translate="no" dir="ltr">RulesTestEnvironment.clearFirestore()</code>.</li> <li>Implementing test cases that mimic authentication states using <code translate="no" dir="ltr">RulesTestEnvironment.authenticatedContext</code> and <code translate="no" dir="ltr">RulesTestEnvironment.unauthenticatedContext</code>.</li> </ul> <aside class="note"><strong>Note:</strong><span> A summary of the API for the Rules unit testing library is provided below. You can also review the <a href="https://firebase.google.com/docs/reference/emulator-suite/rules-unit-testing/rules-unit-testing">full API reference documentation</a>.</span></aside> <h3 id="rut-v2-common-methods">Common methods and utility functions</h3> <p>Also see <a href="#rut-v2-specific-methods">emulator-specific test methods using the modular API</a>.</p> <p><strong><code translate="no" dir="ltr">initializeTestEnvironment() =&gt; RulesTestEnvironment</code></strong></p> <p>This function initializes a test environment for rules unit testing. Call this function first for test setup. Successful execution requires emulators to be running.</p> <p>The function accepts an optional object defining a <code translate="no" dir="ltr">TestEnvironmentConfig</code>, which can consist of a project ID and emulator configuration settings.</p> 
+<pre>let testEnv = await initializeTestEnvironment({
+  projectId: "demo-project-1234",
+  firestore: {
+    rules: fs.readFileSync("firestore.rules", "utf8"),
+  },
+});</pre> <p><aside class="note">Note: The emulators persist data between test invocations on a single emulator run. This might impact your results. To clear data between each test run, call the applicable clear emulator data method, e.g. <code translate="no" dir="ltr">clearFirestoreData</code>, between tests.</aside></p> <p><strong><code translate="no" dir="ltr">RulesTestEnvironment.authenticatedContext({ user_id: string, tokenOptions?: TokenOptions  }) =&gt; RulesTestContext</code></strong></p> <p>This method creates a <code translate="no" dir="ltr">RulesTestContext</code>, which behaves like an authenticated Authentication user. Requests created via the returned context will have a mock Authentication token attached. Optionally, pass an object defining custom claims or overrides for Authentication token payloads.</p> <p>Use the returned test context object in your tests to access any emulator instances configured, including those configured with <code translate="no" dir="ltr">initializeTestEnvironment</code>.</p> 
+<pre>// Assuming a Firestore app and the Firestore emulator for this example
+import { setDoc } from "firebase/firestore";
+
+const alice = testEnv.authenticatedContext("alice", { … });
+// Use the Firestore instance associated with this context
+await assertSucceeds(setDoc(alice.firestore().doc('/users/alice'), { ... });</pre> <p><strong><code translate="no" dir="ltr">RulesTestEnvironment.unauthenticatedContext() =&gt; RulesTestContext</code></strong></p> <p>This method creates a <code translate="no" dir="ltr">RulesTestContext</code>, which behaves like a client that is not logged in via Authentication. Requests created via the returned context will not have Firebase Auth tokens attached.</p> <p>Use the returned test context object in your tests to access any emulator instances configured, including those configured with <code translate="no" dir="ltr">initializeTestEnvironment</code>.</p> 
+<pre>// Assuming a Cloud Storage app and the Storage emulator for this example
+import { getStorage, ref, deleteObject } from "firebase/storage";
+
+const alice = testEnv.unauthenticatedContext();
+
+// Use the Cloud Storage instance associated with this context
+const desertRef = ref(alice.storage(), 'images/desert.jpg');
+await assertSucceeds(deleteObject(desertRef));</pre> <p><strong><code translate="no" dir="ltr">RulesTestEnvironment.withSecurityRulesDisabled()</code></strong></p> <p>Run a test setup function with a context that behaves as if Security Rules were disabled.</p> <p>This method takes a callback function, which takes the Security-Rules-bypassing context and returns a promise. The context will be destroyed once the promise resolves / rejects.</p> <p><strong><code translate="no" dir="ltr">RulesTestEnvironment.cleanup()</code></strong></p> <p>This method destroys all <code translate="no" dir="ltr">RulesTestContexts</code> created in the test environment and cleans up the underlying resources, allowing a clean exit.</p> <p>This method does not change the state of emulators in any way. To reset data between tests, use the application emulator-specific clear data method.</p> <p><strong><code translate="no" dir="ltr">assertSucceeds(pr: Promise&lt;any&gt;)) =&gt; Promise&lt;any&gt;</code></strong></p> <p>This is a test case utility function.</p> <p>The function asserts that the supplied Promise wrapping an emulator operation will be resolved with no Security Rules violations.</p> 
+<pre>await assertSucceeds(setDoc(alice.firestore(), '/users/alice'), { ... });</pre> <p><strong><code translate="no" dir="ltr">assertFails(pr: Promise&lt;any&gt;)) =&gt; Promise&lt;any&gt;</code></strong></p> <p>This is a test case utility function.</p> <p>The function asserts that the supplied Promise wrapping an emulator operation will be rejected with a Security Rules violation.</p> 
+<pre>await assertFails(setDoc(alice.firestore(), '/users/bob'), { ... });</pre> <h3 id="rut-v2-specific-methods">Emulator-specific methods</h3> <p>Also see <a href="#rut-v2-common-methods">common test methods and utility functions using the modular API</a>.</p> 
+<div class="ds-selector-tabs"> <p><section><h3 id="firestore">Cloud Firestore</h3></section></p> <h3 id="cloud-firestore">Cloud Firestore</h3> <p><strong><code translate="no" dir="ltr">RulesTestEnvironment.clearFirestore() =&gt; Promise&lt;void&gt;</code></strong></p> <p>This method clears data in the Firestore database that belongs to the <code translate="no" dir="ltr">projectId</code> configured for the Firestore emulator.</p> <p><strong><code translate="no" dir="ltr">RulesTestContext.firestore(settings?: Firestore.FirestoreSettings) =&gt; Firestore;</code></strong></p> <p>This method gets a Firestore instance for this test context. The returned Firebase JS Client SDK instance can be used with the client SDK APIs (v9 modular or v9 compat).</p> <p><section><h3 id="database">Realtime Database</h3></section></p> <h3 id="realtime-database">Realtime Database</h3> <p><strong><code translate="no" dir="ltr">RulesTestEnvironment.clearDatabase() =&gt; Promise&lt;void&gt;</code></strong></p> <p>This method clears data in the Realtime Database that belongs to the <code translate="no" dir="ltr">projectId</code> configured for the Realtime Database emulator.</p> <p><strong><code translate="no" dir="ltr">RulesTestContext.database(databaseURL?: Firestore.FirestoreSettings) =&gt; Firestore;</code></strong></p> <p>Get a Realtime Database instance for this test context. The returned Firebase JS Client SDK instance can be used with the client SDK APIs (modular or namespaced, version 9 or greater). The method accepts a URL of the Realtime Database instance. If specified, returns an instance for an emulated version of the namespace with parameters extracted from URL.</p> <p><section><h3 id="storage">Cloud Storage</h3></section></p> <h3 id="cloud-storage">Cloud Storage</h3> <p><strong><code translate="no" dir="ltr">RulesTestEnvironment.clearStorage() =&gt; Promise&lt;void&gt;</code></strong></p> <p>This method clears objects and metadata in storage buckets belonging to the <code translate="no" dir="ltr">projectId</code> configured for the Cloud Storage emulator.</p> <p><strong><code translate="no" dir="ltr">RulesTestContext.storage(bucketUrl?: string) =&gt; Firebase Storage;</code></strong></p> <p>This method returns a Storage instance configured to connect to the emulator. The method accepts a <code translate="no" dir="ltr">gs://</code> url to the Firebase Storage Bucket for testing. If specified, returns a Storage instance for an emulated version of the bucket name.</p> 
+</div> <h2 id="rut-v1-testing">Run local unit tests with the v8 JavaScript SDK</h2> <p>Select a product to see the methods used by the Firebase Test SDK to interface with the emulator.</p> 
+<div class="ds-selector-tabs"> <p><section><h3 id="firestore">Cloud Firestore</h3></section></p> <p><strong><code translate="no" dir="ltr">initializeTestApp({ projectId: string, auth: Object }) =&gt; FirebaseApp</code></strong></p> <p>This method returns an initialized Firebase app corresponding to the project ID and auth variable specified in the options. Use this to create an app authenticated as a specific user to use in tests.</p> 
+<pre>firebase.initializeTestApp({
+  projectId: "my-test-project",
+  auth: { uid: "alice", email: "alice@example.com" }
+});</pre> <p><aside class="note">Note: The Cloud Firestore emulator persists data between test invocations on a single emulator run. This might impact your results. To clear data between each test run, call the <code translate="no" dir="ltr">clearFirestoreData</code> method between tests.</aside></p> <p><strong><code translate="no" dir="ltr">initializeAdminApp({ projectId: string }) =&gt; FirebaseApp</code></strong></p> <p>This method returns an initialized admin Firebase app. This app bypasses security rules when performing reads and writes. Use this to create an app authenticated as an admin to set state for tests.</p> 
+<pre>firebase.initializeAdminApp({ projectId: "my-test-project" });
+    </pre> <p><strong><code translate="no" dir="ltr">apps() =&gt; [FirebaseApp]</code></strong> This method returns all the currently initialized test and admin apps. Use this to clean up apps between or after tests.</p> 
+<pre>Promise.all(firebase.apps().map(app =&gt; app.delete()))</pre> <p><aside class="note">Note: If you have any initialized apps with active listeners, JavaScript doesn't exit. Make sure to remove active listeners.</aside></p> <p><strong><code translate="no" dir="ltr">loadFirestoreRules({ projectId: string, rules: Object }) =&gt; Promise</code></strong></p> <p>This method sends rules to a locally running database. It takes an object that specifies the rules as a string. Use this method to set your database's rules.</p> 
+
+<pre>firebase.loadFirestoreRules({
+  projectId: "my-test-project",
+  rules: fs.readFileSync("/path/to/firestore.rules", "utf8")
+});
+    </pre> <p><strong><code translate="no" dir="ltr">assertFails(pr: Promise) =&gt; Promise</code></strong></p> <p>This method returns a promise that is rejected if the input succeeds or that succeeds if the input is rejected. Use this to assert if a database read or write fails.</p> 
+
+<pre>firebase.assertFails(app.firestore().collection("private").doc("super-secret-document").get());
+    </pre> <p><strong><code translate="no" dir="ltr">assertSucceeds(pr: Promise) =&gt; Promise</code></strong></p> <p>This method returns a promise that succeeds if the input succeeds and is rejected if the input is rejected. Use this to assert if a database read or write succeeds.</p> 
+
+<pre>firebase.assertSucceeds(app.firestore().collection("public").doc("test-document").get());
+    </pre> <p><strong><code translate="no" dir="ltr">clearFirestoreData({ projectId: string }) =&gt; Promise</code></strong></p> <p>This method clears all data associated with a particular project in the locally running Firestore instance. Use this method to clean-up after tests.</p> 
+
+<pre>
+firebase.clearFirestoreData({
+  projectId: "my-test-project"
+});
+   </pre> <p><section><h3 id="database">Realtime Database</h3></section></p> <h3 id="realtime-database_1">Realtime Database</h3> <p><strong><code translate="no" dir="ltr">initializeTestApp({ databaseName: string, auth: Object }) =&gt; FirebaseApp</code></strong></p> <p>Use this to create an app authenticated as a specific user to use in tests.</p> <p>Returns an initialized firebase app corresponding to the database name and auth variable override specified in options.</p> 
+<pre>firebase.initializeTestApp({
+  databaseName: "my-database",
+  auth: { uid: "alice" }
+});
+</pre> <p><strong><code translate="no" dir="ltr">initializeAdminApp({ databaseName: string }) =&gt; FirebaseApp</code></strong></p> <p>Use this to create an app authenticated as an admin to set up state for tests.</p> <p>Returns an initialized admin firebase app corresponding to the database name specified in options. This app bypasses security rules when reading and writing to the database.</p> 
+<pre>firebase.initializeAdminApp({ databaseName: "my-database" });
+</pre> <p><strong><code translate="no" dir="ltr">loadDatabaseRules({ databaseName: string, rules: Object }) =&gt; Promise</code></strong></p> <p>Use this to set your database's rules.</p> <p>Sends rules to a locally running database. Takes an options object that specifies your "databaseName" and your "rules" as strings.</p> 
+<pre>firebase
+      .loadDatabaseRules({
+        databaseName: "my-database",
+        rules: "{'rules': {'.read': false, '.write': false}}"
+      });
+</pre> <p><strong><code translate="no" dir="ltr">apps() =&gt; [FirebaseApp]</code></strong></p> <p>Returns all the currently initialized test and admin apps.</p> <p>Use this to clean up apps between or after tests (note that initialized apps with active listeners prevent JavaScript from exiting):</p> 
+<pre> Promise.all(firebase.apps().map(app =&gt; app.delete()))
+</pre> <p><strong><code translate="no" dir="ltr">assertFails(pr: Promise) =&gt; Promise</code></strong></p> <p>Returns a promise that is rejected if the input succeeds and succeeds if the input is rejected.</p> <p>Use this to assert that a database read or write fails:</p> 
+<pre>firebase.assertFails(app.database().ref("secret").once("value"));
+</pre> <p><strong><code translate="no" dir="ltr">assertSucceeds(pr: Promise) =&gt; Promise</code></strong></p> <p>Returns a promise that succeeds if the input succeeds and is rejected if the input is rejected.</p> <p>Use this to assert that a database read or write succeeds:</p> 
+<pre>firebase.assertSucceeds(app.database().ref("public").once("value"));
+</pre> <p><section><h3 id="storage">Cloud Storage</h3></section></p> <h3 id="cloud-storage_1">Cloud Storage</h3> <p><strong><code translate="no" dir="ltr">initializeTestApp({ storageBucket: string, auth: Object }) =&gt; FirebaseApp</code></strong></p> <p>Use this to create an app authenticated as a specific user to use in tests.</p> <p>Returns an initialized firebase app corresponding to the storage bucket name and auth variable override specified in options.</p> 
+<pre>firebase.initializeTestApp({
+  storageBucket: "my-bucket",
+  auth: { uid: "alice" }
+});
+</pre> <p><strong><code translate="no" dir="ltr">initializeAdminApp({ storageBucket: string }) =&gt; FirebaseApp</code></strong></p> <p>Use this to create an app authenticated as an admin to set up state for tests.</p> <p>Returns an initialized admin firebase app corresponding to the storage bucket name specified in options. This app bypasses security rules when reading and writing to the bucket.</p> 
+<pre>firebase.initializeAdminApp({ storageBucket: "my-bucket" });
+</pre> <p><strong><code translate="no" dir="ltr">loadStorageRules({ storageBucket: string, rules: Object }) =&gt; Promise</code></strong></p> <p>Use this to set your storage bucket's rules.</p> <p>Sends rules to a locally managed storage buckets. Takes an options object that specifies your "storageBucket" and your "rules" as strings.</p> 
+<pre>firebase
+      .loadStorageRules({
+        storageBucket: "my-bucket",
+        rules: fs.readFileSync("/path/to/storage.rules", "utf8")
+      });
+</pre> <p><strong><code translate="no" dir="ltr">apps() =&gt; [FirebaseApp]</code></strong></p> <p>Returns all the currently initialized test and admin apps.</p> <p>Use this to clean up apps between or after tests (note that initialized apps with active listeners prevent JavaScript from exiting):</p> 
+<pre> Promise.all(firebase.apps().map(app =&gt; app.delete()))
+</pre> <p><strong><code translate="no" dir="ltr">assertFails(pr: Promise) =&gt; Promise</code></strong></p> <p>Returns a promise that is rejected if the input succeeds and succeeds if the input is rejected.</p> <p>Use this to assert that a storage bucket read or write fails:</p> 
+<pre>firebase.assertFails(app.storage().ref("letters/private.doc").getMetadata());
+</pre> <p><strong><code translate="no" dir="ltr">assertSucceeds(pr: Promise) =&gt; Promise</code></strong></p> <p>Returns a promise that succeeds if the input succeeds and is rejected if the input is rejected.</p> <p>Use this to assert that a storage bucket read or write succeeds:</p> 
+<pre>firebase.assertFails(app.storage().ref("images/cat.png").getMetadata());
+</pre> 
+</div> <h3 id="rut_library_api_for_js_sdk_v8">RUT library API for JS SDK v8</h3> <p>Select a product to see the methods used by the Firebase Test SDK to interface with the emulator.</p> 
+<div class="ds-selector-tabs"> <p><section><h3 id="firestore">Cloud Firestore</h3></section></p> <h3 id="cloud-firestore_1">Cloud Firestore</h3> <p><strong><code translate="no" dir="ltr">initializeTestApp({ projectId: string, auth: Object }) =&gt; FirebaseApp</code></strong></p> <p>This method returns an initialized Firebase app corresponding to the project ID and auth variable specified in the options. Use this to create an app authenticated as a specific user to use in tests.</p> 
+<pre>firebase.initializeTestApp({
+  projectId: "my-test-project",
+  auth: { uid: "alice", email: "alice@example.com" }
+});</pre> <p><aside class="note">Note: The Cloud Firestore emulator persists data between test invocations on a single emulator run. This might impact your results. To clear data between each test run, call the <code translate="no" dir="ltr">clearFirestoreData</code> method between tests.</aside></p> <p><strong><code translate="no" dir="ltr">initializeAdminApp({ projectId: string }) =&gt; FirebaseApp</code></strong></p> <p>This method returns an initialized admin Firebase app. This app bypasses security rules when performing reads and writes. Use this to create an app authenticated as an admin to set state for tests.</p> 
+<pre>firebase.initializeAdminApp({ projectId: "my-test-project" });
+    </pre> <p><strong><code translate="no" dir="ltr">apps() =&gt; [FirebaseApp]</code></strong> This method returns all the currently initialized test and admin apps. Use this to clean up apps between or after tests.</p> 
+<pre>Promise.all(firebase.apps().map(app =&gt; app.delete()))</pre> <p><aside class="note">Note: If you have any initialized apps with active listeners, JavaScript doesn't exit. Make sure to remove active listeners.</aside></p> <p><strong><code translate="no" dir="ltr">loadFirestoreRules({ projectId: string, rules: Object }) =&gt; Promise</code></strong></p> <p>This method sends rules to a locally running database. It takes an object that specifies the rules as a string. Use this method to set your database's rules.</p> 
+
+<pre>firebase.loadFirestoreRules({
+  projectId: "my-test-project",
+  rules: fs.readFileSync("/path/to/firestore.rules", "utf8")
+});
+    </pre> <p><strong><code translate="no" dir="ltr">assertFails(pr: Promise) =&gt; Promise</code></strong></p> <p>This method returns a promise that is rejected if the input succeeds or that succeeds if the input is rejected. Use this to assert if a database read or write fails.</p> 
+
+<pre>firebase.assertFails(app.firestore().collection("private").doc("super-secret-document").get());
+    </pre> <p><strong><code translate="no" dir="ltr">assertSucceeds(pr: Promise) =&gt; Promise</code></strong></p> <p>This method returns a promise that succeeds if the input succeeds and is rejected if the input is rejected. Use this to assert if a database read or write succeeds.</p> 
+
+<pre>firebase.assertSucceeds(app.firestore().collection("public").doc("test-document").get());
+    </pre> <p><strong><code translate="no" dir="ltr">clearFirestoreData({ projectId: string }) =&gt; Promise</code></strong></p> <p>This method clears all data associated with a particular project in the locally running Firestore instance. Use this method to clean-up after tests.</p> 
+
+<pre>
+firebase.clearFirestoreData({
+  projectId: "my-test-project"
+});
+   </pre> <p><section><h3 id="database">Realtime Database</h3></section></p> <h3 id="realtime-database_2">Realtime Database</h3> <p><strong><code translate="no" dir="ltr">initializeTestApp({ databaseName: string, auth: Object }) =&gt; FirebaseApp</code></strong></p> <p>Use this to create an app authenticated as a specific user to use in tests.</p> <p>Returns an initialized firebase app corresponding to the database name and auth variable override specified in options.</p> 
+<pre>firebase.initializeTestApp({
+  databaseName: "my-database",
+  auth: { uid: "alice" }
+});
+</pre> <p><strong><code translate="no" dir="ltr">initializeAdminApp({ databaseName: string }) =&gt; FirebaseApp</code></strong></p> <p>Use this to create an app authenticated as an admin to set up state for tests.</p> <p>Returns an initialized admin firebase app corresponding to the database name specified in options. This app bypasses security rules when reading and writing to the database.</p> 
+<pre>firebase.initializeAdminApp({ databaseName: "my-database" });
+</pre> <p><strong><code translate="no" dir="ltr">loadDatabaseRules({ databaseName: string, rules: Object }) =&gt; Promise</code></strong></p> <p>Use this to set your database's rules.</p> <p>Sends rules to a locally running database. Takes an options object that specifies your "databaseName" and your "rules" as strings.</p> 
+<pre>firebase
+      .loadDatabaseRules({
+        databaseName: "my-database",
+        rules: "{'rules': {'.read': false, '.write': false}}"
+      });
+</pre> <p><strong><code translate="no" dir="ltr">apps() =&gt; [FirebaseApp]</code></strong></p> <p>Returns all the currently initialized test and admin apps.</p> <p>Use this to clean up apps between or after tests (note that initialized apps with active listeners prevent JavaScript from exiting):</p> 
+<pre> Promise.all(firebase.apps().map(app =&gt; app.delete()))
+</pre> <p><strong><code translate="no" dir="ltr">assertFails(pr: Promise) =&gt; Promise</code></strong></p> <p>Returns a promise that is rejected if the input succeeds and succeeds if the input is rejected.</p> <p>Use this to assert that a database read or write fails:</p> 
+<pre>firebase.assertFails(app.database().ref("secret").once("value"));
+</pre> <p><strong><code translate="no" dir="ltr">assertSucceeds(pr: Promise) =&gt; Promise</code></strong></p> <p>Returns a promise that succeeds if the input succeeds and is rejected if the input is rejected.</p> <p>Use this to assert that a database read or write succeeds:</p> 
+<pre>firebase.assertSucceeds(app.database().ref("public").once("value"));
+</pre> <p><section><h3 id="storage">Cloud Storage</h3></section></p> <h3 id="cloud-storage_2">Cloud Storage</h3> <p><strong><code translate="no" dir="ltr">initializeTestApp({ storageBucket: string, auth: Object }) =&gt; FirebaseApp</code></strong></p> <p>Use this to create an app authenticated as a specific user to use in tests.</p> <p>Returns an initialized firebase app corresponding to the storage bucket name and auth variable override specified in options.</p> 
+<pre>firebase.initializeTestApp({
+  storageBucket: "my-bucket",
+  auth: { uid: "alice" }
+});
+</pre> <p><strong><code translate="no" dir="ltr">initializeAdminApp({ storageBucket: string }) =&gt; FirebaseApp</code></strong></p> <p>Use this to create an app authenticated as an admin to set up state for tests.</p> <p>Returns an initialized admin firebase app corresponding to the storage bucket name specified in options. This app bypasses security rules when reading and writing to the bucket.</p> 
+<pre>firebase.initializeAdminApp({ storageBucket: "my-bucket" });
+</pre> <p><strong><code translate="no" dir="ltr">loadStorageRules({ storageBucket: string, rules: Object }) =&gt; Promise</code></strong></p> <p>Use this to set your storage bucket's rules.</p> <p>Sends rules to a locally managed storage buckets. Takes an options object that specifies your "storageBucket" and your "rules" as strings.</p> 
+<pre>firebase
+      .loadStorageRules({
+        storageBucket: "my-bucket",
+        rules: fs.readFileSync("/path/to/storage.rules", "utf8")
+      });
+</pre> <p><strong><code translate="no" dir="ltr">apps() =&gt; [FirebaseApp]</code></strong></p> <p>Returns all the currently initialized test and admin apps.</p> <p>Use this to clean up apps between or after tests (note that initialized apps with active listeners prevent JavaScript from exiting):</p> 
+<pre> Promise.all(firebase.apps().map(app =&gt; app.delete()))
+</pre> <p><strong><code translate="no" dir="ltr">assertFails(pr: Promise) =&gt; Promise</code></strong></p> <p>Returns a promise that is rejected if the input succeeds and succeeds if the input is rejected.</p> <p>Use this to assert that a storage bucket read or write fails:</p> 
+<pre>firebase.assertFails(app.storage().ref("letters/private.doc").getMetadata());
+</pre> <p><strong><code translate="no" dir="ltr">assertSucceeds(pr: Promise) =&gt; Promise</code></strong></p> <p>Returns a promise that succeeds if the input succeeds and is rejected if the input is rejected.</p> <p>Use this to assert that a storage bucket read or write succeeds:</p> 
+<pre>firebase.assertFails(app.storage().ref("images/cat.png").getMetadata());
+</pre> 
+</div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/rules/unit-tests" class="_attribution-link">https://firebase.google.com/docs/rules/unit-tests</a>
+  </p>
+</div>

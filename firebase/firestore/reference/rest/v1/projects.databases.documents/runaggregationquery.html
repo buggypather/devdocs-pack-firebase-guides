@@ -1,0 +1,147 @@
+<h1>Method: projects.databases.documents.runAggregationQuery</h1> <meta itemprop="name" content="runAggregationQuery"> <meta itemprop="path" content="/docs/firestore/reference/rest/v1/projects.databases.documents/runAggregationQuery"> <section id="/docs/firestore/reference/rest/v1/projects.databases.documents/runAggregationQuery">  <section id="description"> <p>Runs an aggregation query.</p>
+<p>Rather than producing <code translate="no" dir="ltr"><a href="../projects.databases.documents#Document">Document</a></code> results like <code translate="no" dir="ltr"><a href="runquery#google.firestore.v1.Firestore.RunQuery">Firestore.RunQuery</a></code>, this API allows running an aggregation to produce a series of <code translate="no" dir="ltr"><a href="runaggregationquery#AggregationResult">AggregationResult</a></code> server-side.</p>
+<p>High-Level Example:</p> 
+<pre>-- Return the number of documents in table given a filter.
+SELECT COUNT(*) FROM ( SELECT * FROM k where a = true );
+</pre> </section> <section id="body"> <section id="body.HTTP_TEMPLATE"> <h3 id="http-request">HTTP request</h3> <p><label>Choose a location:</label> </p>
+ <div> <br> <code translate="no" dir="ltr">POST https://firestore.googleapis.com/v1/{parent=projects/*/databases/*/documents}:runAggregationQuery</code> </div>
+<p>The URLs use <a href="https://google.aip.dev/127">gRPC Transcoding</a> syntax.</p> </section> <section id="body.PATH_PARAMETERS"> <h3 id="path-parameters">Path parameters</h3> <table class="properties responsive fixed" id="body.PATH_PARAMETERS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Parameters</th> </tr> </thead> <tbody> <tr id="body.PATH_PARAMETERS.parent"> <td><code translate="no" dir="ltr">parent</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string</code></p> <p>Required. The parent resource name. In the format: <code translate="no" dir="ltr">projects/{projectId}/databases/{databaseId}/documents</code> or <code translate="no" dir="ltr">projects/{projectId}/databases/{databaseId}/documents/{document_path}</code>. For example: <code translate="no" dir="ltr">projects/my-project/databases/my-database/documents</code> or <code translate="no" dir="ltr">projects/my-project/databases/my-database/documents/chatrooms/my-chatroom</code></p> </td> </tr> </tbody> </table> </section> <section id="body.request_body"> <h3 id="request-body">Request body</h3> <p>The request body contains data with the following structure:</p> <section id="body.request_body.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "explainOptions": {
+    object (ExplainOptions)
+  },
+
+  // Union field query_type can be only one of the following:
+  "structuredAggregationQuery": {
+    object (StructuredAggregationQuery)
+  }
+  // End of list of possible types for union field query_type.
+
+  // Union field consistency_selector can be only one of the following:
+  "transaction": string,
+  "newTransaction": {
+    object (TransactionOptions)
+  },
+  "readTime": string
+  // End of list of possible types for union field consistency_selector.
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="body.request_body.FIELDS"> <table class="properties responsive fixed" id="body.request_body.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="body.request_body.FIELDS.explain_options"> <td><code translate="no" dir="ltr">explainOptions</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="../explainoptions">ExplainOptions</a></code>)</code></p> <p>Optional. Explain options for the query. If set, additional query statistics will be returned. If not, only query results will be returned.</p> </td> </tr> <tr id="body.request_body.FIELDS.oneof_query_type" class="alt"> <td colspan="2">Union field <code translate="no" dir="ltr">query_type</code>. The query to run. <code translate="no" dir="ltr">query_type</code> can be only one of the following:</td> </tr> <tr id="body.request_body.FIELDS.structured_aggregation_query"> <td><code translate="no" dir="ltr">structuredAggregationQuery</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="runaggregationquery#StructuredAggregationQuery">StructuredAggregationQuery</a></code>)</code></p> <p>An aggregation query.</p> </td> </tr> <tr id="body.request_body.FIELDS.oneof_consistency_selector" class="alt"> <td colspan="2">Union field <code translate="no" dir="ltr">consistency_selector</code>. The consistency mode for the query, defaults to strong consistency. <code translate="no" dir="ltr">consistency_selector</code> can be only one of the following:</td> </tr> <tr id="body.request_body.FIELDS.transaction"> <td><code translate="no" dir="ltr">transaction</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string (<a href="https://developers.google.com/discovery/v1/type-format">bytes</a> format)</code></p> <p>Run the aggregation within an already active transaction.</p>
+<p>The value here is the opaque transaction ID to execute the query in.</p>
+<p>A base64-encoded string.</p> </td> </tr> <tr id="body.request_body.FIELDS.new_transaction"> <td><code translate="no" dir="ltr">newTransaction</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="../transactionoptions">TransactionOptions</a></code>)</code></p> <p>Starts a new transaction as part of the query, defaulting to read-only.</p>
+<p>The new transaction ID will be returned as the first response in the stream.</p> </td> </tr> <tr id="body.request_body.FIELDS.read_time"> <td><code translate="no" dir="ltr">readTime</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string (<code translate="no" dir="ltr"><a href="https://protobuf.dev/reference/protobuf/google.protobuf/#timestamp">Timestamp</a></code> format)</code></p> <p>Executes the query at the given timestamp.</p>
+<p>This must be a microsecond precision timestamp within the past one hour, or if Point-in-Time Recovery is enabled, can additionally be a whole minute timestamp within the past 7 days.</p>
+<p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: <code translate="no" dir="ltr">"2014-10-02T15:01:23Z"</code>, <code translate="no" dir="ltr">"2014-10-02T15:01:23.045123456Z"</code> or <code translate="no" dir="ltr">"2014-10-02T15:01:23+05:30"</code>.</p> </td> </tr> </tbody> </table> </section> </section> <section id="body.response_body"> <h3 id="response-body">Response body</h3> <section id="body.RunAggregationQueryResponse"> <section id="body.RunAggregationQueryResponse.description"> <p>The response for <code translate="no" dir="ltr"><a href="runaggregationquery#google.firestore.v1.Firestore.RunAggregationQuery">Firestore.RunAggregationQuery</a></code>.</p> <p>If successful, the response body contains data with the following structure:</p> </section> <section id="body.RunAggregationQueryResponse.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "result": {
+    object (AggregationResult)
+  },
+  "transaction": string,
+  "readTime": string,
+  "explainMetrics": {
+    object (ExplainMetrics)
+  }
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="body.RunAggregationQueryResponse.FIELDS"> <table class="properties responsive fixed" id="body.RunAggregationQueryResponse.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="body.RunAggregationQueryResponse.FIELDS.result"> <td><code translate="no" dir="ltr">result</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="runaggregationquery#AggregationResult">AggregationResult</a></code>)</code></p> <p>A single aggregation result.</p>
+<p>Not present when reporting partial progress.</p> </td> </tr> <tr id="body.RunAggregationQueryResponse.FIELDS.transaction"> <td><code translate="no" dir="ltr">transaction</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string (<a href="https://developers.google.com/discovery/v1/type-format">bytes</a> format)</code></p> <p>The transaction that was started as part of this request.</p>
+<p>Only present on the first response when the request requested to start a new transaction.</p>
+<p>A base64-encoded string.</p> </td> </tr> <tr id="body.RunAggregationQueryResponse.FIELDS.read_time"> <td><code translate="no" dir="ltr">readTime</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string (<code translate="no" dir="ltr"><a href="https://protobuf.dev/reference/protobuf/google.protobuf/#timestamp">Timestamp</a></code> format)</code></p> <p>The time at which the aggregate result was computed. This is always monotonically increasing; in this case, the previous AggregationResult in the result stream are guaranteed not to have changed between their <code translate="no" dir="ltr">readTime</code> and this one.</p>
+<p>If the query returns no results, a response with <code translate="no" dir="ltr">readTime</code> and no <code translate="no" dir="ltr">result</code> will be sent, and this represents the time at which the query was run.</p>
+<p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: <code translate="no" dir="ltr">"2014-10-02T15:01:23Z"</code>, <code translate="no" dir="ltr">"2014-10-02T15:01:23.045123456Z"</code> or <code translate="no" dir="ltr">"2014-10-02T15:01:23+05:30"</code>.</p> </td> </tr> <tr id="body.RunAggregationQueryResponse.FIELDS.explain_metrics"> <td><code translate="no" dir="ltr">explainMetrics</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="../explainmetrics">ExplainMetrics</a></code>)</code></p> <p>Query explain metrics. This is only present when the <code translate="no" dir="ltr"><a href="runaggregationquery#body.request_body.FIELDS.explain_options">RunAggregationQueryRequest.explain_options</a></code> is provided, and it is sent only once with the last response in the stream.</p> </td> </tr> </tbody> </table> </section> </section> </section> <section id="body.aspect"> <h3 id="authorization-scopes">Authorization scopes</h3> <p>Requires one of the following OAuth scopes:</p> <ul> <li><code translate="no" dir="ltr">https://www.googleapis.com/auth/datastore</code></li> <li><code translate="no" dir="ltr">https://www.googleapis.com/auth/cloud-platform</code></li> </ul>
+<p>For more information, see the <a href="https://developers.google.com/identity/protocols/OAuth2">OAuth 2.0 Overview</a>.</p> </section> </section> <section id="StructuredAggregationQuery"> <h2 id="structuredaggregationquery">StructuredAggregationQuery</h2> <section id="StructuredAggregationQuery.description"> <p>Firestore query for running an aggregation over a <code translate="no" dir="ltr"><a href="../structuredquery">StructuredQuery</a></code>.</p> </section> <section id="StructuredAggregationQuery.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "aggregations": [
+    {
+      object (Aggregation)
+    }
+  ],
+
+  // Union field query_type can be only one of the following:
+  "structuredQuery": {
+    object (StructuredQuery)
+  }
+  // End of list of possible types for union field query_type.
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="StructuredAggregationQuery.FIELDS"> <table class="properties responsive fixed" id="StructuredAggregationQuery.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="StructuredAggregationQuery.FIELDS.aggregations"> <td><code translate="no" dir="ltr">aggregations[]</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="runaggregationquery#Aggregation">Aggregation</a></code>)</code></p> <p>Optional. Series of aggregations to apply over the results of the <code translate="no" dir="ltr">structuredQuery</code>.</p>
+<p>Requires:</p> <ul> <li>A minimum of one and maximum of five aggregations per query.</li> </ul> </td> </tr> <tr id="StructuredAggregationQuery.FIELDS.oneof_query_type" class="alt"> <td colspan="2">Union field <code translate="no" dir="ltr">query_type</code>. The base query to aggregate over. <code translate="no" dir="ltr">query_type</code> can be only one of the following:</td> </tr> <tr id="StructuredAggregationQuery.FIELDS.structured_query"> <td><code translate="no" dir="ltr">structuredQuery</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="../structuredquery">StructuredQuery</a></code>)</code></p> <p>Nested structured query.</p> </td> </tr> </tbody> </table> </section> </section> <section id="Aggregation"> <h2 id="aggregation">Aggregation</h2> <section id="Aggregation.description"> <p>Defines an aggregation that produces a single result.</p> </section> <section id="Aggregation.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "alias": string,
+
+  // Union field operator can be only one of the following:
+  "count": {
+    object (Count)
+  },
+  "sum": {
+    object (Sum)
+  },
+  "avg": {
+    object (Avg)
+  }
+  // End of list of possible types for union field operator.
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="Aggregation.FIELDS"> <table class="properties responsive fixed" id="Aggregation.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="Aggregation.FIELDS.alias"> <td><code translate="no" dir="ltr">alias</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string</code></p> <p>Optional. Optional name of the field to store the result of the aggregation into.</p>
+<p>If not provided, Firestore will pick a default name following the format <code translate="no" dir="ltr">field_&lt;incremental_id++&gt;</code>. For example:</p> 
+<pre>AGGREGATE
+  COUNT_UP_TO(1) AS count_up_to_1,
+  COUNT_UP_TO(2),
+  COUNT_UP_TO(3) AS count_up_to_3,
+  COUNT(*)
+OVER (
+  ...
+);
+</pre> <p>becomes:</p> 
+<pre>AGGREGATE
+  COUNT_UP_TO(1) AS count_up_to_1,
+  COUNT_UP_TO(2) AS field_1,
+  COUNT_UP_TO(3) AS count_up_to_3,
+  COUNT(*) AS field_2
+OVER (
+  ...
+);
+</pre> <p>Requires:</p> <ul> <li>Must be unique across all aggregation aliases.</li> <li>Conform to <code translate="no" dir="ltr"><a href="../projects.databases.documents#Document.FIELDS.fields">document field name</a></code> limitations.</li> </ul> </td> </tr> <tr id="Aggregation.FIELDS.oneof_operator" class="alt"> <td colspan="2">Union field <code translate="no" dir="ltr">operator</code>. The type of aggregation to perform, required. <code translate="no" dir="ltr">operator</code> can be only one of the following:</td> </tr> <tr id="Aggregation.FIELDS.count"> <td><code translate="no" dir="ltr">count</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="runaggregationquery#Count">Count</a></code>)</code></p> <p>Count aggregator.</p> </td> </tr> <tr id="Aggregation.FIELDS.sum"> <td><code translate="no" dir="ltr">sum</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="runaggregationquery#Sum">Sum</a></code>)</code></p> <p>Sum aggregator.</p> </td> </tr> <tr id="Aggregation.FIELDS.avg"> <td><code translate="no" dir="ltr">avg</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="runaggregationquery#Avg">Avg</a></code>)</code></p> <p>Average aggregator.</p> </td> </tr> </tbody> </table> </section> </section> <section id="Count"> <h2 id="count">Count</h2> <section id="Count.description"> <p>Count of documents that match the query.</p>
+<p>The <code translate="no" dir="ltr">COUNT(*)</code> aggregation function operates on the entire document so it does not require a field reference.</p> </section> <section id="Count.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "upTo": string
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="Count.FIELDS"> <table class="properties responsive fixed" id="Count.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="Count.FIELDS.up_to"> <td><code translate="no" dir="ltr">upTo</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string (<a href="https://developers.google.com/discovery/v1/type-format">Int64Value</a> format)</code></p> <p>Optional. Optional constraint on the maximum number of documents to count.</p>
+<p>This provides a way to set an upper bound on the number of documents to scan, limiting latency, and cost.</p>
+<p>Unspecified is interpreted as no bound.</p>
+<p>High-Level Example:</p> 
+<pre>AGGREGATE COUNT_UP_TO(1000) OVER ( SELECT * FROM k );
+</pre> <p>Requires:</p> <ul> <li>Must be greater than zero when present.</li> </ul> </td> </tr> </tbody> </table> </section> </section> <section id="Sum"> <h2 id="sum">Sum</h2> <section id="Sum.description"> <p>Sum of the values of the requested field.</p> <ul> <li><p>Only numeric values will be aggregated. All non-numeric values including <code translate="no" dir="ltr">NULL</code> are skipped.</p></li> <li><p>If the aggregated values contain <code translate="no" dir="ltr">NaN</code>, returns <code translate="no" dir="ltr">NaN</code>. Infinity math follows IEEE-754 standards.</p></li> <li><p>If the aggregated value set is empty, returns 0.</p></li> <li><p>Returns a 64-bit integer if all aggregated numbers are integers and the sum result does not overflow. Otherwise, the result is returned as a double. Note that even if all the aggregated values are integers, the result is returned as a double if it cannot fit within a 64-bit signed integer. When this occurs, the returned value will lose precision.</p></li> <li><p>When underflow occurs, floating-point aggregation is non-deterministic. This means that running the same query repeatedly without any changes to the underlying values could produce slightly different results each time. In those cases, values should be stored as integers over floating-point numbers.</p></li> </ul> </section> <section id="Sum.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "field": {
+    object (FieldReference)
+  }
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="Sum.FIELDS"> <table class="properties responsive fixed" id="Sum.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="Sum.FIELDS.field"> <td><code translate="no" dir="ltr">field</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="../fieldreference">FieldReference</a></code>)</code></p> <p>The field to aggregate on.</p> </td> </tr> </tbody> </table> </section> </section> <section id="Avg"> <h2 id="avg">Avg</h2> <section id="Avg.description"> <p>Average of the values of the requested field.</p> <ul> <li><p>Only numeric values will be aggregated. All non-numeric values including <code translate="no" dir="ltr">NULL</code> are skipped.</p></li> <li><p>If the aggregated values contain <code translate="no" dir="ltr">NaN</code>, returns <code translate="no" dir="ltr">NaN</code>. Infinity math follows IEEE-754 standards.</p></li> <li><p>If the aggregated value set is empty, returns <code translate="no" dir="ltr">NULL</code>.</p></li> <li><p>Always returns the result as a double.</p></li> </ul> </section> <section id="Avg.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "field": {
+    object (FieldReference)
+  }
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="Avg.FIELDS"> <table class="properties responsive fixed" id="Avg.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="Avg.FIELDS.field"> <td><code translate="no" dir="ltr">field</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="../fieldreference">FieldReference</a></code>)</code></p> <p>The field to aggregate on.</p> </td> </tr> </tbody> </table> </section> </section> <section id="AggregationResult"> <h2 id="aggregationresult">AggregationResult</h2> <section id="AggregationResult.description"> <p>The result of a single bucket from a Firestore aggregation query.</p>
+<p>The keys of <code translate="no" dir="ltr">aggregateFields</code> are the same for all results in an aggregation query, unlike document queries which can have different fields present for each result.</p> </section> <section id="AggregationResult.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "aggregateFields": {
+    string: {
+      object (Value)
+    },
+    ...
+  }
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="AggregationResult.FIELDS"> <table class="properties responsive fixed" id="AggregationResult.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="AggregationResult.FIELDS.aggregate_fields"> <td><code translate="no" dir="ltr">aggregateFields</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">map (key: string, value: object (<code translate="no" dir="ltr"><a href="../../shared.types/arrayvalue#Value">Value</a></code>))</code></p> <p>The result of the aggregation functions, ex: <code translate="no" dir="ltr">COUNT(*) AS total_docs</code>.</p>
+<p>The key is the <code translate="no" dir="ltr"><a href="runaggregationquery#Aggregation.FIELDS.alias">alias</a></code> assigned to the aggregation function on input and the size of this map equals the number of aggregation functions in the query.</p>
+<p>An object containing a list of <code translate="no" dir="ltr">"key": value</code> pairs. Example: <code translate="no" dir="ltr">{ "name": "wrench", "mass": "1.3kg", "count": "3" }</code>.</p> </td> </tr> </tbody> </table> </section> </section>  </section><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/runAggregationQuery" class="_attribution-link">https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/runAggregationQuery</a>
+  </p>
+</div>

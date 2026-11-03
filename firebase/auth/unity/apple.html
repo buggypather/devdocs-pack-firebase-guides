@@ -1,0 +1,145 @@
+<h1>Authenticate Using Apple and Unity</h1> <p>You can let your users authenticate with Firebase using their Apple ID by using the Firebase SDK to carry out the end-to-end OAuth 2.0 sign-in flow.</p> <aside> <p><b>Important</b>: To sign in with an Apple account, users must:</p> <ul> <li>Have an Apple ID with two-factor authentication (2FA) enabled.</li> <li>Be signed in to iCloud on an Apple device.</li> </ul> <p>See <a class="external" href="https://support.apple.com/en-us/HT210318">How to use Sign in with Apple</a>. You will also need to meet these requirements to test your integration with Sign In with Apple.</p> </aside> <h2 id="before-you-begin">Before you begin</h2>  <p>To sign in users using Apple, first configure Sign In with Apple on Apple's developer site, then enable Apple as a sign-in provider for your Firebase project.</p> <h3 id="join-the-apple-developer-program">Join the Apple Developer Program</h3> <p>Sign In with Apple can only be configured by members of the <a href="https://developer.apple.com/programs/">Apple Developer Program</a>.</p> <h3 id="configure-sign-in-with-apple">Configure Sign In with Apple</h3> Apple Sign In must be enabled and properly configured in your Firebase project. The Apple Developer configuration varies across Android and Apple platforms. Please follow the "Configure Sign In With Apple" section of the <a href="../ios/apple#configure-sign-in-with-apple">iOS+</a> and/or <a href="../android/apple#configure-sign-in-with-apple">Android</a> guides before proceeding. <h3 id="enable-apple-as-a-sign-in-provider">Enable Apple as a sign-in provider</h3> <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Apple</b> sign-in provider. </li>
+<li>Configure the Apple Sign In provider settings: <ul> <li> <strong>Apple</strong>: If you're deploying your app only on Apple platforms, you can leave the Service ID, Apple Team ID, private key and key ID fields empty. </li> <li> <strong>Android</strong>: Complete the following to support Android devices: <ol> <li> <a href="../../android/setup">Add Firebase to your Android project</a>. </li> <li> Specify your app's SHA-1 fingerprint if you haven't already. <ol> <li> In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><b>General</b> tab</a>. </li> <li> Scroll down to the <b>Your apps</b> card, select your Android app, and add your SHA-1 fingerprint in the <b>SHA certificate fingerprints</b> field. </li> </ol> <p> See <a href="https://developers.google.com/android/guides/client-auth" class="external">Authenticating Your Client</a> for details on how to get your app's SHA fingerprint. </p> </li> <li> Configure the Apple Sign-in provider settings: <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, click the <b>Apple</b> sign-in provider. </li> <li> Specify the Service ID you created in the previous section. Also, in the OAuth code flow configuration section, specify your Apple Team ID and the private key and key ID you created in the previous section. </li> </ol> </li> </ol> </li> </ul> </li> </ol> <h2 id="comply-with-apple-anonymized-data-requirements">Comply with Apple anonymized data requirements</h2> <p>Sign In with Apple gives users the option of anonymizing their data, including their email address, when signing in. Users who choose this option have email addresses with the domain <code translate="no" dir="ltr">privaterelay.appleid.com</code>. When you use Sign In with Apple in your app, you must comply with any applicable developer policies or terms from Apple regarding these anonymized Apple IDs.</p> <p>This includes obtaining any required user consent before you associate any directly identifying personal information with an anonymized Apple ID. When using Firebase Authentication, this may include the following actions:</p> <ul> <li>Link an email address to an anonymized Apple ID or vice versa.</li> <li>Link a phone number to an anonymized Apple ID or vice versa</li> <li>Link a non-anonymous social credential (Facebook, Google, etc) to an anonymized Apple ID or vice versa.</li> </ul> <p>The above list is not exhaustive. Refer to the Apple Developer Program License Agreement in the Membership section of your developer account to make sure your app meets Apple's requirements.</p> <h2 id="access_the_firebaseauthfirebaseauth_class">Access the <code translate="no" dir="ltr">Firebase.Auth.FirebaseAuth</code> class</h2> The <code translate="no" dir="ltr">FirebaseAuth</code> class is the gateway for all API calls. It is accessible through <a href="https://firebase.google.com/docs/reference/unity/class/firebase/auth/firebase-auth#defaultinstance">FirebaseAuth.DefaultInstance</a>. 
+<pre>Firebase.Auth.FirebaseAuth auth = Firebase.Auth.FirebaseAuth.DefaultInstance;</pre> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>The process to Sign-in With Apple varies across Apple and Android platforms.</p> <h3 id="on-apple-platforms">On Apple platforms</h3> <ol> <li><p>Install a third party plugin to handle Apple sign in nonce and token generation, such as the <a href="https://blogs.unity3d.com/2019/09/19/support-for-apple-sign-in/">Unity's Sign In With Apple Asset Storage Package</a>. You may need to alter the code to plumb the generated random nonce string in its raw string state for use in Firebase operations (that is, store a copy of it before the SHA256 digest form of the nonce is created).</p></li> <li>
+<p>Use the resulting token string and raw nonce to construct a Firebase Credential and sign into Firebase. </p>
+
+<pre>Firebase.Auth.Credential credential =
+    Firebase.Auth.OAuthProvider.GetCredential("apple.com", appleIdToken, rawNonce, appleAuthorizationCode);
+auth.SignInAndRetrieveDataWithCredentialAsync(credential).ContinueWith(task =&gt; {
+  if (task.IsCanceled) {
+    Debug.LogError("SignInAndRetrieveDataWithCredentialAsync was canceled.");
+    return;
+  }
+  if (task.IsFaulted) {
+    Debug.LogError("SignInAndRetrieveDataWithCredentialAsync encountered an error: " + task.Exception);
+    return;
+  }
+
+  Firebase.Auth.AuthResult result = task.Result;
+  Debug.LogFormat("User signed in successfully: {0} ({1})",
+      result.User.DisplayName, result.User.UserId);
+});</pre>
+</li> <li><p>The same pattern can be used with <code translate="no" dir="ltr">ReauthenticateAsync</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login. For more information see <a href="../cpp/manage-users">Manage Users</a>.</p></li> <li>
+<p>When linking with Apple Sign In on Apple platforms you may encounter an error that an existing Firebase account has already been linked to the Apple account. When this occurs a <code translate="no" dir="ltr">Firebase.Auth.FirebaseAccountLinkException</code> will be thrown instead of the standard <code translate="no" dir="ltr">Firebase.FirebaseException</code>. In this case the exception includes a <code translate="no" dir="ltr">UserInfo.UpdatedCredential</code> property that, if valid, may be used to sign-in the Apple-linked user via <code translate="no" dir="ltr">FirebaseAuth.SignInAndRetrieveDataWithCredentialAsync</code>. The updated credential circumvents the need to generate new Apple Sign-In token with nonce for the sign-in operation. </p>
+
+<pre>auth.CurrentUser.LinkWithCredentialAsync(
+  Firebase.Auth.OAuthProvider.GetCredential("apple.com", idToken, rawNonce, null))
+    .ContinueWithOnMainThread( task =&gt; {
+      if (task.IsCompletedSuccessfully) {
+        // Link Success
+      } else {
+        if (task.Exception != null) {
+          foreach (Exception exception in task.Exception.Flatten().InnerExceptions) {
+            Firebase.Auth.FirebaseAccountLinkException firebaseEx =
+              exception as Firebase.Auth.FirebaseAccountLinkException;
+            if (firebaseEx != null &amp;&amp; firebaseEx.UserInfo.UpdatedCredential.IsValid()) {
+              // Attempt to sign in with the updated credential.
+              auth.SignInAndRetrieveDataWithCredentialAsync(firebaseEx.UserInfo.UpdatedCredential).
+                ContinueWithOnMainThread( authResultTask =&gt; {
+                  // Handle Auth result.
+                });
+            } else {
+              Debug.Log("Link with Apple failed:" + firebaseEx );
+            }
+          } // end for loop
+        }
+      }
+    });</pre>
+</li> </ol> <h3 id="on-android">On Android</h3> <p>On Android, authenticate your users with Firebase by integrating web-based generic OAuth Login into your app using the Firebase SDK to carry out the end to end sign-in flow.</p> <p>To handle the sign-in flow with the Firebase SDK, follow these steps:</p> <ol> <li>
+<p>Construct an instance of a <code translate="no" dir="ltr">FederatedOAuthProviderData</code> configured with the provider ID appropriate for Apple.</p> 
+<pre>Firebase.Auth.FederatedOAuthProviderData providerData =
+  new Firebase.Auth.FederatedOAuthProviderData();
+
+providerData.ProviderId = "apple.com";
+</pre>
+</li> <li>
+<p><strong>Optional:</strong> Specify additional OAuth 2.0 scopes beyond the default that you want to request from the authentication provider.</p> 
+<pre>providerData.Scopes = new List&lt;string&gt;();
+providerData.Scopes.Add("email");
+providerData.Scopes.Add("name");
+</pre>
+</li> <li>
+<p><strong>Optional:</strong> If you want to display Apple's sign-in screen in a language other than English, set the <code translate="no" dir="ltr">locale</code> parameter. See the <a href="https://developer.apple.com/documentation/signinwithapplejs/incorporating_sign_in_with_apple_into_other_platforms#3332112" class="external">Sign In with Apple docs</a> for the supported locales.</p> 
+<pre>providerData.CustomParameters = new Dictionary&lt;string,string&gt;;
+
+// Localize to French.
+providerData.CustomParameters.Add("language", "fr");
+</pre>
+</li> <li>
+<p>Once your provider data has been configured, use it to create a FederatedOAuthProvider.</p> 
+<pre>// Construct a FederatedOAuthProvider for use in Auth methods.
+Firebase.Auth.FederatedOAuthProvider provider =
+  new Firebase.Auth.FederatedOAuthProvider();
+provider.SetProviderData(providerData);
+</pre>
+</li> <li>
+<p>Authenticate with Firebase using the Auth provider object. Note that unlike other FirebaseAuth operations, this will take control of your UI by popping up a web view in which the user can enter their credentials.</p> <p>To start the sign in flow, call <code translate="no" dir="ltr">signInWithProvider</code>:</p> 
+<pre>auth.SignInWithProviderAsync(provider).ContinueOnMainThread(task =&gt; {
+    if (task.IsCanceled) {
+        Debug.LogError("SignInWithProviderAsync was canceled.");
+        return;
+    }
+    if (task.IsFaulted) {
+        Debug.LogError("SignInWithProviderAsync encountered an error: " +
+          task.Exception);
+        return;
+    }
+
+    Firebase.Auth.AuthResult authResult = task.Result;
+    Firebase.Auth.FirebaseUser user = authResult.User;
+    Debug.LogFormat("User signed in successfully: {0} ({1})",
+        user.DisplayName, user.UserId);
+});
+</pre>
+</li> <li>
+<p>The same pattern can be used with <code translate="no" dir="ltr">ReauthenticateWithProvider</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> 
+<pre>user.ReauthenticateWithProviderAsync(provider).ContinueOnMainThread(task =&gt; {
+    if (task.IsCanceled) {
+        Debug.LogError("ReauthenticateWithProviderAsync was canceled.");
+        return;
+    }
+    if (task.IsFaulted) {
+        Debug.LogError(
+        "ReauthenticateWithProviderAsync encountered an error: " +
+            task.Exception);
+        return;
+    }
+
+    Firebase.Auth.AuthResult authResult = task.Result;
+    Firebase.Auth.FirebaseUser user = authResult.User;
+    Debug.LogFormat("User reauthenticated successfully: {0} ({1})",
+        user.DisplayName, user.UserId);
+});
+</pre>
+</li> <li>
+<p>And, you can use <code translate="no" dir="ltr">LinkWithCredentialAsync()</code> to link different identity providers to existing accounts.</p> <p>Note that Apple requires you to get explicit consent from users before you link their Apple accounts to other data.</p> <p>For example, to link a Facebook account to the current Firebase account, use the access token you got from signing the user in to Facebook:</p> 
+<pre>// Initialize a Facebook credential with a Facebook access token.
+
+Firebase.Auth.Credential credential =
+    Firebase.Auth.FacebookAuthProvider.GetCredential(facebook_token);
+
+// Assuming the current user is an Apple user linking a Facebook provider.
+user.LinkWithCredentialAsync(credential)
+    .ContinueWithOnMainThread( task =&gt; {
+      if (task.IsCanceled) {
+          Debug.LogError("LinkWithCredentialAsync was canceled.");
+          return;
+      }
+      if (task.IsFaulted) {
+        Debug.LogError("LinkWithCredentialAsync encountered an error: "
+                       + task.Exception);
+          return;
+      }
+
+      Firebase.Auth.AuthResult result = task.Result;
+      Firebase.Auth.FirebaseUser user = result.User;
+      Debug.LogFormat("User linked successfully: {0} ({1})",
+          user.DisplayName, user.UserId);
+    });
+</pre>
+</li> </ol> <h3 id="sign-in-with-apple-notes">Sign in with Apple Notes</h3> <p>Unlike other providers supported by Firebase Auth, Apple does not provide a photo URL.</p> <p>Also, when the user chooses not to share their email with the app, Apple provisions a unique email address for that user (of the form <code translate="no" dir="ltr">xyz@privaterelay.appleid.com</code>), which it shares with your app. If you configured the private email relay service, Apple forwards emails sent to the anonymized address to the user's real email address.</p> <p>Apple only shares user information such as the display name with apps the first time a user signs in. Usually, Firebase stores the display name the first time a user signs in with Apple, which you can get with <code translate="no" dir="ltr">auth.CurrentUser.DisplayName</code>. However, if you previously used Apple to sign a user in to the app without using Firebase, Apple will not provide Firebase with the user's display name.</p> <h2 id="next-steps">Next steps</h2> After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. <p>In your apps, you can get the user's basic profile information from the Firebase.Auth.FirebaseUser object. See <a href="../cpp/manage-users">Manage Users</a>.</p> <p>In your Firebase Realtime Database and Cloud Storage Security Rules, you can get the signed-in user's unique user ID from the auth variable, and use it to control what data a user can access. </p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/unity/apple" class="_attribution-link">https://firebase.google.com/docs/auth/unity/apple</a>
+  </p>
+</div>

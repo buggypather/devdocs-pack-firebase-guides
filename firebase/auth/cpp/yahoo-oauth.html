@@ -1,0 +1,72 @@
+<h1>Authenticate Using Yahoo and C++</h1> <p>You can let your users authenticate with Firebase using OAuth providers like Yahoo by integrating web-based generic OAuth Login into your app using the Firebase SDK to carry out the end to end sign-in flow. Since this flow requires the use of the phone-based Firebase SDKs, it is only supported on Android and Apple platforms.</p> <h2 id="before_you_begin">Before you begin</h2> <ol> <li>
+<a href="../../cpp/setup#note_select_platform">Add Firebase to your C++ project</a>. </li>
+<li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Yahoo</b> sign-in provider. </li> <li> Add the <b>Client ID</b> and <b>Client Secret</b> from that provider's developer console to the provider configuration: <ol> <li> <p> To register a Yahoo OAuth client, follow the Yahoo developer documentation on <a href="https://developer.yahoo.com/oauth2/guide/openid_connect/getting_started.html" class="external">registering a web application with Yahoo</a>. </p> <p> Be sure to select the two OpenID Connect API permissions: <code translate="no" dir="ltr">profile</code> and <code translate="no" dir="ltr">email</code>. </p> </li>
+<li> When registering apps with these providers, be sure to register the <code translate="no" dir="ltr">*.firebaseapp.com</code> domain for your project as the redirect domain for your app. </li> </ol> </li> <li> Click <b>Save</b>. </li> </ol> <h2 id="access_the_firebaseauthauth_class">Access the <code translate="no" dir="ltr">firebase::auth::Auth</code> class</h2> The <code translate="no" dir="ltr">Auth</code> class is the gateway for all API calls. <ol> <li>Add the Auth and App header files: 
+<pre>#include &lt;cassert&gt;
+#include &lt;cinttypes&gt;
+#include &lt;cstdint&gt;
+
+#include "firebase/app.h"
+#include "firebase/auth.h"</pre> </li> <li>In your initialization code, create a <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/app"><code translate="no" dir="ltr">firebase::App</code></a> class. 
+<pre>#if defined(__ANDROID__)
+  firebase::App* app =
+      firebase::App::Create(firebase::AppOptions(), my_jni_env, my_activity);
+#else
+  firebase::App* app = firebase::App::Create(firebase::AppOptions());
+#endif  // defined(__ANDROID__)</pre> </li> <li>Acquire the <code translate="no" dir="ltr">firebase::auth::Auth</code> class for your <code translate="no" dir="ltr">firebase::App</code>. There is a one-to-one mapping between <code translate="no" dir="ltr">App</code> and <code translate="no" dir="ltr">Auth</code>. 
+<pre>firebase::auth::Auth* auth = firebase::auth::Auth::GetAuth(app);</pre> </li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>To handle the sign-in flow with the Firebase SDK, follow these steps:</p> <ol> <li>
+<p>Construct an instance of a <code translate="no" dir="ltr">FederatedOAuthProviderData</code> configured with the provider ID appropriate for Yahoo.</p> 
+<pre>firebase::auth::FederatedOAuthProviderData
+    provider_data(firebase::auth::YahooAuthProvider::kProviderId);
+</pre>
+</li> <li>
+<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> 
+<pre>// Prompt user to re-authenticate to Yahoo.
+provider_data.custom_parameters["prompt"] = "login";
+
+// Localize to French.
+provider_data.custom_parameters["language"] = "fr";
+</pre> <p>For the parameters Yahoo supports, see the <a href="https://developer.yahoo.com/oauth2/guide/openid_connect/getting_started.html">Yahoo OAuth documentation</a>. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">custom_parameters()</code>. These parameters are <strong>client_id</strong>, <strong>redirect_uri</strong>, <strong>response_type</strong>, <strong>scope</strong> and <strong>state</strong>.</p>
+</li> <li>
+<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond <code translate="no" dir="ltr">profile</code> and <code translate="no" dir="ltr">email</code> that you want to request from the authentication provider. If your application requires access to private user data from Yahoo APIs, you'll need to request permissions to Yahoo APIs under <strong>API Permissions</strong> in the Yahoo developer console. Requested OAuth scopes must be exact matches to the preconfigured ones in the app's API permissions. For example if, read/write access is requested to user contacts and preconfigured in the app's API permissions, <code translate="no" dir="ltr">sdct-w</code> has to be passed instead of the readonly OAuth scope <code translate="no" dir="ltr">sdct-r</code>. Otherwise,the flow will fail and an error would be shown to the end user.</p> 
+<pre>// Request access to Yahoo Mail API.
+provider_data.scopes.push_back("mail-r");
+// This must be preconfigured in the app's API permissions.
+provider_data.scopes.push_back("sdct-w");
+</pre> <p>To learn more, refer to the <a href="https://developer.yahoo.com/oauth2/guide/yahoo_scopes/">Yahoo scopes documentation</a>.</p>
+</li> <li>
+<p>Once your provider data has been configured, use it to create a FederatedOAuthProvider.</p> 
+<pre>// Construct a FederatedOAuthProvider for use in Auth methods.
+firebase::auth::FederatedOAuthProvider provider(provider_data);
+</pre>
+</li> <li>
+<p>Authenticate with Firebase using the Auth provider object. Note that unlike other FirebaseAuth operations, this will take control of your UI by popping up a web view in which the user can enter their credentials.</p> <p>To start the sign in flow, call <code translate="no" dir="ltr">SignInWithProvider</code>:</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+  auth-&gt;SignInWithProvider(provider_data);
+</pre> <p>Your application may then wait or <a href="#register_callback_on_future"> register a callback on the Future</a>.</p>
+</li> <li>
+<p>While the above examples focus on sign-in flows, you also have the ability to link a Yahoo provider to an existing user using <code translate="no" dir="ltr">LinkWithProvider</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result = user.LinkWithProvider(provider_data);
+</pre>
+</li> <li>
+<p>The same pattern can be used with <code translate="no" dir="ltr">ReauthenticateWithProvider</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+  user.ReauthenticateWithProvider(provider_data);
+</pre> <p>Your application may then wait or <a href="#register_callback_on_future">register a callback on the Future</a>.</p>
+</li> </ol> <section class="expandable"> <h2 class="showalways" id="advanced:-handle-the-sign-in-flow-manually">Advanced: Handle the sign-in flow manually</h2> <p>Unlike other OAuth providers supported by Firebase such as Google, Facebook, and Twitter, where sign-in can directly be achieved with OAuth access token based credentials, Firebase Auth does not support the same capability for providers such as Yahoo due to the inability of the Firebase Auth server to verify the audience of Yahoo OAuth access tokens. This is a critical security requirement and could expose applications and websites to replay attacks where a Yahoo OAuth access token obtained for one project (attacker) can be used to sign in to another project (victim). Instead, Firebase Auth offers the ability to handle the entire OAuth flow and the authorization code exchange using the OAuth client ID and secret configured in the Firebase Console. As the authorization code can only be used in conjunction with a specific client ID/secret, an authorization code obtained for one project cannot be used with another. </p> <p>If these providers are required to be used in unsupported environments, a third party OAuth library and <a href="../admin/create-custom-tokens">Firebase custom authentication</a> would need to be used. The former is needed to authenticate with the provider and the latter to exchange the provider's credential for a custom token.</p> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/auth/user"> <code translate="no" dir="ltr">firebase::auth::User</code></a> object:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  std::string name = user.display_name();
+  std::string email = user.email();
+  std::string photo_url = user.photo_url();
+  // The user's ID, unique to the Firebase project.
+  // Do NOT use this value to authenticate with your backend server,
+  // if you have one. Use firebase::auth::User::Token() instead.
+  std::string uid = user.uid();
+}</pre> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/auth/auth#signout"> <code translate="no" dir="ltr">SignOut()</code></a>:</p> 
+<pre>auth-&gt;SignOut();</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/cpp/yahoo-oauth" class="_attribution-link">https://firebase.google.com/docs/auth/cpp/yahoo-oauth</a>
+  </p>
+</div>

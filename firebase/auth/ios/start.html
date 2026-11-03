@@ -1,0 +1,98 @@
+<h1>Get Started with Firebase Authentication on Apple Platforms</h1> <p>You can use Firebase Authentication to allow users to sign in to your app using one or more sign-in methods, including email address and password sign-in, and federated identity providers such as Google Sign-in and Facebook Login. This tutorial gets you started with Firebase Authentication by showing you how to add email address and password sign-in to your app.</p> <h2 id="connect_your_app_to_firebase">Connect your app to Firebase</h2>  <ol> <li>
+<a href="../../ios/setup">Install the Firebase SDK</a>.</li> <li>In the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, add your app to your Firebase project.</li> </ol> <h2 id="add_to_your_app">Add Firebase Authentication to your app</h2> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+<pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Firebase Authentication library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> <aside class="important"> <b>Important:</b> For Mac apps, enable the Keychain Sharing capability so the SDK has permission to store user entries in the keychain. For more information, see the <a href="../../ios/troubleshooting-faq#macos-keychain-sharing">FAQ guide</a>. </aside> <h2 id="optional_prototype_and_test_with">(Optional) Prototype and test with Firebase Local Emulator Suite</h2> <p>Before talking about how your app authenticates users, let's introduce a set of tools you can use to prototype and test Authentication functionality: Firebase Local Emulator Suite. If you're deciding among authentication techniques and providers, trying out different data models with public and private data using Authentication and Firebase Security Rules, or prototyping sign-in UI designs, being able to work locally without deploying live services can be a great idea.</p> <p>An Authentication emulator is part of the Local Emulator Suite, which enables your app to interact with emulated database content and config, as well as optionally your emulated project resources (functions, other databases, and security rules).</p> <p>Using the Authentication emulator involves just a few steps:</p> <ol> <li>Adding a line of code to your app's test config to connect to the emulator.</li> <li>From the root of your local project directory, running <code translate="no" dir="ltr">firebase emulators:start</code>.</li> <li>Using the Local Emulator Suite UI for interactive prototyping, or the Authentication emulator REST API for non-interactive testing.</li> </ol> <p>A detailed guide is available at <a href="../../emulator-suite/connect_auth">Connect your app to the Authentication emulator</a>. For more information, see the <a href="../../emulator-suite">Local Emulator Suite introduction</a>.</p> <p>Now let's continue with how to authenticate users.</p> <h2 id="initialize_the_firebase_sdk">Initialize the Firebase SDK</h2> <p>In your app delegate, first import the Firebase SDK:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">import FirebaseCore
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">@import FirebaseCore;
+</pre></section> </div> <p>Then, in the <code translate="no" dir="ltr">application:didFinishLaunchingWithOptions:</code> method, initialize the <code translate="no" dir="ltr">FirebaseApp</code> object:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Use Firebase library to configure APIs
+FirebaseApp.configure()
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">// Use Firebase library to configure APIs
+[FIRApp configure];
+</pre></section> </div> <h2 id="listen_for_authentication_state">Listen for authentication state</h2> <p>For each of your app's views that need information about the signed-in user, attach a listener to the <code translate="no" dir="ltr">FIRAuth</code> object. This listener gets called whenever the user's sign-in state changes.</p> <p>Attach the listener in the view controller's <code translate="no" dir="ltr">viewWillAppear</code> method:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">handle = Auth.auth().addStateDidChangeListener { auth, user in
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">self.handle = [[FIRAuth auth]
+    addAuthStateDidChangeListener:^(FIRAuth *_Nonnull auth, FIRUser *_Nullable user) {
+      // ...
+    }];
+</pre></section> </div> <p>And detach the listener in the view controller's <code translate="no" dir="ltr">viewWillDisappear</code> method:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">Auth.auth().removeStateDidChangeListener(handle!)
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRAuth auth] removeAuthStateDidChangeListener:_handle];
+</pre></section> </div> <h2 id="sign_up_new_users">Sign up new users</h2> <p>Create a form that allows new users to register with your app using their email address and a password. When a user completes the form, validate the email address and password provided by the user, then pass them to the <code translate="no" dir="ltr">createUser</code> method:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRAuth auth] createUserWithEmail:email
+                           password:password
+                         completion:^(FIRAuthDataResult * _Nullable authResult,
+                                      NSError * _Nullable error) {
+  // ...
+}];
+</pre></section> </div> <h2 id="sign_in_existing_users">Sign in existing users</h2> <p>Create a form that allows existing users to sign in using their email address and password. When a user completes the form, call the <code translate="no" dir="ltr">signIn</code> method:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">Auth.auth().signIn(withEmail: email, password: password) { [weak self] authResult, error in
+  guard let strongSelf = self else { return }
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRAuth auth] signInWithEmail:self-&gt;_emailField.text
+                       password:self-&gt;_passwordField.text
+                     completion:^(FIRAuthDataResult * _Nullable authResult,
+                                  NSError * _Nullable error) {
+  // ...
+}];
+</pre></section> </div> <h2 id="get_user_information">Get user information</h2> <p>After a user signs in successfully, you can get information about the user. For example, in your <a href="#listen_for_authentication_state">authentication state listener</a>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">if let user = user {
+  // The user's ID, unique to the Firebase project.
+  // Do NOT use this value to authenticate with your backend server,
+  // if you have one. Use getTokenWithCompletion:completion: instead.
+  let uid = user.uid
+  let email = user.email
+  let photoURL = user.photoURL
+  var multiFactorString = "MultiFactor: "
+  for info in user.multiFactor.enrolledFactors {
+    multiFactorString += info.displayName ?? "[DispayName]"
+    multiFactorString += " "
+  }
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">if (user) {
+  // The user's ID, unique to the Firebase project.
+  // Do NOT use this value to authenticate with your backend server,
+  // if you have one. Use getTokenWithCompletion:completion: instead.
+  NSString *email = user.email;
+  NSString *uid = user.uid;
+  NSMutableString *multiFactorString = [NSMutableString stringWithFormat:@"MultiFactor: "];
+  for (FIRMultiFactorInfo *info in user.multiFactor.enrolledFactors) {
+    [multiFactorString appendString:info.displayName];
+    [multiFactorString appendString:@" "];
+  }
+  NSURL *photoURL = user.photoURL;
+  // ...
+}
+</pre></section> </div> <h2 id="next_steps">Next steps</h2> <p>Learn how to add support for other identity providers and anonymous guest accounts:</p> <ul> <li><a href="google-signin">Google Sign-in</a></li> <li><a href="facebook-login">Facebook Login</a></li> <li><a href="twitter-login">Twitter Login</a></li> <li><a href="github-auth">GitHub Login</a></li> <li><a href="anonymous-auth">Anonymous sign-in</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/ios/start" class="_attribution-link">https://firebase.google.com/docs/auth/ios/start</a>
+  </p>
+</div>

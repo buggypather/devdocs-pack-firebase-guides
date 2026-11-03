@@ -1,0 +1,71 @@
+<h1>Get started using App Check with a custom provider on web apps</h1> <p>This page shows you how to enable App Check in a web app, using <a href="custom-provider">your custom App Check provider</a>. When you enable App Check, you help ensure that only your app can access your project's Firebase resources.</p> <p>If you want to use App Check with one of the built-in providers, see the docs for <a href="recaptcha-enterprise-provider">App Check with reCAPTCHA Enterprise</a>.</p> <h2 id="before_you_begin">Before you begin</h2> <ul> <li><p><a href="../../web/setup">Add Firebase to your JavaScript project</a> if you haven’t already done so.</p></li> <li><p><a href="../custom-provider">Implement your custom App Check provider's server-side logic</a>.</p></li> </ul> <h2 id="install-sdk">1. Add the App Check library to your app</h2> <p><a href="../../web/setup">Add Firebase to your web app</a> if you haven't already. Be sure to import the App Check library.</p> <h2 id="implement-object">2. Create the App Check provider object</h2> <p>Create an App Check provider object for your custom provider. This object must have a <code translate="no" dir="ltr">getToken()</code> method, which collects whatever information your custom App Check provider requires as proof of authenticity, and sends it to your token acquisition service in exchange for an App Check token. The App Check SDK handles token caching, so always get a new token in your implementation of <code translate="no" dir="ltr">getToken()</code>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { CustomProvider } from "firebase/app-check";
+
+const appCheckCustomProvider = new CustomProvider({
+  getToken: () =&gt; {
+    return new Promise((resolve, _reject) =&gt; {
+      // TODO: Logic to exchange proof of authenticity for an App Check token and
+      // expiration time.
+
+      // ...
+
+      const appCheckToken = {
+        token: tokenFromServer,
+        expireTimeMillis: expirationFromServer * 1000
+      };
+
+      resolve(appCheckToken);
+    });
+  }
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">const appCheckCustomProvider = {
+  getToken: () =&gt; {
+    return new Promise((resolve, _reject) =&gt; {
+      // TODO: Logic to exchange proof of authenticity for an App Check token and
+      // expiration time.
+
+      // ...
+
+      const appCheckToken = {
+        token: tokenFromServer,
+        expireTimeMillis: expirationFromServer * 1000
+      };
+
+      resolve(appCheckToken);
+    });
+  }
+};</pre> </section> </div> <h2 id="initialize">3. Initialize App Check</h2> <p>Add the following initialization code to your application, before you access any Firebase services:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { initializeApp } from "firebase/app";
+import { initializeAppCheck } from "firebase/app-check";
+
+const app = initializeApp({
+  // Your firebase configuration object
+});
+
+const appCheck = initializeAppCheck(app, {
+  provider: appCheckCustomProvider,
+
+  // Optional argument. If true, the SDK automatically refreshes App Check
+  // tokens as needed.
+  isTokenAutoRefreshEnabled: true    
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.initializeApp({
+  // Your firebase configuration object
+});
+
+const appCheck = firebase.appCheck();
+appCheck.activate(
+  appCheckCustomProvider,
+
+  // Optional argument. If true, the SDK automatically refreshes App Check
+  // tokens as needed.
+  true);</pre> </section> </div> <aside class="note"><strong>Note:</strong><span> The SDK will not automatically refresh App Check tokens by default. That functionality must be explicitly enabled by providing <code translate="no" dir="ltr">true</code> as a second argument to <code translate="no" dir="ltr">activate()</code> or by calling <code translate="no" dir="ltr">firebase.appCheck().setTokenAutoRefreshEnabled(true)</code>. For more, see <a href="https://firebase.google.com/docs/reference/js/firebase.appcheck.AppCheck">the App Check reference docs</a>.</span></aside> <h2 id="next_steps">Next steps</h2> <p>Once the App Check library is installed in your app, deploy it.</p> <p>The updated client app will begin sending App Check tokens along with every request it makes to Firebase, but Firebase products will not require the tokens to be valid until you enable enforcement in the App Check section of the Firebase console.</p> <h3 id="monitor">Monitor metrics and enable enforcement</h3> <p>Before you enable enforcement, however, you should make sure that doing so won't disrupt your existing legitimate users. On the other hand, if you're seeing suspicious use of your app resources, you might want to enable enforcement sooner.</p> <p>To help make this decision, you can look at App Check metrics for the services you use:</p> <ul> <li>
+<a href="../monitor-metrics">Monitor App Check request metrics</a> for <span class='\"notranslate\"'>Firebase AI Logic</span>, SQL Connect, Realtime Database, Cloud Firestore, Cloud Storage, Authentication, Google Identity for iOS, Maps JavaScript API, and Places API (New).</li> <li>
+<a href="../monitor-functions-metrics">Monitor App Check request metrics for Cloud Functions</a>.</li> </ul> <h3 id="enforce">Enable App Check enforcement</h3> <p>When you understand how App Check will affect your users and you're ready to proceed, you can enable App Check enforcement:</p> <ul> <li>
+<a href="../enable-enforcement">Enable App Check enforcement</a> for <span class='\"notranslate\"'>Firebase AI Logic</span>, SQL Connect, Realtime Database, Cloud Firestore, Cloud Storage, Authentication, Google Identity for iOS, Maps JavaScript API, and Places API (New).</li> <li>
+<a href="../cloud-functions">Enable App Check enforcement for Cloud Functions</a>.</li> </ul> <h3 id="debug">Use App Check in debug environments</h3> <p>If, after you have registered your app for App Check, you want to run your app in an environment that App Check would normally not classify as valid, such as locally during development, or from a continuous integration (CI) environment, you can create a debug build of your app that uses the App Check debug provider instead of a real attestation provider.</p> <p>See <a href="debug-provider">Use App Check with the debug provider in web apps</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/web/custom-provider" class="_attribution-link">https://firebase.google.com/docs/app-check/web/custom-provider</a>
+  </p>
+</div>

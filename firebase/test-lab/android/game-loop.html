@@ -1,0 +1,195 @@
+<h1>Get started with Game Loop tests</h1> <p>It can be hard to automate game testing when gaming apps are built on different UI frameworks. Game Loop tests allow you to integrate your native tests with Test Lab and easily run them on devices you select. A Game Loop test runs your test through your gaming app while simulating the actions of a real player. This guide shows you how to run a Game Loop test, then view and manage your test results in the Firebase console.</p> <h2 id="what-is-game-loop-test">What is a game loop test?</h2> <p>Since gaming apps render across different UI frameworks and engines, such as Unity, Unreal, or OpenGL/Vulkan C++ code, standard automation tools cannot inspect or interact with UI elements. A <strong>game loop test</strong> lets you integrate your native engine tests with Test Lab by launching your game with an intent containing a specific scenario number. This scenario number prompts your app to run pre-scripted logic, AI simulations, or performance checks directly within your game engine.</p> <p>Once launched, Test Lab doesn't interact further with your game's UI. Instead, Test Lab acts as a test transport and environment: it launches the specific scenario, monitors for crashes and timeouts, and collects any custom result logs when your app finishes running the loop.</p> <h3 id="instrumentation-tests-differences">How game loops differ from instrumentation tests</h3> <ul> <li>
+<strong>Instrumentation tests</strong> (such as Espresso or UI Automator) rely on external frameworks to drive UI interactions, click buttons, and assert application state across the Android View hierarchy from outside your app.</li> <li>
+<strong>Game loop tests</strong> delegate test logic to your app. Your app runs its own internal testing loop or simulation without external UI interaction, while Test Lab triggers your scenario and collects the test output.</li> </ul> <h3 id="game-loop-examples">Examples</h3> <p>Suppose you want to verify that your game maintains at least 60 frames per second on various physical devices. You can implement scenario <code translate="no" dir="ltr">1</code> inside your game code to load your most visually complex level and let an AI player, or automated script, play through it for two minutes.</p> <p>When Test Lab triggers scenario <code translate="no" dir="ltr">1</code>, your game starts the AI playthrough, monitors frame rendering times and memory usage, streams those metrics to a custom output log file (<code translate="no" dir="ltr">logFile</code>), and calls <code translate="no" dir="ltr">finish()</code> when complete. Test Lab then captures the log file and makes it available to you in Cloud Storage and the Firebase console.</p> <h3 id="use-cases">Use cases</h3> <p>Depending on your game engine, you can implement tests with single or multiple loops. A loop is a full or partial run-through of your test on your gaming app. Game loops can be used to:</p> <ul> <li>Run a level of your game the same way an end user would play it. You can either script the input of the user, let the user be idle, or replace the user with an AI if it makes sense in your game (for example, if you have a race car gaming app and already have an AI implemented, you can put an AI driver in charge of the user's input).</li> <li>Run your game at the highest quality setting to see if devices support it.</li> <li>Run a technical test (compile multiple shaders, execute them, check that the output is as expected, and so on).</li> </ul> <p>You can run a Game Loop test on a single test device, a set of test devices, or on Test Lab. However, we don't recommend running Game Loop tests on virtual devices because they have lower graphics frame rates than physical devices.</p> <aside class="note"><strong>Note:</strong><span> Test Lab offers additional features to help you customize your Game Loop tests, such as the ability to run multiple loops at once, or to organize your loops with labels. For more information on these features, see <a href="#optional-features">Optional features</a>.</span></aside> <h2 id="begin-anchor">Before you begin</h2> <p>To implement a test, you must first configure your app for Game Loop tests.</p> <ol> <li>
+<p>In your app manifest, add a new intent filter to your <a href="https://developer.android.com/reference/android/app/Activity" class="external">activity</a>:</p> 
+<pre>&lt;activity android:name=".MyActivity"&gt;
+   &lt;intent-filter&gt;
+       &lt;action android:name="com.google.intent.action.TEST_LOOP"/&gt;
+       &lt;category android:name="android.intent.category.DEFAULT"/&gt;
+       &lt;data android:mimeType="application/javascript"/&gt;
+   &lt;/intent-filter&gt;
+   &lt;intent-filter&gt;
+      ... (other intent filters here)
+   &lt;/intent-filter&gt;
+&lt;/activity&gt;</pre> <p>This allows Test Lab to launch your game by triggering it with a specific intent.</p> <aside class="note"><strong>Note:</strong><span> Game loops require a separate, dedicated intent filter that is not used for other purposes. Your activity can include other intent filters. To learn more about intent filters, see the <a href="https://developer.android.com/guide/topics/manifest/intent-filter-element.html" class="external">&lt;intent-filter&gt; reference page.</a> </span></aside>
+</li> <li>
+<p>In your code (we recommend inside the <code translate="no" dir="ltr">onCreate</code> method declaration), add the following:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val launchIntent = intent
+if (launchIntent.action == "com.google.intent.action.TEST_LOOP") {
+    val scenario = launchIntent.getIntExtra("scenario", 0)
+    // Code to handle your game loop here
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">Intent launchIntent = getIntent();
+if(launchIntent.getAction().equals("com.google.intent.action.TEST_LOOP")) {
+    int scenario = launchIntent.getIntExtra("scenario", 0);
+    // Code to handle your game loop here
+}</pre></section> </div> <p>This allows your activity to check the intent that launches it. You can also add this code later if you prefer (e.g., after initially loading your game engine).</p>
+</li> <li>
+<p>Recommended: At the end of the test, add:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">yourActivity.finish()</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">yourActivity.finish();</pre></section> </div> <p>This closes your app when the Game Loop test is complete. The test relies on your app's UI framework to start the next loop, and closing your app tells it that the test is finished.</p>
+</li> </ol> <h2 id="create-and-run">Create and run a Game Loop test</h2> <p>After you configure your app for Game Loop tests, you can immediately create a test and run it in your gaming app. You can choose to run a test in Test Lab using either the <a href="#run-console">Firebase console</a> or the <a href="#run-gcloud">gcloud command line interface (CLI)</a>, or on a <a href="#run-local">local device using the Test Loop Manager</a>.</p> <h3 id="run-local">Run on a local device</h3> <p>Test Lab's <strong>Test Loop Manager</strong> is an open source app that helps you integrate Game Loop tests and run them on your local devices. It also allows your Quality Assurance team to run the same game loops on their devices.</p> <p>To run a test on a local device using the Test Loop Manager:</p> <ol> <li>Download the <a href="https://dl.google.com/firebase/testlab/testloopmanager.apk">Test Loop Manager</a> on a phone or tablet and install it by running: 
+<pre>adb install testloopmanager.apk</pre>
+</li> <li>On your device, open the <strong>Test Loop Apps</strong> app on your phone or tablet. The app displays a list of apps on your device that can be run with game loops. If you don't see your gaming app here, make sure your intent filter matches the one described in the first step of the <a href="#begin-anchor">Before you begin section</a>.</li> <li>Select your gaming app, then select the number of loops you want to run. Note: At this step, you can choose to run a subset of loops instead of just one loop. For more information on running multiple loops at once, see <a href="#optional-features">Optional features</a>.</li> <li>Click <strong>Run test</strong>. Your test starts running immediately.</li> </ol> <aside class="note"><strong>Note:</strong><span> Game Loop tests have a default timeout of three minutes. When the timeout ends, the test terminates and cancels all pending loops. To set a different timeout duration in the <strong>Test Loop Manager</strong> app, click <strong>menu</strong> &gt; <strong>Set timeout</strong>, then change the timeout in the dialogue that appears.</span></aside> <h2 id="run-testlab">Run in Test Lab</h2> <p>You can run a Game Loop test in Test Lab using either the <a href="#run-console">Firebase console</a> or the <a href="#run-gcloud">gcloud CLI.</a> Before you begin, if you haven't already, open the <a href="https://console.firebase.google.com/">Firebase console</a> and create a project.</p> <aside class="note"><strong>Note:</strong><span> You can use Test Lab at no charge with the Spark pricing plan, which comes with a limited daily quota. For more information about other pricing plans and usage limits, see <a href="https://firebase.google.com/pricing">Firebase Pricing Plans</a>.</span></aside> <h3 id="run-console">Use the Firebase console</h3> <ol> <li>In the Firebase console, click <strong>Test Lab</strong> from the left panel.</li> <li>Click <strong>Run Your First Test</strong> (or <strong>Run a Test</strong> if your project has previously run a test).</li> <li>Select <strong>Game Loop</strong> as the test type, and then click <strong>Continue</strong>.</li> <li>Click <strong>Browse</strong>, and then browse to your app's <code translate="no" dir="ltr">.apk</code> file. Note: At this step, you can choose to run a subset of loops instead of just one loop. For more information on running multiple loops at once, see <a href="#optional-features">Optional features</a>.</li> <li>Click <strong>Continue</strong>.</li> <li>Select the physical devices to use to test your app.</li> <li>Click <strong>Start Tests</strong>.</li> </ol> <p>For more information on getting started with the Firebase console, see <a href="firebase-console">Start testing with the Firebase console.</a></p> <h3 id="run-gcloud">Use the gcloud command-line (CLI)</h3> <ol> <li><p>If you haven't already, download and install the <a href="https://cloud.google.com/sdk/docs/install-sdk#installing_the_latest_version" class="external">Google Cloud SDK</a> </p></li> <li>
+<p>Sign in to the gcloud CLI using your Google Account:</p> <p><code translate="no" dir="ltr">gcloud auth login</code></p>
+</li> <li>
+<p>Set your Firebase project in gcloud, where <code translate="no" dir="ltr">PROJECT_ID</code> is the ID of your Firebase project:</p> 
+<pre>gcloud config set project PROJECT_ID
+</pre>
+</li> <li>
+<p>Run your first test:</p> 
+<pre>gcloud firebase test android run \
+ --type=game-loop --app=&lt;var&gt;path-to-apk&lt;/var&gt; \
+ --device model=herolte,version=23
+</pre> <aside class="note"><strong>Note:</strong><span> At this step, you can choose to run a subset of loops instead of just one loop. For more information on running multiple loops at once, see <a href="#optional-features">Optional features</a>.</span></aside>
+</li> </ol> <p>For more information on getting started with the gcloud CLI, see <a href="command-line">Start testing from the gcloud command line.</a></p> <h2 id="optional-features">Optional features</h2> <p>Test Lab offers several optional features that let you further customize your tests, including the ability to write output data, support for multiple game loops, and labels for related loops.</p> <h3 id="write-output-data">Write output data</h3> <p>When Test Lab launches your game, it specifies a URL pointing to a local result file on the test device, accessible using <code translate="no" dir="ltr">launchIntent.getData()</code>. Your game can write test results, performance metrics, and logs (<code translate="no" dir="ltr">logFile</code>) directly to this location during your test run.</p> <p>You can write <em>any arbitrary content</em> to the <code translate="no" dir="ltr">logFile</code>, such as plain text, CSV data, frame rendering times, or custom diagnostic reports. There are no restrictions or formatting requirements for the content you write; it captures the file when your test finishes and uploads it to your Cloud Storage bucket alongside your other test artifacts.</p> <p>Test Lab follows established best practices for sharing a file between apps described in <a href="https://developer.android.com/training/secure-file-sharing/share-file.html" class="external">Sharing a File</a>. In your activity's <code translate="no" dir="ltr">onCreate()</code> method, where your intent is located, you can retrieve and check your data output file by running the following code:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val launchIntent = intent
+val logFile = launchIntent.data
+logFile?.let {
+    Log.i(TAG, "Log file ${it.encodedPath}")
+    // ...
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">Intent launchIntent = getIntent();
+Uri logFile = launchIntent.getData();
+if (logFile != null) {
+    Log.i(TAG, "Log file " + logFile.getEncodedPath());
+    // ...
+}</pre></section> </div> <p>If you want to write to the file from the C++ side of your game app, you can pass in the file descriptor instead of the file path:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val launchIntent = intent
+val logFile = launchIntent.data
+var fd = -1
+logFile?.let {
+    Log.i(TAG, "Log file ${it.encodedPath}")
+    fd = try {
+        contentResolver
+            .openAssetFileDescriptor(logFile, "w")!!
+            .parcelFileDescriptor
+            .fd
+    } catch (e: FileNotFoundException) {
+        e.printStackTrace()
+        -1
+    } catch (e: NullPointerException) {
+        e.printStackTrace()
+        -1
+    }
+}
+
+// C++ code invoked here.
+// native_function(fd);</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">Intent launchIntent = getIntent();
+Uri logFile = launchIntent.getData();
+int fd = -1;
+if (logFile != null) {
+    Log.i(TAG, "Log file " + logFile.getEncodedPath());
+    try {
+        fd = getContentResolver()
+                .openAssetFileDescriptor(logFile, "w")
+                .getParcelFileDescriptor()
+                .getFd();
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+        fd = -1;
+    } catch (NullPointerException e) {
+        e.printStackTrace();
+        fd = -1;
+    }
+}
+
+// C++ code invoked here.
+// native_function(fd);</pre></section> <section><p class="_firebase-tab"><strong>C++</strong></p>
+
+<pre data-language="cpp">#include &lt;unistd.h&gt;
+JNIEXPORT void JNICALL
+Java_my_package_name_MyActivity_native_function(JNIEnv *env, jclass type, jint log_file_descriptor) {
+// The file descriptor needs to be duplicated.
+int my_file_descriptor = dup(log_file_descriptor);
+}</pre></section> </div> <h3 id="output-example">Output file example</h3> <p>Although Test Lab does not require a specific format for your <code translate="no" dir="ltr">logFile</code>, structuring your output as JSON matching the schema below allows the Firebase console (<code translate="no" dir="ltr">https://console.firebase.google.com/project/_/testlab</code>) to parse and display summary metrics for your game loop test.</p> <p><strong>Key details about this example:</strong></p> <ul> <li>
+<strong>Who provides the data:</strong> You (the test developer) are responsible for calculating and writing all metrics to this file from your game code. Test Lab does not automatically collect or generate these data points for you.</li> <li>
+<strong>Adding custom fields:</strong> Areas marked as <code translate="no" dir="ltr">/.../</code> indicate where you can add arbitrary custom key-value pairs (for example, <code translate="no" dir="ltr">"rendered_vertices": 12000</code> or <code translate="no" dir="ltr">"ai_error_count": 0</code>). You can add any valid JSON property to your output when writing the file from your app, as long as field names don't conflict with schema fields such as <code translate="no" dir="ltr">name</code> or <code translate="no" dir="ltr">start_timestamp</code>.</li> <li>
+<strong>Where to find the output file:</strong> After your test completes, your raw output file is stored and downloadable in your project's Cloud Storage (<code translate="no" dir="ltr">GCS</code>) results bucket inside the test run artifact directory. You can also view and inspect the parsed output in the <strong>Test Lab</strong> page of the Firebase console.</li> </ul> <p>The following is an example structured JSON output file:</p> 
+<pre>
+{
+  "name": "test name",
+  "start_timestamp": 0, // Timestamp of the test start (in us).
+                           Can be absolute or relative
+  "driver_info": "...",
+  "frame_stats": [
+    {
+      "timestamp": 1200000, // Timestamp at which this section was written
+                               It contains value regarding the period
+                               start_timestamp(0) -&gt; this timestamp (1200000 us)
+      "avg_frame_time": 15320, // Average time to render a frame in ns
+      "nb_swap": 52, // Number of frame rendered
+      "threads": [
+        {
+          "name": "physics",
+          "Avg_time": 8030 // Average time spent in this thread per frame in us
+        },
+        {
+          "name": "AI",
+          "Avg_time": 2030 // Average time spent in this thread per frame in us
+        }
+      ],
+      /.../ // Any custom field you want (vertices display on the screen, nb units …)
+    },
+    {
+      // Next frame data here, same format as above
+    }
+  ],
+  "loading_stats": [
+    {
+      "name": "assets_level_1",
+      "total_time": 7850, // in us
+      /.../
+    },
+    {
+      "name": "victory_screen",
+      "total_time": 554, // in us
+      /.../
+    }
+
+  ],
+  /.../, // You can add custom fields here
+}
+
+</pre> <h3 id="multi-loops">Multiple game loops</h3> <p>You might find it useful to run multiple game loops in your app. A loop is a complete run-through of your game app from beginning to end. For example, if you have multiple levels in your game, you might want to have one game loop to launch each level instead of having one loop that iterates through all of them. That way, if your app crashes on level 32, you can directly launch that game loop to reproduce the crash and test bug fixes.</p> <p>To enable your app to run multiple loops at once:</p> <ul> <li>
+<p>If you're running a test with the Test Loop Manager:</p> <ol> <li>
+<p>Add the following line to your app's manifest, inside the <code translate="no" dir="ltr">&lt;application&gt;</code> element: </p>
+
+<pre>&lt;meta-data
+  android:name="com.google.test.loops"
+  android:value="5" /&gt;</pre> <p>This launch intent contains the target loop as an integer parameter. In the <code translate="no" dir="ltr">android:value</code> field, you can specify an integer from 1 to 1024 (the maximum number of loops allowed for a single test). Note that loops are indexed starting from 1, not 0.</p>
+</li> <li><p>In the Test Loop Manager app, a selection screen appears that allows you to select which loop(s) you want to run. If you select multiple loops, each loop is launched in sequence after the preceding loop completes.</p></li> </ol>
+</li> <li><p>If you're running a test with the Firebase console, enter a list or a range of loop numbers in the <strong>Scenarios</strong> field.</p></li> <li><p>If you're running a test with the gcloud CLI, specify a list of loop numbers by using the <code translate="no" dir="ltr">--scenario-numbers</code> flag. For example, <code translate="no" dir="ltr">--scenario-numbers=1,3,5</code> runs loops 1, 3, and 5.</p></li> <li>
+<p>If you're writing C++ and want to change the behavior of your loop, pass the following extra to your native C++ code:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val launchIntent = intent
+val scenario = launchIntent.getIntExtra("scenario", 0)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">Intent launchIntent = getIntent();
+int scenario = launchIntent.getIntExtra("scenario", 0);</pre></section> </div> <p>You can now change the behavior of your loop based on the resulting <code translate="no" dir="ltr">int</code> value.</p>
+</li> </ul> <h3 id="label-loops">Label game loops</h3> <p>When you label your game loops with one or more scenario labels, you and your QA team can easily launch a set of related game loops (e.g., "all compatibility game loops") and test them in a single matrix. You can create your own labels or use the predefined labels offered by Test Lab:</p> <ul> <li>
+<code translate="no" dir="ltr">com.google.test.loops.player_experience</code>: For loops used to reproduce a real user's experience when playing the game. The goal of testing with these loops is to find issues that a real user would face while playing the game.</li> <li>
+<code translate="no" dir="ltr">com.google.test.loops.gpu_compatibility</code>: For loops used to test GPU-related issues. The goal of testing with these loops is to execute GPU code that might not run properly run in production, to expose issues with hardware and drivers.</li> <li>
+<code translate="no" dir="ltr">com.google.test.loops.compatibility</code>: For loops used to test a broad range of compatibility issues, including I/O issues and OpenSSL issues.</li> <li>
+<code translate="no" dir="ltr">com.google.test.loops.performance</code>: For loops used to test the performance of the device. For example, a game might run at the most complex graphics settings to see how a new device behaves.</li> </ul> <p>To enable your app to run loops with the same label:</p> <ul> <li>
+<p>If you're running a test with the Test Loop Manager:</p> <ol> <li>
+<p>In your app's manifest, add the following meta-data line and replace <var translate="no">LABEL_NAME</var> with a label of your choice:</p> 
+<pre>&lt;meta-data
+ android:name="com.google.test.loops.LABEL_NAME"
+ android:value="1,3-5" /&gt;</pre> <p>In the <code translate="no" dir="ltr">android:value</code> field, you can specify a range or a set of integers from 1 to 1024 (the maximum number of loops allowed for a single test) that represent the loops you want to label. Note that loops are indexed starting from 1, not 0. For example, <code translate="no" dir="ltr">android:value="1,3-5"</code> applies <var translate="no">LABEL_NAME</var> to loops 1, 3, 4, and 5.</p>
+</li> <li><p>In the Test Loop Manager app, enter one or more labels in the <strong>Labels</strong> field.</p></li> </ol>
+</li> <li><p>If you're running a test with the Firebase console, enter one or more labels in the <strong>Labels</strong> field.</p></li> <li><p>If you're running a test with the gcloud CLI, specify one or more scenario labels by using the <code translate="no" dir="ltr">--scenario-labels</code> flag (e.g., <code translate="no" dir="ltr">--scenario-labels=performance,gpu</code>).</p></li> </ul> <h2 id="app_licensing_support">App licensing support</h2> <p>Test Lab supports apps that use the <a href="https://developer.android.com/google/play/licensing/index.html">App Licensing</a> service offered by Google Play. To successfully check licensing when testing your app with Test Lab, you must publish your app to the production channel in the Play store. To test your app in the alpha or beta channel using Test Lab, remove the licensing check before uploading your app to Test Lab.</p> <h2 id="known_issues">Known issues</h2> <p>Game Loop tests in Test Lab have the following known issues:</p> <ul> <li>Some crashes do not support backtraces. For example, some release builds may suppress the output of the <code translate="no" dir="ltr">debuggerd</code> process using <code translate="no" dir="ltr">prctl(PR_SET_DUMPABLE, 0)</code>. To learn more, see <a href="https://source.android.com/devices/tech/debug/#debuggerd"><code translate="no" dir="ltr">debuggerd</code></a>.</li> <li>API Level 19 is not currently supported due to file permission errors.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/test-lab/android/game-loop" class="_attribution-link">https://firebase.google.com/docs/test-lab/android/game-loop</a>
+  </p>
+</div>

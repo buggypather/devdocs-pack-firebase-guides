@@ -1,0 +1,743 @@
+<h1>Call functions from your app</h1> <p>The Cloud Functions for Firebase client SDKs let you call functions directly from a Firebase app. To call a function from your app in this way, write and deploy an HTTP Callable function in Cloud Functions, and then add client logic to call the function from your app.</p> <p>It's important to keep in mind that HTTP callable functions are similar but <strong>not identical to</strong> HTTP functions. To use HTTP callable functions you must use the client SDK for your platform together with the backend API (or implement the protocol). Callables have these key difference from HTTP functions:</p> <ul> <li>With callables, Firebase Authentication tokens, FCM tokens, and App Check tokens, when available, are automatically included in requests.</li> <li>The trigger automatically deserializes the request body and validates auth tokens.</li> </ul> <p>The Firebase SDK for Cloud Functions 2nd gen and higher interoperates with these Firebase client SDK minimum versions to support HTTPS Callable functions:</p> <ul> <li>Firebase SDK for Apple platforms 13.1.1</li> <li>Firebase SDK for Android 23.0.0</li> <li>Firebase Modular Web SDK v. 9.7.0</li> </ul> <p>If you want to add similar functionality to an app built on an unsupported platform, see the <a href="callable-reference">Protocol Specification for <code translate="no" dir="ltr">https.onCall</code></a>. The rest of this guide provides instructions on how to write, deploy, and call an HTTP callable function for Apple platforms, Android, web, C++, and Unity.</p> <aside class="experimental"><strong>Experimental:</strong><span> HTTP callable functions now have experimental support for Dart. <a href="start-dart">Learn more</a> about building a full-stack Dart application using the new Cloud Functions and Admin SDKs for Dart.</span></aside> <h2 id="write-deploy">Write and deploy the callable function</h2> <p>Code examples in this section are based on a complete <a href="https://github.com/firebase/functions-samples/tree/main/Node/quickstarts/callable-functions">quickstart sample</a> that demonstrates how to send requests to a server-side function and get a response using one of the Client SDKs. To get started, import the required modules:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Dependencies for callable functions.
+const {onCall, HttpsError} = require("firebase-functions/https");
+const {logger} = require("firebase-functions");
+
+// Dependencies for the addMessage function.
+const {getDatabase} = require("firebase-admin/database");
+const sanitizer = require("./sanitizer");
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Dependencies for callable functions.
+from firebase_functions import https_fn, options
+
+# Dependencies for writing to Realtime Database.
+from firebase_admin import db, initialize_app
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">// Dependencies for callable functions.
+import 'package:firebase_functions/firebase_functions.dart';
+</pre></section> </div> <p>Use the request handler for your platform to create an HTTPS callable function. This method takes a request parameter:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Saves a message to the Firebase Realtime Database but sanitizes the
+// text by removing swearwords.
+exports.addmessage = onCall((request) =&gt; {
+  // ...
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@https_fn.on_call()
+def addmessage(req: https_fn.CallableRequest) -&gt; Any:
+    """Saves a message to the Firebase Realtime Database but sanitizes the text
+    by removing swear words."""
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">// Adds two numbers to each other.
+firebase.https.onCall(name: 'addNumbers', (request, response) async {
+</pre></section> </div> <p>The <code translate="no" dir="ltr">request</code> parameter contains data passed from the client app as well as additional context like authentication state. For a callable function that saves a text message to the Realtime Database, for example, <code translate="no" dir="ltr">data</code> could contain the message text, along with auth information in <code translate="no" dir="ltr">auth</code>:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Message text passed from the client.
+const text = request.data.text;
+// Authentication / user information is automatically added to the request.
+const uid = request.auth.uid;
+const name = request.auth.token.name || null;
+const picture = request.auth.token.picture || null;
+const email = request.auth.token.email || null;
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Message text passed from the client.
+text = req.data["text"]
+# Authentication / user information is automatically added to the request.
+uid = req.auth.uid
+name = req.auth.token.get("name", "")
+picture = req.auth.token.get("picture", "")
+email = req.auth.token.get("email", "")
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">// Numbers passed from the client.
+final data = request.data as Map&lt;String, Object?&gt;?;
+final firstNumber = data?['firstNumber'];
+final secondNumber = data?['secondNumber'];
+// Authentication / user information is automatically added to the request.
+final uid = request.auth?.uid;
+final token = request.auth?.token;
+final name = token?['name'];
+final picture = token?['picture'];
+final email = token?['email'];
+
+// Use variables to suppress 'unused' lint warnings
+print(
+  'User details: uid=$uid, name=$name, picture=$picture, email=$email',
+);
+</pre>
+<aside class="note"><strong>Note:</strong><span> Sample code for the experimental Dart SDK is based on a simpler sample that does not interact with Realtime Database or other features not yet supported during the experimental release.</span></aside></section> </div> <p>Distance between the location of the callable function and the location of the calling client can create network latency. To optimize performance, consider specifying the <a href="locations">function location</a> where applicable, and make sure to align the callable's location with the location set when you <a href="callable#initialize-client">initialize the SDK</a> on the client side.</p> <p>Optionally, you can attach an App Check attestation to help protect your backend resources from abuse, such as billing fraud or phishing. See <a href="../app-check/cloud-functions">Enable App Check enforcement for Cloud Functions</a>.</p> <aside class="note"><strong>Note:</strong><span> Use only the <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.https"><code translate="no" dir="ltr">functions.https</code></a> or <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/python/firebase_functions.https_fn"><code translate="no" dir="ltr">firebase_functions.https_fn</code></a> backend APIs to write callable functions. The HTTP trigger API is entirely separate and not interoperable with callable functions.</span></aside> <h3 id="send-back">Send back the result</h3> <p>To send data back to the client, return data that can be JSON encoded. For example, to return the result of an addition operation:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// returning result.
+return {
+  firstNumber: firstNumber,
+  secondNumber: secondNumber,
+  operator: "+",
+  operationResult: firstNumber + secondNumber,
+};
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">return {
+    "firstNumber": first_number,
+    "secondNumber": second_number,
+    "operator": "+",
+    "operationResult": first_number + second_number,
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">// returning result.
+return CallableResult({
+  'firstNumber': firstNumber,
+  'secondNumber': secondNumber,
+  'operator': '+',
+  'operationResult': firstNumber + secondNumber,
+});
+</pre></section> </div> <p>The sanitized text from the message text example is returned both to the client and to the Realtime Database. In Node.js, this can be done asynchronously using a JavaScript promise:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Saving the new message to the Realtime Database.
+const sanitizedMessage = sanitizer.sanitizeText(text); // Sanitize message.
+
+return getDatabase().ref("/messages").push({
+  text: sanitizedMessage,
+  author: {uid, name, picture, email},
+}).then(() =&gt; {
+  logger.info("New Message written");
+  // Returning the sanitized message to the client.
+  return {text: sanitizedMessage};
+})
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Saving the new message to the Realtime Database.
+sanitized_message = sanitize_text(text)  # Sanitize message.
+db.reference("/messages").push(
+    {  # type: ignore
+        "text": sanitized_message,
+        "author": {"uid": uid, "name": name, "picture": picture, "email": email},
+    }
+)
+print("New message written")
+
+# Returning the sanitized message to the client.
+return {"text": sanitized_message}
+</pre></section> </div> <p>Your function must return a value or, in the case of Node.js, a Promise that resolves with a value. Otherwise, the function may terminate before data is sent back to the client. See <a href="terminate-functions">Terminate functions</a> for guidance.</p> <h3 id="stream">Send and receive streaming results</h3>  <p>Callable functions have mechanisms for handling streaming results. If you have a use case that requires streaming, you can configure streaming in the callable request and then use the appropriate method from the client SDK to call the function.</p> <h4 id="stream-back">Send streaming results</h4> <p>To efficiently stream results that are generated over time, such as from a number of separate API requests or a generative AI API, check the <code translate="no" dir="ltr">acceptsStreaming</code> property on your callable request. When this property is set to <code translate="no" dir="ltr">true</code>, you can stream results back to the client with <code translate="no" dir="ltr">response.sendChunk()</code>.</p> <p>For example, if an app needed to retrieve weather forecast data for multiple locations, the callable function could send each location's forecast separately to clients that have requested a streaming response, instead of making them wait until all forecast requests have resolved:</p> 
+<pre>exports.getForecast = onCall(async (request, response) =&gt; {
+  if (request.data?.locations?.length &lt; 1) {
+    throw new HttpsError("invalid-argument", "Missing locations to forecast");
+  }
+
+  // fetch forecast data for all requested locations
+  const allRequests = request.data.locations.map(
+      async ({latitude, longitude}) =&gt; {
+        const forecast = await weatherForecastApi(latitude, longitude);
+        const result = {latitude, longitude, forecast};
+
+        // clients that support streaming will have each
+        // forecast streamed to them as they complete
+        if (request.acceptsStreaming) {
+          response.sendChunk(result);
+        }
+
+        return result;
+      },
+  );
+
+  // Return the full set of data to all clients
+  return Promise.all(allRequests);
+});</pre> <p>Note that the way <code translate="no" dir="ltr">response.sendChunk()</code> operates depends on certain details of the client's request:</p> <ol> <li><p>If the client requests a streaming response: <code translate="no" dir="ltr">response.sendChunk(data)</code> sends the data piece immediately.</p></li> <li><p>If the client does not request a streaming response: <code translate="no" dir="ltr">response.sendChunk()</code> does nothing for that call. The full response is sent once all data is ready.</p></li> </ol> <p>To determine whether the client is requesting a streaming response, check the <code translate="no" dir="ltr">request.acceptsStreaming</code> property. For example, if <code translate="no" dir="ltr">request.acceptsStreaming</code> is false, you might decide to skip any resource-intensive work specifically related to preparing or sending individual chunks, as the client isn't expecting an incremental delivery.</p> <h4 id="receive_streaming_results">Receive streaming results</h4> <p>In a typical scenario, the client requests streaming with the <code translate="no" dir="ltr">.stream</code> method and then iterates through the results:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">func listenToWeatherForecast() async throws {
+    isLoading = true
+    defer { isLoading = false }
+
+    Functions
+      .functions(region: "us-central1")
+    let getForecast: Callable&lt;WeatherRequest, StreamResponse&lt;WeatherResponse, [WeatherResponse]&gt;&gt; = Functions.functions().httpsCallable("getForecast")
+
+    let request = WeatherRequest(locations: locations)
+    let stream = try getForecast.stream(request)
+
+    for try await response in stream {
+      switch response {
+      case .message(let singleResponse):
+        weatherData["\(singleResponse.latitude),\(singleResponse.longitude)"] = singleResponse
+      case .result(let arrayOfResponses):
+        for response in arrayOfResponses {
+          weatherData["\(response.latitude),\(response.longitude)"] = response
+        }
+        print("Stream ended.")
+        return
+      }
+    }
+  }
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// Get the callable by passing an initialized functions SDK.
+const getForecast = httpsCallable(functions, "getForecast");
+
+// Call the function with the `.stream()` method to start streaming.
+const { stream, data } = await getForecast.stream({
+  locations: favoriteLocations,
+});
+
+// The `stream` async iterable returned by `.stream()`
+// will yield a new value every time the callable
+// function calls `sendChunk()`.
+for await (const forecastDataChunk of stream) {
+  // update the UI every time a new chunk is received
+  // from the callable function
+  updateUi(forecastDataChunk);
+}
+
+// The `data` promise resolves when the callable
+// function completes.
+const allWeatherForecasts = await data;
+finalizeUi(allWeatherForecasts);
+</pre> <p>Loop through the <code translate="no" dir="ltr">stream</code> async iterable as shown. Awaiting the <code translate="no" dir="ltr">data</code> promise indicates to the client that the request is complete</p></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Get the callable by passing an initialized functions SDK.
+val getForecast = functions.getHttpsCallable("getForecast");
+
+// Call the function with the `.stream()` method and convert it to a flow
+getForecast.stream(
+  mapOf("locations" to favoriteLocations)
+).asFlow().collect { response -&gt;
+  when (response) {
+    is StreamResponse.Message -&gt; {
+      // The flow will emit a [StreamResponse.Message] value every time the
+      // callable function calls `sendChunk()`.
+      val forecastDataChunk = response.message.data as Map&lt;String, Any&gt;
+      // Update the UI every time a new chunk is received
+      // from the callable function
+      updateUI(
+        forecastDataChunk["latitude"] as Double,
+        forecastDataChunk["longitude"] as Double,
+        forecastDataChunk["forecast"] as Double,
+      )
+    }
+    is StreamResponse.Result -&gt; {
+      // The flow will emit a [StreamResponse.Result] value when the
+      // callable function completes.
+      val allWeatherForecasts = response.result.data as List&lt;Map&lt;String, Any&gt;&gt;
+      finalizeUI(allWeatherForecasts)
+    }
+  }
+}
+</pre> <p>In order to use the <code translate="no" dir="ltr">asFlow()</code> extension function, add the <code translate="no" dir="ltr">org.jetbrains.kotlinx:kotlinx-coroutines-reactive</code> library as a dependency to the app's <code translate="no" dir="ltr">build.gradle(.kts)</code> file.</p></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// Get the callable by passing an initialized functions SDK.
+HttpsCallableReference getForecast = mFunctions.getHttpsCallable("getForecast");
+getForecast.stream(
+  new HashMap&lt;String, Object&gt;() {{
+    put("locations", favoriteLocations);
+  }}
+).subscribe(new Subscriber&lt;StreamResponse&gt;() {
+  @Override
+  public void onSubscribe(Subscription subscription) {
+    subscription.request(Long.MAX_VALUE);
+  }
+
+  @Override
+  public void onNext(StreamResponse streamResponse) {
+    if (streamResponse instanceof StreamResponse.Message) {
+      // The flow will emit a [StreamResponse.Message] value every time the
+      // callable function calls `sendChunk()`.
+      StreamResponse.Message response = (StreamResponse.Message) streamResponse;
+      Map&lt;String, Object&gt; forecastDataChunk =
+        (Map&lt;String, Object&gt;) response.getMessage().getData();
+      // Update the UI every time a new chunk is received
+      // from the callable function
+      updateUI(
+        (double) forecastDataChunk.get("latitude"),
+        (double) forecastDataChunk.get("longitude"),
+        (double) forecastDataChunk.get("forecast")
+      );
+    } else if(streamResponse instanceof StreamResponse.Result) {
+      // The flow will emit a [StreamResponse.Result] value when the
+      // callable function completes.
+      StreamResponse.Result response = (StreamResponse.Result) streamResponse;
+      List&lt;Map&lt;String, Object&gt;&gt; allWeatherForecasts =
+        (List&lt;Map&lt;String, Object&gt;&gt;) response.getResult().getData();
+      finalizeUI();
+    }
+  }
+
+  @Override
+  public void onError(Throwable throwable) {
+    // an error occurred in the function
+  }
+
+  @Override
+  public void onComplete() {
+
+  }
+});
+</pre></section> </div> <h3 id="cors">Configure CORS (Cross-Origin Resource Sharing)</h3> <p>Use the <code translate="no" dir="ltr">cors</code> option to control which origins can access your function.</p> <p>By default, callable functions have CORS configured to allow requests from all origins. To allow some cross-origin requests, but not all, pass a list of specific domains or regular expressions that should be allowed. For example:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const { onCall } = require("firebase-functions/v2/https");
+
+exports.getGreeting = onCall(
+  { cors: [/firebase\.com$/, "https://flutter.com"] },
+  (request) =&gt; {
+    return "Hello, world!";
+  }
+);
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions import https_fn, options
+
+@https_fn.on_call(
+    cors=options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
+        cors_methods=["get", "post"],
+    )
+)
+def say_hello(req: https_fn.CallableRequest) -&gt; Any:
+    return "Hello world!"
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">import 'package:firebase_functions/firebase_functions.dart';
+
+void main(List&lt;String&gt; args) {
+  fireUp(args, (firebase) {
+    firebase.https.onCall(
+      name: 'getGreeting',
+      options: CallableOptions(
+        cors: Cors([RegExp(r'^https:\/\/firebase\.com$'), 'https://flutter.com']),
+      ),
+      (request) async {
+        return CallableResult('Hello, world!');
+      },
+    );
+  });
+}
+</pre></section> </div> <p>To forbid cross-origin requests, set the <code translate="no" dir="ltr">cors</code> policy to <code translate="no" dir="ltr">false</code>.</p> <h3 id="handle-errors">Handle errors</h3> <p>To ensure the client gets useful error details, return errors from a callable by throwing (or for Node.js returning a Promise rejected with) an instance of <code translate="no" dir="ltr">functions.https.HttpsError</code> or <code translate="no" dir="ltr">https_fn.HttpsError</code>. The error has a <code translate="no" dir="ltr">code</code> attribute that can be one of the values listed in gRPC <a href="https://github.com/grpc/grpc/blob/master/doc/statuscodes.md">Status codes</a>. The errors also have a string <code translate="no" dir="ltr">message</code>, which defaults to an empty string. They can also have an optional <code translate="no" dir="ltr">details</code> field with an arbitrary value. If an error other than an HTTPS error is thrown from your functions, your client instead receives an error with the message <code translate="no" dir="ltr">INTERNAL</code> and the code <code translate="no" dir="ltr">internal</code>.</p> <p>For example, a function could throw data validation and authentication errors with error messages to return to the calling client:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Checking attribute.
+if (!(typeof text === "string") || text.length === 0) {
+  // Throwing an HttpsError so that the client gets the error details.
+  throw new HttpsError("invalid-argument", "The function must be called " +
+          "with one arguments \"text\" containing the message text to add.");
+}
+// Checking that the user is authenticated.
+if (!request.auth) {
+  // Throwing an HttpsError so that the client gets the error details.
+  throw new HttpsError("failed-precondition", "The function must be " +
+          "called while authenticated.");
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Checking attribute.
+if not isinstance(text, str) or len(text) &lt; 1:
+    # Throwing an HttpsError so that the client gets the error details.
+    raise https_fn.HttpsError(
+        code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
+        message=(
+            'The function must be called with one argument, "text",'
+            " containing the message text to add."
+        ),
+    )
+
+# Checking that the user is authenticated.
+if req.auth is None:
+    # Throwing an HttpsError so that the client gets the error details.
+    raise https_fn.HttpsError(
+        code=https_fn.FunctionsErrorCode.FAILED_PRECONDITION,
+        message="The function must be called while authenticated.",
+    )
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">// Checking that attributes are present and are numbers.
+if (firstNumber is! num || secondNumber is! num) {
+  // Throwing an HttpsError so that the client gets the error details.
+  throw InvalidArgumentError(
+    'The function must be called with two arguments "firstNumber" and "secondNumber" which must both be numbers.',
+  );
+}
+</pre></section> </div> <h3 id="deploy-callable">Deploy the callable function</h3> <p>After you save a completed callable function within <code translate="no" dir="ltr">index.js</code>, it is deployed along with all other functions when you run <code translate="no" dir="ltr">firebase deploy</code>. To deploy only the callable, use the <code translate="no" dir="ltr">--only</code> argument as shown to perform <a href="../cli#partial_deploys">partial deploys</a>:</p> 
+<pre>
+firebase deploy --only functions:addMessage
+</pre> <p>If you encounter permissions errors when deploying functions, make sure that the appropriate <a href="../projects/iam/permissions#functions">IAM roles</a> are assigned to the user running the deployment commands.</p> <h2 id="set-client">Set up your client development environment</h2> <p>Make sure you meet any prerequisites, then add the required dependencies and client libraries to your app.</p> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<p>Follow the instructions to <a href="../ios/setup">add Firebase to your Apple app</a>.</p> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+<pre data-language="">  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Cloud Functions library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<ol> <li>Follow the instructions to <a href="../web/setup">add Firebase to your Web app</a>. Make sure to run the following command from your terminal: 
+<pre data-language="javascript">npm install firebase@13.1.0 --save</pre>
+</li> <li>
+<p>Manually require both Firebase core and Cloud Functions:</p> 
+<pre data-language="javascript"> import { initializeApp } from 'firebase/app';
+ import { getFunctions } from 'firebase/functions';
+
+ const app = initializeApp({
+     projectId: '### CLOUD FUNCTIONS PROJECT ID ###',
+     apiKey: '### FIREBASE API KEY ###',
+     authDomain: '### FIREBASE AUTH DOMAIN ###',
+   });
+ const functions = getFunctions(app);</pre>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<ol> <li><p>Follow the instructions to <a href="../android/setup">add Firebase to your Android app</a>.</p></li> <li>
+<p> In your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the dependency for the Cloud Functions library for Android. We recommend using the <a href="../android/learn-more#bom">Firebase Android BoM</a> to control library versioning. </p> 
+
+<pre data-language="java">dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Add the dependency for the Cloud Functions library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-functions")
+}</pre> <p>By using the <a href="../android/learn-more#bom">Firebase Android BoM</a>, your app will always use compatible versions of Firebase Android libraries. </p>  <p class="showalways"><em>(Alternative)</em> Add Firebase library dependencies <em>without</em> using the BoM </p> <p>If you choose not to use the Firebase BoM, you must specify each Firebase library version in its dependency line.</p> <p><strong>Note that if you use <em>multiple</em> Firebase libraries in your app, we strongly recommend using the BoM to manage library versions, which ensures that all versions are compatible.</strong> </p> 
+<pre data-language="java">dependencies {
+    // Add the dependency for the Cloud Functions library
+    // When NOT using the BoM, you must specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-functions:23.0.0")
+}</pre>  </li> </ol></section> </div> <h2 id="initialize-client">Initialize the client SDK</h2> <p>Initialize an instance of Cloud Functions:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">lazy var functions = Functions.functions()
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">@property(strong, nonatomic) FIRFunctions *functions;
+// ...
+self.functions = [FIRFunctions functions];
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">const app = initializeApp({
+  projectId: '### CLOUD FUNCTIONS PROJECT ID ###',
+  apiKey: '### FIREBASE API KEY ###',
+  authDomain: '### FIREBASE AUTH DOMAIN ###',
+});
+const functions = getFunctions(app);
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">private lateinit var functions: FirebaseFunctions
+// ...
+functions = Firebase.functions</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">private FirebaseFunctions mFunctions;
+// ...
+mFunctions = FirebaseFunctions.getInstance();</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> To call a function running in any <a href="locations">location</a> other than <code translate="no" dir="ltr">us-central1</code>, you must set the appropriate value at initialization. For example, on Android you would initialize with <code translate="no" dir="ltr">getInstance(FirebaseApp app, String region)</code>.</span></aside> <h2 id="call-function">Call the function</h2> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">functions.httpsCallable("addMessage").call(["text": inputField.text]) { result, error in
+  if let error = error as NSError? {
+    if error.domain == FunctionsErrorDomain {
+      let code = FunctionsErrorCode(rawValue: error.code)
+      let message = error.localizedDescription
+      let details = error.userInfo[FunctionsErrorDetailsKey]
+    }
+    // ...
+  }
+  if let data = result?.data as? [String: Any], let text = data["text"] as? String {
+    self.resultField.text = text
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[_functions HTTPSCallableWithName:@"addMessage"] callWithObject:@{@"text": _inputField.text}
+                                                      completion:^(FIRHTTPSCallableResult * _Nullable result, NSError * _Nullable error) {
+  if (error) {
+    if ([error.domain isEqual:@"com.firebase.functions"]) {
+      FIRFunctionsErrorCode code = error.code;
+      NSString *message = error.localizedDescription;
+      NSObject *details = error.userInfo[@"details"];
+    }
+    // ...
+  }
+  self-&gt;_resultField.text = result.data[@"text"];
+}];
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var addMessage = firebase.functions().httpsCallable('addMessage');
+addMessage({ text: messageText })
+  .then((result) =&gt; {
+    // Read result of the Cloud Function.
+    var sanitizedMessage = result.data.text;
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { getFunctions, httpsCallable } from "firebase/functions";
+
+const functions = getFunctions();
+const addMessage = httpsCallable(functions, 'addMessage');
+addMessage({ text: messageText })
+  .then((result) =&gt; {
+    // Read result of the Cloud Function.
+    /** @type {any} */
+    const data = result.data;
+    const sanitizedMessage = data.text;
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">private fun addMessage(text: String): Task&lt;String&gt; {
+    // Create the arguments to the callable function.
+    val data = hashMapOf(
+        "text" to text,
+        "push" to true,
+    )
+
+    return functions
+        .getHttpsCallable("addMessage")
+        .call(data)
+        .continueWith { task -&gt;
+            // This continuation runs on either success or failure, but if the task
+            // has failed then result will throw an Exception which will be
+            // propagated down.
+            val result = task.result?.data as String
+            result
+        }
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">private Task&lt;String&gt; addMessage(String text) {
+    // Create the arguments to the callable function.
+    Map&lt;String, Object&gt; data = new HashMap&lt;&gt;();
+    data.put("text", text);
+    data.put("push", true);
+
+    return mFunctions
+            .getHttpsCallable("addMessage")
+            .call(data)
+            .continueWith(new Continuation&lt;HttpsCallableResult, String&gt;() {
+                @Override
+                public String then(@NonNull Task&lt;HttpsCallableResult&gt; task) throws Exception {
+                    // This continuation runs on either success or failure, but if the task
+                    // has failed then getResult() will throw an Exception which will be
+                    // propagated down.
+                    String result = (String) task.getResult().getData();
+                    return result;
+                }
+            });
+}</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">    final result = await FirebaseFunctions.instance.httpsCallable('addMessage').call(
+      {
+        "text": text,
+        "push": true,
+      },
+    );
+    _response = result.data as String;
+</pre></section> <section><p class="_firebase-tab"><strong>C++</strong></p>
+
+<pre data-language="cpp">firebase::Future&lt;firebase::functions::HttpsCallableResult&gt; AddMessage(
+    const std::string&amp; text) {
+  // Create the arguments to the callable function.
+  firebase::Variant data = firebase::Variant::EmptyMap();
+  data.map()["text"] = firebase::Variant(text);
+  data.map()["push"] = true;
+
+  // Call the function and add a callback for the result.
+  firebase::functions::HttpsCallableReference doSomething =
+      functions-&gt;GetHttpsCallable("addMessage");
+  return doSomething.Call(data);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">private Task&lt;string&gt; addMessage(string text) {
+  // Create the arguments to the callable function.
+  var data = new Dictionary&lt;string, object&gt;();
+  data["text"] = text;
+  data["push"] = true;
+
+  // Call the function and extract the operation from the result.
+  var function = functions.GetHttpsCallable("addMessage");
+  return function.CallAsync(data).ContinueWith((task) =&gt; {
+    return (string) task.Result.Data;
+  });
+}
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> Experimental Dart functions cannot be identified by the client SDKs by name. Instead, you must provide the full Cloud Run URL (of the format <code translate="no" dir="ltr">https://&lt;function-name&gt;-&lt;random-hash&gt;.&lt;region&gt;.run.app</code>) using methods such as <a href="https://firebase.google.com/docs/reference/js/functions#httpscallablefromurl_7af6987"><code translate="no" dir="ltr">httpsCallableFromURL()</code></a>. See the <a href="start-dart#limitations">experimental Dart SDK limitations</a> for more information.</span></aside> <h3 id="handle-errors-client">Handle errors on the client</h3> <p>The client receives an error if the server threw an error or if the resulting promise was rejected.</p> <p>If the error returned by the function is of type <code translate="no" dir="ltr">function.https.HttpsError</code>, then the client receives the error <code translate="no" dir="ltr">code</code>, <code translate="no" dir="ltr">message</code>, and <code translate="no" dir="ltr">details</code> from the server error. Otherwise, the error contains the message <code translate="no" dir="ltr">INTERNAL</code> and the code <code translate="no" dir="ltr">INTERNAL</code>. See guidance for how to <a href="callable#handle-errors">handle errors</a> in your callable function.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">if let error = error as NSError? {
+  if error.domain == FunctionsErrorDomain {
+    let code = FunctionsErrorCode(rawValue: error.code)
+    let message = error.localizedDescription
+    let details = error.userInfo[FunctionsErrorDetailsKey]
+  }
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">if (error) {
+  if ([error.domain isEqual:@"com.firebase.functions"]) {
+    FIRFunctionsErrorCode code = error.code;
+    NSString *message = error.localizedDescription;
+    NSObject *details = error.userInfo[@"details"];
+  }
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var addMessage = firebase.functions().httpsCallable('addMessage');
+addMessage({ text: messageText })
+  .then((result) =&gt; {
+    // Read result of the Cloud Function.
+    var sanitizedMessage = result.data.text;
+  })
+  .catch((error) =&gt; {
+    // Getting the Error details.
+    var code = error.code;
+    var message = error.message;
+    var details = error.details;
+    // ...
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { getFunctions, httpsCallable } from "firebase/functions";
+
+const functions = getFunctions();
+const addMessage = httpsCallable(functions, 'addMessage');
+addMessage({ text: messageText })
+  .then((result) =&gt; {
+    // Read result of the Cloud Function.
+    /** @type {any} */
+    const data = result.data;
+    const sanitizedMessage = data.text;
+  })
+  .catch((error) =&gt; {
+    // Getting the Error details.
+    const code = error.code;
+    const message = error.message;
+    const details = error.details;
+    // ...
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">addMessage(inputMessage)
+    .addOnCompleteListener { task -&gt;
+        if (!task.isSuccessful) {
+            val e = task.exception
+            if (e is FirebaseFunctionsException) {
+                val code = e.code
+                val details = e.details
+            }
+        }
+    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">addMessage(inputMessage)
+  .addOnCompleteListener(new OnCompleteListener&lt;String&gt;() {
+    @Override
+    public void onComplete(@NonNull Task&lt;String&gt; task) {
+      if (!task.isSuccessful()) {
+        Exception e = task.getException();
+        if (e instanceof FirebaseFunctionsException) {
+          FirebaseFunctionsException ffe = (FirebaseFunctionsException) e;
+          FirebaseFunctionsException.Code code = ffe.getCode();
+          Object details = ffe.getDetails();
+        }
+      }
+    }
+  });</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">try {
+  final result =
+      await FirebaseFunctions.instance.httpsCallable('addMessage').call();
+} on FirebaseFunctionsException catch (error) {
+  print(error.code);
+  print(error.details);
+  print(error.message);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>C++</strong></p>
+
+<pre data-language="cpp">void OnAddMessageCallback(
+    const firebase::Future&lt;firebase::functions::HttpsCallableResult&gt;&amp; future) {
+  if (future.error() != firebase::functions::kErrorNone) {
+    // Function error code, will be kErrorInternal if the failure was not
+    // handled properly in the function call.
+    auto code = static_cast&lt;firebase::functions::Error&gt;(future.error());
+
+    // Display the error in the UI.
+    DisplayError(code, future.error_message());
+    return;
+  }
+
+  const firebase::functions::HttpsCallableResult* result = future.result();
+  firebase::Variant data = result-&gt;data();
+  // This will assert if the result returned from the function wasn't a string.
+  std::string message = data.string_value();
+  // Display the result in the UI.
+  DisplayResult(message);
+}
+
+// ...
+
+// ...
+  auto future = AddMessage(message);
+  future.OnCompletion(OnAddMessageCallback);
+  // ...
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp"> addMessage(text).ContinueWith((task) =&gt; {
+  if (task.IsFaulted) {
+    foreach (var inner in task.Exception.InnerExceptions) {
+      if (inner is FunctionsException) {
+        var e = (FunctionsException) inner;
+        // Function error code, will be INTERNAL if the failure
+        // was not handled properly in the function call.
+        var code = e.ErrorCode;
+        var message = e.ErrorMessage;
+      }
+    }
+  } else {
+    string result = task.Result;
+  }
+});
+</pre></section> </div> <h3 id="set-timeout-client">Set a client timeout</h3> <p>By default, the Cloud Functions client SDKs use a 70-second timeout for callable requests. If a callable function takes longer than 70 seconds to complete, the client SDK terminates the request with a <code translate="no" dir="ltr">DEADLINE_EXCEEDED</code> (<code translate="no" dir="ltr">deadline-exceeded</code>) error—even if you configured a longer server-side timeout.</p> <p>To support long-running callable functions, you must increase the timeout on <strong>both</strong> the server and the client:</p> <ol> <li>Increase the server-side function timeout (see <a href="manage-functions#set-timeout">Set timeout and memory allocation</a>).</li> <li>Increase the client-side timeout when configuring the callable reference in your app:</li> </ol> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">let callable = functions.httpsCallable("addMessage")
+callable.timeoutInterval = 300  // 300 seconds (default is 70)
+let result = try await callable.call(["text": text, "push": true])
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">FIRHTTPSCallable *callable = [self.functions HTTPSCallableWithName:@"addMessage"];
+callable.timeoutInterval = 300;  // 300 seconds (default is 70)
+[callable callWithObject:@{@"text": text, @"push": @YES}
+              completion:^(FIRHTTPSCallableResult * _Nullable result, NSError * _Nullable error) {
+  // ...
+}];
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var addMessage = firebase.functions().httpsCallable('addMessage', {
+  timeout: 300000,  // 300 seconds in milliseconds (default is 70000)
+});
+addMessage({ text: messageText })
+  .then((result) =&gt; {
+    // ...
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { getFunctions, httpsCallable } from "firebase/functions";
+
+const functions = getFunctions();
+const addMessage = httpsCallable(functions, 'addMessage', {
+  timeout: 300000,  // 300 seconds in milliseconds (default is 70000)
+});
+const result = await addMessage({ text: messageText });
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val callable = functions.getHttpsCallable("addMessage")
+callable.setTimeout(300L, TimeUnit.SECONDS)
+val result = callable.call(data).await()
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">HttpsCallableReference callable = mFunctions.getHttpsCallable("addMessage");
+callable.setTimeout(300L, TimeUnit.SECONDS);
+Task&lt;HttpsCallableResult&gt; result = callable.call(data);
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">final callable = FirebaseFunctions.instance.httpsCallable(
+  'addMessage',
+  options: HttpsCallableOptions(
+    timeout: const Duration(seconds: 300),
+  ),
+);
+final result = await callable.call({
+  'text': text,
+  'push': true,
+});
+</pre></section> </div> <h2 id="recommended:-prevent">Recommended: Prevent abuse with App Check</h2> <p>Before you launch your app, you should enable <a href="../app-check/cloud-functions">App Check</a> to help ensure that only your apps can access your callable function endpoints.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/callable" class="_attribution-link">https://firebase.google.com/docs/functions/callable</a>
+  </p>
+</div>

@@ -1,0 +1,150 @@
+<h1>Integrate with Google Cloud</h1> <aside class="caution"> <strong>Cloud Storage for Firebase requires projects to be on the <a href="https://firebase.google.com/pricing">pay-as-you-go Blaze pricing plan</a>.</strong> This requirement also applies to accessing the default bucket for your project. <a href="faqs-storage-changes-announced-sept-2024">Learn more.</a> </aside> Cloud Storage for Firebase is tightly integrated with <a href="https://cloud.google.com" class="external">Google Cloud</a>. The Firebase SDKs for Cloud Storage store files directly in <a href="https://cloud.google.com/storage/docs/buckets" class="external">Google Cloud Storage buckets</a>, and as your app grows, you can integrate other Google Cloud services, such as managed compute like App Engine or Cloud Functions, or machine learning APIs like Cloud Vision or Google Translate. <p>A Firebase project is actually just a Google Cloud project that has <em>additional Firebase-specific</em> configurations and services enabled for it. This means that every Cloud Storage bucket that you use with Cloud Storage for Firebase is accessible in Google Cloud (including its console and its APIs).</p> <h2 id="service-accounts">Considerations for service accounts</h2> <p>Firebase uses Google Cloud service accounts to operate and manage services without sharing user credentials. When you create a Firebase project that uses Cloud Storage, you might notice that a corresponding service account is already available in your project: <code translate="no" dir="ltr"><nobr>service-<var translate="no">PROJECT_NUMBER</var>@gcp-sa-firebasestorage.iam.gserviceaccount.com</nobr></code>. For more information, see <a href="https://firebase.google.com/support/guides/service-accounts">Firebase service accounts overview</a>.</p> <aside class="note"><strong>Note:</strong><span> If your Cloud Storage buckets are managed under the service account named <code translate="no" dir="ltr">firebase-storage@system.gserviceaccount.com</code>, refer to <a href="faq-and-troubleshooting#storage-accounts">the Firebase support FAQ topic</a> for special instructions on service account setup.</span></aside> <h2 id="google-cloud-storage-apis">Google Cloud Storage</h2> <p>You can use the <a href="https://cloud.google.com/storage/docs/reference/libraries" class="external">Google Cloud Storage APIs</a> to access files uploaded via the Firebase SDKs for Cloud Storage, especially to perform more complex operations, such as copying or moving a file, or listing all the files available at a reference.</p> <p>It's important to note that these requests use Google Cloud Storage <a href="https://cloud.google.com/storage/docs/access-control/" class="external">access control options</a>, rather than Firebase Authentication and Cloud Storage Security Rules.</p> <h3 id="apis">APIs</h3> <p>In addition to the Firebase SDKs for Cloud Storage, there are a number of other ways to access data stored in your Cloud Storage bucket, depending on what you want to do. If you're accessing data on a server, we offer server side libraries, as well as a <code translate="no" dir="ltr">JSON</code> and S3 compatible <code translate="no" dir="ltr">XML</code> RESTful API, or if you need to script changes or perform other administrative tasks, we've got a command line tool that will come in handy.</p> <h4 id="google-cloud-server-sdks">Google Cloud server SDKs</h4> <p>Google Cloud offers high-quality server SDKs for a number of cloud products, including Cloud Storage. These libraries are available in <a href="https://github.com/GoogleCloudPlatform/google-cloud-node#google-cloud-storage">Node.js</a>, <a href="https://github.com/GoogleCloudPlatform/google-cloud-java#google-cloud-storage">Java</a>, <a href="https://github.com/GoogleCloudPlatform/google-cloud-go#cloud-storage-">go</a>, <a href="https://github.com/GoogleCloudPlatform/google-cloud-python#google-cloud-storage">Python</a>, <a href="https://github.com/GoogleCloudPlatform/google-cloud-php#google-cloud-storage">PHP</a>, and <a href="https://github.com/GoogleCloudPlatform/google-cloud-ruby#storage">Ruby</a>.</p> <p>For more information, including installation instructions, authentication, and troubleshooting, consult the platform-specific documentation linked above.</p> <p>Example usage for the Google Cloud Storage SDK is shown below:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">    // Require gcloud
+    var gcloud = require('google-cloud');
+
+    // Enable Cloud Storage
+    var gcs = gcloud.storage({
+      projectId: 'grape-spaceship-123',
+      keyFilename: '/path/to/keyfile.json'
+    });
+
+    // Reference an existing bucket.
+    var bucket = gcs.bucket('my-existing-bucket');
+
+    // Upload a local file to a new file to be created in your bucket.
+    bucket.upload('/photos/zoo/zebra.jpg', function(err, file) {
+      if (!err) {
+        // "zebra.jpg" is now in your bucket.
+      }
+    });
+
+    // Download a file from your bucket.
+    bucket.file('giraffe.jpg').download({
+      destination: '/photos/zoo/giraffe.jpg'
+    }, function(err) {});
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">    // Enable Cloud Storage
+    Storage storage = StorageOptions.builder()
+      .authCredentials(AuthCredentials.createForJson(new FileInputStream("/path/to/my/key.json"))
+      .build()
+      .service();
+
+    // Upload a local file to a new file to be created in your bucket.
+    InputStream uploadContent = ...
+    BlobId blobId = BlobId.of("my-existing-bucket", "zebra.jpg");
+    BlobInfo blobInfo = BlobInfo.builder(blobId).contentType("text/plain").build();
+    Blob zebraBlob = storage.create(blobInfo, content);
+
+    // Download a file from your bucket.
+    Blob giraffeBlob = storage.get("my-existing-bucket", "giraffe.jpg", null);
+    InputStream downloadContent = giraffeBlob.getInputStream();
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+<pre data-language="go">    // Enable Cloud Storage
+    client, err := storage.NewClient(ctx, option.WithServiceAccountFile("path/to/keyfile.json"))
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Download a file from your bucket.
+    rc, err := client.Bucket("my-existing-bucket").Object("giraffe.jpg").NewReader(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer rc.Close()
+    body, err := ioutil.ReadAll(rc)
+    if err != nil {
+        log.Fatal(err)
+    }
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+<pre data-language="python">    # Import gcloud
+    from google.cloud import storage
+
+    # Enable Cloud Storage
+    client = storage.Client()
+
+    # Reference an existing bucket.
+    bucket = client.get_bucket('my-existing-bucket')
+
+    # Upload a local file to a new file to be created in your bucket.
+    zebraBlob = bucket.get_blob('zebra.jpg')
+    zebraBlob.upload_from_filename(filename='/photos/zoo/zebra.jpg')
+
+    # Download a file from your bucket.
+    giraffeBlob = bucket.get_blob('giraffe.jpg')
+    giraffeBlob.download_as_string()
+    </pre> </section> <section> <p class="_firebase-tab"><strong>PHP</strong></p> 
+<pre data-language="php">    // Require gcloud
+    require 'vendor/autoload.php';
+    use Google\Cloud\Storage\StorageClient;
+
+    // Enable Cloud Storage
+    $storage = new StorageClient([
+        'projectId' =&gt; 'grape-spaceship-123'
+    ]);
+
+    // Reference an existing bucket.
+    $bucket = $storage-&gt;bucket('my-existing-bucket');
+
+    // Upload a file to the bucket.
+    $bucket-&gt;upload(
+        fopen('/photos/zoo/zebra.jpg', 'r')
+    );
+
+    // Download a file from your bucket.
+    $object = $bucket-&gt;object('giraffe.jpg');
+    $object-&gt;downloadToFile('/photos/zoo/giraffe.jpg');
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Ruby</strong></p> 
+<pre data-language="ruby">    # Require gcloud
+    require "google/cloud"
+
+    # Enable Cloud Storage
+    gcloud = Google::Cloud.new "grape-spaceship-123", "/path/to/keyfile.json"
+    storage = gcloud.storage
+
+    # Reference an existing bucket.
+    bucket = storage.bucket "my-existing-bucket"
+
+    # Upload a file to the bucket.
+    bucket.create_file "/photos/zoo/zebra.jpg", "zebra.jpg"
+
+    # Download a file from your bucket.
+    file = bucket.file "giraffe.jpg"
+    file.download "/photos/zoo/#{file.name}"
+    </pre> </section> </div> <h4 id="rest_api">REST API</h4> <p>If you're using a language without a client library, want to do something that the client libraries don't do, or just have a favorite HTTP client that you'd prefer to use, Google Cloud Storage offers APIs for both <a href="https://cloud.google.com/storage/docs/json_api/" class="external">JSON</a> and <a href="https://cloud.google.com/storage/docs/xml-api/overview" class="external">XML</a>.</p> <p>In addition to these storage data access APIs, to manage Cloud Storage buckets for use in Firebase projects, you can use the <a href="https://firebase.google.com/docs/reference/rest/storage/rest">Cloud Storage for Firebase API</a>.</p> <h4 id="gsutil"><code translate="no" dir="ltr">gsutil</code></h4> <p><a href="https://cloud.google.com/storage/docs/gsutil" class="external"><code translate="no" dir="ltr">gsutil</code></a> is a command line tool that gives you direct access to Cloud Storage. You can use <code translate="no" dir="ltr">gsutil</code> to do a wide range of bucket and object management tasks, including:</p> <ul> <li>Uploading, downloading, and deleting objects.</li> <li>Listing buckets and objects.</li> <li>Moving, copying, and renaming objects.</li> <li>Editing object and bucket ACLs.</li> </ul> <p><code translate="no" dir="ltr">gsutil</code> allow for other advanced operations, such as moving files from one directory to another, or deleting all the files below a certain location.</p> <p>Moving all the files from one reference to another is as easy as: </p>
+
+<pre>gsutil mv gs://bucket/old/reference gs://bucket/new/reference</pre> <p>Batch deleting all the files below a reference is similarly intuitive: </p>
+
+<pre># Delete all files under a path
+gsutil rm -r gs://bucket/reference/to/delete
+
+# Delete all the files in a bucket but not the bucket
+gsutil rm -r gs://bucket/**
+
+# Delete all the files AND the bucket
+# Removing the default bucket will break the Firebase SDKs for Cloud Storage and
+is strongly discouraged
+gsutil rm -r gs://bucket</pre> <h2 id="vpc-service-controls">VPC Service Controls</h2> <p><a href="https://cloud.google.com/vpc-service-controls/docs/overview">VPC Service Controls</a> is a Google Cloud feature that lets you define a security perimeter around your cloud resources to mitigate data exfiltration risks. Cloud Storage for Firebase is a supported service within VPC Service Controls perimeters.</p> <p>By adding your project to a security perimeter, you can ensure that access to your Cloud Storage buckets—whether through the Firebase SDKs for Cloud Storage or Google Cloud Storage APIs—is restricted to authorized networks and services defined within that perimeter. This provides a critical layer of defense, protecting files from unauthorized access or accidental exposure.</p> <p>For more details on how to configure perimeters, see the <a href="https://cloud.google.com/vpc-service-controls/docs/overview">VPC Service Controls documentation</a>.</p> <h3 id="request_rates">Request Rates</h3> <p>Google Cloud Storage is a highly scalable service that uses auto-scaling technology to achieve very high request rates.</p> <p>Google Cloud Storage is a multi-tenant service, meaning that users share the same set of underlying resources. In order to make the best use of these shared resources, buckets have an initial IO capacity.</p> <p>As you plan to integrate Cloud Storage for Firebase into your app, think about a minimum request rate your app needs for good performance, and about making requests efficiently. Review guidelines about <a href="https://cloud.google.com/storage/docs/request-rate" class="external">request rates</a>, and especially <a href="https://cloud.google.com/storage/docs/request-rate#ramp-up" class="external">ramping up request rates</a>.</p> <h3 id="object_versioning">Object Versioning</h3> <p>Have you ever deleted something by accident and not had a backup? Google Cloud Storage supports <a href="https://cloud.google.com/storage/docs/object-versioning" class="external">Object Versioning</a>, which provides an automatic way to back your data up, and restore from those backups. You can enable Object Versioning using the <code translate="no" dir="ltr">gsutil</code> <code translate="no" dir="ltr">versioning set</code> command:</p> 
+<pre>gsutil versioning set on gs://&lt;your-cloud-storage-bucket&gt;</pre> <p>Cloud Storage always picks up the most recent version, so if you want to restore an object, you need to use one of the other APIs or tools above to set the desired object as the most recent.</p> <h3 id="object_lifecycle_management">Object Lifecycle Management</h3> <p>Having the ability to automatically archive or delete stale files is a useful feature for many applications. Luckily, Google Cloud Storage provides <a href="https://cloud.google.com/storage/docs/lifecycle" class="external">Object Lifecycle Management</a>, which allows you to delete or archive objects after a certain amount of time.</p> <p>Consider a photo sharing application that you want all photos to be deleted within one day. You can set up an object lifecycle policy as follows:</p> 
+<pre>// lifecycle.json
+{
+  "lifecycle": {
+    "rule":
+    [
+      {
+        "action": {"type": "Delete"},
+        "condition": {"age": 1}
+      }
+    ]
+  }
+}</pre> <p>And deploy it using the <code translate="no" dir="ltr">gsutil</code> <code translate="no" dir="ltr">lifecycle set</code> command:</p> 
+<pre>gsutil lifecycle set lifecycle.json gs://&lt;your-cloud-storage-bucket&gt;</pre> <p>Note that this applies to all files in the bucket, so if you're storing important user backups you want to store for a long time along side photos that you want to delete daily, you might want to use two separate buckets or perform deletions manually with <code translate="no" dir="ltr">gsutil</code> or your own server.</p> <h2 id="google_cloud_functions_beta">Google Cloud Functions (Beta)</h2> <p><a href="https://cloud.google.com/functions" class="external">Google Cloud Functions</a> is a lightweight, event-based, asynchronous compute solution that allows you to create small, single-purpose functions that respond to events without the need to manage a server or a runtime environment. These functions can be used for transcoding video, classifying images using machine learning, or syncing metadata with the Firebase Realtime Database. With even less overhead than App Engine, Cloud Functions is the fastest way to react to changes in Cloud Storage.</p> <h2 id="google_cloud_vision_api">Google Cloud Vision API</h2> <p>The <a href="https://cloud.google.com/vision" class="external">Google Cloud Vision API</a> enables developers to understand the content of an image by encapsulating powerful machine learning models in an easy to use API. It quickly classifies images into thousands of categories, detects individual objects and faces within images, finds and reads printed words contained within images, identifies offensive content, and even provides image sentiment analysis.</p> <h2 id="google_cloud_speech_api">Google Cloud Speech API</h2> <p>Similar to the Vision API, the <a href="https://cloud.google.com/speech" class="external">Google Cloud Speech API</a> enables developers to extract text from an audio file stored in Cloud Storage. The API recognizes over 80 languages and variants, to support your global user base. When combined with the <a href="https://cloud.google.com/natural-language/" class="external">Google Cloud Natural Language API</a>, developers can both extract the raw text and infer meaning about that text. And if a global audience is required, couple this with the <a href="https://cloud.google.com/translate/" class="external">Google Translate API</a> to translate the text to 90+ languages.</p> <h2 id="app-engine">Google App Engine</h2> <p>Cloud Storage for Firebase uses two different naming formats for default buckets depending on when you created the bucket:</p> <ul> <li>
+<strong>Default bucket created after <nobr>September 2024</nobr></strong>: <nobr><code translate="no" dir="ltr">*.firebasestorage.app</code></nobr> default buckets are independent of Google App Engine.</li> <li>
+<strong>Legacy default buckets</strong>: <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr> default buckets are shared with Google App Engine.</li> </ul> <p>Google App Engine is a "Platform as a Service" that automatically scales backend logic in response to the amount of traffic it receives. Just upload your backend code and Google will manage your app's availability; there are no servers for you to provision or maintain. App Engine is a fast and straightforward way to add additional processing power or trusted execution to your Firebase application.</p> <h3 id="legacy-app-engine-integration">Legacy App Engine integration</h3> <p>If you have a legacy <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr> default bucket, it's automatically shared with a App Engine app in your project. This means you can use the built-in App Engine APIs to share data between that bucket and App Engine. This is useful for performing audio encoding, video transcoding, and image transformations, as well as other computation intensive background processing.</p> <p>The Java, Python, and Go <a href="https://cloud.google.com/appengine/docs/about-the-standard-environment">standard environments</a> for App Engine include the App Engine Images API (<a href="https://cloud.google.com/appengine/docs/java/images/">Java</a> | <a href="https://cloud.google.com/appengine/docs/python/images/">Python</a> | <a href="https://cloud.google.com/appengine/docs/go/images/">Go</a>), which can resize, rotate, flip, and crop an image, as well as return an image serving URL which allows for client side transformations, similar to Cloudinary and Imgix.</p> <h3 id="shared-bucket-considerations">Shared bucket considerations</h3> <p>If you're using the legacy <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr> default bucket:</p> <ul> <li><p><strong>Firebase Security Rules and App Engine files:</strong> Files uploaded using App Engine share the same bucket and are subject to the same security configurations. If you configure your Firebase Security Rules for <a href="security/rules-conditions#public">public access</a>, you will make newly uploaded App Engine files publicly accessible as well.</p></li> <li>
+<p><strong>Setting permissions:</strong> When importing an existing Google Cloud project into Firebase, you might need to set the default access control on your objects to allow Firebase to access them. Run the following command using <a href="#gsutil"><code translate="no" dir="ltr">gsutil</code></a>:</p> 
+<pre>gsutil -m acl ch -r -u service-PROJECT_NUMBER@gcp-sa-firebasestorage.iam.gserviceaccount.com gs://BUCKET_NAME</pre>
+</li> </ul> <h3 id="known_issues">Known issues for Cloud Storage and App Engine</h3> <p>There are two known cases where you can't import your App Engine app:</p> <ul> <li><p>The project contains a former App Engine Datastore Master/Slave app.</p></li> <li><p>The project has a domain prefixed project ID, for example: <code translate="no" dir="ltr">domain.com:project-1234</code>.</p></li> </ul> <p>In either of these cases, the project won't support Cloud Storage for Firebase, and you should create a new Firebase project in order to use Cloud Storage. If you have questions, <a href="https://firebase.google.com/support/contact/troubleshooting">reach out to Firebase Support</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/storage/gcp-integration" class="_attribution-link">https://firebase.google.com/docs/storage/gcp-integration</a>
+  </p>
+</div>

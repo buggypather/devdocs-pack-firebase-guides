@@ -1,0 +1,81 @@
+<h1>Receive Firebase Dynamic Links on Android</h1> <aside class="note"> <b>Note:</b> Firebase Dynamic Links is <i>deprecated</i> and should not be used in new projects. The service will be shutting down soon. Follow the <a href="https://firebase.google.com/support/dynamic-links-faq#how_should_i_migrate_from_the_service"> migration guide</a> and see the <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ</a> for more information. </aside> <p>To receive the Firebase Dynamic Links that <a href="../create-links"> you created</a>, you must include the Dynamic Links SDK in your app and call the <code translate="no" dir="ltr">FirebaseDynamicLinks.getDynamicLink()</code> method when your app loads to get the data passed in the Dynamic Link.</p> <h2 id="set-up-firebase-and-the-dynamic-links-sdk">Set up Firebase and the Dynamic Links SDK</h2> <ol> <li>
+<p>If you haven't already, <a href="../../android/setup">add Firebase to your Android project</a>.</p> <p>When you register your app, specify your SHA-1 signing key. If you use App Links, also specify your SHA-256 key.</p> </li> <li> <p> In your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the dependency for the Dynamic Links library for Android. We recommend using the <a href="../../android/learn-more#bom">Firebase Android BoM</a> to control library versioning. </p> <p> For an optimal experience with Dynamic Links, we recommend <a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">enabling Google Analytics</a> in your Firebase project and adding the Firebase SDK for Google Analytics to your app. </p> 
+<pre>dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Add the dependencies for the Dynamic Links and Analytics libraries
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation 'com.google.firebase:firebase-dynamic-links'
+    implementation 'com.google.firebase:firebase-analytics'
+}</pre> <p>By using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, your app will always use compatible versions of Firebase Android libraries. </p>  <p class="showalways"><em>(Alternative)</em> Add Firebase library dependencies <em>without</em> using the BoM </p> <p>If you choose not to use the Firebase BoM, you must specify each Firebase library version in its dependency line.</p> <p><strong>Note that if you use <em>multiple</em> Firebase libraries in your app, we strongly recommend using the BoM to manage library versions, which ensures that all versions are compatible.</strong> </p> 
+<pre>dependencies {
+    // Add the dependencies for the Dynamic Links and Analytics libraries
+    // When NOT using the BoM, you must specify versions in Firebase library dependencies
+    implementation 'com.google.firebase:firebase-dynamic-links:22.1.0'
+    implementation 'com.google.firebase:firebase-analytics:24.0.0'
+}</pre>  </li> <li id="find_domain">In the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, open the <b>Dynamic Links</b> section. Accept the terms of service if you are prompted to do so.</li> </ol> <h2 id="add-an-intent-filter-for-deep-links">Add an intent filter for deep links</h2> <p>As with <a href="https://developer.android.com/training/app-indexing/deep-linking.html"> plain deep links</a>, you must add a new intent filter to the activity that handles deep links for your app. The intent filter should catch deep links of your domain, since the Dynamic Link will redirect to your domain if your app is installed. This is required for your app to receive the Dynamic Link data after it is installed/updated from the Play Store and one taps on Continue button. In <code translate="no" dir="ltr">AndroidManifest.xml</code>:</p> 
+<pre>&lt;intent-filter&gt;
+    &lt;action android:name="android.intent.action.VIEW"/&gt;
+    &lt;category android:name="android.intent.category.DEFAULT"/&gt;
+    &lt;category android:name="android.intent.category.BROWSABLE"/&gt;
+    &lt;data
+        android:host="example.com"
+        android:scheme="https"/&gt;
+&lt;/intent-filter&gt;</pre> <p>When users open a Dynamic Link with a deep link to the scheme and host you specify, your app will start the activity with this intent filter to handle the link.</p> <h2 id="handle_deep_links">Handle deep links</h2> <p>To receive the deep link, call the <code translate="no" dir="ltr">getDynamicLink()</code> method:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">Firebase.dynamicLinks
+    .getDynamicLink(intent)
+    .addOnSuccessListener(this) { pendingDynamicLinkData: PendingDynamicLinkData? -&gt;
+        // Get deep link from result (may be null if no link is found)
+        var deepLink: Uri? = null
+        if (pendingDynamicLinkData != null) {
+            deepLink = pendingDynamicLinkData.link
+        }
+
+        // Handle the deep link. For example, open the linked
+        // content, or apply promotional credit to the user's
+        // account.
+        // ...
+    }
+    .addOnFailureListener(this) { e -&gt; Log.w(TAG, "getDynamicLink:onFailure", e) }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">FirebaseDynamicLinks.getInstance()
+        .getDynamicLink(getIntent())
+        .addOnSuccessListener(this, new OnSuccessListener&lt;PendingDynamicLinkData&gt;() {
+            @Override
+            public void onSuccess(PendingDynamicLinkData pendingDynamicLinkData) {
+                // Get deep link from result (may be null if no link is found)
+                Uri deepLink = null;
+                if (pendingDynamicLinkData != null) {
+                    deepLink = pendingDynamicLinkData.getLink();
+                }
+
+
+                // Handle the deep link. For example, open the linked
+                // content, or apply promotional credit to the user's
+                // account.
+                // ...
+
+                // ...
+            }
+        })
+        .addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.w(TAG, "getDynamicLink:onFailure", e);
+            }
+        });</pre> </section> </div> <p>You must call <code translate="no" dir="ltr">getDynamicLink()</code> in every activity that might be launched by the link, even though the link might be available from the intent using <code translate="no" dir="ltr">getIntent().getData()</code>. Calling <code translate="no" dir="ltr">getDynamicLink()</code> retrieves the link and clears that data so it is only processed once by your app.</p> <p>You normally call <code translate="no" dir="ltr">getDynamicLink()</code> in the main activity as well as any activities launched by intent filters that match the link.</p> <h2 id="record-analytics">Record analytics</h2> <p>The following events can be automatically tracked in Google Analytics and shown in the Firebase console.</p> <ul> <li><code translate="no" dir="ltr">dynamic_link_app_open</code></li> <li><code translate="no" dir="ltr">dynamic_link_first_open</code></li> <li><code translate="no" dir="ltr">dynamic_link_app_update</code></li> </ul> <p>In order to register these events, you need to configure Google Analytics before you retrieve the deep link. Check the following conditions are met:</p> <ul> <li>Call <code translate="no" dir="ltr">FirebaseDynamicLinks.getDynamicLink()</code> in your app entry points:</li> <ul> <li>Launcher activities. e.g.: <code translate="no" dir="ltr">action="android.intent.action.MAIN"</code>, <code translate="no" dir="ltr">category="android.intent.category.LAUNCHER"</code>.</li> <li>Activity entry points. e.g.: <code translate="no" dir="ltr">onStart()</code>, <code translate="no" dir="ltr">onCreate()</code>.</li> <li>Deep link activities.</li> </ul> <li>Set up and use Google Analytics:</li> <ul> <li>Include the Google Analytics dependency. This is usually automatically added by the <code translate="no" dir="ltr">google-services</code> Gradle plugin.</li> <li>
+<a href="../../android/setup">Include the <code translate="no" dir="ltr">google-services.json</code> config file</a> in your app.</li> <li>Call <code translate="no" dir="ltr">FirebaseAnalytics.getInstance()</code> before calling <code translate="no" dir="ltr">FirebaseDynamicLinks.getDynamicLink()</code>.</li> </ul> </ul> <h2 id="app_links">Handling Dynamic Links using App Links</h2> <p>On Android 6.0 (API level 23) and higher, you can set up your app to handle Dynamic Links directly when your app is already installed by using <a href="https://developer.android.com/training/app-links/index.html">Android App Links</a>.</p> <p>Ensure that you have added the SHA256 certificate fingerprint for your app into your project in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. Dynamic Links will handle setting up the App Links website association for your Dynamic Links domain.</p> <p>Add an auto-verified intent filter to the Activity that will handle the Dynamic Link, setting the host to your project's Dynamic Links domain as <a href="receive#find_domain">found in the Firebase console</a>. In the <code translate="no" dir="ltr">AndroidManifest.xml</code>:</p> 
+<pre>&lt;intent-filter android:autoVerify="true"&gt;
+    &lt;action android:name="android.intent.action.VIEW"/&gt;
+    &lt;category android:name="android.intent.category.DEFAULT"/&gt;
+    &lt;category android:name="android.intent.category.BROWSABLE"/&gt;
+    &lt;data android:host="example.com/link" android:scheme="http"/&gt;
+    &lt;data android:host="example.com/link" android:scheme="https"/&gt;
+&lt;/intent-filter&gt;</pre> <p>Note that the <code translate="no" dir="ltr">android:host</code> must be set to your Dynamic Links domain, and not the domain of your deep link.</p> <p>All <code translate="no" dir="ltr">autoVerify</code> intent filters in your manifest must be registered in order for App Links to engage. Firebase handles this automatically for your Dynamic Links domains, but you can check this by opening the <code translate="no" dir="ltr">assetlinks.json</code> file hosted on your Dynamic Links domain: </p>
+
+<pre>https://YOUR_DOMAIN/.well-known/assetlinks.json</pre> All of your Firebase apps' package names should be included. <p>Dynamic Links will now be sent directly to your app. You will be able to get the deep link and other Dynamic Link data by calling <code translate="no" dir="ltr">getDynamicLink()</code> in the Activity you added the App Links intent filter to (as described in <a href="receive#handle_deep_links">Handle deep links</a>).</p> <p> <b>Note:</b> Since invoking through App Links takes the user directly to the app, a Dynamic Link cannot honor the required minimum version. So once the app is opened, you need to compare the Dynamic Link's minimum version ( <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/dynamiclinks/PendingDynamicLinkData#public-int-getminimumappversion"> getminimumappversion</a>) against <a href="https://developer.android.com/reference/android/content/pm/PackageInfo.html#versionCode"> PackageInfo.versionCode</a> and redirect the user to upgrade the app if required using <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/dynamiclinks/PendingDynamicLinkData#public-intent-getupdateappintent-context-context"> getUpdateAppIntent</a>. </p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/dynamic-links/android/receive" class="_attribution-link">https://firebase.google.com/docs/dynamic-links/android/receive</a>
+  </p>
+</div>

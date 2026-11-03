@@ -1,0 +1,124 @@
+<h1>Verify ID Tokens</h1> <p>If your Firebase client app communicates with a custom backend server, you might need to identify the currently signed-in user on that server. To do so securely, after a successful sign-in, send the user's ID token to your server using HTTPS. Then, on the server, verify the integrity and authenticity of the ID token and retrieve the <code translate="no" dir="ltr">uid</code> from it. You can use the <code translate="no" dir="ltr">uid</code> transmitted in this way to securely identify the currently signed-in user on your server.</p> <aside class="note"><strong>Note:</strong><span> Many use cases for verifying ID tokens on the server can be accomplished by using Security Rules for the <a href="../../database/security">Firebase Realtime Database</a> and <a href="../../storage/security">Cloud Storage</a>. See if those solve your problem before verifying ID tokens yourself.</span></aside><aside class="warning"><strong>Warning:</strong><span> The ID token verification methods included in the Firebase Admin SDKs are meant to verify ID tokens that come from the client SDKs, not the custom tokens that you create with the Admin SDKs. See <a href="../users#auth_tokens">Auth tokens</a> for more information.</span></aside> <h2 id="before_you_begin">Before you begin</h2> <p>To verify ID tokens with the Firebase Admin SDK, you must have a service account. Follow the <a href="../../admin/setup">Admin SDK setup instructions</a> for more information on how to initialize the Admin SDK with a service account.</p> <h2 id="retrieve_id_tokens_on_clients">Retrieve ID tokens on clients</h2> <p>When a user or device successfully signs in, Firebase creates a corresponding ID token that uniquely identifies them and grants them access to several resources, such as Firebase Realtime Database and Cloud Storage. You can re-use that ID token to identify the user or device on your custom backend server. To retrieve the ID token from the client, make sure the user is signed in and then get the ID token from the signed-in user:</p> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<h5 id="objective-c">Objective-C</h5> 
+<pre data-language="">FIRUser *currentUser = [FIRAuth auth].currentUser;
+[currentUser getIDTokenForcingRefresh:YES
+                           completion:^(NSString *_Nullable idToken,
+                                        NSError *_Nullable error) {
+          if (error) {
+            // Handle error
+            return;
+          }
+
+          // Send token to your backend via HTTPS
+          // ...
+}];
+</pre> <h5 id="swift">Swift</h5> 
+<pre data-language="">let currentUser = FIRAuth.auth()?.currentUser
+currentUser?.getIDTokenForcingRefresh(true) { idToken, error in
+  if let error = error {
+    // Handle error
+    return;
+  }
+
+  // Send token to your backend via HTTPS
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+
+<pre data-language="java">FirebaseUser mUser = FirebaseAuth.getInstance().getCurrentUser();
+mUser.getIdToken(true)
+    .addOnCompleteListener(new OnCompleteListener&lt;GetTokenResult&gt;() {
+        public void onComplete(@NonNull Task&lt;GetTokenResult&gt; task) {
+            if (task.isSuccessful()) {
+                String idToken = task.getResult().getToken();
+                // Send token to your backend via HTTPS
+                // ...
+            } else {
+                // Handle error -&gt; task.getException();
+            }
+        }
+    });
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">Firebase.Auth.FirebaseUser user = auth.CurrentUser;
+user.TokenAsync(true).ContinueWith(task =&gt; {
+  if (task.IsCanceled) {
+    Debug.LogError("TokenAsync was canceled.");
+   return;
+  }
+
+  if (task.IsFaulted) {
+    Debug.LogError("TokenAsync encountered an error: " + task.Exception);
+    return;
+  }
+
+  string idToken = task.Result;
+
+  // Send token to your backend via HTTPS
+  // ...
+});
+</pre></section> <section><p class="_firebase-tab"><strong>C++</strong></p>
+
+<pre data-language="cpp">firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  firebase::Future&lt;std::string&gt; idToken = user.GetToken(true);
+
+  // Send token to your backend via HTTPS
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+
+<pre data-language="javascript">firebase.auth().currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+  // Send token to your backend via HTTPS
+  // ...
+}).catch(function(error) {
+  // Handle error
+});
+</pre></section> </div> <p>Once you have an ID token, you can send that <a href="https://www.jwt.io/introduction">JSON Web Token (JWT)</a> to your backend and validate it using the Firebase Admin SDK, or using a third-party JWT library if your server is written in a language which Firebase does not natively support.</p> <h2 id="verify_id_tokens_using_the_firebase_admin_sdk">Verify ID tokens using the Firebase Admin SDK</h2> <p>The Firebase Admin SDK has a built-in method for verifying and decoding ID tokens. If the provided ID token has the correct format, is not expired, and is properly signed, the method returns the decoded ID token. You can grab the <code translate="no" dir="ltr">uid</code> of the user or device from the decoded token.</p> <aside class="note"><strong>Note:</strong><span> This does not check whether or not the token has been revoked. See: <a href="manage-sessions#detect_id_token_revocation">Detect ID token revocation</a>.</span></aside> <p>Follow the <a href="../../admin/setup">Admin SDK setup instructions</a> to initialize the Admin SDK with a service account. Then, use the <code translate="no" dir="ltr">verifyIdToken()</code> method to verify an ID token:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// idToken comes from the client app
+getAuth()
+  .verifyIdToken(idToken)
+  .then((decodedToken) =&gt; {
+    const uid = decodedToken.uid;
+    // ...
+  })
+  .catch((error) =&gt; {
+    // Handle error
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">// idToken comes from the client app (shown above)
+FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+String uid = decodedToken.getUid();
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># id_token comes from the client app (shown above)
+
+decoded_token = auth.verify_id_token(id_token)
+uid = decoded_token['uid']
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">client, err := app.Auth(ctx)
+if err != nil {
+	log.Fatalf("error getting Auth client: %v\n", err)
+}
+
+token, err := client.VerifyIDToken(ctx, idToken)
+if err != nil {
+	log.Fatalf("error verifying ID token: %v\n", err)
+}
+
+log.Printf("Verified ID token: %v\n", token)
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">FirebaseToken decodedToken = await FirebaseAuth.DefaultInstance
+    .VerifyIdTokenAsync(idToken);
+string uid = decodedToken.Uid;
+</pre></section> </div> <p>ID token verification requires a project ID. The Firebase Admin SDK attempts to obtain a project ID via one of the following methods:</p> <ul> <li>If the SDK was initialized with an explicit <code translate="no" dir="ltr">projectId</code> app option, the SDK uses the value of that option.</li> <li>If the SDK was initialized with service account credentials, the SDK uses the <code translate="no" dir="ltr">project_id</code> field of the service account JSON object.</li> <li>If the <code translate="no" dir="ltr">GOOGLE_CLOUD_PROJECT</code> environment variable is set, the SDK uses its value as the project ID. This environment variable is available for code running on Google infrastructure such as App Engine and Compute Engine.</li> </ul> <h2 id="verify_id_tokens_using_a_third-party_jwt_library">Verify ID tokens using a third-party JWT library</h2> <p>If your backend is in a language not supported by the Firebase Admin SDK, you can still verify ID tokens. First, <a href="https://jwt.io/">find a third-party JWT library for your language</a>. Then, verify the header, payload, and signature of the ID token.</p> <p>Verify the ID token's header conforms to the following constraints:</p> <table class="responsive"> <tr><th colspan="3">ID Token Header Claims</th></tr> <tr> <td><code translate="no" dir="ltr">alg</code></td> <td>Algorithm</td> <td><code translate="no" dir="ltr">"RS256"</code></td> </tr> <tr> <td><code translate="no" dir="ltr">kid</code></td> <td>Key ID</td> <td> Must correspond to one of the public keys listed at <code translate="no" dir="ltr">https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com</code> </td> </tr> </table> <p>Verify the ID token's payload conforms to the following constraints:</p> <table> <tr><th colspan="3">ID Token Payload Claims</th></tr> <tr> <td><code translate="no" dir="ltr">exp</code></td> <td>Expiration time</td> <td> Must be in the future. The time is measured in seconds since the UNIX epoch. </td> </tr> <tr> <td><code translate="no" dir="ltr">iat</code></td> <td>Issued-at time</td> <td> Must be in the past. The time is measured in seconds since the UNIX epoch. </td> </tr> <tr> <td><code translate="no" dir="ltr">aud</code></td> <td>Audience</td> <td> Must be your Firebase project ID, the unique identifier for your Firebase project, which can be found in the URL of that project's console. </td> </tr> <tr> <td><code translate="no" dir="ltr">iss</code></td> <td>Issuer</td> <td> Must be <code translate="no" dir="ltr">"https://securetoken.google.com/&lt;projectId&gt;"</code>, where <code translate="no" dir="ltr">&lt;projectId&gt;</code> is the same project ID used for <code translate="no" dir="ltr">aud</code> above. </td> </tr> <tr> <td><code translate="no" dir="ltr">sub</code></td> <td>Subject</td> <td> Must be a non-empty string and must be the <code translate="no" dir="ltr">uid</code> of the user or device. </td> </tr> <tr> <td>
+<code translate="no" dir="ltr">auth_time</code> </td> <td>Authentication time </td> <td>Must be in the past. The time when the user authenticated. </td> </tr> </table> <p>Finally, ensure that the ID token was signed by the private key corresponding to the token's <code translate="no" dir="ltr">kid</code> claim. Grab the public key from <code translate="no" dir="ltr">https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com</code> and use a JWT library to verify the signature. Use the value of <code translate="no" dir="ltr">max-age</code> in the <code translate="no" dir="ltr">Cache-Control</code> header of the response from that endpoint to know when to refresh the public keys.</p> <p>If all the above verifications are successful, you can use the subject (<code translate="no" dir="ltr">sub</code>) of the ID token as the <code translate="no" dir="ltr">uid</code> of the corresponding user or device.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/admin/verify-id-tokens" class="_attribution-link">https://firebase.google.com/docs/auth/admin/verify-id-tokens</a>
+  </p>
+</div>

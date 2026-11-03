@@ -1,0 +1,387 @@
+<h1>Grounding with Google Search</h1>  <p>Grounding with <nobr>Google Search</nobr> connects a <span class='\"notranslate\"'>Gemini</span> model to real-time, publicly-available web content. This allows the model to provide more accurate, up-to-date answers and cite verifiable sources beyond its knowledge cutoff.</p> <p>Grounding with <nobr>Google Search</nobr> has the following benefits:</p> <ul> <li>
+<strong>Increase factual accuracy</strong>: Reduce model hallucinations by basing responses on real-world information.</li> <li>
+<strong>Access real-time information</strong>: Answer questions about recent events and topics.</li> <li>
+<strong>Provide sources</strong>: Build user trust or allow users to browse relevant sites by showing the sources for the model's claims.</li> <li>
+<strong>Complete more complex tasks</strong>: Retrieve artifacts and relevant images, videos, or other media to assist in reasoning tasks.</li> <li>
+<strong>Improve region or language-specific responses</strong>: Find region-specific information, or assist in translating content accurately.</li> </ul> <aside class="note"><b>Note for web publishers:</b> Grounding with <nobr>Google Search</nobr> does not use web pages for grounding that have disallowed Google-Extended. Web publishers can <a href="https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers#google-extended" class="external">manage inclusion in Google-Extended with a <code translate="no" dir="ltr">robots.txt</code> file</a>. </aside> <h3 id="supported-models" class="hide-from-toc">Supported models</h3> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li><code translate="no" dir="ltr">gemini-3.8-flash</code></li> <li>
+<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> <li>
+<code translate="no" dir="ltr">gemini-nano-banana-2.1</code> (<span class='\"notranslate\"'>Nano Banana 2.1</span>)</li> <li>
+<code translate="no" dir="ltr">gemini-3.1-flash-image</code> (<span class='\"notranslate\"'>Nano Banana 2</span>)</li> <li>
+<code translate="no" dir="ltr">gemini-3-pro-image</code> (<span class='\"notranslate\"'>Nano Banana Pro</span>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> and <span class='\"notranslate\"'>Gemini 2.5</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <p>The <a href="models#audio-generating-models-live-api">Gemini Live API models</a> also support this capability, but all the code samples in this guide are for the general-use <span class='\"notranslate\"'>Gemini</span> models.</p> <h3 id="supported-languages" class="hide-from-toc">Supported languages</h3> <p>See <a href="models#languages">supported languages</a> for <span class='\"notranslate\"'>Gemini</span> models.</p> <h2 id="ground-the-model">Ground the model with <nobr>Google Search</nobr>
+</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <aside class="special"><strong>Important:</strong><span> If a response contains "<nobr>Google Search</nobr> suggestions" (the <code translate="no" dir="ltr">searchEntryPoint</code> field within the <code translate="no" dir="ltr">groundingMetadata</code> object), then that response is a "grounded result" so <strong>you're required to comply with the "Grounding with <nobr>Google Search</nobr>" usage requirements, which includes how you display the result</strong>. Learn how to <a href="#use-and-display-grounded-result">use and display a grounded result</a> later on this page.</span></aside> <p>When you create the <code translate="no" dir="ltr">GenerativeModel</code> instance, provide <code translate="no" dir="ltr">GoogleSearch</code> as a <code translate="no" dir="ltr">tool</code> that the model can use to generate its response.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+let model = ai.generativeModel(
+    modelName: "GEMINI_MODEL_NAME",
+    // Provide Google Search as a tool that the model can use to generate its response.
+    tools: [.googleSearch()]
+)
+
+let response = try await model.generateContent("Who won the euro 2024?")
+print(response.text ?? "No text in response.")
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = "GEMINI_MODEL_NAME",
+    // Provide Google Search as a tool that the model can use to generate its response
+    tools = listOf(Tool.googleSearch())
+)
+
+val response = model.generateContent("Who won the euro 2024?")
+print(response.text)
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+                .generativeModel("GEMINI_MODEL_NAME",
+                        null,
+                        null,
+                        // Provide Google Search as a tool that the model can use to generate its response
+                        List.of(Tool.GoogleSearch()));
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+ListenableFuture response = model.generateContent("Who won the euro 2024?");
+  Futures.addCallback(response, new FutureCallback() {
+      @Override
+      public void onSuccess(GenerateContentResponse result) {
+          String resultText = result.getText();
+          System.out.println(resultText);
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+          t.printStackTrace();
+      }
+  }, executor);
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+const model = getGenerativeModel(
+  ai,
+  {
+    model: "GEMINI_MODEL_NAME",
+    // Provide Google Search as a tool that the model can use to generate its response
+    tools: [{ googleSearch: {} }]
+  }
+);
+
+const result = await model.generateContent("Who won the euro 2024?");
+
+console.log(result.response.text());
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_ai/firebase_ai.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp.
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'GEMINI_MODEL_NAME',
+  // Provide Google Search as a tool that the model can use to generate its response.
+  tools: [
+    Tool.googleSearch(),
+  ],
+);
+
+final response = await model.generateContent([Content.text("Who won the euro 2024?")]);
+print(response.text);
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  // Provide Google Search as a tool that the model can use to generate its response.
+  tools: new[] { new Tool(new GoogleSearch()) }
+);
+
+var response = await model.GenerateContentAsync("Who won the euro 2024?");
+UnityEngine.Debug.Log(response.Text ?? "No text in response.");
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p> <h2 id="how-it-works">How Grounding with <nobr>Google Search</nobr> works</h2> <p>When you use the <code translate="no" dir="ltr">GoogleSearch</code> tool, the model handles the entire workflow of searching, processing, and citing information automatically.</p> <p>Here's the workflow of the model:</p> <ol> <li>
+<strong>Receive prompt</strong>: Your app sends a prompt to the <span class='\"notranslate\"'>Gemini</span> model with the <code translate="no" dir="ltr">GoogleSearch</code> tool enabled.</li> <li>
+<strong>Analyze prompt</strong>: The model analyzes the prompt and determines if <nobr>Google Search</nobr> can improve its response.</li> <li>
+<strong>Send queries to <nobr>Google Search</nobr></strong>: If needed, the model automatically generates one or multiple search queries and executes them.</li> <li>
+<strong>Process the Search results</strong>: The model processes the <nobr>Google Search</nobr> results and formulates a response to the original prompt.</li> <li>
+<strong>Return a "grounded result"</strong>: The model returns a final, user-friendly response that is grounded in the <nobr>Google Search</nobr> results. This response includes the model's text answer and <code translate="no" dir="ltr">groundingMetadata</code> with the search queries, web results, and sources.</li> </ol> <p>Note that providing <nobr>Google Search</nobr> as a tool to the model doesn't require the model to always use the <nobr>Google Search</nobr> tool to generate its response. In these cases, the response won't contain a <code translate="no" dir="ltr">groundingMetadata</code> object and thus it's <em>not</em> a "grounded result".</p> <p><img src="https://firebase.google.com/static/docs/ai-logic/images/grounding-google-search-workflow.png" alt="Diagram showing how Grounding with Google Search involves the model interacting with Google Search" style="width: 1000px"></p> <h2 id="understand-grounded-result">Understand the grounded result</h2> <p>If the model grounds its response in <nobr>Google Search</nobr> results, then the response includes a <code translate="no" dir="ltr">groundingMetadata</code> object that contains structured data that's essential for verifying claims and building a rich source experience in your application.</p> <aside class="special"><strong>Important:</strong><span> If a response contains "<nobr>Google Search</nobr> suggestions" (the <code translate="no" dir="ltr">searchEntryPoint</code> field within the <code translate="no" dir="ltr">groundingMetadata</code> object), then that response is a "grounded result" so <strong>you're required to comply with the "Grounding with <nobr>Google Search</nobr>" usage requirements, which includes how you display the result</strong>. Learn how to <a href="#use-and-display-grounded-result">use and display a grounded result</a> later on this page.</span></aside> <p>The <code translate="no" dir="ltr">groundingMetadata</code> object in a "grounded result" contains the following information:</p> <ul> <li><p><code translate="no" dir="ltr">webSearchQueries</code>: An array of the search queries sent to <nobr>Google Search</nobr>. This information is useful for debugging and understanding the model's reasoning process.</p></li> <li><p><code translate="no" dir="ltr">searchEntryPoint</code>: Contains the HTML and CSS to render the required "<nobr>Google Search</nobr> suggestions". You're required to comply with the "Grounding with <nobr>Google Search</nobr>" usage requirements for your chosen API provider: <a href="https://ai.google.dev/gemini-api/terms#grounding-with-google-search" class="external"><span class='\"notranslate\"'>Gemini Developer API</span></a> or <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> (see <a href="https://cloud.google.com/terms/service-terms" class="external">Service Terms</a> section within the Service Specific Terms). Learn how to <a href="#use-and-display-grounded-result">use and display a grounded result</a> later on this page.</p></li> <li><p><code translate="no" dir="ltr">groundingChunks</code>: An array of objects containing the web sources (<code translate="no" dir="ltr">uri</code> and <code translate="no" dir="ltr">title</code>).</p></li> <li><p><code translate="no" dir="ltr">groundingSupports</code>: An array of chunks to connect model response <code translate="no" dir="ltr">text</code> to the sources in <code translate="no" dir="ltr">groundingChunks</code>. Each chunk links a text <code translate="no" dir="ltr">segment</code> (defined by <code translate="no" dir="ltr">startIndex</code> and <code translate="no" dir="ltr">endIndex</code>) to one or more <code translate="no" dir="ltr">groundingChunkIndices</code>. This field helps you build inline source links. Learn how to <a href="#use-and-display-grounded-result">use and display a grounded result</a> later on this page.</p></li> </ul> <p>Here's an example response that includes a <code translate="no" dir="ltr">groundingMetadata</code> object:</p> 
+<pre>{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "Spain won Euro 2024, defeating England 2-1 in the final. This victory marks Spain's record fourth European Championship title."
+          }
+        ],
+        "role": "model"
+      },
+      "groundingMetadata": {
+        "webSearchQueries": [
+          "UEFA Euro 2024 winner",
+          "who won euro 2024"
+        ],
+        "searchEntryPoint": {
+          "renderedContent": "&lt;!-- HTML and CSS for the search widget --&gt;"
+        },
+        "groundingChunks": [
+          {"web": {"uri": "https://vertexaisearch.cloud.google.com.....", "title": "aljazeera.com"}},
+          {"web": {"uri": "https://vertexaisearch.cloud.google.com.....", "title": "uefa.com"}}
+        ],
+        "groundingSupports": [
+          {
+            "segment": {"startIndex": 0, "endIndex": 85, "text": "Spain won Euro 2024, defeatin..."},
+            "groundingChunkIndices": [0]
+          },
+          {
+            "segment": {"startIndex": 86, "endIndex": 210, "text": "This victory marks Spain's..."},
+            "groundingChunkIndices": [0, 1]
+          }
+        ]
+      }
+    }
+  ]
+}
+</pre> <h2 id="use-and-display-grounded-result">Use and display a grounded result</h2> <p>If the model uses the <nobr>Google Search</nobr> tool to generate a response, it will provide a <a href="#understand-grounded-result"><code translate="no" dir="ltr">groundingMetadata</code> object</a> in the response.</p> <p><strong>It's <em>required</em> to <a href="#display-search-suggestions">display <nobr>Google Search</nobr> suggestions</a> and <em>required</em> to <a href="#display-sources">display sources</a>.</strong></p> <p>Beyond complying with the requirements of using the <nobr>Google Search</nobr> tool, displaying this information helps you and your end users to validate responses and adds avenues for further learning.</p> <aside class="special"><strong>Important:</strong><span> This section describes basic guidance and a <em>general</em> pattern for how to use and display a grounded result. <strong>Make sure that you review and comply with the <em>usage and display requirements</em> for your chosen <span class='\"notranslate\"'>Gemini API</span> provider</strong>: <a href="https://ai.google.dev/gemini-api/terms#grounding-with-google-search" class="external"><span class='\"notranslate\"'>Gemini Developer API</span></a> or <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> (see <a href="https://cloud.google.com/terms/service-terms" class="external">Service Terms</a> section within the Service Specific Terms).</span></aside> <h3 id="display-search-suggestions">
+<em>(Required)</em> Display <nobr>Google Search</nobr> suggestions</h3> <p><strong>If a response contains "<nobr>Google Search</nobr> suggestions", then you're required to comply with the "Grounding with <nobr>Google Search</nobr>" usage requirements, which includes how you display <nobr>Google Search</nobr> suggestions.</strong></p> <p>The <code translate="no" dir="ltr">groundingMetadata</code> object contains "<nobr>Google Search</nobr> suggestions", specifically the <code translate="no" dir="ltr">searchEntryPoint</code> field, which has a <code translate="no" dir="ltr">renderedContent</code> field that provides compliant HTML and CSS styling, which you need to implement to display Search suggestions in your app.</p> <p>Review the detailed information about the <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/grounding/grounding-with-google-search#requirements" class="external">display and behavior requirements for <nobr>Google Search</nobr> suggestions</a> in the Google Cloud documentation. Note that even though this detailed guidance is in the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> documentation, the guidance is applicable to the <span class='\"notranslate\"'>Gemini Developer API</span> provider, as well.</p> <p>See <a href="#handle-grounded-result-code-samples">example code samples</a> later in this section.</p> <aside class="note"><strong>Note:</strong><span> The HTML and CSS provided in the response automatically adapts to the device settings, displaying in either light or dark mode based on the preference indicated by <code translate="no" dir="ltr">@media(prefers-color-scheme)</code>.</span></aside> <h3 id="display-sources">
+<em>(Required)</em> Display sources</h3> <p>The <code translate="no" dir="ltr">groundingMetadata</code> object contains structured source data, specifically the <code translate="no" dir="ltr">groundingSupports</code> and <code translate="no" dir="ltr">groundingChunks</code> fields. Use this information to link the model's statements directly to their sources within your UI (inline and in aggregate).</p> <p>See <a href="#handle-grounded-result-code-samples">example code samples</a> later in this section.</p> <h3 id="handle-grounded-result-code-samples">Example code samples</h3> <p>These code samples provide <em>generalized</em> patterns for using and displaying the grounded result. However, it's your responsibility to make sure that your specific implementation aligns with the compliance requirements.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// ...
+
+// Get the model's response
+let text = response.text
+
+// Get the grounding metadata
+if let candidate = response.candidates.first,
+   let groundingMetadata = candidate.groundingMetadata {
+  // REQUIRED - display Google Search suggestions
+  // (renderedContent contains HTML and CSS for the search widget)
+  if let renderedContent = groundingMetadata.searchEntryPoint?.renderedContent {
+    // TODO(developer): Display Google Search suggestions using a WebView
+  }
+
+  // REQUIRED - display sources
+  let groundingChunks = groundingMetadata.groundingChunks
+  for chunk in groundingMetadata.groundingChunks {
+    if let web = chunk.web {
+      let title = web.title  // for example, "uefa.com"
+      let uri = web.uri  // for example, "https://vertexaisearch.cloud.google.com..."
+      // TODO(developer): show source in the UI
+    }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// ...
+
+// Get the model's response
+val text = response.text
+
+// Get the grounding metadata
+val groundingMetadata = response.candidates.firstOrNull()?.groundingMetadata
+
+// REQUIRED - display Google Search suggestions
+// (renderedContent contains HTML and CSS for the search widget)
+val renderedContent = groundingMetadata?.searchEntryPoint?.renderedContent
+if (renderedContent != null) {
+    // TODO(developer): Display Google Search suggestions using a WebView
+}
+
+// REQUIRED - display sources
+val groundingChunks = groundingMetadata?.groundingChunks
+groundingChunks?.let { chunks -&gt;
+  for (chunk in chunks) {
+  	val title = chunk.web?.title  // for example, "uefa.com"
+	val uri = chunk.web?.uri  // for example, "https://vertexaisearch.cloud.google.com..."
+// TODO(developer): show source in the UI
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// ...
+
+Futures.addCallback(response, new FutureCallback() {
+  @Override
+  public void onSuccess(GenerateContentResponse result) {
+  // Get the model's response
+  String text = result.getText();
+
+  // Get the grounding metadata
+  GroundingMetadata groundingMetadata =
+  result.getCandidates()[0].getGroundingMetadata();
+
+  if (groundingMetadata != null) {
+    // REQUIRED - display Google Search suggestions
+  // (renderedContent contains HTML and CSS for the search widget)
+    String renderedContent =
+  groundingMetadata.getSearchEntryPoint().getRenderedContent();
+    if (renderedContent != null) {
+      // TODO(developer): Display Google Search suggestions using a WebView
+    }
+
+    // REQUIRED - display sources
+    List chunks = groundingMetadata.getGroundingChunks();
+    if (chunks != null) {
+      for(GroundingChunk chunk : chunks) {
+        WebGroundingChunk web = chunk.getWeb();
+        if (web != null) {
+          String title = web.getTitle();  // for example, "uefa.com"
+          String uri = web.getUri();  // for example, "https://vertexaisearch.cloud.google.com..."
+          // TODO(developer): show sources in the UI
+        }
+      }
+    }
+  }
+  }
+
+  @Override
+  public void onFailure(Throwable t) {
+  t.printStackTrace();
+  }
+  }, executor);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// ...
+
+// Get the model's text response
+const text = result.response.text();
+
+// Get the grounding metadata
+const groundingMetadata = result.response.candidates?.[0]?.groundingMetadata;
+
+// REQUIRED - display Google Search suggestions
+// (renderedContent contains HTML and CSS for the search widget)
+const renderedContent = groundingMetadata?.searchEntryPoint?.renderedContent;
+if (renderedContent) {
+  // TODO(developer): render this HTML and CSS in the UI
+}
+
+// REQUIRED - display sources
+const groundingChunks = groundingMetadata?.groundingChunks;
+if (groundingChunks) {
+  for (const chunk of groundingChunks) {
+    const title = chunk.web?.title;  // for example, "uefa.com"
+    const uri = chunk.web?.uri;  // for example, "https://vertexaisearch.cloud.google.com..."
+    // TODO(developer): show sources in the UI
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">// ...
+
+// Get the model's response
+final text = response.text;
+
+// Get the grounding metadata
+final groundingMetadata = response.candidates.first.groundingMetadata;
+
+// REQUIRED - display Google Search suggestions
+// (renderedContent contains HTML and CSS for the search widget)
+final renderedContent = groundingMetadata?.searchEntryPoint?.renderedContent;
+if (renderedContent != null) {
+    // TODO(developer): Display Google Search suggestions using a WebView
+}
+
+// REQUIRED - display sources
+final groundingChunks = groundingMetadata?.groundingChunks;
+if (groundingChunks != null) {
+  for (var chunk in groundingChunks) {
+    final title = chunk.web?.title;  // for example, "uefa.com"
+    final uri = chunk.web?.uri;  // for example, "https://vertexaisearch.cloud.google.com..."
+    // TODO(developer): show sources in the UI
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">// ...
+
+// Get the model's response.
+var text = response.Text;
+
+// Get the grounding metadata.
+var groundingMetadata = response.Candidates.First().GroundingMetadata.Value;
+
+// REQUIRED - display Google Search suggestions
+// (renderedContent contains HTML and CSS for the search widget)
+if (groundingMetadata.SearchEntryPoint.HasValue) {
+    var renderedContent = groundingMetadata.SearchEntryPoint.Value.RenderedContent;
+    // TODO(developer): Display Google Search suggestions using a WebView
+}
+
+// REQUIRED - display sources
+foreach(GroundingChunk chunk in groundingMetadata.GroundingChunks) {
+    var title = chunk.Web.Value.Title;  // for example, "uefa.com"
+    var uri = chunk.Web.Value.Uri;  // for example, "https://vertexaisearch.cloud.google.com..."
+    // TODO(developer): show sources in the UI
+}
+</pre></section> </div> <h3 id="ai-monitoring">Grounded results and AI monitoring in the Firebase console</h3> <p>If you've enabled <a href="monitoring#ai-monitoring-in-console">AI monitoring in the Firebase console</a>, responses are stored in Cloud Logging. By default, this data has a 30-day retention period.</p> <p>It's your responsibility to ensure that this retention period, or any custom period you set, fully aligns with your specific use case and any additional compliance requirements for your chosen <span class='\"notranslate\"'>Gemini API</span> provider: <a href="https://ai.google.dev/gemini-api/terms#grounding-with-google-search" class="external"><span class='\"notranslate\"'>Gemini Developer API</span></a> or <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> (see <a href="https://cloud.google.com/terms/service-terms" class="external">Service Terms</a> section within the Service Specific Terms). You may need to <a href="https://docs.cloud.google.com/logging/docs/buckets" class="external">adjust the retention period in Cloud Logging</a> to meet these requirements.</p> <h2 id="pricing-and-limits">Pricing and limits</h2> <p>Make sure to review pricing, model availability, and limits for Grounding with <nobr>Google Search</nobr> in your chosen <span class='\"notranslate\"'>Gemini API</span> provider documentation: <a href="https://ai.google.dev/gemini-api/docs/pricing" class="external"><span class='\"notranslate\"'>Gemini Developer API</span></a> | <a href="https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing" class="external"><span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span></a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/grounding-google-search" class="_attribution-link">https://firebase.google.com/docs/ai-logic/grounding-google-search</a>
+  </p>
+</div>

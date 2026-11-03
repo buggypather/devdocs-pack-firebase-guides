@@ -1,0 +1,216 @@
+<h1>Implement Firebase SQL Connect operations using native SQL</h1> <p>A guide to writing Firebase SQL Connect operations with SQL instead of GraphQL. page_type: guide announcement: &gt; Native SQL is available as a feature Preview, which means that it isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways. If you use this feature with stored procedures or functions that execute dynamic SQL, follow the security best practices explained at the bottom of this page.</p> <p>Firebase SQL Connect offers multiple ways to interact with your Cloud SQL database:</p> <ul> <li>
+<strong>Native GraphQL</strong>: Define types in your <code translate="no" dir="ltr">schema.gql</code> and SQL Connect translates your GraphQL operations into SQL. This is the standard approach, offering strong typing and schema-enforced structures. Most of the SQL Connect documentation outside of this page discusses this option. When possible, you should use this method to take advantage of full type safety and tooling support.</li> <li>
+<strong>The <code translate="no" dir="ltr">@view</code> directive</strong>: Define a GraphQL type in <code translate="no" dir="ltr">schema.gql</code> backed by a custom <code translate="no" dir="ltr">SELECT</code> SQL statement. This is useful for creating read-only, strongly-typed views based on complex SQL logic. These types are queryable like regular types. See <a href="https://firebase.google.com/docs/reference/data-connect/gql/directive#view"><code translate="no" dir="ltr">@view</code></a>.</li> <li>
+<strong>Native SQL</strong>: Embed SQL statements directly in named operations in <code translate="no" dir="ltr">.gql</code> files using special root fields. This provides maximum flexibility and direct control, especially for operations not supported by standard GraphQL, leveraging database-specific features, or utilizing PostgreSQL extensions. Unlike GraphQL and the <code translate="no" dir="ltr">@view</code> directive, native SQL doesn't provide strongly-typed output.</li> </ul> <p>This guide focuses on the <strong>Native SQL</strong> option.</p> <h2 id="common-uses">Common use cases for native SQL</h2> <p>While native GraphQL provides full type safety, and the <code translate="no" dir="ltr">@view</code> directive offers strongly-typed results for read-only SQL reports, native SQL provides the flexibility needed for:</p> <ul> <li>
+<strong>PostgreSQL Extensions</strong>: Directly query and use any installed PostgreSQL extension (such as <code translate="no" dir="ltr">PostGIS</code> for geospatial data) without needing to map complex types in your GraphQL schema.</li> <li>
+<strong>Complex Queries</strong>: Execute intricate SQL with joins, subqueries, aggregations, window functions, and stored procedures.</li> <li>
+<strong>Data Manipulation (DML)</strong>: Perform <code translate="no" dir="ltr">INSERT, UPDATE, DELETE</code> operations directly. (However, don't use native SQL for Data Definition Language (DDL) commands. You must continue to make schema-level alterations using GraphQL to keep your backend and generated SDKs in sync.)</li> <li>
+<strong>Database-Specific Features</strong>: Utilize functions, operators, or data types unique to PostgreSQL.</li> <li>
+<strong>Performance Optimization</strong>: Hand-tune SQL statements for critical paths.</li> </ul> <h2 id="fields">Native SQL root fields</h2> <p>To write operations with SQL, use one of the following root fields of the <code translate="no" dir="ltr">query</code> or <code translate="no" dir="ltr">mutation</code> types:</p> <h3 id="query-fields">
+<code translate="no" dir="ltr">query</code> fields</h3> <table> <colgroup> <col width="220px"> <col> </colgroup> <thead> <tr> <th>Field</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">_select</code></td> <td> <p>Executes a SQL query returning zero or more rows.</p> <p><strong>Arguments</strong>:</p> <ul> <li>
+<code translate="no" dir="ltr">sql</code>: The SQL statement string literal. To prevent SQL injection, use positional placeholders (<code translate="no" dir="ltr">$1</code>, <code translate="no" dir="ltr">$2</code>, and so on) for parameter values.</li> <li>
+<code translate="no" dir="ltr">params</code>: An ordered list of values to bind to the placeholders. This can include literals, GraphQL variables, and special server-injected context maps like <code translate="no" dir="ltr">{_expr: "auth.uid"}</code> (the authenticated user's ID).</li> </ul> <p><strong>Returns</strong>: a JSON array (<code translate="no" dir="ltr">[Any]</code>).</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">_selectFirst</code></td> <td> <p>Executes a SQL query expected to return zero or one row.</p> <p><strong>Arguments</strong>:</p> <ul> <li>
+<code translate="no" dir="ltr">sql</code>: The SQL statement string literal. To prevent SQL injection, use positional placeholders (<code translate="no" dir="ltr">$1</code>, <code translate="no" dir="ltr">$2</code>, and so on) for parameter values.</li> <li>
+<code translate="no" dir="ltr">params</code>: An ordered list of values to bind to the placeholders. This can include literals, GraphQL variables, and special server-injected context maps like <code translate="no" dir="ltr">{_expr: "auth.uid"}</code> (the authenticated user's ID).</li> </ul> <p><strong>Returns</strong>: a JSON object (<code translate="no" dir="ltr">Any</code>) or <code translate="no" dir="ltr">null</code>.</p> </td> </tr> </tbody> </table> <h3 id="mutation-fields">
+<code translate="no" dir="ltr">mutation</code> fields</h3> <table> <colgroup> <col width="220px"> <col> </colgroup> <thead> <tr> <th>Field</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">_execute</code></td> <td> <p>Executes a DML statement (<code translate="no" dir="ltr">INSERT, UPDATE, DELETE</code>).</p> <p><strong>Arguments</strong>:</p> <ul> <li>
+<code translate="no" dir="ltr">sql</code>: The SQL statement string literal. To prevent SQL injection, use positional placeholders (<code translate="no" dir="ltr">$1</code>, <code translate="no" dir="ltr">$2</code>, and so on) for parameter values. <p>You can use data-modifying Common Table Expressions (for example, <code translate="no" dir="ltr">WITH new_row AS (INSERT...)</code>) here because this field only returns the row count. Only <code translate="no" dir="ltr">_execute</code> supports CTEs.</p>
+</li> <li>
+<code translate="no" dir="ltr">params</code>: An ordered list of values to bind to the placeholders. This can include literals, GraphQL variables, and special server-injected context maps like <code translate="no" dir="ltr">{_expr: "auth.uid"}</code> (the authenticated user's ID).</li> </ul> <p><strong>Returns</strong>: an <code translate="no" dir="ltr">Int</code> (number of rows affected).</p> <p><code translate="no" dir="ltr">RETURNING</code> clauses are ignored in the result.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">_executeReturning</code></td> <td> <p>Executes a DML statement with a <code translate="no" dir="ltr">RETURNING</code> clause, returning zero or more rows.</p> <p><strong>Arguments</strong>:</p> <ul> <li>
+<code translate="no" dir="ltr">sql</code>: The SQL statement string literal. To prevent SQL injection, use positional placeholders (<code translate="no" dir="ltr">$1</code>, <code translate="no" dir="ltr">$2</code>, and so on) for parameter values. Data-modifying Common Table Expressions aren't supported.</li> <li>
+<code translate="no" dir="ltr">params</code>: An ordered list of values to bind to the placeholders. This can include literals, GraphQL variables, and special server-injected context maps like <code translate="no" dir="ltr">{_expr: "auth.uid"}</code> (the authenticated user's ID).</li> </ul> <p><strong>Returns</strong>: a JSON array (<code translate="no" dir="ltr">[Any]</code>).</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">_executeReturningFirst</code></td> <td> <p>Executes a DML statement with a <code translate="no" dir="ltr">RETURNING</code> clause, expected to return zero or one row.</p> <p><strong>Arguments</strong>:</p> <ul> <li>
+<code translate="no" dir="ltr">sql</code>: The SQL statement string literal. To prevent SQL injection, use positional placeholders (<code translate="no" dir="ltr">$1</code>, <code translate="no" dir="ltr">$2</code>, and so on) for parameter values. Data-modifying Common Table Expressions aren't supported.</li> <li>
+<code translate="no" dir="ltr">params</code>: An ordered list of values to bind to the placeholders. This can include literals, GraphQL variables, and special server-injected context maps like <code translate="no" dir="ltr">{_expr: "auth.uid"}</code> (the authenticated user's ID).</li> </ul> <p><strong>Returns</strong>: a JSON object (<code translate="no" dir="ltr">Any</code>) or <code translate="no" dir="ltr">null</code>.</p> </td> </tr> </tbody> </table> <p>Notes:</p> <ul> <li>Operations are executed using the permissions granted to the SQL Connect service account.</li> </ul> <h2 id="syntax-rules">Syntax rules &amp; limitations</h2> <p>Native SQL enforces strict parsing rules to ensure security and prevent SQL injection. Be aware of the following constraints:</p> <ul> <li>
+<strong>Comments</strong>: Use block comments (<code translate="no" dir="ltr">/* ... */</code>). Line comments (<code translate="no" dir="ltr">--</code>) are forbidden because they can truncate subsequent clauses (like security filters) during query concatenation.</li> <li>
+<strong>Parameters</strong>: Use positional parameters (<code translate="no" dir="ltr">$1</code>, <code translate="no" dir="ltr">$2</code>) that match the <code translate="no" dir="ltr">params</code> array order. Named parameters (<code translate="no" dir="ltr">$id</code>, <code translate="no" dir="ltr">:name</code>) are not supported.</li> <li>
+<strong>Strings</strong>: Extended string literals (<code translate="no" dir="ltr">E'...'</code>) and dollar-quoted strings (<code translate="no" dir="ltr">$$...$$</code>) are supported. PostgreSQL Unicode escapes (<code translate="no" dir="ltr">U&amp;'...'</code>) are not supported.</li> </ul> <h4 id="parameters_in_comments">Parameters in comments</h4> <p>The parser ignores everything inside a block comment. If you comment out a line containing a parameter (for example, <code translate="no" dir="ltr">/* WHERE id = $1 */</code>), you must also remove that parameter from the <code translate="no" dir="ltr">params</code> list, or the operation will fail with the error <code translate="no" dir="ltr">unused parameter: $1</code>.</p> <h2 id="naming-conventions">Naming conventions</h2> <p>When writing native SQL, you are interacting directly with your PostgreSQL database, so you must use the actual database names for tables and columns. By default, SQL Connect automatically maps the names in your GraphQL schema to <strong>snake case</strong> in the database, unless you explicitly customize the PostgreSQL identifiers using the <a href="https://firebase.google.com/docs/reference/data-connect/gql/directive#table"><code translate="no" dir="ltr">@table(name)</code></a> and <a href="https://firebase.google.com/docs/reference/data-connect/gql/directive#col"><code translate="no" dir="ltr">@col(name)</code></a> directives.</p> <p>If you define a type without directives, the GraphQL table and field names map to the default <code translate="no" dir="ltr">snake_case</code> PostgreSQL identifiers:</p> <table> <colgroup> <col width="50%"> <col width="50%"> </colgroup> <thead> <tr> <th><code translate="no" dir="ltr">schema.gql</code></th> <th><code translate="no" dir="ltr">queries.gql</code></th> </tr> </thead> <tbody> <tr> <td> 
+<pre>type UserProfile {
+  userId: ID!
+  displayName: String
+}</pre> </td> <td> 
+<pre>query GetUserProfileDefault($id: ID!) {
+  profile: _selectFirst(
+    sql: """
+      SELECT user_id, display_name
+      FROM user_profile
+      WHERE user_id = $1
+    """,
+    params: [$id]
+  )
+}</pre> </td> </tr> </tbody> </table> <p>PostgreSQL identifiers are case-insensitive by default. If you use directives like <code translate="no" dir="ltr">@table</code> or <code translate="no" dir="ltr">@col</code> to specify a name that contains uppercase or mixed-case letters, you <strong>must</strong> enclose that identifier in double quotes in your SQL statements.</p> <p>In the following example, you must use <code translate="no" dir="ltr">"UserProfiles"</code> for the table name and <code translate="no" dir="ltr">"profileId"</code> for the <code translate="no" dir="ltr">userId</code> column. The <code translate="no" dir="ltr">displayName</code> field follows the default conversion to <code translate="no" dir="ltr">display_name</code>:</p> <table> <colgroup> <col width="50%"> <col width="50%"> </colgroup> <thead> <tr> <th><code translate="no" dir="ltr">schema.gql</code></th> <th><code translate="no" dir="ltr">queries.gql</code></th> </tr> </thead> <tbody> <tr> <td> 
+<pre>type UserProfileCustom @table(name: "UserProfiles") {
+  userId: ID! @col(name: "profileId")
+  displayName: String
+}</pre> </td> <td> 
+<pre>query GetUserProfileCustom($id: ID!) {
+  profile: _selectFirst(
+    sql: """
+      SELECT "profileId", display_name
+      FROM "UserProfiles"
+      WHERE "profileId" = $1
+    """,
+    params: [$id]
+  )
+}</pre> </td> </tr> </tbody> </table> <h2 id="usage-examples">Usage examples</h2> <h3 id="basic-select">Example 1: Basic SELECT with field aliasing</h3> <p>You can alias the root field (for example, <code translate="no" dir="ltr">movies: _select</code>) to make the client response cleaner (<code translate="no" dir="ltr">data.movies</code> instead of <code translate="no" dir="ltr">data._select</code>).</p> <p><code translate="no" dir="ltr">queries.gql</code>:</p> 
+<pre>query GetMoviesByGenre($genre: String!, $limit: Int!) @auth(level: PUBLIC) {
+  movies: _select(
+    sql: """
+      SELECT id, title, release_year, rating
+      FROM movie
+      WHERE genre = $1
+      ORDER BY release_year DESC
+      LIMIT $2
+    """,
+    params: [$genre, $limit]
+  )
+}
+</pre> <p>After running the query using a client SDK, the result will be in <code translate="no" dir="ltr">data.movies</code>.</p> <h3 id="basic-update">Example 2: Basic UPDATE</h3> <p><code translate="no" dir="ltr">mutations.gql</code>:</p> 
+<pre>mutation UpdateMovieRating(
+  $movieId: UUID!,
+  $newRating: Float!
+) @auth(level: NO_ACCESS) {
+  _execute(
+    sql: """
+      UPDATE movie
+      SET rating = $2
+      WHERE id = $1
+    """,
+    params: [$movieId, $newRating]
+  )
+}
+</pre> <p>After running the mutation using a client SDK, the number of affected rows will be in <code translate="no" dir="ltr">data._execute</code>.</p> <h3 id="basic-aggregation">Example 3: Basic aggregation</h3> <p><code translate="no" dir="ltr">queries.gql</code>:</p> 
+<pre>query GetTotalReviewCount @auth(level: PUBLIC) {
+  stats: _selectFirst(
+    sql: "SELECT COUNT(*) as total_reviews FROM \"Reviews\""
+  )
+}
+</pre> <p>After running the query using a client SDK, the result will be in <code translate="no" dir="ltr">data.stats.total_reviews</code>.</p> <h3 id="advanced-aggregation-with-rank">Example 4: Advanced aggregation with RANK</h3> <p><code translate="no" dir="ltr">queries.gql</code>:</p> 
+<pre>query GetMoviesRankedByRating @auth(level: PUBLIC) {
+  _select(
+    sql: """
+      SELECT
+        id,
+        title,
+        rating,
+        RANK() OVER (ORDER BY rating DESC) as rank
+      FROM movie
+      WHERE rating IS NOT NULL
+      LIMIT 20
+    """,
+    params: []
+  )
+}
+</pre> <p>After running the query using a client SDK, the result will be in <code translate="no" dir="ltr">data._select</code>.</p> <h3 id="update-with-returning-and-auth-context">Example 5: UPDATE with RETURNING and Auth Context</h3> <p><code translate="no" dir="ltr">mutations.gql</code>:</p> 
+<pre>mutation UpdateMyReviewText(
+  $movieId: UUID!,
+  $newText: String!
+) @auth(level: USER) {
+  updatedReview: _executeReturningFirst(
+    sql: """
+      UPDATE "Reviews"
+      SET review_text = $2
+      WHERE movie_id = $1 AND user_id = $3
+      RETURNING movie_id, user_id, rating, review_text
+    """,
+    params: [$movieId, $newText, {_expr: "auth.uid"}]
+  )
+}
+</pre> <p>After running the mutation using a client SDK, the updated post data will be in <code translate="no" dir="ltr">data.updatedReview</code>.</p> <h3 id="advanced-cte">Example 6: Advanced CTE with upserts (atomic get-or-create)</h3> <p>This pattern is useful for ensuring dependent records (like Users or Movies) exist before inserting a child record (like a Review), all in a single database transaction.</p> <p><code translate="no" dir="ltr">mutations.gql</code>:</p> 
+<pre>mutation CreateMovieCTE($movieId: UUID!, $userId: UUID!, $reviewId: UUID!) @auth(level: USER) {
+  _execute(
+    sql: """
+      WITH
+      new_user AS (
+        INSERT INTO "user" (id, username)
+        VALUES ($2, 'Auto-Generated User')
+        ON CONFLICT (id) DO NOTHING
+        RETURNING id
+      ),
+      movie AS (
+        INSERT INTO movie (id, title, image_url, release_year, genre)
+        VALUES ($1, 'Auto-Generated Movie', 'https://placeholder.com', 2025, 'Sci-Fi')
+        ON CONFLICT (id) DO NOTHING
+        RETURNING id
+      )
+      INSERT INTO "Reviews" (id, movie_id, user_id, rating, review_text, review_date)
+      VALUES (
+        $3,
+        $1,
+        $2,
+        5,
+        'Good!',
+        NOW()
+      )
+    """,
+    params: [$movieId, $userId, $reviewId]
+  )
+}
+</pre>
+<aside class="special"><strong>Important:</strong><span> Data-modifying CTEs (using <code translate="no" dir="ltr">INSERT</code>, <code translate="no" dir="ltr">UPDATE</code>, or <code translate="no" dir="ltr">DELETE</code> inside a <code translate="no" dir="ltr">WITH</code> clause) are <strong>only supported</strong> by <code translate="no" dir="ltr">_execute</code>.</span></aside> <p><code translate="no" dir="ltr">_executeReturning</code> and <code translate="no" dir="ltr">_executeReturningFirst</code> wrap your query in a parent CTE to format the output as JSON. PostgreSQL does not allow nesting a data-modifying CTE inside another data-modifying statement, causing the query to fail.</p> <h3 id="extensions">Example 7: Using PostgreSQL extensions</h3> <p>Native SQL allows you to use PostgreSQL extensions, such as PostGIS, without needing to map complex geometry types into your GraphQL schema or alter your underlying tables.</p> <p>In this example, suppose your restaurant app has a table that stores location data in a metadata JSON column (for example, <code translate="no" dir="ltr">{"latitude": 37.3688,</code> <code translate="no" dir="ltr">"longitude": -122.0363}</code>). If you have <a href="https://docs.cloud.google.com/sql/docs/postgres/extensions">enabled the PostGIS extension</a>, you can use standard PostgreSQL JSON operators (<code translate="no" dir="ltr">-&gt;&gt;</code>) to extract these values on the fly and pass them into the PostGIS <code translate="no" dir="ltr">ST_MakePoint</code> function.</p> 
+<pre>query GetNearbyActiveRestaurants(
+  $userLong: Float!,
+  $userLat: Float!,
+  $maxDistanceMeters: Float!
+) @auth(level: USER) {
+  nearby: _select(
+    sql: """
+      SELECT
+        id,
+        name,
+        tags,
+        ST_Distance(
+          ST_MakePoint(
+            (metadata-&gt;&gt;'longitude')::float,
+            (metadata-&gt;&gt;'latitude')::float
+          )::geography,
+          ST_MakePoint($1, $2)::geography
+        ) as distance_meters
+      FROM restaurant
+      WHERE active = true
+        AND metadata ? 'longitude' AND metadata ? 'latitude'
+        AND ST_DWithin(
+          ST_MakePoint(
+            (metadata-&gt;&gt;'longitude')::float,
+            (metadata-&gt;&gt;'latitude')::float
+          )::geography,
+          ST_MakePoint($1, $2)::geography,
+          $3
+        )
+      ORDER BY distance_meters ASC
+      LIMIT 10
+    """,
+    params: [$userLong, $userLat, $maxDistanceMeters]
+  )
+}
+</pre> <p>After running the query using a client SDK, the result will be in <code translate="no" dir="ltr">data.nearby</code>.</p> <h2 id="security">Security best practices: dynamic SQL &amp; stored procedures</h2> <p>SQL Connect securely parameterizes all inputs at the GraphQL-to-database boundary, fully protecting your standard SQL queries from first-order SQL injection. However, if you use SQL to call custom PostgreSQL stored procedures or functions that execute dynamic SQL, you must ensure your internal PL/pgSQL code handles these parameters securely.</p> <p>If your stored procedure directly concatenates user inputs into an <code translate="no" dir="ltr">EXECUTE</code> string, it bypasses parameterization and creates a second-order SQL injection vulnerability:</p> 
+<pre>-- INSECURE: Do not concatenate parameters into dynamic strings!
+CREATE OR REPLACE PROCEDURE unsafe_update(user_input TEXT)
+LANGUAGE plpgsql AS $$
+BEGIN
+    -- A malicious user_input (e.g., "val'; DROP TABLE users; --")
+    -- will execute as code.
+    EXECUTE 'UPDATE target_table SET status = ''' || user_input || '''';
+END;
+$$;
+</pre> <p>To avoid this, follow these best practices:</p> <ul> <li>Use the <code translate="no" dir="ltr">USING</code> clause: When writing dynamic SQL in your stored procedures, always use the <code translate="no" dir="ltr">USING</code> clause to bind data parameters safely.</li> <li>Use <code translate="no" dir="ltr">format()</code> for identifiers: Use <code translate="no" dir="ltr">format()</code> with the <code translate="no" dir="ltr">%I</code> flag for safe database identifier injection (like table names).</li> <li>Strictly allow identifiers: Don't let client applications arbitrarily choose database identifiers. If your procedure requires dynamic identifiers, validate the input against a hardcoded allowlist inside your PL/pgSQL logic before execution.</li> </ul> 
+<pre>-- SECURE: Use format() for identifiers and USING for data values
+CREATE OR REPLACE PROCEDURE secure_update(
+    target_table TEXT, new_value TEXT, row_id INT
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    -- Validate the dynamic table name against an allowlist
+    IF target_table NOT IN ('orders', 'users', 'inventory') THEN
+        RAISE EXCEPTION 'Invalid table name';
+    END IF;
+
+    -- Execute securely
+    EXECUTE format('UPDATE %I SET status = $1 WHERE id = $2', target_table)
+    USING new_value, row_id;
+END;
+$$;
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/native-sql" class="_attribution-link">https://firebase.google.com/docs/sql-connect/native-sql</a>
+  </p>
+</div>

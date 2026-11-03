@@ -1,0 +1,211 @@
+<h1>Authenticate with Firebase Using Email Link in JavaScript</h1> <p>You can use Firebase Authentication to sign in a user by sending them an email containing a link, which they can click to sign in. In the process, the user's email address is also verified.</p> <p>There are numerous benefits to signing in by email:</p> <ul> <li>Low friction sign-up and sign-in.</li> <li>Lower risk of password reuse across applications, which can undermine security of even well-selected passwords.</li> <li>The ability to authenticate a user while also verifying that the user is the legitimate owner of an email address.</li> <li>A user only needs an accessible email account to sign in. No ownership of a phone number or social media account is required.</li> <li>A user can sign in securely without the need to provide (or remember) a password, which can be cumbersome on a mobile device.</li> <li>An existing user who previously signed in with an email identifier (password or federated) can be upgraded to sign in with just the email. For example, a user who has forgotten their password can still sign in without needing to reset their password.</li> </ul> <h2 id="before_you_begin">Before you begin</h2> <p>If you haven't already, copy the initialization snippet from the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a> to your project as described in <a href="../../web/setup">Add Firebase to your JavaScript project</a>.</p> <h2 id="enable_email_link_sign-in_for_your_firebase_project">Enable Email Link sign-in for your Firebase project</h2> <p>To sign in users by email link, you must first enable the Email provider and Email link sign-in method for your Firebase project:</p> <ol> <li><p>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><strong>Authentication</strong></a>.</p></li> <li><p>In the <strong>Sign-in method</strong> tab, enable the <strong>Email/Password</strong> sign-in method. Note that email/password sign-in must be enabled to use email link sign-in.</p></li> <li><p>In the same section, enable the <strong>Email link (passwordless sign-in)</strong> sign-in provider.</p></li> <li><p>Click <strong>Save</strong>.</p></li> </ol> <h2 id="send_an_authentication_link_to_the_users_email_address">Send an authentication link to the user's email address</h2> <p>To initiate the authentication flow, present the user with an interface that prompts the user to provide their email address and then call <code translate="no" dir="ltr">sendSignInLinkToEmail</code> to request that Firebase send the authentication link to the user's email.</p> <ol> <li>
+<p>Construct the <code translate="no" dir="ltr">ActionCodeSettings</code> object, which provides Firebase with instructions on how to construct the email link. Set the following fields:</p> <ul> <li>
+<p><code translate="no" dir="ltr">url</code>: The deep link to embed and any additional state to be passed along. If you haven't already, add your domain to the list of authorized domains:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/settings" class="external"><strong>Settings</strong> tab</a>.</p></li> <li><p>In the <strong>Authorized domains</strong> section, click <strong>Add domain</strong>, and add your domain.</p></li> </ol>
+</li> </ul> <aside class="special"><strong>Important:</strong><span> In projects created after April 28, 2025, Firebase Authentication no longer includes <code translate="no" dir="ltr">localhost</code> as an authorized domain by default. Google strongly discourages the use of <code translate="no" dir="ltr">localhost</code> in production projects. If you choose to authorize <code translate="no" dir="ltr">localhost</code>, you can manually add it in the <strong>Settings</strong> tab, in <strong>Authorized Domains</strong>, by clicking <strong>Add Domain</strong>.</span></aside> <ul> <li>
+<code translate="no" dir="ltr">android</code> and <code translate="no" dir="ltr">ios</code>: Helps Firebase Authentication determine if it should create a web-only or mobile link which is opened on an Android or Apple device.</li> <li>
+<code translate="no" dir="ltr">handleCodeInApp</code>: Set to true. The sign-in operation has to always be completed in the app unlike other out of band email actions (password reset and email verifications). This is because, at the end of the flow, the user is expected to be signed in and their Auth state persisted within the app.</li> <li>
+<code translate="no" dir="ltr">linkDomain</code>: When custom Hosting link domains are defined for a project, specify which one to use when the link is to be opened by a specified mobile app. Otherwise, the default domain is automatically selected (for example, <nobr><code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebaseapp.com</code></nobr>).</li> <li>
+<p><code translate="no" dir="ltr">dynamicLinkDomain</code>: Deprecated. Don't specify this parameter.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const actionCodeSettings = {
+  // URL you want to redirect back to. The domain (www.example.com) for this
+  // URL must be in the authorized domains list in the Firebase Console.
+  url: 'https://www.example.com/finishSignUp?cartId=1234',
+  // This must be true.
+  handleCodeInApp: true,
+  iOS: {
+    bundleId: 'com.example.ios'
+  },
+  android: {
+    packageName: 'com.example.android',
+    installApp: true,
+    minimumVersion: '12'
+  },
+  // The domain must be configured in Firebase Hosting and owned by the project.
+  linkDomain: 'custom-domain.com'
+};</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">var actionCodeSettings = {
+  // URL you want to redirect back to. The domain (www.example.com) for this
+  // URL must be in the authorized domains list in the Firebase Console.
+  url: 'https://www.example.com/finishSignUp?cartId=1234',
+  // This must be true.
+  handleCodeInApp: true,
+  iOS: {
+    bundleId: 'com.example.ios'
+  },
+  android: {
+    packageName: 'com.example.android',
+    installApp: true,
+    minimumVersion: '12'
+  },
+  dynamicLinkDomain: 'example.page.link'
+};</pre> </section> </div> </li> </ul> <p>To learn more on <code translate="no" dir="ltr">ActionCodeSettings</code>, refer to the <a href="passing-state-in-email-actions#passing_statecontinue_url_in_email_actions">Passing State in Email Actions</a> section.</p>
+</li> <li><p>Ask the user for their email.</p></li> <li>
+<p>Send the authentication link to the user's email, and save the user's email in case the user completes the email sign-in on the same device.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, sendSignInLinkToEmail } from "firebase/auth";
+
+const auth = getAuth();
+sendSignInLinkToEmail(auth, email, actionCodeSettings)
+  .then(() =&gt; {
+    // The link was successfully sent. Inform the user.
+    // Save the email locally so you don't need to ask the user for it again
+    // if they open the link on the same device.
+    window.localStorage.setItem('emailForSignIn', email);
+    // ...
+  })
+  .catch((error) =&gt; {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    // ...
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().sendSignInLinkToEmail(email, actionCodeSettings)
+  .then(() =&gt; {
+    // The link was successfully sent. Inform the user.
+    // Save the email locally so you don't need to ask the user for it again
+    // if they open the link on the same device.
+    window.localStorage.setItem('emailForSignIn', email);
+    // ...
+  })
+  .catch((error) =&gt; {
+    var errorCode = error.code;
+    var errorMessage = error.message;
+    // ...
+  });</pre> </section> </div> </li> </ol> <h2 id="complete_sign_in_with_the_email_link">Complete sign in with the email link</h2> <h3 id="security_concerns">Security concerns</h3> <p>To prevent a sign-in link from being used to sign in as an unintended user or on an unintended device, Firebase Auth requires the user's email address to be provided when completing the sign-in flow. For sign-in to succeed, this email address must match the address to which the sign-in link was originally sent.</p> <p>You can streamline this flow for users who open the sign-in link on the same device they request the link, by storing their email address locally - for instance using localStorage or cookies - when you send the sign-in email. Then, use this address to complete the flow. Do not pass the user’s email in the redirect URL parameters and re-use it as this may enable session injections.</p> <p>After sign-in completion, any previous unverified mechanism of sign-in will be removed from the user and any existing sessions will be invalidated. For example, if someone previously created an unverified account with the same email and password, the user’s password will be removed to prevent the impersonator who claimed ownership and created that unverified account from signing in again with the unverified email and password.</p> <p>Also Make sure you use an HTTPS URL in production to avoid your link being potentially intercepted by intermediary servers.</p> <h3 id="completing_sign-in_in_a_web_page">Completing sign-in in a web page</h3> <p>The format of the email link deep link is the same as the <a href="../custom-email-handler#create_the_email_action_handler_page">format used for out of band email actions</a> (email verification, password reset and email change revocation). Firebase Auth simplifies this check by providing the <code translate="no" dir="ltr">isSignInWithEmailLink</code> API to check whether a link is a sign-in with email link.</p> <p>To complete the sign in on landing page, call <code translate="no" dir="ltr">signInWithEmailLink</code> with the user's email and the actual email link containing the one-time code.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, isSignInWithEmailLink, signInWithEmailLink } from "firebase/auth";
+
+// Confirm the link is a sign-in with email link.
+const auth = getAuth();
+if (isSignInWithEmailLink(auth, window.location.href)) {
+  // Additional state parameters can also be passed via URL.
+  // This can be used to continue the user's intended action before triggering
+  // the sign-in operation.
+  // Get the email if available. This should be available if the user completes
+  // the flow on the same device where they started it.
+  let email = window.localStorage.getItem('emailForSignIn');
+  if (!email) {
+    // User opened the link on a different device. To prevent session fixation
+    // attacks, ask the user to provide the associated email again. For example:
+    email = window.prompt('Please provide your email for confirmation');
+  }
+  // The client SDK will parse the code from the link for you.
+  signInWithEmailLink(auth, email, window.location.href)
+    .then((result) =&gt; {
+      // Clear email from storage.
+      window.localStorage.removeItem('emailForSignIn');
+      // You can access the new user by importing getAdditionalUserInfo
+      // and calling it with result:
+      // getAdditionalUserInfo(result)
+      // You can access the user's profile via:
+      // getAdditionalUserInfo(result)?.profile
+      // You can check if the user is new or existing:
+      // getAdditionalUserInfo(result)?.isNewUser
+    })
+    .catch((error) =&gt; {
+      // Some error occurred, you can inspect the code: error.code
+      // Common errors could be invalid email and invalid or expired OTPs.
+    });
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Confirm the link is a sign-in with email link.
+if (firebase.auth().isSignInWithEmailLink(window.location.href)) {
+  // Additional state parameters can also be passed via URL.
+  // This can be used to continue the user's intended action before triggering
+  // the sign-in operation.
+  // Get the email if available. This should be available if the user completes
+  // the flow on the same device where they started it.
+  var email = window.localStorage.getItem('emailForSignIn');
+  if (!email) {
+    // User opened the link on a different device. To prevent session fixation
+    // attacks, ask the user to provide the associated email again. For example:
+    email = window.prompt('Please provide your email for confirmation');
+  }
+  // The client SDK will parse the code from the link for you.
+  firebase.auth().signInWithEmailLink(email, window.location.href)
+    .then((result) =&gt; {
+      // Clear email from storage.
+      window.localStorage.removeItem('emailForSignIn');
+      // You can access the new user via result.user
+      // Additional user info profile not available via:
+      // result.additionalUserInfo.profile == null
+      // You can check if the user is new or existing:
+      // result.additionalUserInfo.isNewUser
+    })
+    .catch((error) =&gt; {
+      // Some error occurred, you can inspect the code: error.code
+      // Common errors could be invalid email and invalid or expired OTPs.
+    });
+}</pre> </section> </div> <h3 id="completing_sign-in_in_a_mobile_app">Completing sign-in in a mobile app</h3> <aside class="warning"> <p><b>Warning</b>: The following three Firebase Authentication features are impacted by the shutdown of Firebase Dynamic Links on August 25, 2025: email link authentication for mobile apps, OAuth flows for Android apps using older versions of the Authentication SDK, and Cordova OAuth support for web apps. In order to use these features after the shutdown of Dynamic Links, migrate to use a newer SDK version and complete some additional steps. </p> <p>For specific information and migration guidance, visit the <a href="https://firebase.google.com/support/dynamic-links-faq#impacts-on-email-link-authentication">Dynamic Links Deprecation FAQ</a>. </p> </aside> <p>Firebase Authentication uses Firebase Hosting to send the email link to a mobile device. For sign-in completion via mobile application, the application has to be configured to detect the incoming application link, parse the underlying deep link and then complete the sign-in as is done via web flow.</p> <p>To learn more on how to handle sign-in with email link in an Android application, refer to the <a href="../android/email-link-auth">Android guide</a>.</p> <p>To learn how to more on how to handle sign-in with email link in an Apple application, refer to the <a href="../ios/email-link-auth">Apple platforms guide</a>.</p> <h3 id="linkingre-authentication_with_email_link">Linking/re-authentication with email link</h3> <p>You can also link this method of authentication to an existing user. For example a user previously authenticated with another provider, such as a phone number, can add this method of sign-in to their existing account.</p> <p>The difference would be in the second half of the operation:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, linkWithCredential, EmailAuthProvider } from "firebase/auth";
+
+// Construct the email link credential from the current URL.
+const credential = EmailAuthProvider.credentialWithLink(
+  email, window.location.href);
+
+// Link the credential to the current user.
+const auth = getAuth();
+linkWithCredential(auth.currentUser, credential)
+  .then((usercred) =&gt; {
+    // The provider is now successfully linked.
+    // The phone user can now sign in with their phone number or email.
+  })
+  .catch((error) =&gt; {
+    // Some error occurred.
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Construct the email link credential from the current URL.
+var credential = firebase.auth.EmailAuthProvider.credentialWithLink(
+  email, window.location.href);
+
+// Link the credential to the current user.
+firebase.auth().currentUser.linkWithCredential(credential)
+  .then((usercred) =&gt; {
+    // The provider is now successfully linked.
+    // The phone user can now sign in with their phone number or email.
+  })
+  .catch((error) =&gt; {
+    // Some error occurred.
+  });</pre> </section> </div> <p>This can also be used to re-authenticate an email link user before running a sensitive operation.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+
+// Construct the email link credential from the current URL.
+const credential = EmailAuthProvider.credentialWithLink(
+  email, window.location.href);
+
+// Re-authenticate the user with this credential.
+const auth = getAuth();
+reauthenticateWithCredential(auth.currentUser, credential)
+  .then((usercred) =&gt; {
+    // The user is now successfully re-authenticated and can execute sensitive
+    // operations.
+  })
+  .catch((error) =&gt; {
+    // Some error occurred.
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Construct the email link credential from the current URL.
+var credential = firebase.auth.EmailAuthProvider.credentialWithLink(
+  email, window.location.href);
+
+// Re-authenticate the user with this credential.
+firebase.auth().currentUser.reauthenticateWithCredential(credential)
+  .then((usercred) =&gt; {
+    // The user is now successfully re-authenticated and can execute sensitive
+    // operations.
+  })
+  .catch((error) =&gt; {
+    // Some error occurred.
+  });</pre> </section> </div> <p>However, as the flow could end up on a different device where the original user was not logged in, this flow might not be completed. In that case, an error can be shown to the user to force them to open the link on the same device. Some state can be passed in the link to provide information on the type of operation and the user uid.</p> <h2 id="differentiating_emailpassword_from_email_link">Deprecated: Differentiating email-password from email link</h2> <p>If you created your project on or after September 15, 2023, email enumeration protection is enabled by default. This feature improves the security of your project's user accounts, but it disables the <code translate="no" dir="ltr">fetchSignInMethodsForEmail()</code> method, which we formerly recommended to implement identifier-first flows.</p> <p>Although you can disable email enumeration protection for your project, we recommend against doing so.</p> <p>See the documentation on <a href="https://cloud.google.com/identity-platform/docs/admin/email-enumeration-protection">email enumeration protection</a> for more details.</p> <h2 id="default-email">Default email template for link sign-in</h2> <p>The default email template includes a timestamp in the subject and email body so that <a href="https://github.com/firebase/firebase-js-sdk/issues/2574" class="external">subsequent emails are not collapsed into a single thread, with the link getting hidden</a>.</p> <p>This template applies to the following languages:</p> <table> <tr> <th>Code</th> <th>Language</th> </tr> <tr> <td>ar</td> <td>Arabic</td> </tr> <tr> <td>zh-CN</td> <td>Chinese (Simplified)</td> </tr> <tr> <td>zh-TW</td> <td>Chinese (Traditional)</td> </tr> <tr> <td>nl</td> <td>Dutch</td> </tr> <tr> <td>en</td> <td>English</td> </tr> <tr> <td>en-GB</td> <td>English (UK)</td> </tr> <tr> <td>fr</td> <td>French</td> </tr> <tr> <td>de</td> <td>German</td> </tr> <tr> <td>id</td> <td>Indonesian</td> </tr> <tr> <td>it</td> <td>Italian</td> </tr> <tr> <td>ja</td> <td>Japanese</td> </tr> <tr> <td>ko</td> <td>Korean</td> </tr> <tr> <td>pl</td> <td>Polish</td> </tr> <tr> <td>pt-BR</td> <td>Portuguese (Brazil)</td> </tr> <tr> <td>pt-PT</td> <td>Portuguese (Portugal)</td> </tr> <tr> <td>ru</td> <td>Russian</td> </tr> <tr> <td>es</td> <td>Spanish</td> </tr> <tr> <td>es-419</td> <td>Spanish (Latin America)</td> </tr> <tr> <td>th</td> <td>Thai</td> </tr> </table> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signOut } from "firebase/auth";
+
+const auth = getAuth();
+signOut(auth).then(() =&gt; {
+  // Sign-out successful.
+}).catch((error) =&gt; {
+  // An error happened.
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().signOut().then(() =&gt; {
+  // Sign-out successful.
+}).catch((error) =&gt; {
+  // An error happened.
+});</pre> </section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/web/email-link-auth" class="_attribution-link">https://firebase.google.com/docs/auth/web/email-link-auth</a>
+  </p>
+</div>

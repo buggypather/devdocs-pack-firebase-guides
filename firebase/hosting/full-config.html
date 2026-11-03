@@ -1,0 +1,343 @@
+<h1>Configure Hosting behavior</h1> <p>With Firebase Hosting, you can configure customized hosting behavior for requests to your site.</p> <h4 id="what-can-you-configure">What can you configure for Hosting?</h4> <ul> <li><p>Specify which files in your local project directory you want to deploy to Firebase Hosting. <a href="#specify-files-to-deply">Learn how.</a></p></li> <li><p>Serve a customized 404/Not Found page. <a href="#404">Learn how.</a></p></li> <li><p>Set up <code translate="no" dir="ltr">redirects</code> for pages that you've moved or deleted. <a href="#redirects">Learn how.</a></p></li> <li>
+<p>Set up <code translate="no" dir="ltr">rewrites</code> for any of these purposes:</p> <ul> <li><p>Show the same content for multiple URLs. <a href="#rewrites">Learn how.</a></p></li> <li><p>Serve a function or access a Cloud Run container from a Hosting URL. Learn how: <a href="#rewrite-function">function</a> or <a href="#rewrite-cloud-run-container">container</a>.</p></li> <li><p>Create a custom domain Dynamic Link. <a href="#rewrite-dynamic-links">Learn how.</a></p></li> </ul>
+</li> <li><p>Add <code translate="no" dir="ltr">headers</code> to pass along additional information about a request or a response, such as how browsers should handle the page and its content (authentication, caching, encoding, etc.). <a href="#headers">Learn how.</a></p></li> <li><p>Set up internationalization (i18n) rewrites to serve specific content based on a user's language preference and/or country. <a href="i18n-rewrites">Learn how</a> (different page).</p></li> </ul> <h4 id="where-to-define-config">Where do you define your Hosting configuration?</h4> <p>You define your Firebase Hosting configuration in your <a href="../cli#the_firebasejson_file"><code translate="no" dir="ltr">firebase.json</code></a> file. Firebase automatically creates your <code translate="no" dir="ltr">firebase.json</code> file at the root of your project directory when you run the <a href="quickstart#initialize"><code translate="no" dir="ltr">firebase init</code></a> command.</p> <aside class="caution"><strong>Caution:</strong><span> If you run <code translate="no" dir="ltr">firebase init</code> again and select Hosting, the command will overwrite the <code translate="no" dir="ltr">hosting</code> section of the <code translate="no" dir="ltr">firebase.json</code> file back to the default configuration.</span></aside> <p>You can find a <a href="#firebase-json_example">full <code translate="no" dir="ltr">firebase.json</code> configuration example</a> (covering only Firebase Hosting) at the bottom of this page. Note that a <code translate="no" dir="ltr">firebase.json</code> file can also contain <a href="../cli#the_firebasejson_file">configurations for other Firebase services</a>.</p> <p>You can check the deployed <code translate="no" dir="ltr">firebase.json</code> content using the <a href="https://firebase.google.com/docs/reference/hosting/rest/v1beta1/sites.releases/list">Hosting REST API</a>.</p> <h2 id="hosting_priority_order">Priority order of Hosting responses</h2> <p>The different Firebase Hosting configuration options described on this page can sometimes overlap. If there is a conflict, Hosting determines its response using the following priority order:</p> <ol> <li>Reserved namespaces that begin with a <code translate="no" dir="ltr">/__/*</code> path segment</li> <li>Configured <a href="#redirects">redirects</a>
+</li> <li>Exact-match static content</li> <li>Configured <a href="#rewrites">rewrites</a>
+</li> <li>
+<a href="#404">Custom 404</a> page</li> <li>Default 404 page</li> </ol> <aside class="special"><strong>Important:</strong><span> Within each of the <code translate="no" dir="ltr">redirects</code> and <code translate="no" dir="ltr">rewrites</code> attributes, Hosting applies the redirect or rewrite defined by the <em>first</em> rule with a URL pattern that matches the requested path. So, you need to deliberately order the rules within each of the <code translate="no" dir="ltr">redirects</code> and <code translate="no" dir="ltr">rewrites</code> attributes. Configured <code translate="no" dir="ltr">redirects</code> still take precedence over <code translate="no" dir="ltr">rewrites</code>.</span></aside> <p>If you're using <a href="i18n-rewrites">i18n rewrites</a>, the exact-match and 404 handling priority order are expanded in scope to accommodate your "i18n content".</p> <h2 id="specify-files-to-deply">Specify which files to deploy</h2> <p>The default attributes — <a href="#public"><code translate="no" dir="ltr">public</code></a> and <a href="#ignore"><code translate="no" dir="ltr">ignore</code></a> — included in the default <code translate="no" dir="ltr">firebase.json</code> file define which files in your project directory should be deployed to your Firebase project.</p> <p>The default <code translate="no" dir="ltr">hosting</code> configuration in a <code translate="no" dir="ltr">firebase.json</code> file looks like this:</p> 
+<pre>"hosting": {
+  "public": "public",  // the only required attribute for Hosting
+  "ignore": [
+    "firebase.json",
+    "**/.*",
+    "**/node_modules/**"
+  ]
+}
+</pre> <h3 id="public">public</h3> <p><em><strong>Required</strong></em><br> The <code translate="no" dir="ltr">public</code> attribute specifies which directory to deploy to Firebase Hosting. The default value is a directory named <code translate="no" dir="ltr">public</code>, but you can specify any directory's path, as long as it exists in your project directory.</p> <p>The following is the default specified name of the directory to deploy:</p> 
+<pre>"hosting": {
+  "public": "public"
+
+  // ...
+}
+</pre> <p>You can change the default value to the directory that you want to deploy:</p> 
+<pre>"hosting": {
+  "public": "dist/app"
+
+  // ...
+}
+</pre> <h3 id="ignore">ignore</h3> <p><em><strong>Optional</strong></em><br> The <code translate="no" dir="ltr">ignore</code> attribute specifies the files to ignore on deploy. It can take <a href="#glob_pattern_matching">globs</a> the same way that <a href="https://en.wikipedia.org/wiki/Git_(software)" class="external">Git</a> handles <code translate="no" dir="ltr">.gitignore</code>.</p> <p>The following are the default values for the files to ignore:</p> 
+<pre>"hosting": {
+  // ...
+
+  "ignore": [
+    "firebase.json",  // the Firebase configuration file (the file described on this page)
+    "**/.*",  // files with a leading period should be hidden from the system
+    "**/node_modules/**"  // contains dependencies used to create your site but not run it
+  ]
+}
+</pre> <h2 id="404">Customize a 404/Not Found page</h2> <p><em><strong>Optional</strong></em><br> You can serve a custom <code translate="no" dir="ltr">404 Not Found</code> error when a user tries to access a page that doesn't exist.</p> <p>Create a new file in your project's <a href="#public"><code translate="no" dir="ltr">public</code> directory</a>, name it <code translate="no" dir="ltr">404.html</code>, then add your custom <code translate="no" dir="ltr">404 Not Found</code> content to the file.</p> <p>Firebase Hosting will display the content of this custom <code translate="no" dir="ltr">404.html</code> page if a browser triggers a <code translate="no" dir="ltr">404 Not Found</code> error on your domain or subdomain.</p> <h2 id="redirects">Configure redirects</h2> <p><em><strong>Optional</strong></em><br> Use a URL redirect to prevent broken links if you've moved a page or to shorten URLs. For example, you could redirect a browser from <code translate="no" dir="ltr">example.com/team</code> to <code translate="no" dir="ltr">example.com/about.html</code>.</p> <p>Specify URL redirects by creating a <code translate="no" dir="ltr">redirects</code> attribute that contains an array of objects (called "redirect rules"). In each rule, specify a URL pattern that, if matched to the request URL path, triggers Hosting to respond with a redirect to the specified destination URL.</p> <p>Here's the basic structure for a <code translate="no" dir="ltr">redirects</code> attribute. This example redirects requests to <code translate="no" dir="ltr">/foo</code> by making a new request to <code translate="no" dir="ltr">/bar</code>.</p> 
+<pre>"hosting": {
+  // ...
+
+  // Returns a permanent redirect to "/bar" for requests to "/foo" (but not "/foo/**")
+  "redirects": [ {
+    "source": "/foo",
+    "destination": "/bar",
+    "type": 301
+  } ]
+}
+</pre> <p><section class="expandable"> <p class="showalways"><b>View a more detailed example for a <code translate="no" dir="ltr">redirects</code> attribute</b></p></section></p> 
+<pre>"hosting": {
+  // ...
+
+  // Add the "redirects" attribute within "hosting"
+  "redirects": [ {
+    // Returns a permanent redirect to "/bar" for requests to "/foo" (but not "/foo/**")
+    "source": "/foo",
+    "destination": "/bar",
+    "type": 301
+  }, {
+    // Returns a permanent redirect to "/bar" for requests to both "/foo" and "/foo/**"
+    "source": "/foo{,/**}"
+    "destination": "/bar"
+    "type": 301
+  }, {
+    // Returns a temporary redirect for all requests to files or directories in the "firebase" directory
+    "source": "/firebase/**",
+    "destination": "https://firebase.google.com/",
+    "type": 302
+  }, {
+    // A regular expression-based redirect equivalent to the above behavior
+    "regex": "/firebase/.*",
+    "destination": "https://firebase.google.com/",
+    "type": 302
+  } ]
+}
+</pre>  <p>The <code translate="no" dir="ltr">redirects</code> attribute contains an array of redirect rules, where each rule must include the fields in the table below.</p> <p>Firebase Hosting compares the <code translate="no" dir="ltr">source</code> or <code translate="no" dir="ltr">regex</code> value against all URL paths at the start of every request (before the browser determines whether a file or folder exists at that path). If a match is found, then the Firebase Hosting origin server sends an HTTPS redirect response telling the browser to make a new request at the <code translate="no" dir="ltr">destination</code> URL.</p> <table> <thead> <th colspan="2" width="20%">Field</th> <th>Description</th> </thead> <tbody> <tr> <td colspan="3"><code translate="no" dir="ltr">redirects</code></td> </tr> <tr> <td></td> <td>
+<code translate="no" dir="ltr">source</code> <em>(recommended)</em> <br> or <code translate="no" dir="ltr">regex</code> </td> <td>
+<p>A URL pattern that, if matched to the initial request URL, triggers Hosting to apply the redirect</p> <ul> <li>Use <code translate="no" dir="ltr">source</code> to specify a <a href="#glob_pattern_matching">glob</a> <em>(recommended)</em>.</li> <li>Use <code translate="no" dir="ltr">regex</code> to specify a <a href="https://github.com/google/re2/wiki/Syntax" class="external">RE2 regular expression</a>.</li> </ul> </td> </tr> <tr> <td></td> <td><code translate="no" dir="ltr">destination</code></td> <td>
+<p>A static URL where the browser should make a new request</p> <p>This URL can be a relative or an absolute path.</p> </td> </tr> <tr> <td></td> <td><code translate="no" dir="ltr">type</code></td> <td>
+<p>The HTTPS response code</p> <ul> <li>Use a type of <code translate="no" dir="ltr">301</code> for 'Moved Permanently'</li> <li>Use a type of <code translate="no" dir="ltr">302</code> for 'Found' (Temporary Redirect)</li> </ul> </td> </tr> </tbody> </table> <aside class="special"><strong>Important:</strong><span> Within the <code translate="no" dir="ltr">redirects</code> attribute, Hosting applies the redirect defined by the <em>first</em> rule with a URL pattern that matches the requested path. So, you need to deliberately order the rules within the <code translate="no" dir="ltr">redirects</code> attribute.</span></aside> <h3 id="capture-url-segments-for-redirects">Capture URL segments for redirects</h3> <p><em><strong>Optional</strong></em><br> Sometimes, you might need to capture specific segments of a redirect rule's URL pattern (<code translate="no" dir="ltr">source</code> or <code translate="no" dir="ltr">regex</code> value), then re-use these segments in the rule's <code translate="no" dir="ltr">destination</code> path.</p> <p><section class="expandable" id="capture-url-segments-for-redirects-glob"> <p class="showalways" id="capture-url-segments-for-redirects-glob"><b>Capture URL segments when using globs</b></p></section></p> <p>If you're using a <code translate="no" dir="ltr">source</code> field (that is, specifying a glob for your URL pattern), you can capture segments by including a <code translate="no" dir="ltr">:</code> prefix to identify the segment. If you also need to capture the remaining URL path after the segment, include a <code translate="no" dir="ltr">*</code> immediately after the segment. For example:</p> 
+<pre>"hosting": {
+  // ...
+
+  "redirects": [ {
+    "source": "/blog/:post*",  // captures the entire URL segment beginning at "post"
+    "destination": "https://blog.myapp.com/:post", // includes the entire URL segment identified and captured by the "source" value
+    "type": 301
+  }, {
+    "source": "/users/:id/profile",  // captures only the URL segment "id", but nothing following
+    "destination": "/users/:id/newProfile",  // includes the URL segment identified and captured by the "source" value
+    "type": 301
+  } ]
+}</pre>  <p><section class="expandable" id="capture-url-segments-for-redirects-regex"> <p class="showalways" id="capture-url-segments-for-redirects-regex"><b>Capture URL segments when using RE2 regular expressions</b></p></section></p> <p>If you're using a <code translate="no" dir="ltr">regex</code> field (that is, specifying a RE2 regular expression for your URL pattern), you can capture segments using either named or unnamed RE2 capture groups. Named capture groups can be used in the <code translate="no" dir="ltr">destination</code> field with a <code translate="no" dir="ltr">:</code> prefix, while unnamed capture groups can be referenced by their numerical index in the <code translate="no" dir="ltr">regex</code> value, indexed from 1. For example:</p> 
+<pre>"hosting": {
+  // ...
+
+  "redirects": [ {
+    "regex": "/blog/(?P&lt;post&gt;.+)",  // if you're familiar with PCRE, be aware that RE2 requires named capture groups to begin with ?P
+    "destination": "https://blog.myapp.com/:post",  // includes the entire URL segment identified and captured by the `regex` value
+    "type": 301
+  }, {
+    "regex": "/users/(\d+)/profile",  // uses the \d directive to only match numerical path segments
+    "destination": "/users/:1/newProfile",  // the first capture group to be seen in the `regex` value is named 1, and so on
+    "type": 301
+  } ]
+}</pre>  <h2 id="rewrites">Configure rewrites</h2> <p><em><strong>Optional</strong></em><br> Use a rewrite to show the same content for multiple URLs. Rewrites are particularly useful with pattern matching, as you can accept any URL that matches the pattern and let the client-side code decide what to display.</p> <p>You can also use rewrites to support apps that use <a href="https://developer.mozilla.org/en-US/docs/Web/Guide/API/DOM/Manipulating_the_browser_history#The_pushState().C2.A0method" class="external">HTML5 pushState</a> for navigation. When a browser attempts to open a URL path that matches the specified <code translate="no" dir="ltr">source</code> or <code translate="no" dir="ltr">regex</code> URL pattern, the browser will be given the contents of the file at the <code translate="no" dir="ltr">destination</code> URL instead.</p> <p>Specify URL rewrites by creating a <code translate="no" dir="ltr">rewrites</code> attribute that contains an array of objects (called "rewrite rules"). In each rule, specify a URL pattern that, if matched to the request URL path, triggers Hosting to respond as if the service were given the specified destination URL.</p> <p>Here's the basic structure for a <code translate="no" dir="ltr">rewrites</code> attribute. This example serves <code translate="no" dir="ltr">index.html</code> for requests to files or directories that don't exist.</p> 
+<pre>"hosting": {
+  // ...
+
+  // Serves index.html for requests to files or directories that do not exist
+  "rewrites": [ {
+    "source": "**",
+    "destination": "/index.html"
+  } ]
+}
+</pre> <p><section class="expandable"> <p class="showalways"><b>View a more detailed example for a <code translate="no" dir="ltr">rewrites</code> attribute</b></p></section></p> 
+<pre>"hosting": {
+// ...
+
+// Add the "rewrites" attribute within "hosting"
+"rewrites": [ {
+  // Serves index.html for requests to files or directories that do not exist
+  "source": "**",
+  "destination": "/index.html"
+}, {
+  // Serves index.html for requests to both "/foo" and "/foo/**"
+  // Using "/foo/**" only matches paths like "/foo/xyz", but not "/foo"
+  "source": "/foo{,/**}",
+  "destination": "/index.html"
+}, {
+  // A regular expression-based rewrite equivalent to the above behavior
+  "regex": "/foo(/.*)?",
+  "destination": "/index.html"
+}, {
+  // Excludes specified pathways from rewrites
+  "source": "!/@(js|css)/**",
+  "destination": "/index.html"
+} ]
+}</pre>  <p>The <code translate="no" dir="ltr">rewrites</code> attribute contains an array of rewrite rules, where each rule must include the fields in the table below.</p> <p>Firebase Hosting only applies a rewrite rule if a file or directory does not exist at a URL path that matches the specified <code translate="no" dir="ltr">source</code> or <code translate="no" dir="ltr">regex</code> URL pattern. When a request triggers a rewrite rule, the browser returns the actual content of the specified <code translate="no" dir="ltr">destination</code> file instead of an HTTP redirect.</p> <table> <thead> <th colspan="2" width="20%">Field</th> <th>Description</th> </thead> <tbody> <tr> <td colspan="3"><code translate="no" dir="ltr">rewrites</code></td> </tr> <tr> <td></td> <td>
+<code translate="no" dir="ltr">source</code> <em>(recommended)</em> <br> or <code translate="no" dir="ltr">regex</code> </td> <td>
+<p>A URL pattern that, if matched to the initial request URL, triggers Hosting to apply the rewrite</p> <ul> <li>Use <code translate="no" dir="ltr">source</code> to specify a <a href="#glob_pattern_matching">glob</a> <em>(recommended)</em>.</li> <li>Use <code translate="no" dir="ltr">regex</code> to specify a <a href="https://github.com/google/re2/wiki/Syntax" class="external">RE2 regular expression</a>.</li> </ul> </td> </tr> <tr> <td></td> <td><code translate="no" dir="ltr">destination</code></td> <td>
+<p>A local file that must exist</p> <p>This URL can be a relative or an absolute path.</p> </td> </tr> </tbody> </table> <aside class="special"><strong>Important:</strong><span> Within the <code translate="no" dir="ltr">rewrites</code> attribute, Hosting applies the rewrite defined by the <em>first</em> rule with a URL pattern that matches the requested path. So, you need to deliberately order the rules within the <code translate="no" dir="ltr">rewrites</code> attribute.</span></aside> <h3 id="rewrite-functions">Direct requests to a function</h3> <p>You can use <code translate="no" dir="ltr">rewrites</code> to serve a function from a Firebase Hosting URL. The following example is an excerpt from <a href="functions">serving dynamic content using Cloud Functions</a>.</p> <p>For example, to direct all requests from the page <code translate="no" dir="ltr">/bigben</code> on your Hosting site to execute the <code translate="no" dir="ltr">bigben</code> function:</p> 
+<pre>"hosting": {
+  // ...
+
+  // Directs all requests from the page `/bigben` to execute the `bigben` function
+  "rewrites": [ {
+    "source": "/bigben",
+    "function": {
+      "functionId": "bigben",
+      "region": "us-central1"  // optional (see note below)
+      "pinTag": true           // optional (see note below)
+    }
+  } ]
+}
+</pre> <p><section class="expandable" id="region-in-rewrites"> <p class="showalways" id="region-in-rewrites"><b>How <code translate="no" dir="ltr">region</code> works within the <code translate="no" dir="ltr">function</code> block</b></p></section></p> <blockquote> <p>If <code translate="no" dir="ltr">region</code> is omitted from a <code translate="no" dir="ltr">function</code> block of the <code translate="no" dir="ltr">hosting.rewrites</code> config, the Firebase CLI attempts to automatically detect the region from the function's source code which, if unspecified, defaults to <code translate="no" dir="ltr">us-central1</code>. If the function's source code is unavailable, the CLI attempts to detect the region from the deployed function. If the function is in multiple regions, the CLI requires <code translate="no" dir="ltr">region</code> to be specified in the <code translate="no" dir="ltr">hosting.rewrites</code> config.</p> </blockquote>  <p><section class="expandable" id="pintag-in-rewrites-to-function"> <p class="showalways" id="pintag-in-rewrites-to-function"><b>How <code translate="no" dir="ltr">pinTag</code> works within the <code translate="no" dir="ltr">function</code> block</b></p></section></p> <blockquote> <p>The <code translate="no" dir="ltr">pinTag</code> feature is only available in Cloud Functions for Firebase (2nd gen). With this feature, you can ensure that each function for generating your site's dynamic content is kept in sync with your static Hosting resources and Hosting config. Also, this feature allows you to preview your rewrites to functions on Hosting preview channels.</p> <p>If you add <code translate="no" dir="ltr">"pinTag": true</code> to a <code translate="no" dir="ltr">function</code> block of the <code translate="no" dir="ltr">hosting.rewrites</code> config, then the "pinned" function will be deployed along with your static Hosting resources and configuration, even when running <code translate="no" dir="ltr"><nobr>firebase deploy --only hosting</nobr></code>. If you roll back a version of your site, the "pinned" function is also rolled back.</p> <aside class="note"><strong>Note:</strong><span> If you add a <code translate="no" dir="ltr">pinTag</code> to an <em>existing</em> rewrite, you must first deploy the updated rewrite to your "live" channel. After that deploy, you can then preview changes to your function's code in Hosting preview channels without affecting production.</span></aside> <p>This feature relies on <a href="https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration#tags" class="external">Cloud Run tags</a>, which have a limit of 1000 tags per service and 2000 tags per region. This means that after hundreds of deploys, the oldest versions of a site may stop working.</p> </blockquote>  <p>After adding this rewrite rule and deploying to Firebase (using <code translate="no" dir="ltr">firebase deploy</code>), your function is reachable via the following URLs:</p> <ul> <li><p>Your Firebase subdomains:<br> <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.web.app/bigben</code> and <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebaseapp.com/bigben</code></p></li> <li><p>Any connected <a href="custom-domain">custom domains</a>:<br> <code translate="no" dir="ltr"><var translate="no">CUSTOM_DOMAIN</var>/bigben</code></p></li> </ul> <p>When Firebase Hosting forwards traffic to a function, the function receives the full original request path and query string. For example, a request to <code translate="no" dir="ltr">/bigben/hello/world?foo=bar</code> on your Hosting site is passed to the function with the complete path and query intact. Make sure your function handler is written to handle the <em>entire absolute URL</em>, not just the base path defined in the rewrite.</p> <p>When redirecting requests to functions with Hosting, supported HTTP request methods are <code translate="no" dir="ltr">GET</code>, <code translate="no" dir="ltr">POST</code>, <code translate="no" dir="ltr">HEAD</code>, <code translate="no" dir="ltr">PUT</code>, <code translate="no" dir="ltr">DELETE</code>, <code translate="no" dir="ltr">PATCH</code>, and <code translate="no" dir="ltr">OPTIONS</code>. Other methods like <code translate="no" dir="ltr">REPORT</code> or <code translate="no" dir="ltr">PROFIND</code> are not supported.</p> <h3 id="rewrite-cloud-run-container">Direct requests to a Cloud Run container</h3> <p>You can use <code translate="no" dir="ltr">rewrites</code> to access a Cloud Run container from a Firebase Hosting URL. The following example is an excerpt from <a href="cloud-run">serving dynamic content using Cloud Run</a>.</p> <p>For example, to direct all requests from the page <code translate="no" dir="ltr">/helloworld</code> on your Hosting site to trigger the startup and running of a <code translate="no" dir="ltr">helloworld</code> container instance:</p> 
+<pre>"hosting": {
+ // ...
+
+ // Directs all requests from the page `/helloworld` to trigger and run a `helloworld` container
+ "rewrites": [ {
+   "source": "/helloworld",
+   "run": {
+     "serviceId": "helloworld",  // "service name" (from when you deployed the container image)
+     "region": "us-central1"  // optional (if omitted, default is us-central1)
+   }
+ } ]
+}
+</pre> <p><section class="expandable" id="pintag-in-rewrites-to-run"> <p class="showalways" id="pintag-in-rewrites-to-run"><b>How <code translate="no" dir="ltr">pinTag</code> works within the <code translate="no" dir="ltr">run</code> block</b></p></section></p> <blockquote> <p>With this feature, you can ensure that the revision of your Cloud Run service for generating your site's dynamic content is kept in sync with your static Hosting resources and Hosting config. Also, this feature allows you to preview your rewrites to Cloud Run on Hosting preview channels.</p> <p>If you add <code translate="no" dir="ltr">"pinTag": true</code> to a <code translate="no" dir="ltr">run</code> block of the <code translate="no" dir="ltr">hosting.rewrites</code> config, your static Hosting resources and configuration will be pinned to the most recent revision of the Cloud Run service, at the time of deploy. If you roll back a version of your site, the revision of the "pinned" Cloud Run service is also rolled back.</p> <p>This feature relies on <a href="https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration#tags" class="external">Cloud Run tags</a>, which have a limit of 1000 tags per service and 2000 tags per region. This means that after hundreds of deploys, the oldest versions of a site may stop working.</p> </blockquote>  <p>After adding this rewrite rule and deploying to Firebase (using <code translate="no" dir="ltr">firebase deploy</code>), your container image is reachable via the following URLs:</p> <ul> <li><p>Your Firebase subdomains:<br> <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.web.app/helloworld</code> and <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebaseapp.com/helloworld</code></p></li> <li><p>Any connected <a href="custom-domain">custom domains</a>:<br> <code translate="no" dir="ltr"><var translate="no">CUSTOM_DOMAIN</var>/helloworld</code></p></li> </ul> <p>When redirecting requests to Cloud Run containers with Hosting, supported HTTP request methods are <code translate="no" dir="ltr">GET</code>, <code translate="no" dir="ltr">POST</code>, <code translate="no" dir="ltr">HEAD</code>, <code translate="no" dir="ltr">PUT</code>, <code translate="no" dir="ltr">DELETE</code>, <code translate="no" dir="ltr">PATCH</code>, and <code translate="no" dir="ltr">OPTIONS</code>. Other methods like <code translate="no" dir="ltr">REPORT</code> or <code translate="no" dir="ltr">PROFIND</code> are not supported.</p> <p>For the best performance, colocate your Cloud Run service with Hosting using the following regions:</p> <ul> <li><code translate="no" dir="ltr">us-west1</code></li> <li><code translate="no" dir="ltr">us-central1</code></li> <li><code translate="no" dir="ltr">us-east1</code></li> <li><code translate="no" dir="ltr">europe-west1</code></li> <li><code translate="no" dir="ltr">asia-east1</code></li> </ul> <p>Rewrites to Cloud Run from Hosting are supported in the following regions:</p> <ul> <li><code translate="no" dir="ltr">asia-east1</code></li> <li><code translate="no" dir="ltr">asia-east2</code></li> <li><code translate="no" dir="ltr">asia-northeast1</code></li> <li><code translate="no" dir="ltr">asia-northeast2</code></li> <li><code translate="no" dir="ltr">asia-northeast3</code></li> <li><code translate="no" dir="ltr">asia-south1</code></li> <li><code translate="no" dir="ltr">asia-south2</code></li> <li><code translate="no" dir="ltr">asia-southeast1</code></li> <li><code translate="no" dir="ltr">asia-southeast2</code></li> <li><code translate="no" dir="ltr">asia-southeast3</code></li> <li><code translate="no" dir="ltr">australia-southeast1</code></li> <li><code translate="no" dir="ltr">australia-southeast2</code></li> <li><code translate="no" dir="ltr">europe-central2</code></li> <li><code translate="no" dir="ltr">europe-north1</code></li> <li><code translate="no" dir="ltr">europe-southwest1</code></li> <li><code translate="no" dir="ltr">europe-west1</code></li> <li><code translate="no" dir="ltr">europe-west12</code></li> <li><code translate="no" dir="ltr">europe-west2</code></li> <li><code translate="no" dir="ltr">europe-west3</code></li> <li><code translate="no" dir="ltr">europe-west4</code></li> <li><code translate="no" dir="ltr">europe-west6</code></li> <li><code translate="no" dir="ltr">europe-west8</code></li> <li><code translate="no" dir="ltr">europe-west9</code></li> <li><code translate="no" dir="ltr">me-central1</code></li> <li><code translate="no" dir="ltr">me-central2</code></li> <li><code translate="no" dir="ltr">me-west1</code></li> <li><code translate="no" dir="ltr">northamerica-northeast1</code></li> <li><code translate="no" dir="ltr">northamerica-northeast2</code></li> <li><code translate="no" dir="ltr">southamerica-east1</code></li> <li><code translate="no" dir="ltr">southamerica-west1</code></li> <li><code translate="no" dir="ltr">us-central1</code></li> <li><code translate="no" dir="ltr">us-east1</code></li> <li><code translate="no" dir="ltr">us-east4</code></li> <li><code translate="no" dir="ltr">us-east5</code></li> <li><code translate="no" dir="ltr">us-south1</code></li> <li><code translate="no" dir="ltr">us-west1</code></li> <li><code translate="no" dir="ltr">us-west2</code></li> <li><code translate="no" dir="ltr">us-west3</code></li> <li><code translate="no" dir="ltr">us-west4</code></li> <li><code translate="no" dir="ltr">us-west1</code></li> <li><code translate="no" dir="ltr">us-central1</code></li> <li><code translate="no" dir="ltr">us-east1</code></li> <li><code translate="no" dir="ltr">europe-west1</code></li> <li><code translate="no" dir="ltr">asia-east1</code></li> </ul> <h3 id="rewrite-dynamic-links">Create custom domain Dynamic Links</h3> <aside class="note"> <b>Note:</b> Firebase Dynamic Links is <i>deprecated</i> and should not be used in new projects. The service will be shutting down soon. Follow the <a href="https://firebase.google.com/support/dynamic-links-faq#how_should_i_migrate_from_the_service"> migration guide</a> and see the <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ</a> for more information. </aside> <p>You can use <code translate="no" dir="ltr">rewrites</code> to create custom domain Dynamic Links. Visit the Dynamic Links documentation for detailed information about <a href="../dynamic-links/custom-domains#priority_order">setting up a custom domain for Dynamic Links</a>.</p> <ul> <li>
+<p>Use your custom domain <em>only</em> for Dynamic Links</p> 
+<pre>"hosting": {
+  // ...
+
+  "appAssociation": "AUTO",  // required for Dynamic Links (default is AUTO if not specified)
+
+  // Add the "rewrites" attribute within "hosting"
+  "rewrites": [ {
+    "source": "/**",  // the Dynamic Links start with "https://CUSTOM_DOMAIN/"
+    "dynamicLinks": true
+  } ]
+}</pre>
+</li> <li>
+<p>Specify custom domain path prefixes to use for Dynamic Links</p> 
+<pre>"hosting": {
+  // ...
+
+  "appAssociation": "AUTO",  // required for Dynamic Links (default is AUTO if not specified)
+
+  // Add the "rewrites" attribute within "hosting"
+  "rewrites": [ {
+    "source": "/promos/**",  // the Dynamic Links start with "https://CUSTOM_DOMAIN/promos/"
+    "dynamicLinks": true
+  }, {
+    "source": "/links/share/**",  // the Dynamic Links start with "https://CUSTOM_DOMAIN/links/share/"
+    "dynamicLinks": true
+  } ]
+}</pre>
+</li> </ul> <p>Configuring Dynamic Links in your <code translate="no" dir="ltr">firebase.json</code> file requires the following:</p> <table> <thead> <th colspan="2" width="20%">Field</th> <th>Description</th> </thead> <tbody> <tr> <td colspan="2"><code translate="no" dir="ltr">appAssociation</code></td> <td>
+<p>Must be set to <code translate="no" dir="ltr">AUTO</code></p> <ul> <li>If you don't include this attribute in your configuration, the default for <code translate="no" dir="ltr">appAssociation</code> is <code translate="no" dir="ltr">AUTO</code>. </li> <li>By setting this attribute to <code translate="no" dir="ltr">AUTO</code>, Hosting can dynamically generate <code translate="no" dir="ltr"><nobr>assetlinks.json</nobr></code> and <code translate="no" dir="ltr"><nobr>apple-app-site-association</nobr></code> files when they're requested. </li> </ul> </td> </tr> <tr> <td colspan="3"><code translate="no" dir="ltr">rewrites</code></td> </tr> <tr> <td></td> <td><code translate="no" dir="ltr">source</code></td> <td>
+<p>A path that you want to use for Dynamic Links</p> <p>Unlike rules that rewrite paths to URLs, rewrite rules for Dynamic Links can't contain regular expressions. </p> </td> </tr> <tr> <td></td> <td><code translate="no" dir="ltr">dynamicLinks</code></td> <td>Must be set to <code translate="no" dir="ltr">true</code> </td> </tr> </tbody> </table> <aside class="note"><b>Important</b>: For Dynamic Links, be particularly aware of <a href="#hosting_priority_order">hosting priority order</a>. <ul> <li>Ensure that your Dynamic Links URL prefix doesn't conflict with higher priority hosting configurations (for example, hosted static content always has priority over rewrites).</li> <li>Within each of the <code translate="no" dir="ltr">redirects</code> and <code translate="no" dir="ltr">rewrites</code> attributes, Hosting applies the redirect or rewrite defined by the <em>first</em> rule with a URL pattern that matches the requested path. So, you need to deliberately order the rules within each of the <code translate="no" dir="ltr">redirects</code> and <code translate="no" dir="ltr">rewrites</code> attributes.</li> </ul> <p>For detailed information, refer to the <a href="../dynamic-links/custom-domains#priority_order">Dynamic Links documentation</a>.</p> </aside> <h2 id="headers">Configure headers</h2> <p><em><strong>Optional</strong></em><br> Headers allow the client and the server to pass additional information along with a request or a response. Some sets of headers can affect how the browser handles the page and its content, including access control, authentication, caching, and encoding.</p> <p>Specify custom, file-specific response headers by creating a <code translate="no" dir="ltr">headers</code> attribute that contains an array of header objects. In each object, specify a URL pattern that, if matched to the request URL path, triggers Hosting to apply the specified custom response headers.</p> <p>Here's the basic structure for a <code translate="no" dir="ltr">headers</code> attribute. This example applies a CORS header for all font files.</p> 
+<pre>"hosting": {
+  // ...
+
+  // Applies a CORS header for all font files
+  "headers": [ {
+    "source": "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
+    "headers": [ {
+      "key": "Access-Control-Allow-Origin",
+      "value": "*"
+    } ]
+  } ]
+}
+</pre> <p><section class="expandable"> <p class="showalways"><b>View a more detailed example for a <code translate="no" dir="ltr">headers</code> attribute</b></p></section></p> 
+<pre>"hosting": {
+  // ...
+
+  // Add the "headers" attribute within "hosting"
+  "headers": [ {
+    // Applies a CORS header for all font files
+    "source": "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
+    "headers": [ {
+      "key": "Access-Control-Allow-Origin",
+      "value": "*"
+    } ]
+  }, {
+    // Overrides the default 1 hour browser cache with a 2 hour cache for all image files
+    "source": "**/*.@(jpg|jpeg|gif|png)",
+    "headers": [ {
+      "key": "Cache-Control",
+      "value": "max-age=7200"
+    } ]
+  }, {
+    // A regular expression-based rewrite equivalent to the above behavior
+    "regex": ".+/\w+\.(jpg|jpeg|gif|png)$",
+    "headers": [ {
+      "key": "Cache-Control",
+      "value": "max-age=7200"
+    } ]
+  }, {
+    // Sets the cache header for 404 pages to cache for 5 minutes
+    "source": "404.html",
+    "headers": [ {
+      "key": "Cache-Control",
+      "value": "max-age=300"
+    } ]
+  } ]
+}</pre>  <p>The <code translate="no" dir="ltr">headers</code> attribute contains an array of definitions, where each definition must include the fields in the table below.</p> <table> <thead> <th colspan="3" width="20%">Field</th> <th>Description</th> </thead> <tbody> <tr> <td colspan="4"><code translate="no" dir="ltr">headers</code></td> </tr> <tr> <td></td> <td colspan="2">
+<code translate="no" dir="ltr">source</code> <em>(recommended)</em> <br> or <code translate="no" dir="ltr">regex</code> </td> <td>
+<p>A URL pattern that, if matched to the initial request URL, triggers Hosting to apply the custom header</p> <ul> <li>Use <code translate="no" dir="ltr">source</code> to specify a <a href="#glob_pattern_matching">glob</a> <em>(recommended)</em>.</li> <li>Use <code translate="no" dir="ltr">regex</code> to specify a <a href="https://github.com/google/re2/wiki/Syntax" class="external">RE2 regular expression</a>.</li> </ul> <p>To create a header to match against your <a href="#404">custom 404 page</a>, use <code translate="no" dir="ltr">404.html</code> as your <code translate="no" dir="ltr">source</code> or <code translate="no" dir="ltr">regex</code> value. </p> </td> </tr> <tr> <td></td> <td colspan="2">array of (sub-)<code translate="no" dir="ltr">headers</code>
+</td> <td>
+<p>The custom headers that Hosting applies to the request path</p> <p>Each sub-header must include a <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers" class="external"><code translate="no" dir="ltr">key</code> and <code translate="no" dir="ltr">value</code> pair</a> (see next two rows). </p> </td> </tr> <tr> <td></td> <td></td> <td><code translate="no" dir="ltr">key</code></td> <td>The name of the header, for example <code translate="no" dir="ltr">Cache-Control</code>
+</td> </tr> <tr> <td></td> <td></td> <td><code translate="no" dir="ltr">value</code></td> <td>The value for the header, for example <code translate="no" dir="ltr">max-age=7200</code>
+</td> </tr> </tbody> </table> <aside class="note"><strong>Note:</strong><span> The URL pattern matching for custom headers is done <em>before</em> any <a href="#rewrites">rewrite rules</a> are applied. Matching rules are applied in the order they are defined.</span></aside> <p>You can learn more about <a href="manage-cache"><code translate="no" dir="ltr">Cache-Control</code></a> in the Hosting section that describes serving dynamic content and hosting microservices. You can also learn more about <a href="https://en.wikipedia.org/wiki/Cross-origin_resource_sharing" class="external">CORS</a> headers.</p> <aside class="special"><strong>Important:</strong><span> Firebase Hosting overwrites the <code translate="no" dir="ltr">Strict-Transport-Security</code> configuration on default Hosting subdomains (like <code translate="no" dir="ltr">*.web.app</code>). However, any connected custom domains will serve the configured value.</span></aside> <h2 id="control_html_extensions">Control <code translate="no" dir="ltr">.html</code> extensions</h2> <p><em><strong>Optional</strong></em><br> The <code translate="no" dir="ltr">cleanUrls</code> attribute allows you to control whether or not URLs should include the <code translate="no" dir="ltr">.html</code> extension.</p> <p>When <code translate="no" dir="ltr">true</code>, Hosting automatically drops the <code translate="no" dir="ltr">.html</code> extension from uploaded file URLs. If an <code translate="no" dir="ltr">.html</code> extension is added in the request, Hosting performs a <code translate="no" dir="ltr">301</code> redirect to the same path but eliminates the <code translate="no" dir="ltr">.html</code> extension.</p> <p>Here's how to control the inclusion of <code translate="no" dir="ltr">.html</code> in URLs by including a <code translate="no" dir="ltr">cleanUrls</code> attribute:</p> 
+<pre>"hosting": {
+  // ...
+
+  // Drops `.html` from uploaded URLs
+  "cleanUrls": true
+}
+</pre> <h2 id="control_trailing_slashes">Control trailing slashes</h2> <p><em><strong>Optional</strong></em><br> The <code translate="no" dir="ltr">trailingSlash</code> attribute allows you to control whether or not static content URLs should include trailing slashes.</p> <ul> <li>When <code translate="no" dir="ltr">true</code>, Hosting redirects URLs to add a trailing slash.</li> <li>When <code translate="no" dir="ltr">false</code>, Hosting redirects URLs to remove a trailing slash.</li> <li>When unspecified, Hosting only uses trailing slashes for directory index files (for example, <code translate="no" dir="ltr">about/index.html</code>).</li> </ul> <p>Here's how to control trailing slashes by adding a <code translate="no" dir="ltr">trailingSlash</code> attribute:</p> 
+<pre>"hosting": {
+  // ...
+
+  // Removes trailing slashes from URLs
+  "trailingSlash": false
+}
+</pre> <p>The <code translate="no" dir="ltr">trailingSlash</code> attribute does not affect rewrites to dynamic content served by Cloud Functions or Cloud Run.</p> <h2 id="glob_pattern_matching">Glob pattern matching</h2> <p>Firebase Hosting configuration options make extensive use of the <a href="https://en.wikipedia.org/wiki/Glob_%28programming%29" class="external">glob pattern matching</a> notation with extglob, similar to how Git handles <a href="https://git-scm.com/docs/gitignore" class="external"><code translate="no" dir="ltr">gitignore</code></a> rules and <a href="https://github.com/bower/bower" class="external">Bower</a> handles <code translate="no" dir="ltr">ignore</code> rules. <a href="https://mywiki.wooledge.org/glob" class="external">This wiki page</a> is a more detailed reference, but the following are explanations of examples used on this page:</p> <ul> <li><p><strong><code translate="no" dir="ltr">firebase.json</code></strong> — Only matches the <code translate="no" dir="ltr">firebase.json</code> file in the root of the <a href="#public"><code translate="no" dir="ltr">public</code></a> directory</p></li> <li><p><strong><code translate="no" dir="ltr">**</code></strong> — Matches any file or folder in an arbitrary sub-directory</p></li> <li><p><strong><code translate="no" dir="ltr">*</code></strong> — Only matches files and folders in the root of the <a href="#public"><code translate="no" dir="ltr">public</code></a> directory</p></li> <li><p><strong><code translate="no" dir="ltr">**/.*</code></strong> — Matches any file beginning with <code translate="no" dir="ltr">.</code> (usually hidden files, like in the <code translate="no" dir="ltr">.git</code> folder) in an arbitrary sub-directory</p></li> <li><p><strong><code translate="no" dir="ltr">**/node_modules/**</code></strong> — Matches any file or folder in an arbitrary sub-directory of a <code translate="no" dir="ltr">node_modules</code> folder, which can itself be in an arbitrary sub-directory of the <a href="#public"><code translate="no" dir="ltr">public</code></a> directory</p></li> <li><p><strong><code translate="no" dir="ltr">**/*.@(jpg|jpeg|gif|png)</code></strong> — Matches any file in an arbitrary sub-directory that ends with exactly one of the following: <code translate="no" dir="ltr">.jpg</code>, <code translate="no" dir="ltr">.jpeg</code>, <code translate="no" dir="ltr">.gif</code>, or <code translate="no" dir="ltr">.png</code></p></li> </ul> <h2 id="firebase-json_example">Full Hosting configuration example</h2> <p>The following is a full <code translate="no" dir="ltr">firebase.json</code> configuration example for Firebase Hosting. Note that a <code translate="no" dir="ltr">firebase.json</code> file can also contain <a href="../cli#the_firebasejson_file">configurations for other Firebase services</a>.</p> 
+<pre>{
+  "hosting": {
+
+    "public": "dist/app",  // "public" is the only required attribute for Hosting
+
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+
+    "redirects": [ {
+      "source": "/foo",
+      "destination": "/bar",
+      "type": 301
+    }, {
+      "source": "/firebase/**",
+      "destination": "https://www.firebase.com",
+      "type": 302
+    } ],
+
+    "rewrites": [ {
+      // Shows the same content for multiple URLs
+      "source": "/app/**",
+      "destination": "/app/index.html"
+    }, {
+      // Configures a custom domain for Dynamic Links
+      "source": "/promos/**",
+      "dynamicLinks": true
+    }, {
+      // Directs a request to Cloud Functions
+      "source": "/bigben",
+      "function": "bigben"
+    }, {
+      // Directs a request to a Cloud Run containerized app
+      "source": "/helloworld",
+      "run": {
+        "serviceId": "helloworld",
+        "region": "us-central1"
+      }
+    } ],
+
+    "headers": [ {
+      "source": "**/*.@(eot|otf|ttf|ttc|woff|font.css)",
+      "headers": [ {
+        "key": "Access-Control-Allow-Origin",
+        "value": "*"
+      } ]
+    }, {
+      "source": "**/*.@(jpg|jpeg|gif|png)",
+      "headers": [ {
+        "key": "Cache-Control",
+        "value": "max-age=7200"
+      } ]
+    }, {
+      "source": "404.html",
+      "headers": [ {
+        "key": "Cache-Control",
+        "value": "max-age=300"
+      } ]
+    } ],
+
+    "cleanUrls": true,
+
+    "trailingSlash": false,
+
+    // Required to configure custom domains for Dynamic Links
+    "appAssociation": "AUTO",
+
+  }
+}
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/hosting/full-config" class="_attribution-link">https://firebase.google.com/docs/hosting/full-config</a>
+  </p>
+</div>

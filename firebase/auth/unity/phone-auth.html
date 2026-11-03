@@ -1,0 +1,67 @@
+<h1>Authenticate with Firebase using a Phone Number with Unity</h1> <p>You can use Firebase Authentication to sign in a user by sending an SMS message to the user's phone. The user signs in using a one-time code contained in the SMS message.</p> <p>This document describes how to implement a phone number sign-in flow using the Firebase SDK.</p> <aside class="important"> Phone numbers that end users provide for authentication will be sent and stored by Google to improve our spam and abuse prevention across Google services, including but not limited to Firebase. Developers should ensure they have appropriate end-user consent prior to using the Firebase Authentication phone number sign-in service. </aside> <h2 id="before-you-begin">Before you begin</h2> <ol>  <li> <p>Before you can use <a href="https://firebase.google.com/docs/reference/unity/namespace/firebase/auth">Firebase Authentication</a>, you need to add the <a href="https://firebase.google.com/download/unity">Firebase Unity SDK</a> (specifically, <code translate="no" dir="ltr">FirebaseAuth.unitypackage</code>) to your Unity project.</p> <p><strong>Find detailed instructions for these initial setup steps in <a href="../../unity/setup#set_up_environment">Add Firebase to your Unity project</a>.</strong></p> </li> <li>If you haven't yet connected your app to your Firebase project, do so from the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>.</li> <li>Understand the platform requirements for Phone Number sign-in: <ul> <li>Phone Number sign-in is for mobile platforms only. </li>
+<li>On iOS, Phone Number sign-in requires a physical device and won't work on a simulator. </li>
+</ul> </li> </ol> <h3 id="security-concerns">Security concerns</h3> <p>Authentication using only a phone number, while convenient, is less secure than the other available methods, because possession of a phone number can be easily transferred between users. Also, on devices with multiple user profiles, any user that can receive SMS messages can sign in to an account using the device's phone number.</p> <p>If you use phone number based sign-in in your app, you should offer it alongside more secure sign-in methods, and inform users of the security tradeoffs of using phone number sign-in.</p> <h2 class="procedure-step" id="enable-phone-number-sign-in-for-your-firebase-project">Enable Phone Number sign-in for your Firebase project</h2> <p>To sign in users by SMS, you must first enable the Phone Number sign-in method for your Firebase project:</p> <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Phone</b> sign-in provider. </li> <li> Set a policy on the regions to which you want to allow or deny SMS messages to be sent. Setting an SMS region policy can help protect your apps from SMS abuse. For new projects, the default policy allows no regions. <ol> <li> In the Firebase console, go to the <b>Security</b> &gt; <b>Authentication</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/settings" class="external"><b>Settings</b> tab</a>. </li> <li> In the <b>SMS region policy</b> section, set up your SMS region policy. </li> </ol> </li> </ol> <h2 class="procedure-step" id="start-receiving-apns-notifications-ios-only">Start receiving APNs notifications (iOS only)</h2> <p>To use phone number authentication on iOS, your app must be able to receive APNs notifications from Firebase. When you sign in a user with their phone number for the first time on a device, Firebase Authentication sends a silent push notification to the device to verify that the phone number sign-in request comes from your app. (For this reason, phone number sign-in cannot be used on a simulator.)</p> <p>To enable APNs notifications for use with Firebase Authentication:</p> <ol> <li>In Xcode, <a href="http://help.apple.com/xcode/mac/current/#/dev11b059073"> enable push notifications</a> for your project.</li> <li>
+<p> Upload your APNs certificate to Firebase. If you don't already have an APNs certificate, make sure to create one in the <a href="https://developer.apple.com/membercenter/index.action" class="external">Apple Developer Member Center</a>. </p> <ol> <li> In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <b>General</b>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><b>Cloud Messaging</b> tab</a>. </li> <li> Click <b>Upload Certificate</b> for your development certificate, your production certificate, or both. At least one is required. </li> <li> For each certificate, select the <code translate="no" dir="ltr">.p12</code> file, and provide the password, if any. Make sure the bundle ID for this certificate matches the bundle ID of your app. Click <b>Save</b>. </li> </ol>
+</li> </ol> <h2 class="procedure-step" id="send-a-verification-code-to-the-users-phone">Send a verification code to the user's phone</h2> <p>To initiate phone number sign-in, present the user an interface that prompts them to provide their phone number, and then call <code translate="no" dir="ltr">PhoneAuthProvider.VerifyPhoneNumber</code> to request that Firebase send an authentication code to the user's phone by SMS:</p> <ol> <li> <p>Get the user's phone number.</p> <p>Legal requirements vary, but as a best practice and to set expectations for your users, you should inform them that if they use phone sign-in, they might receive an SMS message for verification and standard rates apply.</p> </li> <li>Call <code translate="no" dir="ltr">PhoneAuthProvider.VerifyPhoneNumber</code>, passing to it a PhoneAuthOptions containing the user's phone number. 
+<pre>PhoneAuthProvider provider = PhoneAuthProvider.GetInstance(firebaseAuth);
+provider.VerifyPhoneNumber(
+  new Firebase.Auth.PhoneAuthOptions {
+    PhoneNumber = phoneNumber,
+    TimeoutInMilliseconds = phoneAuthTimeoutMs,
+    ForceResendingToken = null
+  },
+  verificationCompleted: (credential) =&amp;gt {
+    // Auto-sms-retrieval or instant validation has succeeded (Android only).
+    // There is no need to input the verification code.
+    // `credential` can be used instead of calling GetCredential().
+  },
+  verificationFailed: (error) =&amp;gt {
+    // The verification code was not sent.
+    // `error` contains a human readable explanation of the problem.
+  },
+  codeSent: (id, token) =&amp;gt {
+    // Verification code was successfully sent via SMS.
+    // `id` contains the verification id that will need to passed in with
+    // the code from the user when calling GetCredential().
+    // `token` can be used if the user requests the code be sent again, to
+    // tie the two requests together.
+  },
+  codeAutoRetrievalTimeout: (id) =&amp;gt {
+    // Called when the auto-sms-retrieval has timed out, based on the given
+    // timeout parameter.
+    // `id` contains the verification id of the request that timed out.
+  });</pre> <aside class="note"><b>Note:</b> See <a href="../limits#phone-auth">Firebase Authentication Limits</a> for applicable usage limits and quotas.</aside> When you call <code translate="no" dir="ltr">PhoneAuthProvider.VerifyPhoneNumber</code>, Firebase, <ul> <li>(on iOS), sends a silent push notification to your app.</li> <li>Firebase sends an SMS message containing an authentication code to the specified phone number and passes a verification ID to your completion function. You will need both the verification code and the verification ID to sign in the user.</li> </ul> </li> <li> <p>Save the verification ID and restore it when your app loads. By doing so, you can ensure that you still have a valid verification ID if your app is terminated before the user completes the sign-in flow (for example, while switching to the SMS app).</p> <p>You can persist the verification ID any way you want. A simple way is to save the verification ID with <code translate="no" dir="ltr">UnityEngine.PlayerPrefs</code>.</p> </li> </ol> <p>If the callback passed in to <code translate="no" dir="ltr">codeSent</code> is called, you can prompt the user to type the verification code when they receive it in the SMS message.</p> <p>On the other hand, if the callback for <code translate="no" dir="ltr">verificationCompleted</code> is called, then automatic verification has succeeded and you will now have a <code translate="no" dir="ltr">PhoneAuthCredential</code> with which you can use as described below. <aside class="note">To prevent abuse, Firebase enforces a limit on the number of SMS messages that can be sent to a single phone number within a period of time. If you exceed this limit, phone number verification requests might be throttled. If you encounter this issue during development, use a different phone number for testing, or try the request again later.</aside> </p>
+<h2 class="procedure-step" id="sign-in-the-user-with-the-verification-code">Sign in the user with the verification code</h2> <p>After the user provides your app with the verification code from the SMS message, sign the user in by creating a <code translate="no" dir="ltr">PhoneAuthCredential</code> object from the verification code and verification ID and passing that object to <code translate="no" dir="ltr">FirebaseAuth.SignInAndRetrieveDataWithCredentialAsync</code>.</p> <ol> <li>Get the verification code from the user.</li> <li>Create a <code translate="no" dir="ltr">Credential</code> object from the verification code and verification ID. 
+<pre>PhoneAuthCredential credential =
+    phoneAuthProvider.GetCredential(verificationId, verificationCode);
+    </pre> </li> <li>Sign in the user with the <code translate="no" dir="ltr">PhoneAuthCredential</code> object: 
+<pre>auth.SignInAndRetrieveDataWithCredentialAsync(credential).ContinueWith(task =&amp;gt {
+  if (task.IsFaulted) {
+    Debug.LogError("SignInAndRetrieveDataWithCredentialAsync encountered an error: " +
+                   task.Exception);
+    return;
+  }
+
+  FirebaseUser newUser = task.Result.User;
+  Debug.Log("User signed in successfully");
+  // This should display the phone number.
+  Debug.Log("Phone number: " + newUser.PhoneNumber);
+  // The phone number providerID is 'phone'.
+  Debug.Log("Phone provider ID: " + newUser.ProviderId);
+});</pre> </li> </ol> <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/unity/class/firebase/auth/firebase-user"> <code translate="no" dir="ltr">Firebase.Auth.FirebaseUser</code></a> object:</p> 
+<pre>Firebase.Auth.FirebaseUser user = auth.CurrentUser;
+if (user != null) {
+  string name = user.DisplayName;
+  string email = user.Email;
+  System.Uri photo_url = user.PhotoUrl;
+  // The user's Id, unique to the Firebase project.
+  // Do NOT use this value to authenticate with your backend server, if you
+  // have one; use User.TokenAsync() instead.
+  string uid = user.UserId;
+}</pre> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/unity/class/firebase/auth/firebase-auth#signout"> <code translate="no" dir="ltr">SignOut()</code></a>:</p> 
+<pre>auth.SignOut();</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/unity/phone-auth" class="_attribution-link">https://firebase.google.com/docs/auth/unity/phone-auth</a>
+  </p>
+</div>

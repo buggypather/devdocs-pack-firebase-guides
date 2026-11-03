@@ -1,0 +1,415 @@
+<h1>Authenticate Using Apple with JavaScript</h1> <p>You can let your users authenticate with Firebase using their Apple ID by using the Firebase SDK to carry out the end-to-end OAuth 2.0 sign-in flow.</p> <aside> <p><b>Important</b>: To sign in with an Apple account, users must:</p> <ul> <li>Have an Apple ID with two-factor authentication (2FA) enabled.</li> <li>Be signed in to iCloud on an Apple device.</li> </ul> <p>See <a class="external" href="https://support.apple.com/en-us/HT210318">How to use Sign in with Apple</a>. You will also need to meet these requirements to test your integration with Sign In with Apple.</p> </aside> <h2 id="before-you-begin">Before you begin</h2>  <p>To sign in users using Apple, first configure Sign In with Apple on Apple's developer site, then enable Apple as a sign-in provider for your Firebase project.</p> <h3 id="join-the-apple-developer-program">Join the Apple Developer Program</h3> <p>Sign In with Apple can only be configured by members of the <a href="https://developer.apple.com/programs/">Apple Developer Program</a>.</p> <h3 id="configure-sign-in-with-apple">Configure Sign In with Apple</h3> <p>On the <a class="external" href="https://developer.apple.com/account/resources">Apple Developer</a> site, do the following:</p> <ol> <li> <p>Associate your website with your app as described in the first section of <a class="external" href="https://developer.apple.com/help/account/configure-app-capabilities/configure-sign-in-with-apple-for-the-web/"> Configure Sign In with Apple for the web</a>. When prompted, register the following URL as a Return URL:</p> 
+<pre>https://YOUR_FIREBASE_PROJECT_ID.firebaseapp.com/__/auth/handler</pre> <p>You can find your Firebase project ID in the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><b>General</b> tab</a> of the Firebase console. </p> <p>When you're done, take note of your new Service ID, which you'll need in the next section.</p> </li> <li>
+<a class="external" href="https://developer.apple.com/help/account/configure-app-capabilities/create-a-sign-in-with-apple-private-key/">Create a Sign In with Apple private key</a>. You'll need your new private key and key ID in the next section. </li> <li> <p>If you use any of Firebase Authentication's features that send emails to users, including email link sign-in, email address verification, account change revocation, and others, <a class="external" href="https://developer.apple.com/help/account/configure-app-capabilities/configure-private-email-relay-service/"> configure the Apple private email relay service</a> and register <code translate="no" dir="ltr">noreply@<var translate="no">YOUR_FIREBASE_PROJECT_ID</var>.firebaseapp.com</code> (or your customized email template domain) so Apple can relay emails sent by Firebase Authentication to anonymized Apple email addresses.</p> </li> </ol> <h3 id="enable-apple-as-a-sign-in-provider">Enable Apple as a sign-in provider</h3> <ol> <li>
+<a href="../../web/setup">Add Firebase to your project</a>.</li> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Apple</b> sign-in provider. Specify the Service ID you created in the previous section. Also, in the <b>OAuth code flow configuration section</b>, specify your Apple Team ID and the private key and key ID you created in the previous section. </li> </ol> <h2 id="comply-with-apple-anonymized-data-requirements">Comply with Apple anonymized data requirements</h2> <p>Sign In with Apple gives users the option of anonymizing their data, including their email address, when signing in. Users who choose this option have email addresses with the domain <code translate="no" dir="ltr">privaterelay.appleid.com</code>. When you use Sign In with Apple in your app, you must comply with any applicable developer policies or terms from Apple regarding these anonymized Apple IDs.</p> <p>This includes obtaining any required user consent before you associate any directly identifying personal information with an anonymized Apple ID. When using Firebase Authentication, this may include the following actions:</p> <ul> <li>Link an email address to an anonymized Apple ID or vice versa.</li> <li>Link a phone number to an anonymized Apple ID or vice versa</li> <li>Link a non-anonymous social credential (Facebook, Google, etc) to an anonymized Apple ID or vice versa.</li> </ul> <p>The above list is not exhaustive. Refer to the Apple Developer Program License Agreement in the Membership section of your developer account to make sure your app meets Apple's requirements.</p> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building a web app, the easiest way to authenticate your users with Firebase using their Apple accounts is to handle the entire sign-in flow with the Firebase JavaScript SDK.</p> <p>To handle the sign-in flow with the Firebase JavaScript SDK, follow these steps:</p> <ol> <li>
+<p>Create an instance of an <strong>OAuthProvider</strong> using the corresponding provider ID <strong>apple.com</strong>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { OAuthProvider } from "firebase/auth";
+
+const provider = new OAuthProvider('apple.com');</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">var provider = new firebase.auth.OAuthProvider('apple.com');</pre> </section> </div> </li> <li>
+<p><strong>Optional:</strong> Specify additional OAuth 2.0 scopes beyond the default that you want to request from the authentication provider.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">provider.addScope('email');
+provider.addScope('name');</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">provider.addScope('email');
+provider.addScope('name');</pre> </section> </div> <p>By default, when <strong>One account per email address</strong> is enabled, Firebase requests email and name scopes. If you change this setting to <strong>Multiple accounts per email address</strong>, Firebase doesn't request any scopes from Apple unless you specify them.</p>
+</li> <li>
+<p><strong>Optional:</strong> If you want to display Apple's sign-in screen in a language other than English, set the <code translate="no" dir="ltr">locale</code> parameter. See the <a href="https://developer.apple.com/documentation/signinwithapplejs/incorporating_sign_in_with_apple_into_other_platforms#3332112" class="external">Sign In with Apple docs</a> for the supported locales.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">provider.setCustomParameters({
+  // Localize the Apple authentication screen in French.
+  locale: 'fr'
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">provider.setCustomParameters({
+  // Localize the Apple authentication screen in French.
+  locale: 'fr'
+});</pre> </section> </div> </li> <li>
+<p>Authenticate with Firebase using the OAuth provider object. You can prompt your users to sign in with their Apple Accounts either by opening a pop-up window or by redirecting to the sign-in page. The redirect method is preferred on mobile devices.</p> <ul> <li>
+<p>To sign in with a pop-up window, call <code translate="no" dir="ltr">signInWithPopup()</code>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signInWithPopup, OAuthProvider } from "firebase/auth";
+
+const auth = getAuth();
+signInWithPopup(auth, provider)
+  .then((result) =&gt; {
+    // The signed-in user info.
+    const user = result.user;
+
+    // Apple credential
+    const credential = OAuthProvider.credentialFromResult(result);
+    const accessToken = credential.accessToken;
+    const idToken = credential.idToken;
+
+    // IdP data available using getAdditionalUserInfo(result)
+    // ...
+  })
+  .catch((error) =&gt; {
+    // Handle Errors here.
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    // The email of the user's account used.
+    const email = error.customData.email;
+    // The credential that was used.
+    const credential = OAuthProvider.credentialFromError(error);
+
+    // ...
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase
+  .auth()
+  .signInWithPopup(provider)
+  .then((result) =&gt; {
+    /** @type {firebase.auth.OAuthCredential} */
+    var credential = result.credential;
+
+    // The signed-in user info.
+    var user = result.user;
+
+    // You can also get the Apple OAuth Access and ID Tokens.
+    var accessToken = credential.accessToken;
+    var idToken = credential.idToken;
+
+    // IdP data available using getAdditionalUserInfo(result)
+  // ...
+  })
+  .catch((error) =&gt; {
+    // Handle Errors here.
+    var errorCode = error.code;
+    var errorMessage = error.message;
+    // The email of the user's account used.
+    var email = error.email;
+    // The firebase.auth.AuthCredential type that was used.
+    var credential = error.credential;
+
+    // ...
+  });</pre> </section> </div> </li> <li><p>To sign in by redirecting to the sign-in page, call <code translate="no" dir="ltr">signInWithRedirect()</code>:</p></li> </ul> <p> Follow the <a href="redirect-best-practices">best practices</a> when using <code translate="no" dir="ltr">signInWithRedirect</code>, <code translate="no" dir="ltr">linkWithRedirect</code>, or <code translate="no" dir="ltr">reauthenticateWithRedirect</code>. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signInWithRedirect } from "firebase/auth";
+
+const auth = getAuth();
+signInWithRedirect(auth, provider);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().signInWithRedirect(provider);</pre> </section> </div> <p>After the user completes sign-in and returns to the page, you can get the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult()</code>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, getRedirectResult, OAuthProvider } from "firebase/auth";
+
+// Result from Redirect auth flow.
+const auth = getAuth();
+getRedirectResult(auth)
+  .then((result) =&gt; {
+    const credential = OAuthProvider.credentialFromResult(result);
+    if (credential) {
+      // You can also get the Apple OAuth Access and ID Tokens.
+      const accessToken = credential.accessToken;
+      const idToken = credential.idToken;
+    }
+    // The signed-in user info.
+    const user = result.user;
+  })
+  .catch((error) =&gt; {
+    // Handle Errors here.
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    // The email of the user's account used.
+    const email = error.customData.email;
+    // The credential that was used.
+    const credential = OAuthProvider.credentialFromError(error);
+
+    // ...
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Result from Redirect auth flow.
+firebase
+  .auth()
+  .getRedirectResult()
+  .then((result) =&gt; {
+    if (result.credential) {
+      /** @type {firebase.auth.OAuthCredential} */
+      var credential = result.credential;
+
+      // You can get the Apple OAuth Access and ID Tokens.
+      var accessToken = credential.accessToken;
+      var idToken = credential.idToken;
+
+      // IdP data available in result.additionalUserInfo.profile.
+      // ...
+    }
+    // The signed-in user info.
+    var user = result.user;
+  })
+  .catch((error) =&gt; {
+    // Handle Errors here.
+    var errorCode = error.code;
+    var errorMessage = error.message;
+    // The email of the user's account used.
+    var email = error.email;
+    // The firebase.auth.AuthCredential type that was used.
+    var credential = error.credential;
+
+    // ...
+  });</pre> </section> </div> <p>This is also where you can catch and handle errors. For a list of error codes, see the <a href="https://firebase.google.com/docs/reference/js/auth#autherrorcodes">API reference</a>.</p> <p>Unlike other providers supported by Firebase Auth, Apple does not provide a photo URL.</p> <p>Also, when the user chooses not to share their email with the app, Apple provisions a unique email address for that user (of the form <code translate="no" dir="ltr">xyz@privaterelay.appleid.com</code>), which it shares with your app. If you configured the private email relay service, Apple forwards emails sent to the anonymized address to the user's real email address.</p> <p>Apple only shares user information such as the display name with apps the first time a user signs in. Usually, Firebase stores the display name the first time a user signs in with Apple, which you can get with <code translate="no" dir="ltr">firebase.auth().currentUser.displayName</code>. However, if you previously used Apple to sign a user in to the app without using Firebase, Apple will not provide Firebase with the user's display name.</p>
+</li> </ol> <h3 id="reauthentication_and_account_linking">Reauthentication and account linking</h3> <p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithPopup()</code> and <code translate="no" dir="ltr">reauthenticateWithRedirect()</code>, which you can use to retrieve a fresh credential for sensitive operations that require recent sign-in:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, reauthenticateWithPopup, OAuthProvider } from "firebase/auth";
+
+// Result from Redirect auth flow.
+const auth = getAuth();
+const provider = new OAuthProvider('apple.com');
+
+reauthenticateWithPopup(auth.currentUser, provider)
+  .then((result) =&gt; {
+    // User is re-authenticated with fresh tokens minted and can perform
+    // sensitive operations like account deletion, or updating their email
+    // address or password.
+
+    // The signed-in user info.
+    const user = result.user;
+
+    // You can also get the Apple OAuth Access and ID Tokens.
+    const credential = OAuthProvider.credentialFromResult(result);
+    const accessToken = credential.accessToken;
+    const idToken = credential.idToken;
+
+    // ...
+  })
+  .catch((error) =&gt; {
+    // Handle Errors here.
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    // The email of the user's account used.
+    const email = error.customData.email;
+    // The credential that was used.
+    const credential = OAuthProvider.credentialFromError(error);
+
+    // ...
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">const provider = new firebase.auth.OAuthProvider('apple.com');
+
+firebase
+  .auth()
+  .currentUser
+  .reauthenticateWithPopup(provider)
+  .then((result) =&gt; {
+    // User is re-authenticated with fresh tokens minted and can perform
+    // sensitive operations like account deletion, or updating their email
+    // address or password.
+    /** @type {firebase.auth.OAuthCredential} */
+    var credential = result.credential;
+
+    // The signed-in user info.
+    var user = result.user;
+     // You can also get the Apple OAuth Access and ID Tokens.
+    var accessToken = credential.accessToken;
+    var idToken = credential.idToken;
+
+    // IdP data available in result.additionalUserInfo.profile.
+      // ...
+  })
+  .catch((error) =&gt; {
+    // Handle Errors here.
+    var errorCode = error.code;
+    var errorMessage = error.message;
+    // The email of the user's account used.
+    var email = error.email;
+    // The firebase.auth.AuthCredential type that was used.
+    var credential = error.credential;
+
+    // ...
+  });</pre> </section> </div> <p>And, you can use <code translate="no" dir="ltr">linkWithPopup()</code> and <code translate="no" dir="ltr">linkWithRedirect()</code>, to link different identity providers to existing accounts.</p> <p>Note that Apple requires you to get explicit consent from users before you link their Apple accounts to other data.</p> <p>For example, to link a Facebook account to the current Firebase account, use the access token you got from signing the user in to Facebook:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, linkWithPopup, FacebookAuthProvider } from "firebase/auth";
+
+const auth = getAuth();
+const provider = new FacebookAuthProvider();
+provider.addScope('user_birthday');
+
+// Assuming the current user is an Apple user linking a Facebook provider.
+linkWithPopup(auth.currentUser, provider)
+    .then((result) =&gt; {
+      // Facebook credential is linked to the current Apple user.
+      // ...
+
+      // The user can now sign in to the same account
+      // with either Apple or Facebook.
+    })
+    .catch((error) =&gt; {
+      // Handle error.
+    });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">const provider = new firebase.auth.FacebookAuthProvider();
+provider.addScope('user_birthday');
+
+// Assuming the current user is an Apple user linking a Facebook provider.
+firebase.auth().currentUser.linkWithPopup(provider)
+    .then((result) =&gt; {
+      // Facebook credential is linked to the current Apple user.
+      // Facebook additional data available in result.additionalUserInfo.profile,
+
+      // Additional Facebook OAuth access token can also be retrieved.
+      // result.credential.accessToken
+
+      // The user can now sign in to the same account
+      // with either Apple or Facebook.
+    })
+    .catch((error) =&gt; {
+      // Handle error.
+    });</pre> </section> </div> <h2 id="authenticate_with_firebase_in_a_chrome_extension">Authenticate with Firebase in a Chrome extension</h2> <p>If you are building a Chrome extension app, see the <a href="chrome-extension#use_offscreen_documents"> Offscreen Documents guide</a>. </p> <section class="expandable"> <h2 class="showalways" id="customizing-the-redirect-domain-for-apple-sign-in">Customizing the redirect domain for Apple sign-in</h2> <p>On project creation, Firebase will provision a unique subdomain for your project: <code translate="no" dir="ltr">https://my-app-12345.firebaseapp.com</code>.</p> <p>This will also be used as the redirect mechanism for OAuth sign in. That domain would need to be allowed for all supported OAuth providers. However, this means that users may see that domain while signing in to Apple before redirecting back to the application: <b>Continue to: https://my-app-12345.firebaseapp.com</b>.</p> <p>To avoid displaying your subdomain, you can set up a custom domain with Firebase Hosting:</p> <ol> <li>Follow steps 1 through 3 in <a href="../../hosting/custom-domain">Set up your domain for Hosting</a>. When you verify your domain ownership, Hosting provisions an SSL certificate for your custom domain.</li> <li>Add your custom domain to the list of authorized domains in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>: <code translate="no" dir="ltr">auth.custom.domain.com</code>.</li> <li>In the Apple developer console or OAuth setup page, whitelist the URL of the redirect page, which will be accessible on your custom domain: <code translate="no" dir="ltr">https://auth.custom.domain.com/__/auth/handler</code>.</li> <li>When you initialize the JavaScript library, specify your custom domain with the <code translate="no" dir="ltr">authDomain</code> field: 
+<pre>var config = {
+  apiKey: '...',
+  // Changed from 'PROJECT_ID.firebaseapp.com'.
+  authDomain: 'auth.custom.domain.com',
+  databaseURL: 'https://PROJECT_ID.firebaseio.com',
+  projectId: 'PROJECT_ID',
+  storageBucket: 'PROJECT_ID.firebasestorage.app',
+  messagingSenderId: 'SENDER_ID'
+};
+firebase.initializeApp(config);</pre> </li> </ol> </section> <p>Note that you must still verify the custom domain with Apple similarly to the default firebaseapp.com domain:</p> 
+<pre>http://auth.custom.example.com/.well-known/apple-developer-domain-association.txt
+</pre> <h2 id="token-revocation">Token revocation</h2> <p>Apple requires that apps that support account creation must let users initiate deletion of their account within the app, as described in the <a href="https://developer.apple.com/app-store/review/guidelines/#5.1.1v" class="external">App Store Review Guidelines</a> </p> <p>To meet this requirement, implement the following steps:</p> <ol> <li><p>Make sure you filled out the <em>Services ID</em> and <em>OAuth code flow configuration</em> section of the Sign in with Apple provider configuration, as outlined in the <a href="#configure-sign-in-with-apple">Configure Sign in with Apple</a> section.</p></li> <li>
+<p>Since Firebase does not store user tokens when users are created with Sign in with Apple, you must ask the user to sign in again before revoking their token and deleting the account.</p> <p>Then, obtain the Apple OAuth access token from the <code translate="no" dir="ltr">OAuthCredential</code>, and use it to call <code translate="no" dir="ltr">revokeAccessToken(auth, token)</code> to revoke the Apple OAuth access token.</p> 
+<pre>const provider = new OAuthProvider('apple.com');
+provider.addScope('email');
+provider.addScope('name');
+
+const auth = getAuth();
+signInWithPopup(auth, provider).then(result =&gt; {
+  // Get the Apple OAuth access token.
+  const credential = OAuthProvider.credentialFromResult(result);
+  const accessToken = credential.accessToken;
+
+  // Revoke the Apple OAuth access token.
+  revokeAccessToken(auth, accessToken)
+    .then(() =&gt; {
+      // Token revoked.
+
+      // Delete the user account.
+      // ...
+    })
+    .catch(error =&gt; {
+      // An error happened.
+      // ...
+    });
+});
+</pre>
+</li> <li><p>Finally, <a href="manage-users#delete_a_user">delete the user account</a> (and all associated data).</p></li> </ol> <h2 id="advanced_authenticate_with_firebase_in_nodejs">Advanced: Authenticate with Firebase in Node.js</h2> <p>To authenticate with Firebase in a Node.js application:</p> <ol> <li>
+<p>Sign in the user with their Apple Account and get the user's Apple ID token. You can accomplish this in several ways. For example, if your Node.js app has a browser front end:</p> <ol> <li>
+<p>On your backend, generate a random string (a "nonce") and compute its SHA256 hash. The nonce is a one-time use value you use to validate a single round trip between your backend and Apple's auth servers.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const crypto = require("crypto");
+const string_decoder = require("string_decoder");
+
+// Generate a new random string for each sign-in
+const generateNonce = (length) =&gt; {
+  const decoder = new string_decoder.StringDecoder("ascii");
+  const buf = Buffer.alloc(length);
+  let nonce = "";
+  while (nonce.length &lt; length) {
+    crypto.randomFillSync(buf);
+    nonce = decoder.write(buf);
+  }
+  return nonce.slice(0, length);
+};
+
+const unhashedNonce = generateNonce(10);
+
+// SHA256-hashed nonce in hex
+const hashedNonceHex = crypto.createHash('sha256')
+  .update(unhashedNonce).digest().toString('hex');</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">const crypto = require("crypto");
+const string_decoder = require("string_decoder");
+
+// Generate a new random string for each sign-in
+const generateNonce = function(length) {
+  const decoder = new string_decoder.StringDecoder("ascii");
+  const buf = Buffer.alloc(length);
+  var nonce = "";
+  while (nonce.length &lt; length) {
+    crypto.randomFillSync(buf);
+    nonce = decoder.write(buf);
+  }
+  return nonce.slice(0, length);
+};
+
+const unhashedNonce = generateNonce(10);
+
+// SHA256-hashed nonce in hex
+const hashedNonceHex = crypto.createHash('sha256')
+  .update(unhashedNonce).digest().toString('hex');</pre> </section> </div> </li> <li>
+<p>On your sign-in page, specify the hashed nonce in your Sign In with Apple configuration:</p> 
+<pre>&lt;script src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"&gt;&lt;/script&gt;
+&lt;div id="appleid-signin" data-color="black" data-border="true" data-type="sign in"&gt;&lt;/div&gt;
+&lt;script&gt;
+    AppleID.auth.init({
+        clientId: YOUR_APPLE_CLIENT_ID,
+        scope: 'name email',
+        redirectURI: URL_TO_YOUR_REDIRECT_HANDLER,  // See the next step.
+        state: '[STATE]',  // Optional value that Apple will send back to you
+                           // so you can return users to the same context after
+                           // they sign in.
+        nonce: HASHED_NONCE  // The hashed nonce you generated in the previous step.
+    });
+&lt;/script&gt;
+</pre>
+</li> <li>
+<p>Get the Apple ID token from POSTed auth response server-side:</p> 
+<pre>app.post('/redirect', (req, res) =&gt; {
+  const savedState = req.cookies.__session;
+  const code = req.body.code;
+  const state = req.body.state;
+  const appleIdToken = req.body.id_token;
+  if (savedState !== state || !code) {
+    res.status(403).send('403: Permission denied');
+  } else {
+    // Sign in with Firebase using appleIdToken. (See next step).
+  }
+});
+</pre>
+</li> </ol> <p>Also see <a href="https://developer.apple.com/documentation/signinwithapplejs/configuring_your_webpage_for_sign_in_with_apple" class="external">Configuring Your Webpage for Sign In with Apple</a>.</p>
+</li> <li>
+<p>After you get the user's Apple ID token, use it to build a Credential object and then sign in the user with the credential:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signInWithCredential, OAuthProvider } from "firebase/auth";
+
+const auth = getAuth();
+
+// Build Firebase credential with the Apple ID token.
+const provider = new OAuthProvider('apple.com');
+const authCredential = provider.credential({
+  idToken: appleIdToken,
+  rawNonce: unhashedNonce,
+});
+
+// Sign in with credential form the Apple user.
+signInWithCredential(auth, authCredential)
+  .then((result) =&gt; {
+    // User signed in.
+  })
+  .catch((error) =&gt; {
+    // An error occurred. If error.code == 'auth/missing-or-invalid-nonce',
+    // make sure you're sending the SHA256-hashed nonce as a hex string
+    // with your request to Apple.
+    console.log(error);
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Build Firebase credential with the Apple ID token.
+const provider = new firebase.auth.OAuthProvider('apple.com');
+const authCredential = provider.credential({
+  idToken: appleIdToken,
+  rawNonce: unhashedNonce,
+});
+
+// Sign in with credential form the Apple user.
+firebase.auth().signInWithCredential(authCredential)
+  .then((result) =&gt; {
+    // User signed in.
+  })
+  .catch((error) =&gt; {
+    // An error occurred. If error.code == 'auth/missing-or-invalid-nonce',
+    // make sure you're sending the SHA256-hashed nonce as a hex string
+    // with your request to Apple.
+    console.log(error);
+  });</pre> </section> </div> </li> </ol>  <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signOut } from "firebase/auth";
+
+const auth = getAuth();
+signOut(auth).then(() =&gt; {
+  // Sign-out successful.
+}).catch((error) =&gt; {
+  // An error happened.
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().signOut().then(() =&gt; {
+  // Sign-out successful.
+}).catch((error) =&gt; {
+  // An error happened.
+});</pre> </section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/web/apple" class="_attribution-link">https://firebase.google.com/docs/auth/web/apple</a>
+  </p>
+</div>

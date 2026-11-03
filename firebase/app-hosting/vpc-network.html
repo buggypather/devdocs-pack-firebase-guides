@@ -1,0 +1,96 @@
+<h1>Connect Firebase App Hosting to a VPC network</h1> <p>Your Firebase App Hosting backend can connect to a <a href="https://cloud.google.com/vpc/docs">Virtual Private Cloud (VPC)</a> network. This allows your Firebase App Hosting backend to access backend services not accessible using public IP addresses, such as Cloud SQL, Spanner, Cloud Memorystore, Compute Engine, or Kubernetes internal microservices.</p> <p>VPC access is only available at runtime (from your Cloud Run container), not at build time (Cloud Build).</p> <h2 id="how-connect">Choose how to connect to a VPC network</h2> <ul> <li>
+<a href="https://cloud.google.com/run/docs/configuring/vpc-direct-vpc">Direct VPC Egress</a>: Simpler, faster, and less expensive. Uses one IP address per container. Recommended for most use cases.</li> <li>
+<a href="https://cloud.google.com/vpc/docs/serverless-vpc-access">Serverless Connectors</a>: Pools IP addresses for larger applications. Requires payment for the underlying VM. See "Serverless VPC Access" in the <a href="https://cloud.google.com/vpc/network-pricing">VPC pricing page</a> for pricing details.</li> </ul> <h2 id="configure-in-app-hosting-yaml">Configure in <code translate="no" dir="ltr">apphosting.yaml</code>
+</h2> <p>Use the <code translate="no" dir="ltr">vpcAccess</code> mapping in your <code translate="no" dir="ltr">apphosting.yaml</code> file to configure access. Use either a fully qualified network/connector name or an ID. Using IDs allows for portability between staging and production environments with different connectors/networks.</p> <h3 id="direct-vpc">Direct VPC Egress Configuration (<code translate="no" dir="ltr">apphosting.yaml</code>):</h3> 
+<pre>runConfig:
+  vpcAccess:
+    egress: PRIVATE_RANGES_ONLY # Default value
+    networkInterfaces:
+      # Specify at least one of network and/or subnetwork
+      - network: my-network-id
+        subnetwork: my-subnetwork-id
+</pre> <h3 id="serverless-connector">Serverless Connector Configuration (<code translate="no" dir="ltr">apphosting.yaml</code>):</h3> 
+<pre>runConfig:
+  vpcAccess:
+    egress: ALL_TRAFFIC
+    connector: connector-id
+</pre> <h2 id="example-connect-to-memorystore-for-redis">Example: connect to Memorystore for Redis from a Next.js app</h2> <p>Caching systems like Redis or Memcached are commonly used to build a fast data caching layer for an app. This example shows you how to set up <a href="https://cloud.google.com/memorystore/docs/redis/memorystore-for-redis-overview">Memorystore for Redis</a> in the same Google Cloud project as your Firebase App Hosting backend and connect to it using <a href="https://cloud.google.com/run/docs/configuring/vpc-direct-vpc">Direct VPC egress</a>.</p> <h3 id="create-memorystore-for-redis-instance">Step 0: Create a Memorystore for Redis instance</h3> <aside class="note"><strong>Note:</strong><span> you may also be prompted to create a <a href="https://cloud.google.com/vpc/docs/about-service-connection-policies">service connection policy</a> as part of this setup.</span></aside> <ol> <li>Go to the <a href="https://console.cloud.google.com/memorystore/redis/instances" class="external"><em>Memorystore for Redis</em> page</a> in the Google Cloud console. <ul> <li>Make sure the same project you're using for Firebase App Hosting is selected.</li> <li>If you can't access this page, make sure billing is enabled for your project and that you've enabled the <a href="https://console.cloud.google.com/apis/dashboard" class="external">Memorystore API</a>.</li> </ul>
+</li> <li>Select <strong>Create Instance</strong>.</li> <li>Configure the new instance with your preferred settings. Here are some example values you can use: <ul> <li>Enter <code translate="no" dir="ltr">my-redis-cache</code> under <strong>Instance ID</strong>.</li> <li>Enter <code translate="no" dir="ltr">Redis cache</code> under <strong>Display name</strong>.</li> <li>Choose <strong>Basic</strong> under the tier selector. Basic tier designates a standalone Redis node, as opposed to standard tier, which uses a replica node to backup your data.</li> <li>Choose your App Hosting backend's region from the <strong>Region</strong> selector. <strong>Be sure to set this value to match the region of your backend.</strong>
+</li> <li>Choose <strong>any</strong> from the zone selector.</li> <li>Enter <code translate="no" dir="ltr">5</code> under <strong>Capacity</strong>. This sets your instance capacity to 5 GB.</li> <li>Select <code translate="no" dir="ltr">7.0</code> (or the default recommended version) under <strong>Version</strong>.</li> <li>Choose <strong>default</strong> from the <strong>Authorized network</strong> selector.</li> </ul>
+</li> </ol> <h3 id="update-app-hopsting-yaml-with-vpc-network-id">Step 1: Update <code translate="no" dir="ltr">apphosting.yaml</code> with your VPC network ID</h3> <ol> <li>Visit the <a href="https://console.cloud.google.com/networking/networks/list" class="external">VPC networks page</a> in the Google Cloud console.</li> <li>Find the VPC network ID for your Memorystore for Redis instance (it will often be <code translate="no" dir="ltr">default</code>).</li> <li>
+<p>Set direct VPC egress configuration in <code translate="no" dir="ltr">apphosting.yaml</code> using the VPC network ID:</p> 
+<pre>runConfig:
+  vpcAccess:
+    egress: PRIVATE_RANGES_ONLY # Default value
+    networkInterfaces:
+      - network: my-network-id
+</pre>
+</li> </ol> <h3 id="add-env-vars-that-direct-app-to-redis">Step 2: Add environment variables that direct your app to Redis</h3> <ol> <li>Find connection information (host and port) in the "Connections" tab of your Memorystore for Redis instance in the Google Cloud console.</li> <li>
+<p>Connect to Redis with <code translate="no" dir="ltr">REDISPORT</code> and <code translate="no" dir="ltr">REDISHOST</code> environment variables. Set these in <code translate="no" dir="ltr">apphosting.yaml</code> using the host and port values from the Google Cloud console:</p> 
+<pre>env:
+  # Sample only. Use actual values provided by Memorystore
+  - variable: REDISPORT
+    value: 6379
+  - variable: REDISHOST
+    value: 10.127.16.3
+</pre>
+</li> </ol> <h3 id="use-redis-from-your-app">Step 3: Use redis from your app</h3> <ol> <li>
+<p>Install the <a href="https://www.npmjs.com/package/redis">redis</a> npm package:</p> <p><code translate="no" dir="ltr">npm install redis@latest</code></p>
+</li> <li>
+<p>Access your redis cache from your code. Use the environment variables configured in the previous step. For example, here's how you might read from a cache in a Next.js route handler:</p> <ul> <li>
+<p><code translate="no" dir="ltr">src/lib/redis.js</code></p> 
+<pre>import { createClient } from "redis";
+
+// Set these environment variables in apphosting.yaml
+const REDISHOST = process.env.REDISHOST;
+const REDISPORT = process.env.REDISPORT;
+
+let redisClient;
+
+export async function getClient(req, res) {
+  // Only connect if a connection isn't already available
+  if (!redisClient) {
+    redisClient = await createClient({
+      socket: {
+        host: REDISHOST,
+        port: Number(REDISPORT),
+      },
+    })
+      .on("error", (err) =&gt; console.error("Redis Client Error", err))
+      .connect();
+  }
+
+  return redisClient;
+}
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">src/app/counter/route.js</code></p> 
+<pre>import { getClient } from "@/lib/redis.js";
+
+export async function GET(request) {
+  const redisClient = await getClient();
+  const count = await redisClient.get("counter");
+
+  return Response.json({ count });
+}
+
+export async function POST(request) {
+  const redisClient = await getClient();
+  const count = await redisClient.incr("counter");
+
+  return Response.json({ count });
+}
+</pre>
+</li> </ul>
+</li> </ol> <h3 id="configur-app-for-local-dev">Step 4 (optional): Configure your app for local development</h3> <p>The Firebase App Hosting emulator can override values using <code translate="no" dir="ltr">apphosting.emulator.yaml</code>. Here, you can change the value of <code translate="no" dir="ltr">REDISHOST</code> to point to the localhost so that you can develop locally using a local installation of Redis.</p> <ol> <li><a href="https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/">Install Redis on your local machine</a></li> <li>
+<p>Create or edit <code translate="no" dir="ltr">apphosting.emulator.yaml</code> to reference your local instance:</p> 
+<pre>env:
+  - variable: REDISHOST
+    value: 127.0.0.1
+</pre>
+</li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-hosting/vpc-network" class="_attribution-link">https://firebase.google.com/docs/app-hosting/vpc-network</a>
+  </p>
+</div>

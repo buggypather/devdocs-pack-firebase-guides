@@ -1,0 +1,59 @@
+<h1>Options to install Firebase in your Apple app</h1> <h2 id="swift-package-manager">Swift Package Manager</h2> <p>Firebase recommends Swift Package Manager for new projects.</p> <h3 id="via-xcode">Via Xcode</h3> <p>Swift Package Manager support requires 26.2 or higher.</p> <ol> <li><p>If migrating from a CocoaPods-based project, run <code translate="no" dir="ltr">pod deintegrate</code> to remove CocoaPods from your Xcode project. The CocoaPods-generated <code translate="no" dir="ltr">.xcworkspace</code> file can safely be deleted afterward. If you're adding Firebase to a project for the first time, this step can be ignored.</p></li> <li><p>In Xcode, install the Firebase libraries by navigating to <strong>File &gt; Add Packages</strong>.</p></li> <li>
+<p>In the prompt that appears, select the Firebase GitHub repository:</p> 
+<pre>https://github.com/firebase/firebase-ios-sdk.git
+</pre>
+</li> <li><p>Select the version of Firebase you want to use. For new projects, we recommend using the newest version of Firebase.</p></li> <li><p>Choose the Firebase libraries you want to include in your app.</p></li> </ol> <p>Once you're finished, Xcode will begin resolving your package dependencies and downloading them in the background.</p> <h3 id="via-package-dot-swift">Via <code translate="no" dir="ltr">Package.swift</code>
+</h3> <p>To integrate Firebase to a Swift package via a <code translate="no" dir="ltr">Package.swift</code> manifest, you can add Firebase to the <code translate="no" dir="ltr">dependencies</code> array of your package. For more details, see the <a href="https://docs.swift.org/package-manager/PackageDescription/PackageDescription.html#package-dependency" class="external">Swift Package Manager documentation</a>.</p> 
+<pre>dependencies: [
+
+  .package(name: "Firebase",
+           url: "https://github.com/firebase/firebase-ios-sdk.git",
+           from: "8.0"),
+  // ...
+
+],
+</pre> <p>Then in any target that depends on a Firebase product, add it to the <a href="https://docs.swift.org/package-manager/PackageDescription/PackageDescription.html#target-dependency" class="external"><code translate="no" dir="ltr">dependencies</code> array</a> of that target.</p> 
+<pre>.target(
+  name: "MyTargetName",
+  dependencies: [
+    .product(name: "FirebaseAuth", package: "Firebase"),
+    // ...
+  ]
+),
+</pre> <h3 id="product-specific-considerations">Product-specific considerations</h3> <p>Some Firebase products require extra integration steps in order to function correctly.</p> <h4 id="analytics">Google Analytics</h4> <p>Google Analytics requires adding the <code translate="no" dir="ltr">-ObjC</code> linker flag to your target's build settings if included transitively.</p> <h4 id="crashlytics">Crashlytics</h4> <p>Crashlytics requires you to upload debug symbols.</p> <p>You can use a run script build phase for Xcode to automatically upload debug symbols post-build. Find the run script here:</p> 
+<pre>${BUILD_DIR%Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run
+</pre> <p>Another option for uploading symbols is to use the <a href="https://github.com/firebase/firebase-ios-sdk/raw/master/Crashlytics/upload-symbols" class="external"><code translate="no" dir="ltr">upload-symbols</code></a> script. Place the script in a subdirectory of your project file (for example <code translate="no" dir="ltr">scripts/upload-symbols</code>), then make sure that the script is executable:</p> 
+<pre>chmod +x scripts/upload-symbols
+</pre> <p>This script can be used to manually upload dSYM files. For usage notes and additional instructions for the script, run <code translate="no" dir="ltr">upload-symbols</code> without any parameters.</p> <h2 id="cocoapods">CocoaPods</h2> <aside class="warning"><strong>Warning:</strong><span> CocoaPods <a href="https://blog.cocoapods.org/CocoaPods-Specs-Repo/" class="external">announced</a> that they will become read-only in December 2026, after which new pod versions can no longer be published. For this reason, <strong>Firebase will stop publishing new versions to CocoaPods in October 2026</strong>. To learn more, see <a href="cocoapods-deprecation">Migrate from CocoaPods</a>.</span></aside> <p>Firebase supports installation with <a href="https://guides.cocoapods.org/using/getting-started.html#getting-started" class="external">CocoaPods</a> in addition to Swift Package Manager.</p> <p>Firebase's CocoaPods distribution requires Xcode 26.2 and CocoaPods 1.12.0 or higher. Here's how to install Firebase using CocoaPods:</p> <ol> <li>
+<p>Create a Podfile if you don't already have one. From the root of your project directory, run the following command:</p> 
+<pre>pod init</pre> <aside class="note"><strong>Note:</strong><span> Podfiles must include <code translate="no" dir="ltr">use_frameworks!</code> (dynamic linking) or <code translate="no" dir="ltr">use_frameworks! :linkage =&gt; :static</code>; please see the documentation on <a href="link-firebase-static-dynamic">linking Firebase dependencies statically or dynamically</a> for more details.</span></aside>
+</li> <li>
+<p>To your Podfile, add the Firebase pods that you want to use in your app.</p> <p>You can add any of the <a href="setup#available-pods">supported Firebase products</a> to your app.</p> <div> <section><p class="_firebase-tab"><strong>Analytics enabled</strong></p>
+
+<pre data-language=""># Add the Firebase pod for Google Analytics
+pod 'FirebaseAnalytics'
+
+# For Analytics without IDFA collection capability, use this pod instead
+# pod FirebaseAnalytics/Core
+
+# Add the pods for any other Firebase products you want to use in your app
+# For example, to use Firebase Authentication and Cloud Firestore
+pod 'FirebaseAuth'
+pod 'FirebaseFirestore'</pre> <p>Learn more about IDFA, the device-level advertising identifier, in Apple's <a href="https://developer.apple.com/app-store/user-privacy-and-data-use/" class="external">User Privacy and Data Use</a> and <a href="https://developer.apple.com/documentation/apptrackingtransparency" class="external">App Tracking Transparency</a> documentation.</p></section> <section><p class="_firebase-tab"><strong>Analytics not enabled</strong></p>
+
+<pre data-language=""># Add the pods for the Firebase products you want to use in your app
+# For example, to use Firebase Authentication and Cloud Firestore
+pod 'FirebaseAuth'
+pod 'FirebaseFirestore'</pre></section> </div> <aside class="note">Binary Firebase dependencies are integrated as static frameworks by default. If you're using Firebase as a dependency of a dynamic framework, make sure you read the documentation about <a href="https://github.com/firebase/firebase-ios-sdk/blob/master/docs/firebase_in_libraries.md" class="external">using Firebase from a framework or a library</a>. </aside>
+</li> <li>
+<p>Install the pods, then open your <code translate="no" dir="ltr">.xcworkspace</code> file to see the project in Xcode:</p> 
+<pre>pod install --repo-update</pre> 
+<pre>open your-project.xcworkspace</pre>
+</li> </ol> <h3 id="product-specific-considerations">Product-specific considerations</h3> <p>Some Firebase products require extra integration steps in order to function correctly.</p> <h4 id="crashlytics">Crashlytics</h4> <p>Crashlytics requires you to upload debug symbols.</p> <p>You can use a run script build phase for Xcode to automatically upload debug symbols post-build. Find the run script here:</p> 
+<pre>"${PODS_ROOT}/FirebaseCrashlytics/run"
+</pre> <h2 id="carthage">Carthage</h2> <p>Carthage support is experimental. See the <a href="https://github.com/firebase/firebase-ios-sdk/blob/master/Carthage.md" class="external">instructions on GitHub</a> for including Firebase in your app via Carthage.</p> <h2 id="integrate-manually">Integrate manually</h2> <p>Firebase provides a pre-built binary XCFramework distribution for users who want to integrate Firebase without using a dependency manager. To install Firebase:</p> <ol> <li><p>Download the <a class="link gc-analytics-event" data-category="exitLinks" data-action="linkClick" data-label="ios-zip-download" href="https://firebase.google.com/download/ios">framework SDK zip</a>. This file contains architecture slices for all available target architectures for all Firebase SDKs and thus may take some time to download.</p></li> <li><p>Unzip the file, then review the <code translate="no" dir="ltr">README</code> for the frameworks that you want to include in your app.</p></li> <li><p>Add the <a href="https://developer.apple.com/library/content/qa/qa1490/_index.html"><code translate="no" dir="ltr">-ObjC</code> linker flag</a> in your <code translate="no" dir="ltr">Other Linker Settings</code> in your target's build settings.</p></li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ios/installation-methods" class="_attribution-link">https://firebase.google.com/docs/ios/installation-methods</a>
+  </p>
+</div>

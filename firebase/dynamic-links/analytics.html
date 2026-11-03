@@ -1,0 +1,44 @@
+<h1>View Dynamic Links Analytics Data</h1> <aside class="note"> <b>Note:</b> Firebase Dynamic Links is <i>deprecated</i> and should not be used in new projects. The service will be shutting down soon. Follow the <a href="https://firebase.google.com/support/dynamic-links-faq#how_should_i_migrate_from_the_service"> migration guide</a> and see the <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ</a> for more information. </aside> <p>To help you gauge the effectiveness of your promotions and campaigns, Firebase Dynamic Links provides several ways to view analytics data and integrate with analytics tools.</p> <p>Firebase Dynamic Links records events related to your Dynamic Links' performance, including events that happen outside of your apps, such as the number of times someone clicks on one of your short Dynamic Links. This data can be viewed in the Dynamic Links section of the Firebase console and retrieved using a REST API.</p> <p>Dynamic Links also work with <a href="../analytics">Google Analytics</a>. Google Analytics provides detailed statistics for events that happen in your app, such as when someone opens your app by clicking a Dynamic Link. This data can be viewed in the Analytics section of the Firebase console.</p> <p>The following table summarizes the features of these two analytics options:</p> <table> <tr> <th></th> <th>Firebase Dynamic Links analytics</th> <th>Google Analytics</th> </tr> <tr> <th>Events tracked</th> <td> <ul> <li>App first-open</li> <li>App re-open</li> <li>Clicks</li> <li>Redirects</li> <li>App installs</li> </ul> </td> <td> <ul> <li>App first-open</li> <li>App re-open</li> <li>App updates</li> </ul> </td> </tr> <tr> <th>Data access</th> <td> <ul> <li>Firebase console (Dynamic Links section)</li> <li>REST API</li> </ul> </td> <td> <ul> <li>Firebase console (Analytics section)</li> <li>BigQuery export</li> </ul> </td> </tr> <tr> <th>Custom campaign attribution<br>(<code translate="no" dir="ltr">utm_</code> parameters)</th> <td></td> <td></td> </tr> </table> <p>Both analytics options track in-app events that web-based tracking tools often miss. For example, when a Dynamic Link is opened on iOS as a Universal Link, the link is opened directly by the app, bypassing web analytics; these events are correctly tracked by both Firebase Dynamic Links analytics and Google Analytics.</p> <aside class="note"><strong>Note:</strong><span> If you use Firebase Dynamic Links analytics or Google Analytics to track Dynamic Link usage, do not wrap your Dynamic Links in custom URLs, such as those created by link shortening services. By doing so, you prevent Firebase from accurately tracking your links.</span></aside> <h2 id="analytics">Firebase Dynamic Links analytics</h2> <p>Firebase Dynamic Links tracks the number of times each of your short Dynamic Links have been clicked, as well as the number of times a click resulted in a redirect, app install, app first-open, or app re-open. You can view these statistics in the Firebase console or retrieve them with a REST API.</p> <table> <tr> <th>Event</th> <th>Description</th> <th>Firebase console</th> <th>REST API</th> </tr> <tr> <td>CLICK</td> <td>Count of any click on a Dynamic Link, irrespective to how it is handled and its destinations</td> <td></td> <td></td> </tr> <tr> <td>REDIRECT</td> <td>Count of attempts to redirect users, either to the App Store or Play Store to install or update the app, or to some other destination</td> <td></td> <td></td> </tr> <tr> <td>APP_INSTALL</td> <td>Count of actual installs (only supported by the Play Store)</td> <td></td> <td></td> </tr> <tr> <td>APP_FIRST_OPEN</td> <td>Count of first-opens after an install</td> <td></td> <td></td> </tr> <tr> <td>APP_RE_OPEN</td> <td>Number of times the Dynamic Link caused an app to be re-opened</td> <td></td> <td></td> </tr> </table> <h3 id="firebase-console">Firebase console</h3> <p>In the <a href="https://console.firebase.google.com/">Firebase console</a>, you can view event counts for each short Dynamic Link you created in the console.</p> <p><img src="https://firebase.google.com/static/docs/dynamic-links/images/fdl-analytics.png"></p> <h3 id="rest_api">REST API</h3> <p>To get event counts for any of your short Dynamic Links, whether you created the link in the console or programmatically, you can use the <a href="https://firebase.google.com/docs/reference/dynamic-links/analytics">Dynamic Links Analytics REST API</a>.</p> <p>An API call looks like the following example HTTP request:</p> 
+<pre>
+GET https://firebasedynamiclinks.googleapis.com/v1/https%3A%2F%2Fexample.page.link%2FwXYz/linkStats?durationDays=7
+
+Authorization: Bearer ya29.Abc123...
+</pre> <p>The response to a request is a JSON object like the following:</p> 
+<pre>{
+  "linkEventStats": [
+    {
+      "platform": "ANDROID",
+      "count": "123",
+      "event": "CLICK"
+    },
+    {
+      "platform": "IOS",
+      "count": "123",
+      "event": "CLICK"
+    },
+    {
+      "platform": "DESKTOP",
+      "count": "456",
+      "event": "CLICK"
+    },
+    {
+      "platform": "ANDROID",
+      "count": "99",
+      "event": "APP_INSTALL"
+    },
+    {
+      "platform": "ANDROID",
+      "count": "42",
+      "event": "APP_FIRST_OPEN"
+    },
+
+    ...
+
+  ]
+}
+</pre> <h2 id="google-analytics">Google Analytics</h2> <p>You can also use Google Analytics in your app to track the performance of your Dynamic Links. The following Analytics events are automatically logged when you open a short or long Dynamic Link in your app.</p> <table class="responsive"> <tr> <th colspan="2">Analytics events</th> </tr> <tr> <td>dynamic_link_first_open</td> <td>Logged when a user opens the app for the first time via a Dynamic Link.</td> </tr> <tr> <td>dynamic_link_app_open</td> <td>Logged when a user re-opens the app via a Dynamic Link.</td> </tr> <tr> <td>dynamic_link_app_update</td> <td>Logged when the app is updated to a new version via a Dynamic Link. Android only.</td> </tr> </table> <p>You can then view the logged data in the Analytics section of the <a href="https://console.firebase.google.com/">Firebase console</a>.</p> <p><img src="https://firebase.google.com/static/docs/dynamic-links/images/analytics.png" alt="Dynamic Links events in &lt;span class=" notranslate>Google Analytics" class="screenshot"&gt;</p> <p>If you mark Dynamic Link events as conversions, you can see how your Dynamic Links are performing on the Attribution page.</p> <h3 id="google_analytics_and_apple_app_analytics_campaign_parameters">Google Analytics and Apple App Analytics campaign parameters</h3> <p>You use Dynamic Links with your existing Google Analytics custom campaigns and iTunes Connect App Analytics campaigns by specifying campaign parameters when you <a href="create-links">create a Dynamic Link</a>. When a user opens a Dynamic Link with campaign parameters specified, the campaign parameters are passed on to Google Analytics or the App Store.</p> <p>By adding these tracking parameters to your Dynamic Links, Google Analytics and iTunes Connect can treat them like any other campaign it's measuring attribution reporting for, and you can view conversion events not just by the ad campaigns responsible for bringing in those users, but also by which Dynamic Links might have brought them in.</p> <p>The following parameters are passed to Google Analytics: <code translate="no" dir="ltr">utm_source</code>, <code translate="no" dir="ltr">utm_medium</code>, <code translate="no" dir="ltr">utm_campaign</code>, <code translate="no" dir="ltr">utm_term</code>, <code translate="no" dir="ltr">utm_content</code>.</p> <p>The following parameters are passed to the App Store: <code translate="no" dir="ltr">at</code>, <code translate="no" dir="ltr">ct</code>, <code translate="no" dir="ltr">mt</code>, <code translate="no" dir="ltr">pt</code></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/dynamic-links/analytics" class="_attribution-link">https://firebase.google.com/docs/dynamic-links/analytics</a>
+  </p>
+</div>

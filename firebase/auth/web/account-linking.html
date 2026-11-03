@@ -1,0 +1,174 @@
+<h1>Link Multiple Auth Providers to an Account Using JavaScript</h1> <aside class="important"> <b>Important</b>: There is a <a href="https://github.com/firebase/firebase-js-sdk/issues/7675" class="external">known issue</a> that prevents <code translate="no" dir="ltr">linkWithCredentials()</code> from working correctly in some projects. See the issue report for a workaround and the status of a fix. </aside> <p>You can allow users to sign in to your app using multiple authentication providers by linking auth provider credentials to an existing user account. Users are identifiable by the same Firebase user ID regardless of the authentication provider they used to sign in. For example, a user who signed in with a password can link a Google account and sign in with either method in the future. Or, an anonymous user can link a Facebook account and then, later, sign in with Facebook to continue using your app.</p> <h2 id="before-you-begin">Before you begin</h2> <p>Add support for two or more authentication providers (possibly including anonymous authentication) to your app.</p> <h2 id="link-federated-auth-provider-credentials-to-a-user-account">Link federated auth provider credentials to a user account</h2> <p>To link credentials from an auth provider such as Google or Facebook to an existing user account:</p> <ol> <li>Sign in the user using any authentication provider or method.</li> <li>Get the <code translate="no" dir="ltr">AuthProvider</code> object that corresponds to the provider you want to link to the user's account. Examples: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { GoogleAuthProvider, FacebookAuthProvider, TwitterAuthProvider, GithubAuthProvider } from "firebase/auth";
+
+const googleProvider = new GoogleAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
+const twitterProvider = new TwitterAuthProvider();
+const githubProvider = new GithubAuthProvider();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">var googleProvider = new firebase.auth.GoogleAuthProvider();
+var facebookProvider = new firebase.auth.FacebookAuthProvider();
+var twitterProvider = new firebase.auth.TwitterAuthProvider();
+var githubProvider = new firebase.auth.GithubAuthProvider();</pre> </section> </div> </li> <li>Prompt the user to sign in with the provider you want to link. You can prompt your users to sign in either by opening a pop-up window or by redirecting to the provider's sign-in page. The redirect method is preferred on mobile devices. <ul> <li>To sign in with a pop-up window, call <code translate="no" dir="ltr">linkWithPopup</code>: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, linkWithPopup, GoogleAuthProvider } from "firebase/auth";
+const provider = new GoogleAuthProvider();
+
+const auth = getAuth();
+linkWithPopup(auth.currentUser, provider).then((result) =&gt; {
+  // Accounts successfully linked.
+  const credential = GoogleAuthProvider.credentialFromResult(result);
+  const user = result.user;
+  // ...
+}).catch((error) =&gt; {
+  // Handle Errors here.
+  // ...
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">auth.currentUser.linkWithPopup(provider).then((result) =&gt; {
+  // Accounts successfully linked.
+  var credential = result.credential;
+  var user = result.user;
+  // ...
+}).catch((error) =&gt; {
+  // Handle Errors here.
+  // ...
+});</pre> </section> </div> </li> <li>To sign in by redirecting to the provider's sign-in page, call <code translate="no" dir="ltr">linkWithRedirect</code>: Follow the <a href="redirect-best-practices">best practices</a> when using `linkWithRedirect`. <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, linkWithRedirect, GoogleAuthProvider } from "firebase/auth";
+const provider = new GoogleAuthProvider();
+
+const auth = getAuth();
+linkWithRedirect(auth.currentUser, provider)
+  .then(/* ... */)
+  .catch(/* ... */);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">auth.currentUser.linkWithRedirect(provider)
+  .then(/* ... */)
+  .catch(/* ... */);</pre> </section> </div> After the user signs in, they are redirected back to your page. Then, you can retrieve the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult</code> when your page loads: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getRedirectResult } from "firebase/auth";
+getRedirectResult(auth).then((result) =&gt; {
+  const credential = GoogleAuthProvider.credentialFromResult(result);
+  if (credential) {
+    // Accounts successfully linked.
+    const user = result.user;
+    // ...
+  }
+}).catch((error) =&gt; {
+  // Handle Errors here.
+  // ...
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">auth.getRedirectResult().then((result) =&gt; {
+  if (result.credential) {
+    // Accounts successfully linked.
+    var credential = result.credential;
+    var user = result.user;
+    // ...
+  }
+}).catch((error) =&gt; {
+  // Handle Errors here.
+  // ...
+});</pre> </section> </div> </li> </ul> If the user is signed in successfully, the user's account with the provider is linked to the user's account in your Firebase project. <p>Account linking will fail if the credentials are already linked to another user account. In this situation, you must handle merging the accounts and associated data as appropriate for your app:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signInWithCredential, deleteUser } from "firebase/auth";
+
+// The implementation of how you store your user data depends on your application
+const repo = new MyUserDataRepo();
+
+// Get reference to the currently signed-in user
+const auth = getAuth();
+const prevUser = auth.currentUser;
+
+// Get the data which you will want to merge. This should be done now
+// while the app is still signed in as this user.
+const prevUserData = repo.get(prevUser);
+
+try {
+  // Sign in user with the account you want to link to
+  const result = await signInWithCredential(auth, newCredential);
+  console.log("Sign In Success", result);
+  const currentUser = result.user;
+  const currentUserData = repo.get(currentUser);
+
+  // Merge prevUser and currentUser data stored in Firebase.
+  // Note: How you handle this is specific to your application
+  const mergedData = repo.merge(prevUserData, currentUserData);
+
+  // Save the merged data to the new user
+  repo.set(currentUser, mergedData);
+
+  // Delete the previous user's Firebase Auth account first
+  await deleteUser(prevUser);
+  repo.delete(prevUser);
+} catch (error) {
+  console.log("Sign In Error", error);
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// The implementation of how you store your user data depends on your application
+var repo = new MyUserDataRepo();
+
+// Get reference to the currently signed-in user
+var prevUser = auth.currentUser;
+
+// Get the data which you will want to merge. This should be done now
+// while the app is still signed in as this user.
+var prevUserData = repo.get(prevUser);
+
+// Sign in user with the account you want to link to
+auth.signInWithCredential(newCredential).then((result) =&gt; {
+  console.log("Sign In Success", result);
+  var currentUser = result.user;
+  var currentUserData = repo.get(currentUser);
+
+  // Merge prevUser and currentUser data stored in Firebase.
+  // Note: How you handle this is specific to your application
+  var mergedData = repo.merge(prevUserData, currentUserData);
+
+  // Save the merged data to the new user
+  repo.set(currentUser, mergedData);
+
+  // Delete the previous user's Firebase Auth account first
+  return prevUser.delete().then(() =&gt; {
+    repo.delete(prevUser);
+  });
+}).catch((error) =&gt; {
+  console.log("Sign In Error", error);
+});</pre> </section> </div> </li> </ol> <h2 id="link-email-address-and-password-credentials-to-a-user-account">Link email address and password credentials to a user account</h2> <p>To add email address and password credentials to an existing user account:</p> <ol> <li>Sign in the user using any authentication provider or method.</li> <li>Prompt the user for an email address and new password.</li> <li>Create an <code translate="no" dir="ltr">AuthCredential</code> object with the email address and password: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { EmailAuthProvider } from "firebase/auth";
+
+const credential = EmailAuthProvider.credential(email, password);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">var credential = firebase.auth.EmailAuthProvider.credential(email, password);</pre> </section> </div> </li> <li>
+<p>Pass the <code translate="no" dir="ltr">AuthCredential</code> object to the signed-in user's <code translate="no" dir="ltr">linkWithCredential</code> method:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, linkWithCredential } from "firebase/auth";
+
+const auth = getAuth();
+linkWithCredential(auth.currentUser, credential)
+  .then((usercred) =&gt; {
+    const user = usercred.user;
+    console.log("Account linking success", user);
+  }).catch((error) =&gt; {
+    console.log("Account linking error", error);
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">auth.currentUser.linkWithCredential(credential)
+  .then((usercred) =&gt; {
+    var user = usercred.user;
+    console.log("Account linking success", user);
+  }).catch((error) =&gt; {
+    console.log("Account linking error", error);
+  });</pre> </section> </div> <p>The call to <code translate="no" dir="ltr">linkWithCredential</code> will fail if the credentials are already linked to another user account. In this situation, you must handle merging the accounts and associated data as appropriate for your app (see example above). </p>
+</li> </ol> <h2 id="unlink-an-auth-provider-from-a-user-account">Unlink an auth provider from a user account</h2> <p>A single Firebase user account can have multiple authentication providers linked to it (for example, email/password, Google, Facebook), which lets the user sign in to the same Firebase account through different methods.</p> <p>If you unlink an authentication provider from a user's account, they can no longer sign in with that provider.</p> <aside class="important"> <b>Important:</b> If a user signs in again with the same provider after it has been unlinked, Firebase creates a new, separate user account instead of restoring link to the original account. </aside> <p>To unlink an auth provider from a user account, pass the provider ID to the <code translate="no" dir="ltr">unlink</code> method. You can get the provider IDs of the auth providers linked to a user from the <code translate="no" dir="ltr">providerData</code> property.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, unlink } from "firebase/auth";
+
+const auth = getAuth();
+unlink(auth.currentUser, providerId).then(() =&gt; {
+  // Auth provider unlinked from account
+  // ...
+}).catch((error) =&gt; {
+  // An error happened
+  // ...
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">user.unlink(providerId).then(() =&gt; {
+  // Auth provider unlinked from account
+  // ...
+}).catch((error) =&gt; {
+  // An error happened
+  // ...
+});</pre> </section> </div> <h2 id="troubleshooting">Troubleshooting</h2> <p>If you encounter errors when trying to link multiple accounts, see the <a href="../users#verified_email_addresses">documentation on verified email addresses</a>. </p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/web/account-linking" class="_attribution-link">https://firebase.google.com/docs/auth/web/account-linking</a>
+  </p>
+</div>

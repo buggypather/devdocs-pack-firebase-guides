@@ -1,0 +1,557 @@
+<h1>Code execution</h1> <p>Code execution is a tool that enables the model to generate and run Python code. The model can learn iteratively from the code execution results until it arrives at a final output.</p> <p>You can use code execution to build features that benefit from code-based reasoning and that generate text output. For example, you could use code execution to solve equations or process text. You can also use the <a href="#supported-libraries">libraries</a> included in the code execution environment to perform more specialized tasks.</p> <aside class="note"><strong>Note:</strong><span> <span class='\"notranslate\"'>Gemini</span> models can only execute code that it writes in <em>Python</em>. You can still request that the model generates code in another language, but the model can't use the code execution tool to run that code.<br><br> Also, note that code execution doesn't care which programming language your actual app is written in.</span></aside> <p>Just like with all tools that you provide to the model, the model decides when to use code execution.</p> <p><a href="#use-code-execution" class="button">Jump to code implementation</a> </p> <h4 id="comparison-code-execution-vs-function-calling">Comparison of code execution versus function calling</h4> <p>Code execution and <a href="function-calling">function calling</a> are similar features. In general, you should prefer to use code execution if the model can handle your use case. Code execution is also simpler to use because you just enable it.</p> <p>Here are some additional differences between code execution and function calling:</p> <table> <thead> <tr> <th width="50%">Code execution</th> <th>Function calling</th> </tr> </thead> <tbody> <tr> <td> Use code execution if you want the model to write and run Python code for you and return the result. </td> <td> Use function calling if you already have your own functions that you want to run locally. </td> </tr> <tr> <td> Code execution lets the model run code in the API backend in a fixed, isolated environment. </td> <td> Function calling lets you run the functions that the model requests, in whatever environment you want. </td> </tr> <tr> <td> Code execution resolves in a single request. Although you can optionally use code execution with the chat capability, there's no requirement. </td> <td>Function calling requires an additional request to send back the output from each function call. Thus, you're required to use the chat capability. </td> </tr> </tbody> </table> <h3 id="supported-models" class="hide-from-toc">Supported models</h3> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li><code translate="no" dir="ltr">gemini-3.8-flash</code></li> <li>
+<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> and <span class='\"notranslate\"'>Gemini 2.5</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <h2 id="use-code-execution">Use code execution</h2> <p>You can use code execution with both text-only and multimodal input, but the response will always be text or code only.</p> <h3 id="before-you-begin">Before you begin</h3> 
+<table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>If you haven't already, complete the <a href="get-started">getting started guide</a>, which describes how to set up your Firebase project, connect your app to Firebase, add the SDK, initialize the backend service for your chosen <span class='\"notranslate\"'>Gemini API</span> provider, and create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> <p> <aside class="note">All our docs assume that you're using the <a href="https://firebase.google.com/support/releases">latest versions</a> of the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs. </aside> </p> For testing and iterating on your prompts, we recommend using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <h3 id="enable-code-execution">Enable code execution</h3> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>When you create the <code translate="no" dir="ltr">GenerativeModel</code> instance, provide <code translate="no" dir="ltr">CodeExecution</code> as a tool that the model can use to generate its response. This allows the model to generate and run Python code.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create a `GenerativeModel` instance with a model that supports your use case
+let model = ai.generativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  // Provide code execution as a tool that the model can use to generate its response.
+  tools: [.codeExecution()]
+)
+
+let prompt = """
+What is the sum of the first 50 prime numbers?
+Generate and run code for the calculation, and make sure you get all 50.
+"""
+
+let response = try await model.generateContent(prompt)
+
+guard let candidate = response.candidates.first else {
+  print("No candidates in response.")
+  return
+}
+for part in candidate.content.parts {
+  if let textPart = part as? TextPart {
+    print("Text = \(textPart.text)")
+  } else if let executableCode = part as? ExecutableCodePart {
+    print("Code = \(executableCode.code), Language = \(executableCode.language)")
+  } else if let executionResult = part as? CodeExecutionResultPart {
+    print("Outcome = \(executionResult.outcome), Result = \(executionResult.output ?? "no output")")
+  }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = "GEMINI_MODEL_NAME",
+    // Provide code execution as a tool that the model can use to generate its response.
+    tools = listOf(Tool.codeExecution())
+)
+
+val prompt =  "What is the sum of the first 50 prime numbers? " +
+        "Generate and run code for the calculation, and make sure you get all 50."
+
+val response = model.generateContent(prompt)
+
+response.candidates.first().content.parts.forEach {
+    if(it is TextPart) {
+        println("Text = ${it.text}")
+    }
+    if(it is ExecutableCodePart) {
+        println("Code = ${it.code}, Language = ${it.language}")
+    }
+    if(it is CodeExecutionResultPart) {
+       println("Outcome = ${it.outcome}, Result = ${it.output}")
+    }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+                .generativeModel("GEMINI_MODEL_NAME",
+                        null,
+                        null,
+                        // Provide code execution as a tool that the model can use to generate its response.
+                        List.of(Tool.codeExecution()));
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+String text = "What is the sum of the first 50 prime numbers? " +
+        "Generate and run code for the calculation, and make sure you get all 50.";
+
+Content prompt = new Content.Builder()
+    .addText(text)
+    .build();
+
+ListenableFuture response = model.generateContent(prompt);
+
+Futures.addCallback(response, new FutureCallback() {
+   @Override
+public void onSuccess(GenerateContentResponse response)   {
+    // Access the first candidate's content parts
+    List parts = response.getCandidates().get(0).getContent().getParts();
+    for (Part part : parts) {
+        if (part instanceof TextPart) {
+            TextPart textPart = (TextPart) part;
+            System.out.println("Text = " + textPart.getText());
+        } else if (part instanceof ExecutableCodePart) {
+            ExecutableCodePart codePart = (ExecutableCodePart) part;
+            System.out.println("Code = " + codePart.getCode() + ", Language = " + codePart.getLanguage());
+        } else if (part instanceof CodeExecutionResultPart) {
+            CodeExecutionResultPart resultPart = (CodeExecutionResultPart) part;
+            System.out.println("Outcome = " + resultPart.getOutcome() + ", Result = " + resultPart.getOutput());
+        }
+    }
+}
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+const model = getGenerativeModel(
+  ai,
+  {
+    model: "GEMINI_MODEL_NAME",
+    // Provide code execution as a tool that the model can use to generate its response.
+    tools: [{ codeExecution: {} }]
+  }
+);
+
+const prompt =  "What is the sum of the first 50 prime numbers? " +
+        "Generate and run code for the calculation, and make sure you get all 50."
+
+const result = await model.generateContent(prompt);
+const response = await result.response;
+
+const parts = response.candidates?.[0].content.parts;
+
+if (parts) {
+  parts.forEach((part) =&gt; {
+    if (part.type === "text") {
+      console.log(`Text: ${part.text}`);
+    } else if (part.type === "executableCode") {
+      console.log(
+        `Code: ${part.executableCode.code}, Language: ${part.executableCode.language}`
+      );
+    } else if (part.type === "codeExecutionResult") {
+      console.log(
+        `Outcome: ${part.codeExecutionResult.outcome}, Result: ${part.codeExecutionResult.output}`
+      );
+    }
+  });
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_ai/firebase_ai.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'GEMINI_MODEL_NAME',
+  // Provide code execution as a tool that the model can use to generate its response.
+  tools: [
+    Tool.codeExecution(),
+  ],
+);
+
+const prompt = 'What is the sum of the first 50 prime numbers? '
+    'Generate and run code for the calculation, and make sure you get all 50.';
+
+final response = await model.generateContent([Content.text(prompt)]);
+
+final buffer = StringBuffer();
+    for (final part in response.candidates.first.content.parts) {
+      if (part is TextPart) {
+        buffer.writeln(part.text);
+      } else if (part is ExecutableCodePart) {
+        buffer.writeln('Executable Code:');
+        buffer.writeln('Language: ${part.language}');
+        buffer.writeln('Code:');
+        buffer.writeln(part.code);
+      } else if (part is CodeExecutionResultPart) {
+        buffer.writeln('Code Execution Result:');
+        buffer.writeln('Outcome: ${part.outcome}');
+        buffer.writeln('Output:');
+        buffer.writeln(part.output);
+      }
+    }
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  // Provide code execution as a tool that the model can use to generate its response.
+  tools: new Tool[] { new Tool(new CodeExecution()) }
+);
+
+var prompt = "What is the sum of the first 50 prime numbers? " +
+        "Generate and run code for the calculation, and make sure you get all 50.";
+
+var response = await model.GenerateContentAsync(prompt);
+
+foreach (var part in response.Candidates.First().Content.Parts) {
+  if (part is ModelContent.TextPart tp) {
+    UnityEngine.Debug.Log($"Text = {tp.Text}");
+  } else if (part is ModelContent.ExecutableCodePart esp) {
+    UnityEngine.Debug.Log($"Code = {esp.Code}, Language = {esp.Language}");
+  } else if (part is ModelContent.CodeExecutionResultPart cerp) {
+    UnityEngine.Debug.Log($"Outcome = {cerp.Outcome}, Output = {cerp.Output}");
+  }
+}
+
+</pre></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p> <p><section class="expandable"> <p class="showalways"><strong>View example output</strong></p></section></p> <p>The output might look something like the following, which has been formatted for readability:</p> 
+<pre>Okay, I need to calculate the sum of the first 50 prime numbers. Here's how I'll
+approach this:
+
+1.  **Generate Prime Numbers:** I'll use an iterative method to find prime
+    numbers. I'll start with 2 and check if each subsequent number is divisible
+    by any number between 2 and its square root. If not, it's a prime.
+2.  **Store Primes:** I'll store the prime numbers in a list until I have 50 of
+    them.
+3.  **Calculate the Sum:**  Finally, I'll sum the prime numbers in the list.
+
+Here's the Python code to do this:
+
+def is_prime(n):
+  """Efficiently checks if a number is prime."""
+  if n &lt;= 1:
+    return False
+  if n &lt;= 3:
+    return True
+  if n % 2 == 0 or n % 3 == 0:
+    return False
+  i = 5
+  while i * i &lt;= n:
+    if n % i == 0 or n % (i + 2) == 0:
+      return False
+    i += 6
+  return True
+
+primes = []
+num = 2
+while len(primes) &lt; 50:
+  if is_prime(num):
+    primes.append(num)
+  num += 1
+
+sum_of_primes = sum(primes)
+print(f'{primes=}')
+print(f'{sum_of_primes=}')
+
+primes=[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
+71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151,
+157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229]
+sum_of_primes=5117
+
+The sum of the first 50 prime numbers is 5117.
+</pre> <p>This output combines several content parts that the model returns when using code execution:</p> <ul> <li>
+<code translate="no" dir="ltr">text</code>: Inline text generated by the model</li> <li>
+<code translate="no" dir="ltr">executableCode</code>: Code generated by the model that is meant to be executed</li> <li>
+<code translate="no" dir="ltr">codeExecutionResult</code>: Result of the executed code</li> </ul> <p>The naming conventions for these parts vary by programming language.</p>  <h3 id="code-execution-chat">Use code execution in chat</h3> <p>You can also use code execution as part of a chat:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create a `GenerativeModel` instance with a model that supports your use case
+let model = ai.generativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  // Provide code execution as a tool that the model can use to generate its response.
+  tools: [.codeExecution()]
+)
+
+let prompt = """
+What is the sum of the first 50 prime numbers?
+Generate and run code for the calculation, and make sure you get all 50.
+"""
+let chat = model.startChat()
+
+let response = try await chat.sendMessage(prompt)
+
+guard let candidate = response.candidates.first else {
+  print("No candidates in response.")
+  return
+}
+for part in candidate.content.parts {
+  if let textPart = part as? TextPart {
+    print("Text = \(textPart.text)")
+  } else if let executableCode = part as? ExecutableCodePart {
+    print("Code = \(executableCode.code), Language = \(executableCode.language)")
+  } else if let executionResult = part as? CodeExecutionResultPart {
+    print("Outcome = \(executionResult.outcome), Result = \(executionResult.output ?? "no output")")
+  }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = "GEMINI_MODEL_NAME",
+    // Provide code execution as a tool that the model can use to generate its response.
+    tools = listOf(Tool.codeExecution())
+)
+
+val prompt =  "What is the sum of the first 50 prime numbers? " +
+        "Generate and run code for the calculation, and make sure you get all 50."
+val chat = model.startChat()
+val response = chat.sendMessage(prompt)
+
+response.candidates.first().content.parts.forEach {
+    if(it is TextPart) {
+        println("Text = ${it.text}")
+    }
+    if(it is ExecutableCodePart) {
+        println("Code = ${it.code}, Language = ${it.language}")
+    }
+    if(it is CodeExecutionResultPart) {
+       println("Outcome = ${it.outcome}, Result = ${it.output}")
+    }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+                .generativeModel("GEMINI_MODEL_NAME",
+                        null,
+                        null,
+                        // Provide code execution as a tool that the model can use to generate its response.
+                        List.of(Tool.codeExecution()));
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+String text = "What is the sum of the first 50 prime numbers? " +
+        "Generate and run code for the calculation, and make sure you get all 50.";
+
+Content prompt = new Content.Builder()
+    .addText(text)
+    .build();
+
+ChatFutures chat = model.startChat();
+ListenableFuture response = chat.sendMessage(prompt);
+
+Futures.addCallback(response, new FutureCallback() {
+   @Override
+public void onSuccess(GenerateContentResponse response)   {
+    // Access the first candidate's content parts
+    List parts = response.getCandidates().get(0).getContent().getParts();
+    for (Part part : parts) {
+        if (part instanceof TextPart) {
+            TextPart textPart = (TextPart) part;
+            System.out.println("Text = " + textPart.getText());
+        } else if (part instanceof ExecutableCodePart) {
+            ExecutableCodePart codePart = (ExecutableCodePart) part;
+            System.out.println("Code = " + codePart.getCode() + ", Language = " + codePart.getLanguage());
+        } else if (part instanceof CodeExecutionResultPart) {
+            CodeExecutionResultPart resultPart = (CodeExecutionResultPart) part;
+            System.out.println("Outcome = " + resultPart.getOutcome() + ", Result = " + resultPart.getOutput());
+        }
+    }
+}
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+const model = getGenerativeModel(
+  ai,
+  {
+    model: "GEMINI_MODEL_NAME",
+    // Provide code execution as a tool that the model can use to generate its response.
+    tools: [{ codeExecution: {} }]
+  }
+);
+
+const prompt =  "What is the sum of the first 50 prime numbers? " +
+        "Generate and run code for the calculation, and make sure you get all 50."
+const chat = model.startChat()
+const result = await chat.sendMessage(prompt);
+
+const parts = result.response.candidates?.[0].content.parts;
+
+if (parts) {
+  parts.forEach((part) =&gt; {
+    if (part.type === "text") {
+      console.log(`Text: ${part.text}`);
+    } else if (part.type === "executableCode") {
+      console.log(
+        `Code: ${part.executableCode.code}, Language: ${part.executableCode.language}`
+      );
+    } else if (part.type === "codeExecutionResult") {
+      console.log(
+        `Outcome: ${part.codeExecutionResult.outcome}, Result: ${part.codeExecutionResult.output}`
+      );
+    }
+  });
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_ai/firebase_ai.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'GEMINI_MODEL_NAME',
+  // Provide code execution as a tool that the model can use to generate its response.
+  tools: [
+    Tool.codeExecution(),
+  ],
+);
+
+final codeExecutionChat = await model.startChat();
+
+const prompt = 'What is the sum of the first 50 prime numbers? '
+    'Generate and run code for the calculation, and make sure you get all 50.';
+final response = await codeExecutionChat.sendMessage(Content.text(prompt));
+
+final buffer = StringBuffer();
+    for (final part in response.candidates.first.content.parts) {
+      if (part is TextPart) {
+        buffer.writeln(part.text);
+      } else if (part is ExecutableCodePart) {
+        buffer.writeln('Executable Code:');
+        buffer.writeln('Language: ${part.language}');
+        buffer.writeln('Code:');
+        buffer.writeln(part.code);
+      } else if (part is CodeExecutionResultPart) {
+        buffer.writeln('Code Execution Result:');
+        buffer.writeln('Outcome: ${part.outcome}');
+        buffer.writeln('Output:');
+        buffer.writeln(part.output);
+      }
+    }
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  // Provide code execution as a tool that the model can use to generate its response.
+  tools: new Tool[] { new Tool(new CodeExecution()) }
+);
+
+var prompt = "What is the sum of the first 50 prime numbers? " +
+        "Generate and run code for the calculation, and make sure you get all 50.";
+var chat = model.StartChat();
+var response = await chat.SendMessageAsync(prompt);
+
+foreach (var part in response.Candidates.First().Content.Parts) {
+  if (part is ModelContent.TextPart tp) {
+    UnityEngine.Debug.Log($"Text = {tp.Text}");
+  } else if (part is ModelContent.ExecutableCodePart esp) {
+    UnityEngine.Debug.Log($"Code = {esp.Code}, Language = {esp.Language}");
+  } else if (part is ModelContent.CodeExecutionResultPart cerp) {
+    UnityEngine.Debug.Log($"Outcome = {cerp.Outcome}, Output = {cerp.Output}");
+  }
+}
+
+</pre></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p> <h2 id="pricing">Pricing</h2> <p>There's no additional charge for enabling code execution and providing it as a tool for the model. If the model does decide to use code execution, then you're billed at the current rate of input and output tokens based on the Gemini model you're using.</p> <p>The following diagram shows the billing model for code execution:</p> <p><img src="https://firebase.google.com/static/docs/ai-logic/images/code-execution-diagram.png" alt="Diagram showing how tokens are billed when a model uses code execution." style="width: 1000px"> <br></p> <p>Here's a summary of how tokens are billed when a model uses code execution:</p> <ul> <li><p>The original prompt is billed once. Its tokens are labeled as <em>intermediate</em> tokens, which are billed as <em>input tokens</em>.</p></li> <li>
+<p>The generated code and the result of the executed code are billed like so:</p> <ul> <li><p>When they're used during code execution – they're labeled as <em>intermediate</em> tokens which are billed as <em>input tokens</em>.</p></li> <li><p>When they're included as part of the final response – they're billed as <em>output tokens</em>.</p></li> </ul>
+</li> <li><p>The final summary in the final response is billed as <em>output tokens</em>.</p></li> </ul> <p>The <span class='\"notranslate\"'>Gemini API</span> includes an intermediate token count in the API response, so you know why you're getting charged for input tokens beyond your initial prompt.</p> <p>Note that generated code can include both text and multimodal outputs, such as images.</p> <h2 id="limitations-and-best-practices">Limitations and best practices</h2> <ul> <li><p>The model can only generate and execute Python code. It can't return other artifacts like media files.</p></li> <li><p>Code execution can run for a maximum of 30 seconds before timing out.</p></li> <li><p>In some cases, enabling code execution can lead to regressions in other areas of model output (for example, writing a story).</p></li> <li><p>The code execution tool doesn't support file URIs as input/output. However, the code execution tool supports file input and graph output as inlined bytes. By using these input and output capabilities, you can upload CSV and text files, ask questions about the files, and have Matplotlib graphs generated as part of the code execution result. The supported mime types for inlined bytes are <code translate="no" dir="ltr">.cpp</code>, <code translate="no" dir="ltr">.csv</code>, <code translate="no" dir="ltr">.java</code>, <code translate="no" dir="ltr">.jpeg</code>, <code translate="no" dir="ltr">.js</code>, <code translate="no" dir="ltr">.png</code>, <code translate="no" dir="ltr">.py</code>, <code translate="no" dir="ltr">.ts</code>, and <code translate="no" dir="ltr">.xml</code>.</p></li> </ul> <h3 id="supported-libraries">Supported libraries</h3> <p>The code execution environment includes the following libraries. <strong>You can't install your own libraries.</strong></p> <p><section class="expandable"> <p class="showalways">View supported libraries for the <span class='\"notranslate\"'>Gemini Developer API</span></p></section></p> <ul> <li>attrs</li> <li>chess</li> <li>contourpy</li> <li>fpdf</li> <li>geopandas</li> <li>imageio</li> <li>jinja2</li> <li>joblib</li> <li>jsonschema</li> <li>jsonschema-specifications</li> <li>lxml</li> <li>matplotlib</li> <li>mpmath</li> <li>numpy</li> <li>opencv-python</li> <li>openpyxl</li> <li>packaging</li> <li>pandas</li> <li>pillow</li> <li>protobuf</li> <li>pylatex</li> <li>pyparsing</li> <li>PyPDF2</li> <li>python-dateutil</li> <li>python-docx</li> <li>python-pptx</li> <li>reportlab</li> <li>scikit-learn</li> <li>scipy</li> <li>seaborn</li> <li>six</li> <li>striprtf</li> <li>sympy</li> <li>tabulate</li> <li>tensorflow</li> <li>toolz</li> <li>xlrd</li> </ul> <aside class="note"><strong>Note:</strong><span> Only <code translate="no" dir="ltr">matplotlib</code> is supported for graph rendering using code execution.</span></aside>  <p><section class="expandable"> <p class="showalways">View supported libraries for the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span></p></section></p> <ul> <li>
+<a href="https://altair-viz.github.io/" class="external">Altair</a> </li> <li>
+<a href="https://python-chess.readthedocs.io/" class="external">Chess</a> </li> <li>
+<a href="https://opencv.org/" class="external">Cv2</a> </li> <li>
+<a href="https://matplotlib.org/" class="external">Matplotlib</a> </li> <li>
+<a href="https://mpmath.org/" class="external">Mpmath</a> </li> <li>
+<a href="https://numpy.org/" class="external">NumPy</a> </li> <li>
+<a href="https://pandas.pydata.org/" class="external">Pandas</a> </li> <li>
+<a href="https://pdfminersix.readthedocs.io/" class="external">Pdfminer</a> </li> <li>
+<a href="https://www.reportlab.com/" class="external">Reportlab</a> </li> <li>
+<a href="https://seaborn.pydata.org/" class="external">Seaborn</a> </li> <li>
+<a href="https://scikit-learn.org/" class="external">Sklearn</a> </li> <li>
+<a href="https://www.statsmodels.org/" class="external">Statsmodels</a> </li> <li>
+<a href="https://github.com/joshy/striprtf" class="external">Striprtf</a> </li> <li>
+<a href="https://www.sympy.org/" class="external">SymPy</a> </li> <li>
+<a href="https://github.com/astanin/python-tabulate" class="external">Tabulate</a> </li> </ul>  <p><br></p> <p><a class="button button-primary" href="feedback">Give feedback about your experience with <span class='\"notranslate\"'>Firebase AI Logic</span></a></p> <p><br></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/code-execution" class="_attribution-link">https://firebase.google.com/docs/ai-logic/code-execution</a>
+  </p>
+</div>

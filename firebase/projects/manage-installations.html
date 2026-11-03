@@ -1,0 +1,476 @@
+<h1>Manage Firebase installations and IDs</h1> <p>The Firebase installations service (FIS) provides a Firebase installation ID (FID) for each installed instance of a Firebase app. The Firebase installation ID is used internally by these Firebase services:</p> <table> <thead> <tr> <th>Firebase service</th> <th>Firebase installations functionality</th> </tr> </thead> <tbody> <tr> <td>Firebase Cloud Messaging</td> <td> <p> Firebase Cloud Messaging uses Firebase installation IDs to target devices for message delivery. </p> </td> </tr> <tr> <td>Firebase Crashlytics</td> <td> <p> Firebase Crashlytics rotates the Crashlytics installation UUID based on changes to the app instance's Firebase installation ID. In the future, the installation ID may be used to enable features that enhance crash reporting and crash management services. </p> </td> </tr> <tr> <td>Firebase In-App Messaging</td> <td> <p> Firebase In-App Messaging uses Firebase installation IDs to target devices for message delivery. </p> </td> </tr> <tr> <td>Firebase Performance Monitoring</td> <td> <p> Performance Monitoring uses Firebase installation IDs to calculate the number of unique Firebase installations that access network resources, to ensure that access patterns are sufficiently anonymous. It also uses Firebase installation IDs with Firebase Remote Config to manage the rate of performance event reporting. </p> </td> </tr> <tr> <td>Firebase Remote Config</td> <td> <p> Remote Config uses Firebase installation IDs to select configuration values to return to end-user devices. The Remote Config personalization feature uses Firebase installation IDs to associate app event data with Firebase installations in order to predict and return optimal configuration values to end-user devices. </p> </td> </tr> <tr> <td>Firebase ML</td> <td> <p> Credentials called <a href="manage-installations#retrieve-fis-token"> installation auth tokens</a> are used by Firebase ML for device authentication when interacting with app instances, for example, to distribute developer models to app instances. </p> </td> </tr> <tr> <td>Firebase User Segmentation Storage</td> <td> <p> Firebase User Segmentation Storage stores Firebase installation IDs and related attributes and segments to provide targeting information to other Firebase services that use them. </p> </td> </tr> </tbody> </table> <aside class="note"><b>Note:</b> Additional Firebase services use different types of credentials for similar purposes of identifying or targeting app instances. See <a href="https://firebase.google.com/support/privacy#data_processing_information">Privacy and security in Firebase</a> for complete details. <p>If you link your Firebase project to a Google Analytics property, then Google Analytics may use Firebase installation IDs to provide analytics and attribution information. The precise information collected can vary by the device and environment. </p> </aside> <p>Typically, Firebase services use the Firebase installations service without requiring developers to interact directly with the FIS API. However, there are cases where app developers might want to directly call the FIS API, such as:</p> <ul> <li>To delete a Firebase installation and data tied to the installation.</li> <li>To retrieve identifiers (Firebase installation IDs) in order to target specific app installations.</li> <li>To retrieve installation auth tokens to authenticate Firebase installations.</li> </ul> <p>To get started with directly calling the FIS API, add the SDK to your app.</p> <h2 id="add_the_sdk_to_your_app">Add the Firebase installations SDK to your app</h2> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+
+<ol> <li>Add the dependency for Firebase installations to your Podfile: 
+<pre data-language="">pod 'FirebaseInstallations'</pre> </li> <li>Run <code translate="no" dir="ltr">pod install</code> and open the created <code translate="no" dir="ltr">.xcworkspace</code> file.</li> <li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">import SwiftUI
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">@import FirebaseCore;
+@import FirebaseFirestore;
+@import FirebaseAuth;
+// ...
+      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Use Firebase library to configure APIs
+[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">@main
+struct YourApp: App {
+  // register app delegate for Firebase setup
+  @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
+  var body: some Scene {
+    WindowGroup {
+      NavigationView {
+        ContentView()
+      }
+    }
+  }
+}
+      </pre> </section> </div> </li> </ol></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<p>Add the dependency for the Firebase installations Android SDK to your module (app-level) Gradle file (usually <code translate="no" dir="ltr">app/build.gradle</code>):</p> 
+<pre data-language="java">implementation 'com.google.firebase:firebase-installations:20.0.0'
+</pre></section> <section><p class="_firebase-tab"><strong>JavaScript</strong></p>
+<p>Depending on how your web application is hosted, your configuration may be handled automatically or you may need to update your <a href="learn-more#config-files-objects">Firebase configuration object</a>.</p> <p>For example, if your dependencies are added in index.html, add the dependency in the &lt;head&gt; element:</p> 
+
+<pre data-language="">&lt;script src="/__/firebase/13.1.0/firebase-installations.js"&gt;&lt;/script&gt;</pre></section> <section><p class="_firebase-tab"><strong>Flutter</strong></p>
+<ol> <li>
+<p>From the root directory of your Flutter project, run the following command to install the Firebase installations plugin:</p> 
+<pre data-language="dart">flutter pub add firebase_app_installations
+</pre>
+</li> <li>
+<p>Rebuild your project:</p> 
+<pre data-language="dart">flutter run
+</pre>
+</li> <li>
+<p>Import the Firebase installations plugin:</p> 
+<pre data-language="dart">import 'package:firebase_app_installations/firebase_app_installations.dart';
+</pre>
+</li> </ol></section> </div> <h2 id="delete-installation">Delete a Firebase installation</h2> <p>Data tied to a Firebase installation is generally <em>not</em> personally identifying. Still, it can be helpful to give users an option to manage and delete this data.</p> <p>Firebase installation IDs are different for every installation of every application; different applications on the same device have different Firebase installation IDs. Firebase installation IDs identify app installations and data tied to those app installations.</p> <p>When you delete an installation ID, the data tied to that installation ID is removed from live and backup systems of all Firebase services that use Firebase installation IDs to identify installations within 180 days. This process is described at a high level in Google’s <a href="https://policies.google.com/technologies/retention">statement on deletion and retention</a>.</p> <p>Unless you disable all FID-generating services in your app, FIS creates a new ID within a few days. Firebase considers the newly-created ID to be a new Firebase installation, and doesn't associate it with the previous ID or data in any way.</p> <aside class="note"><strong>Note:</strong><span> Google Analytics for Firebase uses its own form of ID to keep track of analytics data. Deleting a Firebase installation ID does <em>not</em> delete Analytics data. Learn how to <a href="https://support.google.com/firebase/answer/9019185#delete_analytics_data">delete Analytics data associated with end users</a>.</span></aside> <h3 id="delete-fid">Delete an FID with a client API call</h3> <p>To delete FIDs generated by Firebase services, call the appropriate method from the Firebase installations SDK:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">do {
+  try await Installations.installations().delete()
+  print("Installation deleted");
+} catch {
+  print("Error deleting installation: \(error)")
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRInstallations installations] deleteWithCompletion:^(NSError *error) {
+   if (error != nil) {
+     NSLog(@"Error deleting Installation %@", error);
+     return;
+   }
+   NSLog(@"Installation deleted");
+}];</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseInstallations.getInstance().delete()
+        .addOnCompleteListener(new OnCompleteListener&lt;Void&gt;() {
+    @Override
+    public void onComplete(@NonNull Task&lt;Void&gt; task) {
+        if (task.isSuccessful()) {
+            Log.d("Installations", "Installation deleted");
+        } else {
+            Log.e("Installations", "Unable to delete Installation");
+        }
+    }
+});</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">FirebaseInstallations.getInstance().delete().addOnCompleteListener { task -&gt;
+    if (task.isComplete) {
+        Log.d("Installations", "Installation deleted")
+    } else {
+        Log.e("Installations", "Unable to delete Installation")
+    }
+}</pre></section> <section><p class="_firebase-tab"><strong>JavaScript</strong></p>
+
+<pre data-language="">await firebase.installations().delete();</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">await FirebaseInstallations.instance.delete();
+</pre></section> </div> <h3 id="delete-fid-server">Delete an FID with a server API call</h3> <p>To delete an FID with a server API call, <a href="../admin/setup">add the Firebase Admin SDK to your server</a>, if you haven't already.</p> <p>Once the SDK is added, delete FIDs through a call to the deletion function in your language of choice (note: Except for Node.js, these methods reflect Instance ID naming. However, they all actually delete the FID when called with any current Firebase SDK).</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// An FIDsent from a client service SDK
+const idToDelete = 'eyJhbGciOiJFUzI1N_iIs5';
+
+admin.installations().deleteInstallation(idToDelete);
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// An FID sent from a client service SDK
+String idToDelete = "eyJhbGciOiJFUzI1N_iIs5";
+
+FirebaseInstanceId.getInstance().deleteInstanceIdAsync(idToDelete).get();
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">  from firebase_admin import instance_id
+
+  # An FID sent from a client service SDK
+  id_to_delete = 'eyJhbGciOiJFUzI1N_iIs5'
+
+  instance_id.delete_instance_id(id_to_delete)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">client, err := app.InstanceId(ctx)
+if err != nil {
+  log.Fatalln("error initializing client", err)
+}
+
+iidToDelete := "eyJhbGciOiJFUzI1N_iIs5"
+if err := client.DeleteInstanceId(ctx, iidToDelete); err != nil {
+  log.Fatalln("error deleting FID", err)
+}
+</pre></section> </div> <p>When you delete an Firebase installation ID with a server API call, Firebase services start the process to delete the data tied to that installation ID, stop accepting new data for that ID over the course of 1-2 days, and then notify the client app that the ID was deleted. Until Firebase notifies the client app, some of the app's services might still target the ID—for example, a Firebase installation might continue to receive FCM notifications for a few hours.</p> <p>If you want to delete the current Firebase installation ID and immediately use Firebase services with a new, unrelated ID, use the client API to handle the deletion.</p> <h2 id="retrieve_client_identifiers">Retrieve client identifiers</h2> <p>If you have a requirement to identify particular installations of your app, you can do so by retrieving the Firebase installation ID. For example, to create segments of app installs for BiqQuery import, or to perform testing during Firebase In-App Messaging development, you can identify and target the correct devices using the corresponding Firebase installation IDs.</p> <p>To retrieve a Firebase installation ID:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">do {
+  let id = try await Installations.installations().installationID()
+  print("Installation ID: \(id)")
+} catch {
+  print("Error fetching id: \(error)")
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRInstallations installations] installationIDWithCompletion:^(NSString *identifier, NSError *error) {
+  if (error != nil) {
+    NSLog(@"Error fetching Installation ID %@", error);
+    return;
+  }
+  NSLog(@"Installation ID: %@", identifier);
+}];</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseInstallations.getInstance().getId()
+        .addOnCompleteListener(new OnCompleteListener&lt;String&gt;() {
+    @Override
+    public void onComplete(@NonNull Task&lt;String&gt; task) {
+        if (task.isSuccessful()) {
+            Log.d("Installations", "Installation ID: " + task.getResult());
+        } else {
+            Log.e("Installations", "Unable to get Installation ID");
+        }
+    }
+});</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">FirebaseInstallations.getInstance().id.addOnCompleteListener { task -&gt;
+    if (task.isSuccessful) {
+        Log.d("Installations", "Installation ID: " + task.result)
+    } else {
+        Log.e("Installations", "Unable to get Installation ID")
+    }
+}</pre></section> <section><p class="_firebase-tab"><strong>JavaScript</strong></p>
+
+<pre data-language="">const installationId = await firebase.installations().getId();
+console.log(installationId);</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">String id = await FirebaseInstallations.instance.getId();
+</pre></section> </div> <h2 id="retrieve-fis-token">Retrieve installation auth tokens</h2> <p>Firebase services can authenticate Firebase installations with auth tokens retrieved from FIS. For example, when designing A/B tests for Remote Config, you can authenticate a targeted test device using an installation auth token.</p> <aside class="special"><strong>Important:</strong><span> Do not confuse installation auth tokens with <a href="../auth/users#auth_tokens">tokens used by Firebase Authentication</a>. These different types of tokens differ in usage, and are <em>not</em> interchangeable.</span></aside> <p>An installation auth token is a short-lived bearer token in JSON web token (JWT) format containing the following information for an installation:</p> <ul> <li>The Firebase installation ID</li> <li>The associated project (<code translate="no" dir="ltr">projectNumber</code>)</li> <li>The associated Firebase application ID (<code translate="no" dir="ltr">appId</code>)</li> <li>The token's expiration date</li> </ul> <p>An installation auth token cannot be revoked, and remains valid until its expiration date. The default token lifetime is one week.</p> <p>To retrieve an installation auth token:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">do {
+  let result = try await Installations.installations()
+    .authTokenForcingRefresh(true)
+  print("Installation auth token: \(result.authToken)")
+} catch {
+  print("Error fetching token: \(error)")
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRInstallations installations] authTokenForcingRefresh:true
+                                               completion:^(FIRInstallationsAuthTokenResult *result, NSError *error) {
+  if (error != nil) {
+    NSLog(@"Error fetching Installation token %@", error);
+    return;
+  }
+  NSLog(@"Installation auth token: %@", [result authToken]);
+}];</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseInstallations.getInstance().getToken(/* forceRefresh */true)
+        .addOnCompleteListener(new OnCompleteListener&lt;InstallationTokenResult&gt;() {
+    @Override
+    public void onComplete(@NonNull Task&lt;InstallationTokenResult&gt; task) {
+        if (task.isSuccessful() &amp;&amp; task.getResult() != null) {
+            Log.d("Installations", "Installation auth token: " + task.getResult().getToken());
+        } else {
+            Log.e("Installations", "Unable to get Installation auth token");
+        }
+    }
+});</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val forceRefresh = true
+FirebaseInstallations.getInstance().getToken(forceRefresh)
+    .addOnCompleteListener { task -&gt;
+        if (task.isSuccessful) {
+            Log.d("Installations", "Installation auth token: " + task.result?.token)
+        } else {
+            Log.e("Installations", "Unable to get Installation auth token")
+        }
+    }</pre></section> <section><p class="_firebase-tab"><strong>JavaScript</strong></p>
+
+<pre data-language="">const installationToken = await firebase.installations()
+    .getToken(/* forceRefresh */ true);
+console.log(installationToken);</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">String token = await FirebaseInstallations.instance.getToken();
+</pre></section> </div> <h2 id="monitor-id-lifecycle">Monitor the Firebase installation ID lifecycle</h2> <p>During the normal operation of an app, Firebase installation IDs (FIDs) don't require special monitoring. However, apps that explicitly retrieve and use FIDs should add logic to monitor the potential deletion or rotation of the FID. Here are some cases where FIDs could be deleted or rotated:</p> <ul> <li>Uninstallation or reinstallation of the app, for instance when an end user installs on a new device.</li> <li>The end user clears the cache of the app or the device.</li> <li>FID deletion is triggered in the backend due to app inactivity (currently the threshold for this is 270 days of inactivity).</li> </ul> <p>When apps experience FID rotation or deletion in these kinds of cases, they are assigned a new FID. Also, the installation auth token associated with a deleted FID is deleted, regardless of its own maturity, and is replaced with a new installation auth token.</p> <p>Apps can monitor these changes and respond accordingly.</p> <p>To monitor FID rotation:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">installationIDObserver = NotificationCenter.default.addObserver(
+        forName: .InstallationIDDidChange,
+        object: nil,
+        queue: nil
+) { (notification) in
+  // Fetch new Installation ID
+  Task {
+    await self.fetchInstallationToken()
+  }
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">__weak __auto_type weakSelf = self;
+self.installationIDObserver = [[NSNotificationCenter defaultCenter]
+        addObserverForName: FIRInstallationIDDidChangeNotification
+                    object:nil
+                     queue:nil
+                usingBlock:^(NSNotification * _Nonnull notification) {
+    // Fetch new Installation ID
+    [weakSelf fetchInstallationsID];
+}];</pre> <p>An NSNotification named <code translate="no" dir="ltr">NSNotificationName.InstallationIDDidChange</code> is posted to the default NSNotificationCenter whenever a new FID is assigned.</p></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<p>Kotlin and Java clients should add retry logic to respond on failed calls to retrieve the new FID.</p></section> <section><p class="_firebase-tab"><strong>JavaScript</strong></p>
+<p>Web apps can subscribe to the <code translate="no" dir="ltr">onIdChange</code> hook.</p> <p>Whenever a new FID is created, the subscribed callback is triggered:</p> 
+<pre data-language="">await firebase.installations().onIdChange((newId) =&gt; {
+  console.log(newId);
+  // TODO: Handle new installation ID.
+});</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">FirebaseInstallations.instance.onIdChange.listen((token) {
+  print('FID token: $token');
+});
+</pre></section> </div> <h2 id="fid-iid">Migrate from Instance ID to Firebase installations</h2> <p>Prior to the introduction of Firebase installations, Firebase relied on the Instance ID SDK for identifiers of app installs. Firebase installations provides significant advantages over Instance ID in reliability, performance, and security. Firebase apps that depend on the Instance ID SDK should migrate to Firebase installations.</p> <p>The migration process is different based on your app:</p> <ul> <li><p>Apps that don't directly call Instance ID APIs can migrate by <a href="#version-update">updating their SDK versions</a>. Most Firebase apps fall into this category.</p></li> <li><p>Apps that explicitly make API calls to Instance ID must update SDK versions <strong>and</strong> <a href="#explicit-update">make code changes</a> to replace Instance ID methods with their Firebase installations or FCM equivalents. If your app uses Instance ID to retrieve FCM registration tokens or explicitly uses Instance ID to target app instances or for any other purpose, you'll need to update your application code.</p></li> </ul> <p>Currently, FIS is backward-compatible with the legacy identifier Firebase Instance ID. <a href="https://firebase.google.com/support/privacy/manage-iids#delete_an_instance_id">Deleting an IID</a> is an alternative method of requesting data deletion with these Firebase SDKs:</p> <ul> <li>iOS 6.14.0 and lower</li> <li>Android SDKs earlier than February 27, 2020</li> </ul> <p>This means that apps are not <em>required</em> to migrate to Firebase installations; however, doing so is highly recommended.</p> <h3 id="version-update">Upgrading to minimum SDK versions for Firebase installations</h3> <p>To migrate from Instance ID to Firebase installations, make sure that your applications use at least the listed minimum version numbers of the following Firebase SDKs:</p> <table> <tr> <td>
+<strong>Firebase SDK</strong> </td> <td>
+<strong>Minimum Android version</strong> </td> <td>
+<strong>Minimum iOS version</strong> </td> </tr> <tr> <td>Firebase Cloud Messaging </td> <td>
+<a href="https://firebase.google.com/support/release-notes/android#messaging_v20-3-0">v20.3.0</a> </td> <td>
+<a href="https://firebase.google.com/support/release-notes/ios#fcm_2">v6.34.0</a> </td> </tr> <tr> <td>Remote Config </td> <td>
+<a href="https://firebase.google.com/support/release-notes/android#remote-config_v19-2-0">v19.2.0</a> </td> <td>
+<a href="https://firebase.google.com/support/release-notes/ios#remote-config_9">v6.24.0</a> </td> </tr> <tr> <td>Google Analytics for Firebase \ (Measurement SDK) </td> <td>
+<a href="https://firebase.google.com/support/release-notes/android#analytics_v17-4-4">v17.4.4</a> </td> <td>
+<a href="https://firebase.google.com/support/release-notes/ios#analytics_17">v6.18.0</a> </td> </tr> <tr> <td>In-App Messaging </td> <td>
+<a href="https://firebase.google.com/support/release-notes/android#inappmessaging_v19-0-7">v19.0.7</a> </td> <td>
+<a href="https://firebase.google.com/support/release-notes/ios#version_6240_-_may_5_2020">v6.24.0</a> </td> </tr> <tr> <td>Performance Monitoring </td> <td>
+<a href="https://firebase.google.com/support/release-notes/android#performance_v19-0-8">v19.0.8</a> </td> <td>
+<a href="https://firebase.google.com/support/release-notes/ios#performance-monitoring_7">v6.21.0</a> </td> </tr> <tr> <td>Crashlytics </td> <td>
+<a href="https://firebase.google.com/support/release-notes/android#crashlytics_v17-2-1">v17.2.1</a> </td> <td>
+<a href="https://firebase.google.com/support/release-notes/ios#version_6230_-_april_21_2020">v6.23.0</a> </td> </tr> <tr> <td>ML Kit </td> <td>
+<a href="https://firebase.google.com/support/release-notes/android#mlkit-common_v22-1-2">v22.1.2</a> </td> <td>
+<a href="https://firebase.google.com/support/release-notes/ios#ml_kit_for_firebase">v6.28.0</a> </td> </tr> </table> <h3 id="explicit-update">Updating code that explicitly calls Instance ID APIs</h3> <p>If your Android or Apple app directly uses Instance ID SDK methods, you can replace that usage with identical alternatives in the Firebase installations SDK or the FCM SDK.</p> <h4 id="retrieving-an-identifier">Retrieving an identifier</h4> <p>Methods to get Instance IDs are replaced with methods to get an installations ID. For example:</p> <p><strong>Before</strong></p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">Messaging.messaging().token { token, error in
+  if let error = error {
+    print("Error fetching remote FCM registration token: \(error)")
+  } else if let token = token {
+    print("Remote instance ID token: \(token)")
+  }
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[[FIRMessaging messaging] tokenWithCompletion:^(NSString * _Nullable token, NSError * _Nullable error) {
+  if (error != nil) {
+    NSLog(@"Error fetching the remote FCM registration token: %@", error);
+  } else {
+    NSLog(@"Remote FCM registration token: %@", token);
+    NSString* message =
+      [NSString stringWithFormat:@"FCM registration token: %@", token];
+    // display message
+    NSLog(@"%@", message);
+  }
+}];</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">FirebaseInstanceId.getInstance().getInstanceId()
+        .addOnCompleteListener(new OnCompleteListener&lt;InstanceIdResult&gt;() {
+            @Override
+            public void onComplete(@NonNull Task&lt;InstanceIdResult&gt; task) {
+                Log.d("IID_TOKEN", task.getResult().getToken());
+            }
+        });</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">FirebaseInstanceId.getInstance().instanceId
+        .addOnSuccessListener { result -&gt;
+            Log.d("IID_TOKEN", result.token)
+        }</pre> </section> </div> <p><strong>After</strong></p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">do {
+  let id = try await Installations.installations().installationID()
+  print("Installation ID: \(id)")
+} catch {
+  print("Error fetching id: \(error)")
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRInstallations installations] installationIDWithCompletion:^(NSString *identifier, NSError *error) {
+  if (error != nil) {
+    NSLog(@"Error fetching Installation ID %@", error);
+    return;
+  }
+  NSLog(@"Installation ID: %@", identifier);
+}];</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseInstallations.getInstance().getId()
+        .addOnCompleteListener(new OnCompleteListener&lt;String&gt;() {
+    @Override
+    public void onComplete(@NonNull Task&lt;String&gt; task) {
+        if (task.isSuccessful()) {
+            Log.d("Installations", "Installation ID: " + task.getResult());
+        } else {
+            Log.e("Installations", "Unable to get Installation ID");
+        }
+    }
+});</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">FirebaseInstallations.getInstance().id.addOnCompleteListener { task -&gt;
+    if (task.isSuccessful) {
+        Log.d("Installations", "Installation ID: " + task.result)
+    } else {
+        Log.e("Installations", "Unable to get Installation ID")
+    }
+}</pre></section> </div> <h4 id="deleting-an-identifier">Deleting an identifier</h4> <p>Methods to delete Instance IDs are replaced with methods to delete Firebase installation IDs. For example:</p> <p><strong>Before</strong></p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">InstanceID.instanceID().deleteID { error in
+  if let error = error {
+    print("Error deleting instance ID: \(error)")
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[FIRInstanceID instanceID] deleteIDWithHandler:^(NSError *error) {
+  if error != nil {
+    NSLog(@"Error deleting instance ID: %@", error);
+  }
+}];
+</pre></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+
+<pre data-language="java">FirebaseInstanceId.deleteInstanceId();
+</pre></section> </div> <p><strong>After</strong></p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">func delete(completion: @escaping (Error?) -&gt; Void)
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">- (void)deleteWithCompletion:(nonnull void (^)(NSError *_Nullable))completion;
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseInstallations.getInstance().delete()
+        .addOnCompleteListener(new OnCompleteListener&lt;Void&gt;() {
+    @Override
+    public void onComplete(@NonNull Task&lt;Void&gt; task) {
+        if (task.isSuccessful()) {
+            Log.d("Installations", "Installation deleted");
+        } else {
+            Log.e("Installations", "Unable to delete Installation");
+        }
+    }
+});</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">FirebaseInstallations.getInstance().delete().addOnCompleteListener { task -&gt;
+    if (task.isComplete) {
+        Log.d("Installations", "Installation deleted")
+    } else {
+        Log.e("Installations", "Unable to delete Installation")
+    }
+}</pre></section> </div> <h4 id="retrieving-an-fcm-registration-token">Retrieving an FCM registration token</h4> <p>Prior to the introduction of Firebase Installations, FCM clients retrieved registration tokens from Instance ID. Now, the FCM SDK provides methods to retrieve the registration token.</p> <p><strong>Before</strong></p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">FirebaseInstanceId.getInstance().getInstanceId()
+        .addOnCompleteListener(new OnCompleteListener&lt;InstanceIdResult&gt;() {
+            @Override
+            public void onComplete(@NonNull Task&lt;InstanceIdResult&gt; task) {
+                if (!task.isSuccessful()) {
+                    Log.w(TAG, "getInstanceId failed", task.getException());
+                    return;
+                }
+
+                // Get new Instance ID token
+                String token = task.getResult().getToken();
+
+                // Log and toast
+                String msg = getString(R.string.msg_token_fmt, token);
+                Log.d(TAG, msg);
+                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+            }
+        });</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">FirebaseInstanceId.getInstance().instanceId
+        .addOnCompleteListener(OnCompleteListener { task -&gt;
+            if (!task.isSuccessful) {
+                Log.w(TAG, "getInstanceId failed", task.exception)
+                return@OnCompleteListener
+            }
+
+            // Get new Instance ID token
+            val token = task.result?.token
+
+            // Log and toast
+            val msg = getString(R.string.msg_token_fmt, token)
+            Log.d(TAG, msg)
+            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+        })</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">InstanceID.instanceID().instanceID { result, error in
+  if let error = error {
+    print("Error fetching instance ID: \(error)")
+  } else if let result = result {
+    print("Instance ID token: \(result.token)")
+  }
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[[FIRInstanceID instanceID] instanceIDWithHandler:^(FIRInstanceIDResult * _Nullable result,
+                                                    NSError * _Nullable error) {
+  if (error != nil) {
+    NSLog(@"Error fetching instance ID: %@", error);
+  } else {
+    NSLog(@"Instance ID token: %@", result.token);
+  }
+}];</pre> </section> </div> <p><strong>After</strong></p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">FirebaseMessaging.getInstance().getToken()
+    .addOnCompleteListener(new OnCompleteListener&lt;String&gt;() {
+        @Override
+        public void onComplete(@NonNull Task&lt;String&gt; task) {
+          if (!task.isSuccessful()) {
+            Log.w(TAG, "Fetching FCM registration token failed", task.getException());
+            return;
+          }
+
+          // Get new FCM registration token
+          String token = task.getResult();
+
+          // Log and toast
+          String msg = getString(R.string.msg_token_fmt, token);
+          Log.d(TAG, msg);
+          Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+        }
+    });</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task -&gt;
+    if (!task.isSuccessful) {
+        Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+        return@OnCompleteListener
+    }
+
+    // Get new FCM registration token
+    val token = task.result
+
+    // Log and toast
+    val msg = getString(R.string.msg_token_fmt, token)
+    Log.d(TAG, msg)
+    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+})</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">Messaging.messaging().token { token, error in
+  if let error = error {
+    print("Error fetching remote FCM registration token: \(error)")
+  } else if let token = token {
+    print("Remote instance ID token: \(token)")
+  }
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[[FIRMessaging messaging] tokenWithCompletion:^(NSString * _Nullable token, NSError * _Nullable error) {
+  if (error != nil) {
+    NSLog(@"Error fetching the remote FCM registration token: %@", error);
+  } else {
+    NSLog(@"Remote FCM registration token: %@", token);
+    NSString* message =
+      [NSString stringWithFormat:@"FCM registration token: %@", token];
+    // display message
+    NSLog(@"%@", message);
+  }
+}];</pre> </section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/projects/manage-installations" class="_attribution-link">https://firebase.google.com/docs/projects/manage-installations</a>
+  </p>
+</div>

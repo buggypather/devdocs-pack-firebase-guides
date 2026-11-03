@@ -1,0 +1,254 @@
+<h1>Federated identity and social sign-in</h1> <p>Social authentication is a multi-step authentication flow, allowing you to sign a user into an account or link them with an existing one.</p> <p>Both native platforms and web support creating a credential which can then be passed to the <code translate="no" dir="ltr">signInWithCredential</code> or <code translate="no" dir="ltr">linkWithCredential</code> methods. Alternatively on web platforms, you can trigger the authentication process via a popup or redirect.</p> <h2 id="google">Google</h2> <p>Most configuration is already setup when using Google Sign-In with Firebase, however you need to ensure your machine's SHA1 key has been configured for use with Android. You can see how to generate the key in the <a href="https://developers.google.com/android/guides/client-auth">authentication documentation</a>.</p> <p>Make sure the "Google" sign-in provider is enabled in the Firebase console (go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><strong>Sign-in method</strong> tab</a>).</p> <blockquote> <p>If your user signs in with Google, after having already manually registered an account, their authentication provider will automatically change to Google, due to Firebase Authentications concept of trusted providers. You can find out more about this <a href="https://groups.google.com/g/firebase-talk/c/ms_NVQem_Cw/m/8g7BFk1IAAAJ">here</a>.</p> </blockquote> <div> <section><p class="_firebase-tab"><strong>iOS+ and Android</strong></p>
+<p>On native platforms, a 3rd party library is required to trigger the authentication flow.</p> <p>Install the official <a href="https://pub.dev/packages/google_sign_in"><code translate="no" dir="ltr">google_sign_in</code></a> plugin.</p> <p>Once installed, trigger the sign-in flow and create a new credential:</p> 
+<pre data-language="">import 'package:google_sign_in/google_sign_in.dart';
+
+Future&lt;UserCredential&gt; signInWithGoogle() async {
+  // Trigger the authentication flow
+  final GoogleSignInAccount? googleUser = await GoogleSignIn.instance.authenticate();
+
+  // Obtain the auth details from the request
+  final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+
+  // Create a new credential
+  final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
+
+  // Once signed in, return the UserCredential
+  return await FirebaseAuth.instance.signInWithCredential(credential);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>On the web, the Firebase SDK provides support for automatically handling the authentication flow using your Firebase project. For example:</p> <p>Create a Google auth provider, providing any additional <a href="https://developers.google.com/identity/protocols/oauth2/scopes">permission scope</a> you wish to obtain from the user:</p> 
+<pre data-language="javascript">GoogleAuthProvider googleProvider = GoogleAuthProvider();
+
+googleProvider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+googleProvider.setCustomParameters({
+  'login_hint': 'user@example.com'
+});
+</pre> <p>Provide the credential to the <code translate="no" dir="ltr">signInWithPopup</code> method. This will trigger a new window to appear prompting the user to sign-in to your project. Alternatively you can use <code translate="no" dir="ltr">signInWithRedirect</code> to keep the authentication process in the same window.</p> 
+<pre data-language="javascript">Future&lt;UserCredential&gt; signInWithGoogle() async {
+  // Create a new provider
+  GoogleAuthProvider googleProvider = GoogleAuthProvider();
+
+  googleProvider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+  googleProvider.setCustomParameters({
+    'login_hint': 'user@example.com'
+  });
+
+  // Once signed in, return the UserCredential
+  return await FirebaseAuth.instance.signInWithPopup(googleProvider);
+
+  // Or use signInWithRedirect
+  // return await FirebaseAuth.instance.signInWithRedirect(googleProvider);
+}
+</pre></section> </div> <h2 id="games">Google Play Games (Android only)</h2> <p>Ensure the "Play Games" sign-in provider is enabled in the Firebase console (go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><strong>Sign-in method</strong> tab</a>). Follow these instructions for <a href="../android/play-games#set-up-firebase-project">Play Games Firebase project set-up</a>.</p> <p>Follow these <a href="../android/play-games#configure-play-games-with-firebase-info">instructions for configuring Play Games services</a> with your Firebase app.</p> <div> <section><p class="_firebase-tab"><strong>Android</strong></p>
+
+<pre data-language="java">Future&lt;void&gt; _signInWithPlayGames() async {
+  // Get server auth code from 3rd party provider
+  // See PR description for details on how you might get the server auth code:
+  // https://github.com/firebase/flutterfire/pull/12201#issue-2100392487
+  final serverAuthCode = '...';
+  final playGamesCredential = PlayGamesAuthProvider.credential(
+                                          serverAuthCode: serverAuthCode);
+
+  await FirebaseAuth.instance
+    .signInWithCredential(playGamesCredential);
+}
+</pre></section> </div> <h2 id="facebook">Facebook</h2> <p>Before getting started setup your <a href="https://developers.facebook.com/apps/">Facebook Developer App</a> and follow the setup process to enable Facebook Login.</p> <p>Ensure the "Facebook" sign-in provider is enabled in the Firebase console with the Facebook App ID and Secret set (go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><strong>Sign-in method</strong> tab</a>).</p> <div> <section><p class="_firebase-tab"><strong>iOS+ and Android</strong></p>
+<p>On native platforms, a 3rd party library is required to both install the Facebook SDK and trigger the authentication flow.</p> <p>Install the <a href="https://pub.dev/packages/flutter_facebook_auth"><code translate="no" dir="ltr">flutter_facebook_auth</code></a> plugin.</p> <p>You will need to follow the steps in the plugin documentation to ensure that both the Android &amp; iOS Facebook SDKs have been initialized correctly. Once complete, trigger the sign-in flow, create a Facebook credential and sign the user in:</p> 
+<pre data-language="">import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+
+Future&lt;UserCredential&gt; signInWithFacebook() async {
+  // Trigger the sign-in flow
+  final LoginResult loginResult = await FacebookAuth.instance.login();
+
+  // Create a credential from the access token
+  final OAuthCredential facebookAuthCredential = FacebookAuthProvider.credential(loginResult.accessToken.token);
+
+  // Once signed in, return the UserCredential
+  return FirebaseAuth.instance.signInWithCredential(facebookAuthCredential);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>On the web, the Firebase SDK provides support for automatically handling the authentication flow using the Facebook application details provided in the Firebase console. For example:</p> <p>Create a Facebook provider, providing any additional <a href="https://developers.facebook.com/docs/facebook-login/permissions/">permission scope</a> you want to obtain from the user.</p> <p>Ensure that the OAuth redirect URI from the Firebase console is added as a valid OAuth Redirect URI in your Facebook App.</p> 
+<pre data-language="javascript">FacebookAuthProvider facebookProvider = FacebookAuthProvider();
+
+facebookProvider.addScope('email');
+facebookProvider.setCustomParameters({
+  'display': 'popup',
+});
+</pre> <p>Provide the credential to the <code translate="no" dir="ltr">signInWithPopup</code> method. This will trigger a new window to appear prompting the user to sign-in to your Facebook application:</p> 
+<pre data-language="javascript">Future&lt;UserCredential&gt; signInWithFacebook() async {
+  // Create a new provider
+  FacebookAuthProvider facebookProvider = FacebookAuthProvider();
+
+  facebookProvider.addScope('email');
+  facebookProvider.setCustomParameters({
+    'display': 'popup',
+  });
+
+  // Once signed in, return the UserCredential
+  return await FirebaseAuth.instance.signInWithPopup(facebookProvider);
+
+  // Or use signInWithRedirect
+  // return await FirebaseAuth.instance.signInWithRedirect(facebookProvider);
+}
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> Firebase will not set the <code translate="no" dir="ltr">User.isEmailVerified</code> property to <code translate="no" dir="ltr">true</code> if your user logs in with Facebook. Should your user login using a provider that verifies email (e.g. Google sign-in) then this will be set to true. For further information, see this <a href="https://github.com/firebase/flutterfire/issues/4612#issuecomment-782107867">issue</a>.</span></aside> <h2 id="apple">Apple</h2> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<p>Before you begin, <a href="../ios/apple#configure-sign-in-with-apple">configure Sign In with Apple</a> and <a href="../ios/apple#enable-apple-as-a-sign-in-provider">enable Apple as a sign-in provider</a>.</p> <p>Next, make sure that your <code translate="no" dir="ltr">Runner</code> apps have the "Sign in with Apple" capability.</p></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<p>Before you begin, <a href="../android/apple#configure_sign_in_with_apple">configure Sign In with Apple</a> and <a href="../android/apple#enable-apple-as-a-sign-in-provider">enable Apple as a sign-in provider</a>.</p></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>Before you begin, <a href="../web/apple#configure-sign-in-with-apple">configure Sign In with Apple</a> and <a href="../web/apple#enable-apple-as-a-sign-in-provider">enable Apple as a sign-in provider</a>.</p></section> </div>
+
+<pre>import 'package:firebase_auth/firebase_auth.dart';
+
+Future&lt;UserCredential&gt; signInWithApple() async {
+  final appleProvider = AppleAuthProvider();
+  if (kIsWeb) {
+    await FirebaseAuth.instance.signInWithPopup(appleProvider);
+  } else {
+    await FirebaseAuth.instance.signInWithProvider(appleProvider);
+  }
+}
+</pre> <h4 id="apple_platform_sign-in_only">Apple platform sign-in only</h4> <p>Apple sign-in on iOS+ platforms can also be achieved with the following method:</p> 
+<pre>// Implement a function that generates a nonce. See iOS documentation for how to create a nonce:
+// https://firebase.google.com/docs/auth/ios/apple#sign_in_with_apple_and_authenticate_with_firebase
+String rawNonce = createNonce();
+// Create a SHA-256 hash of the nonce. Consider using the `crypto` package from the pub.dev registry.
+String hashSHA256String = createHashSHA256String(rawNonce);
+// Use the hash of the nonce to get the idToken. Consider using the `sign_in_with_apple` plugin from the pub.dev registry.
+String idToken = await getIdToken();
+
+final fullName = AppleFullPersonName(
+  familyName: 'Name',
+  givenName: 'Your',
+);
+// Use the `rawNonce` and `idToken` to get the credential
+final credential = AppleAuthProvider.credentialWithIDToken(
+  idToken,
+  rawNonce,
+  fullName,
+);
+
+await FirebaseAuth.instance.signInWithCredential(credential);
+</pre> <h3 id="revoke-apple">Revoke Apple auth tokens</h3> <p>Apple sign-in on Apple platforms returns an authorization code that can be used to revoke the Apple auth token using the <code translate="no" dir="ltr">revokeTokenWithAuthorizationCode()</code> API.</p> 
+<pre>import 'package:firebase_auth/firebase_auth.dart';
+
+Future&lt;UserCredential&gt; signInWithApple() async {
+  final appleProvider = AppleAuthProvider();
+
+  UserCredential userCredential = await FirebaseAuth.instance.signInWithPopup(appleProvider);
+  // Keep the authorization code returned from Apple platforms
+  String? authCode = userCredential.additionalUserInfo?.authorizationCode;
+  // Revoke Apple auth token
+  await FirebaseAuth.instance.revokeTokenWithAuthorizationCode(authCode!);
+}
+</pre> <h2 id="games">Apple Game Center (Apple only)</h2> <p>Ensure the "Game Center" sign-in provider is enabled in the Firebase console (go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><strong>Sign-in method</strong> tab</a>). Follow these instructions for <a href="../ios/game-center#before_you_begin">Game Center Firebase project set-up</a>.</p> <p>You will need to login with Game Center before a Firebase Game Center credential can be issued and logged in via Firebase. <a href="../ios/game-center#integrate_game_center_sign-in_into_your_game">Here are some instructions</a> on how that can be achieved.</p> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+
+<pre data-language="">Future&lt;void&gt; _signInWithGameCenter() async {
+  final credential = GameCenterAuthProvider.credential();
+  await FirebaseAuth.instance
+      .signInWithCredential(credential);
+}
+</pre></section> </div> <h2 id="microsoft">Microsoft</h2> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<p>Before you begin <a href="../ios/microsoft-oauth#before_you_begin">configure Microsoft Login for iOS</a> and add the <a href="../ios/microsoft-oauth#handle_the_sign-in_flow_with_the_firebase_sdk">custom URL schemes to your Runner (step 1)</a>.</p></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<p>Before you begin <a href="../android/microsoft-oauth#before_you_begin">configure Microsoft Login for Android</a>.</p> <p>Don't forget to add your app's SHA-1 fingerprint.</p></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>Before you begin <a href="../web/microsoft-oauth#configure-sign-in-with-apple">configure Microsoft Login for Web</a>.</p></section> </div>
+
+<pre>import 'package:firebase_auth/firebase_auth.dart';
+
+Future&lt;UserCredential&gt; signInWithMicrosoft() async {
+  final microsoftProvider = MicrosoftAuthProvider();
+  if (kIsWeb) {
+    await FirebaseAuth.instance.signInWithPopup(microsoftProvider);
+  } else {
+    await FirebaseAuth.instance.signInWithProvider(microsoftProvider);
+  }
+}
+</pre> <h2 id="twitter">Twitter</h2> <p>Ensure the "Twitter" sign-in provider is enabled in the Firebase console with an API Key and API Secret set (go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><strong>Sign-in method</strong> tab</a>). Ensure your Firebase OAuth redirect URI (for example <code translate="no" dir="ltr">my-app-12345.firebaseapp.com/__/auth/handler</code>) is set as your Authorization callback URL in your app's settings page on your <a href="https://apps.twitter.com/">Twitter app's config</a>.</p> <p>You also might need to request elevated <a href="https://developer.twitter.com/en/portal/products/elevated">API access depending on your app</a>.</p> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<p>You need to configure your custom URL scheme as <a href="../ios/twitter-login#handle_the_sign-in_flow_with_the_firebase_sdk">described in iOS guide step 1</a>.</p></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<p>If you haven't already, specify your app's SHA-1 fingerprint:</p> <ol> <li><p>In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><strong>General</strong> tab</a>.</p></li> <li><p>Scroll down to the <strong>Your apps</strong> card, select your Android app, and add your SHA-1 fingerprint in the <strong>SHA certificate fingerprints</strong> field.</p></li> </ol> <p>See <a href="https://developers.google.com/android/guides/client-auth">Authenticating Your Client</a> for details on how to get your app's SHA fingerprint.</p></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>Works out of the box.</p></section> </div>
+
+<pre>import 'package:firebase_auth/firebase_auth.dart';
+
+Future&lt;void&gt; _signInWithTwitter() async {
+  TwitterAuthProvider twitterProvider = TwitterAuthProvider();
+
+  if (kIsWeb) {
+    await FirebaseAuth.instance.signInWithPopup(twitterProvider);
+  } else {
+    await FirebaseAuth.instance.signInWithProvider(twitterProvider);
+  }
+}
+</pre> <h2 id="github">GitHub</h2> <p>Ensure that you have setup an OAuth App from your <a href="https://github.com/settings/developers">GitHub Developer Settings</a> and that the "GitHub" sign-in provider is enabled in the Firebase console (go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><strong>Sign-in method</strong> tab</a>). Make sure the Client ID and Secret are set, with the callback URL set in the GitHub app.</p> <div> <section><p class="_firebase-tab"><strong>iOS+ and Android</strong></p>
+<p>For native platforms, you need to add the <code translate="no" dir="ltr">google-services.json</code> and <code translate="no" dir="ltr">GoogleService-Info.plist</code>.</p> <p>For iOS, add the custom URL scheme as <a href="../ios/github-auth#handle_the_sign-in_flow_with_the_firebase_sdk">described on the iOS guide</a> step 1.</p> 
+<pre data-language="">Future&lt;UserCredential&gt; signInWithGitHub() async {
+  // Create a new provider
+  GithubAuthProvider githubProvider = GithubAuthProvider();
+
+  return await FirebaseAuth.instance.signInWithProvider(githubProvider);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>On the web, the GitHub SDK provides support for automatically handling the authentication flow using the GitHub application details provided in the Firebase console. Ensure that the callback URL in the Firebase console is added as a callback URL in your GitHub application on the developer console.</p> <p>For example:</p> <p>Create a GitHub provider and provide the credential to the <code translate="no" dir="ltr">signInWithPopup</code> method. This will trigger a new window to appear prompting the user to sign-in to your GitHub application:</p> 
+<pre data-language="javascript">Future&lt;UserCredential&gt; signInWithGitHub() async {
+  // Create a new provider
+  GithubAuthProvider githubProvider = GithubAuthProvider();
+
+  // Once signed in, return the UserCredential
+  return await FirebaseAuth.instance.signInWithPopup(githubProvider);
+
+  // Or use signInWithRedirect
+  // return await FirebaseAuth.instance.signInWithRedirect(githubProvider);
+}
+</pre></section> </div> <h2 id="yahoo">Yahoo</h2> <p>Ensure the "Yahoo" sign-in provider is enabled in the Firebase console with an API Key and API Secret set (go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><strong>Sign-in method</strong> tab</a>). Also make sure your Firebase OAuth redirect URI (for example, <code translate="no" dir="ltr">my-app-12345.firebaseapp.com/__/auth/handler</code>) is set as a redirect URI in your app's Yahoo Developer Network configuration.</p> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<p>Before you begin, <a href="../ios/yahoo-oauth#before_you_begin">configure Yahoo Login for iOS</a> and add the <a href="../ios/yahoo-oauth#handle_the_sign-in_flow_with_the_firebase_sdk">custom URL schemes to your Runner (step 1)</a>.</p></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<p>Before you begin, <a href="../android/yahoo-oauth#before_you_begin">configure Yahoo Login for Android</a>.</p> <p>Don't forget to add your app's SHA-1 fingerprint.</p></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>Works out of the box.</p></section> </div>
+
+<pre>import 'package:firebase_auth/firebase_auth.dart';
+
+Future&lt;UserCredential&gt; signInWithYahoo() async {
+  final yahooProvider = YahooAuthProvider();
+  if (kIsWeb) {
+    await _auth.signInWithPopup(yahooProvider);
+  } else {
+    await _auth.signInWithProvider(yahooProvider);
+  }
+}
+</pre> <h1 id="using_the_oauth_access_token" class="page-title">Using the OAuth access token</h1> <p>By using an AuthProvider, you can retrieve the access token associated with the provider by making the following request.</p> 
+<pre>final appleProvider = AppleAuthProvider();
+
+final user = await FirebaseAuth.instance.signInWithProvider(appleProvider);
+final accessToken = user.credential?.accessToken;
+
+// You can send requests with the `accessToken`
+</pre> <h1 id="linking_an_authentication_provider" class="page-title">Linking an Authentication Provider</h1> <p>If you want to link a provider to a current user, you can use the following method:</p> 
+<pre>await FirebaseAuth.instance.signInAnonymously();
+
+final appleProvider = AppleAuthProvider();
+
+if (kIsWeb) {
+  await FirebaseAuth.instance.currentUser?.linkWithPopup(appleProvider);
+
+  // You can also use `linkWithRedirect`
+} else {
+  await FirebaseAuth.instance.currentUser?.linkWithProvider(appleProvider);
+}
+
+// You're anonymous user is now upgraded to be able to connect with Sign In With Apple
+</pre> <h1 id="reauthenticate_with_provider" class="page-title">Reauthenticate with provider</h1> <p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithProvider</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> 
+<pre>final appleProvider = AppleAuthProvider();
+
+if (kIsWeb) {
+  await FirebaseAuth.instance.currentUser?.reauthenticateWithPopup(appleProvider);
+
+  // Or you can reauthenticate with a redirection
+  // await FirebaseAuth.instance.currentUser?.reauthenticateWithRedirect(appleProvider);
+} else {
+  await FirebaseAuth.instance.currentUser?.reauthenticateWithProvider(appleProvider);
+}
+
+// You can now perform sensitive operations
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/flutter/federated-auth" class="_attribution-link">https://firebase.google.com/docs/auth/flutter/federated-auth</a>
+  </p>
+</div>

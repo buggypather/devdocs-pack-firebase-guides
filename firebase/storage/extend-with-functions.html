@@ -1,0 +1,176 @@
+<h1>Extend Cloud Storage with Cloud Functions</h1> <aside class="caution"> <strong>Cloud Storage for Firebase requires projects to be on the <a href="https://firebase.google.com/pricing">pay-as-you-go Blaze pricing plan</a>.</strong> This requirement also applies to accessing the default bucket for your project. <a href="faqs-storage-changes-announced-sept-2024">Learn more.</a> </aside> <p>You can trigger a function in response to the uploading, updating, or deleting of files and folders in Cloud Storage.</p> <p>Examples in this page are based on a sample function that triggers when image files are uploaded to Cloud Storage. This sample function demonstrates how to access event attributes, how to download a file to a Cloud Functions instance, and other fundamentals of handling Cloud Storage events.</p> <h2 id="import-required">Import the required modules</h2> <p>To get started, import the module required for handling Cloud Storage events:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript"> const {onObjectFinalized} = require("firebase-functions/storage");
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"> from firebase_functions import storage_fn
+</pre></section> </div> <p>To build out the full sample, also add the dependencies for the Firebase Admin SDK and image processing tools:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript"> const {initializeApp} = require("firebase-admin/app");
+const {getStorage} = require("firebase-admin/storage");
+const logger = require("firebase-functions/logger");
+const path = require("path");
+
+// library for image resizing
+const sharp = /** @type {typeof import("sharp")} */ (require("sharp"));
+
+initializeApp();
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"> import io
+import pathlib
+
+from PIL import Image
+
+from firebase_admin import initialize_app
+
+initialize_app()
+from firebase_admin import storage
+</pre></section> </div> <h2 id="scoping">Scope a Cloud Storage function</h2> <p>Use the following pattern to scope your function to a specific Cloud Storage bucket and set any desired options:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// scope handler to a specific bucket, using storage options parameter
+exports.archivedopts = onObjectArchived({ bucket: "myBucket" }, (event) =&gt; {
+  //…
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Scope handler to a specific bucket using storage options parameter
+@storage_fn.on_object_archived(bucket="myBucket")
+def archived_bucket(event: storage_fn.CloudEvent[storage_fn.StorageObjectData]):
+    # ...
+</pre></section> </div> <p>By contrast, the example thumbnail generator function is scoped to the default bucket for the project:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.generateThumbnail = onObjectFinalized({cpu: 2}, async (event) =&gt; {
+// ...
+});</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@storage_fn.on_object_archived()
+def generatethumbnail(event: storage_fn.CloudEvent[storage_fn.StorageObjectData]):
+    # ...
+</pre></section> </div> <h2 id="setting-location">Set the function location</h2> <p>A mismatch between locations can result in deployment failure. Also, distance between the location of a Cloud Storage bucket and the location of the function can create significant network latency. To avoid these situations, specify the <a href="../functions/locations">function location</a> so that it matches the bucket/trigger location in one of these ways:</p> <ul> <li>Function location is the same as the trigger location</li> <li>Function location is inside the trigger location (when the trigger region is dual/multi region)</li> <li>Function may be in any location if the trigger region is set to <code translate="no" dir="ltr">us-central1</code>
+</li> </ul> <h2 id="trigger-on-storage-changes">Handle Cloud Storage events</h2> <p>These handlers for responding to Cloud Storage events are available:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<ul> <li>
+<code translate="no" dir="ltr">onObjectArchived</code> Only sent when a bucket has enabled <a href="https://cloud.google.com/storage/docs/object-versioning">object versioning</a>. This event indicates that the live version of an object has become an archived version, either because it was archived or because it was overwritten by the upload of an object of the same name.</li> <li>
+<code translate="no" dir="ltr">onObjectDeleted</code> Sent when an object has been permanently deleted. This includes objects that are overwritten or are deleted as part of the bucket's <a href="https://cloud.google.com/storage/docs/lifecycle">lifecycle configuration</a>. For buckets with <a href="https://cloud.google.com/storage/docs/object-versioning">object versioning</a> enabled, this is not sent when an object is archived (see <code translate="no" dir="ltr">onArchive</code>), even if archival occurs via the <code translate="no" dir="ltr">storage.objects.delete</code> method.</li> <li>
+<code translate="no" dir="ltr">onObjectFinalized</code> Sent when a new object (or a new generation of an existing object) is successfully created in the bucket. This includes copying or rewriting an existing object. A failed upload does not trigger this event.</li> <li>
+<code translate="no" dir="ltr">onMetadataUpdated</code> Sent when the metadata of an existing object changes.</li> </ul></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+<ul> <li>
+<code translate="no" dir="ltr">on_object_archived</code> Only sent when a bucket has enabled <a href="https://cloud.google.com/storage/docs/object-versioning">object versioning</a>. This event indicates that the live version of an object has become an archived version, either because it was archived or because it was overwritten by the upload of an object of the same name.</li> <li>
+<code translate="no" dir="ltr">on_object_deleted</code> Sent when an object has been permanently deleted. This includes objects that are overwritten or are deleted as part of the bucket's <a href="https://cloud.google.com/storage/docs/lifecycle">lifecycle configuration</a>. For buckets with <a href="https://cloud.google.com/storage/docs/object-versioning">object versioning</a> enabled, this is not sent when an object is archived (see <code translate="no" dir="ltr">onArchive</code>), even if archival occurs via the <code translate="no" dir="ltr">storage.objects.delete</code> method.</li> <li>
+<code translate="no" dir="ltr">on_object_finalized</code> Sent when a new object (or a new generation of an existing object) is successfully created in the bucket. This includes copying or rewriting an existing object. A failed upload does not trigger this event.</li> <li>
+<code translate="no" dir="ltr">on_metadata_updated</code> Sent when the metadata of an existing object changes.</li> </ul></section> </div> <h2 id="access-attributes">Access Cloud Storage object attributes</h2> <p>Cloud Functions exposes a number of Cloud Storage object attributes such as the object's size and content type for the file updated. The <code translate="no" dir="ltr">metageneration</code> attribute is incremented whenever there's a change to the object's metadata. For new objects, the <code translate="no" dir="ltr">metageneration</code> value is <code translate="no" dir="ltr">1</code>.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const fileBucket = event.data.bucket; // Storage bucket containing the file.
+const filePath = event.data.name; // File path in the bucket.
+const contentType = event.data.contentType; // File content type.</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">bucket_name = event.data.bucket
+file_path = pathlib.PurePath(event.data.name)
+content_type = event.data.content_type
+</pre></section> </div> <p>The thumbnail generation sample uses some of these attributes to detect exit cases in which the function returns:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Exit if this is triggered on a file that is not an image.
+if (!contentType.startsWith("image/")) {
+  return logger.log("This is not an image.");
+}
+// Exit if the image is already a thumbnail.
+const fileName = path.basename(filePath);
+if (fileName.startsWith("thumb_")) {
+  return logger.log("Already a Thumbnail.");
+}</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Exit if this is triggered on a file that is not an image.
+if not content_type or not content_type.startswith("image/"):
+    print(f"This is not an image. ({content_type})")
+    return
+
+# Exit if the image is already a thumbnail.
+if file_path.name.startswith("thumb_"):
+    print("Already a thumbnail.")
+    return
+</pre></section> </div> <h2 id="download-transform">Download, transform, and upload a file</h2> <p>For some cases, it may not be necessary to download files from Cloud Storage. However, to perform intensive tasks such as generating a thumbnail image from a file stored in Cloud Storage, you need to download files to the functions instance—that is, the virtual machine that runs your code.</p> <p>Using Cloud Functions together with image-processing programs like <a href="https://sharp.pixelplumbing.com/"><code translate="no" dir="ltr">sharp</code></a> for Node.js and <a href="https://pillow.readthedocs.io/en/stable/">Pillow</a> for Python, you can perform manipulations on graphical image files. The following is an example of how to create a thumbnail image for an uploaded image file:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">/**
+ * When an image is uploaded in the Storage bucket,
+ * generate a thumbnail automatically using sharp.
+ */
+exports.generateThumbnail = onObjectFinalized({cpu: 2}, async (event) =&gt; {
+
+  const fileBucket = event.data.bucket; // Storage bucket containing the file.
+  const filePath = event.data.name; // File path in the bucket.
+  const contentType = event.data.contentType; // File content type.
+
+  // Exit if this is triggered on a file that is not an image.
+  if (!contentType.startsWith("image/")) {
+    return logger.log("This is not an image.");
+  }
+  // Exit if the image is already a thumbnail.
+  const fileName = path.basename(filePath);
+  if (fileName.startsWith("thumb_")) {
+    return logger.log("Already a Thumbnail.");
+  }
+
+  // Download file into memory from bucket.
+  const bucket = getStorage().bucket(fileBucket);
+  const downloadResponse = await bucket.file(filePath).download();
+  const imageBuffer = downloadResponse[0];
+  logger.log("Image downloaded!");
+
+  // Generate a thumbnail using sharp.
+  const thumbnailBuffer = await sharp(imageBuffer).resize({
+    width: 200,
+    height: 200,
+    withoutEnlargement: true,
+  }).toBuffer();
+  logger.log("Thumbnail created");
+
+  // Prefix 'thumb_' to file name.
+  const thumbFileName = `thumb_${fileName}`;
+  const thumbFilePath = path.join(path.dirname(filePath), thumbFileName);
+
+  // Upload the thumbnail.
+  const metadata = {contentType: contentType};
+  await bucket.file(thumbFilePath).save(thumbnailBuffer, {
+    metadata: metadata,
+  });
+  return logger.log("Thumbnail uploaded!");
+});
+</pre> <p>Download the file to a temporary directory on your Cloud Functions instance. In this location, you can process the file as needed and then upload to Cloud Storage. When performing asynchronous tasks, make sure you return a JavaScript promise in your callback.</p></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@storage_fn.on_object_finalized()
+def generatethumbnail(event: storage_fn.CloudEvent[storage_fn.StorageObjectData]):
+    """When an image is uploaded in the Storage bucket, generate a thumbnail
+    automatically using Pillow."""
+
+    bucket_name = event.data.bucket
+    file_path = pathlib.PurePath(event.data.name)
+    content_type = event.data.content_type
+
+    # Exit if this is triggered on a file that is not an image.
+    if not content_type or not content_type.startswith("image/"):
+        print(f"This is not an image. ({content_type})")
+        return
+
+    # Exit if the image is already a thumbnail.
+    if file_path.name.startswith("thumb_"):
+        print("Already a thumbnail.")
+        return
+
+    bucket = storage.bucket(bucket_name)
+
+    image_blob = bucket.blob(str(file_path))
+    image_bytes = image_blob.download_as_bytes()
+    image = Image.open(io.BytesIO(image_bytes))
+
+    image.thumbnail((200, 200))
+    thumbnail_io = io.BytesIO()
+    image.save(thumbnail_io, format="png")
+    thumbnail_path = file_path.parent / pathlib.PurePath(f"thumb_{file_path.stem}.png")
+    thumbnail_blob = bucket.blob(str(thumbnail_path))
+    thumbnail_blob.upload_from_string(thumbnail_io.getvalue(), content_type="image/png")
+</pre></section> </div> <p>This code creates a 200x200 thumbnail for the image saved in a temporary directory, then uploads it back to Cloud Storage.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/storage/extend-with-functions" class="_attribution-link">https://firebase.google.com/docs/storage/extend-with-functions</a>
+  </p>
+</div>

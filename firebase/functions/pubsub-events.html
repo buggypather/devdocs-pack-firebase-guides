@@ -1,0 +1,70 @@
+<h1>Pub/Sub triggers</h1> <p>Google Cloud's <a href="https://cloud.google.com/pubsub/docs/">Pub/Sub</a> is a globally distributed message bus that automatically scales as you need it. You can trigger a function whenever a new Pub/Sub message is sent to a specific topic.</p> <h2 id="import-required">Import the required modules</h2> <p>To get started, import the modules required for handling Pub/Sub events:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {onMessagePublished} = require("firebase-functions/pubsub");
+const logger = require("firebase-functions/logger");
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions import pubsub_fn
+</pre></section> </div> <h2 id="trigger-function">Trigger the function</h2> <p>You must specify the Pub/Sub topic name that you want to trigger your function, and set the event within the event handler:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.hellopubsub = onMessagePublished("topic-name", (event) =&gt; {
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@pubsub_fn.on_message_published(topic="topic-name")
+def hellopubsub(event: pubsub_fn.CloudEvent[pubsub_fn.MessagePublishedData]) -&gt; None:
+    """Log a message using data published to a Pub/Sub topic."""
+</pre></section> </div> <h2 id="access-pub/sub">Access the pub/sub message payload</h2> <p>The payload for the Pub/Sub message is accessible from the message object returned to your function. For messages with JSON in the Pub/Sub message body, the Firebase SDK for Cloud Functions has a helper property to decode the message. For example, here is a message published with a simple JSON payload:</p> 
+<pre>gcloud pubsub topics publish topic-name --message '{"name":"Xenia"}'
+</pre> <p>You can access a JSON data payload like this via the <code translate="no" dir="ltr">json</code> property:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">  // Get the `name` attribute of the PubSub message JSON body.
+  let name = null;
+  try {
+    name = event.data.message.json.name;
+  } catch (e) {
+    logger.error("PubSub message was not JSON", e);
+  }</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Get the `name` attribute of the PubSub message JSON body.
+try:
+    data = event.data.message.json
+except ValueError:
+    print("PubSub message was not JSON")
+    return
+if data is None:
+    return
+if "name" not in data:
+    print("No 'name' key")
+    return
+name = data["name"]
+</pre></section> </div> <p>Other, non-JSON payloads are contained in the Pub/Sub message as base64 encoded strings in the message object. To read a message like the following, you must decode the base64 encoded string as shown:</p> 
+<pre>gcloud pubsub topics publish topic-name --message 'MyMessage'
+</pre>
+<div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Decode the PubSub Message body.
+const message = event.data.message;
+const messageBody = message.data ?
+      Buffer.from(message.data, "base64").toString() :
+      null;</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Decode the PubSub message body.
+message_body = base64.b64decode(event.data.message.data)
+</pre></section> </div> <h2 id="access-message">Access message attributes</h2> <p>Pub/Sub message can be sent with data attributes set in the publish command. For example, you could publish a message with a <code translate="no" dir="ltr">name</code> attribute:</p> 
+<pre>gcloud pubsub topics publish topic-name --attribute name=Xenia
+</pre> <p>You can read such attributes from the corresponding property of the message object:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Get the `name` attribute of the message.
+const name = event.data.message.attributes.name;</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Get the `name` attribute of the message.
+if "name" not in event.data.message.attributes:
+    print("No 'name' attribute")
+    return
+name = event.data.message.attributes["name"]
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/pubsub-events" class="_attribution-link">https://firebase.google.com/docs/functions/pubsub-events</a>
+  </p>
+</div>

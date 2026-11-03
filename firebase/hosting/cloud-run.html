@@ -1,0 +1,287 @@
+<h1>Serve dynamic content and host microservices with Cloud Run</h1>  <p>Pair Cloud Run with Firebase Hosting to generate and serve your dynamic content or build REST APIs as microservices.</p> <p>Using <a href="https://cloud.google.com/run/docs/" class="external">Cloud Run</a>, you can deploy an application packaged in a container image. Then, using Firebase Hosting, you can direct HTTPS requests to trigger your containerized app.</p> <ul> <li>Cloud Run supports <a href="https://cloud.google.com/run/docs/quickstarts/build-and-deploy#writing" class="external">several languages</a> (including Go, Node.js, Python, and Java), giving you the flexibility to use the programming language and framework of your choice.</li> <li>Cloud Run <a href="https://cloud.google.com/run/docs/about-concurrency" class="external">automatically and horizontally scales</a> your container image to handle the received requests, then scales down when demand decreases.</li> <li>You only <a href="https://cloud.google.com/run/pricing" class="external">pay</a> for the CPU, memory, and networking consumed during request handling.</li> </ul> <p><strong>For example use cases and samples for Cloud Run integrated with Firebase Hosting, visit our <a href="serverless-overview">serverless overview</a>.</strong></p> <p><br> This guide shows you how to:</p> <ol> <li><a href="#write">Write a simple Hello World application</a></li> <li><a href="#containerize">Containerize an app and upload it to Artifact Registry</a></li> <li><a href="#deploy">Deploy the container image to Cloud Run</a></li> <li><a href="#direct_requests_to_container">Direct Hosting requests to your containerized app</a></li> </ol> <p>Note that to improve the performance of serving dynamic content, you can optionally tune your <a href="manage-cache">cache settings</a>.</p> <h2 id="before-you-begin">Before you begin</h2> <p>Before using Cloud Run, you need to complete some initial tasks, including setting up a Cloud Billing account, enabling the Cloud Run API, and installing the <code translate="no" dir="ltr">gcloud</code> command line tool.</p> <h3 id="enable-billing">Set up billing for your project</h3> <p>Cloud Run offers <a href="https://cloud.google.com/run/pricing" class="external">free usage quota</a>, but you still must have a <a href="https://cloud.google.com/billing/docs/how-to/manage-billing-account" class="external">Cloud Billing account</a> associated with your Firebase project to use or try out Cloud Run.</p> <aside class="caution">If your Firebase project is on the Spark pricing plan, and you associate your Firebase project with a Cloud Billing account, then your Firebase project is automatically upgraded to the Blaze pricing plan. Review the <a href="https://firebase.google.com/pricing">Firebase pricing page</a> for a comparison of the Spark and Blaze plans. Also, make sure to review Cloud Run <a href="https://cloud.google.com/run/pricing" class="external">pricing</a> and its <a href="https://cloud.google.com/run/quotas" class="external">quotas and limits</a>. </aside> <aside class="note"><strong>Note:</strong><span> Every Firebase project is also a Google Cloud project.<br> Visit <a href="../projects/learn-more#firebase-cloud-relationship">Understand Firebase Projects</a> to learn more about the Firebase and Google Cloud project relationship.</span></aside> <h3 id="enable-install-API">Enable the API and install the SDK</h3> <ol> <li>
+<p>Enable the Cloud Run API in the Google APIs console:</p> <ol> <li><p>Open the <a href="https://console.cloud.google.com/apis/library/run.googleapis.com" class="external">Cloud Run API page</a> in the Google APIs console.</p></li> <li><p>When prompted, select your Firebase project.</p></li> <li><p>Click <strong>Enable</strong> on the Cloud Run API page.</p></li> </ol>
+</li> <li><p><a href="https://cloud.google.com/sdk/docs/" class="external">Install and initialize</a> the Cloud SDK.</p></li> <li>
+<p>Check that the <code translate="no" dir="ltr">gcloud</code> tool is configured for the correct project:</p> 
+<pre>gcloud config list</pre>
+</li> </ol> <h2 id="write">
+<strong>Step 1</strong>: Write the sample application</h2> <p>Note that Cloud Run supports <a href="https://cloud.google.com/run/docs/quickstarts/build-and-deploy#writing" class="external">many other languages</a> in addition to the languages shown in the following sample.</p> <div> <section><p class="_firebase-tab"><strong>Go</strong></p>
+<ol> <li>
+<p>Create a new directory named <code translate="no" dir="ltr">helloworld-go</code>, then change directory into it:</p> 
+<pre data-language="go">mkdir helloworld-go</pre> 
+<pre data-language="go">cd helloworld-go</pre> <ol> <li>Create a new file named <code translate="no" dir="ltr">helloworld.go</code>, then add the following code:</li> </ol> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="go">package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+)
+
+func handler(w http.ResponseWriter, r *http.Request) {
+	log.Print("helloworld: received a request")
+	target := os.Getenv("TARGET")
+	if target == "" {
+		target = "World"
+	}
+	fmt.Fprintf(w, "Hello %s!\n", target)
+}
+
+func main() {
+	log.Print("helloworld: starting server...")
+
+	http.HandleFunc("/", handler)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("helloworld: listening on port %s", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+}
+</pre> </div> <p>This code creates a basic web server that listens on the port defined by the <code translate="no" dir="ltr">PORT</code> environment variable.</p>
+</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<ol> <li>
+<p>Create a new directory named <code translate="no" dir="ltr">helloworld-nodejs</code>, then change directory into it:</p> 
+<pre data-language="javascript">mkdir helloworld-nodejs</pre> 
+<pre data-language="javascript">cd helloworld-nodejs</pre>
+</li> <li>
+<p>Create a <code translate="no" dir="ltr">package.json</code> file with the following contents:</p> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="javascript">{
+  "name": "knative-serving-helloworld",
+  "version": "1.0.0",
+  "description": "Simple hello world sample in Node",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "express": "^4.22.1"
+  }
+}
+</pre> </div> </li> <li>
+<p>Create a new file named <code translate="no" dir="ltr">index.js</code>, then add the following code:</p> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="javascript">const express = require('express');
+const app = express();
+
+app.get('/', (req, res) =&gt; {
+  console.log('Hello world received a request.');
+
+  const target = process.env.TARGET || 'World';
+  res.send(`Hello ${target}!\n`);
+});
+
+const port = process.env.PORT || 8080;
+app.listen(port, () =&gt; {
+  console.log('Hello world listening on port', port);
+});
+</pre> </div> <p>This code creates a basic web server that listens on the port defined by the <code translate="no" dir="ltr">PORT</code> environment variable.</p>
+</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+<ol> <li>
+<p>Create a new directory named <code translate="no" dir="ltr">helloworld-python</code>, then change directory into it:</p> 
+<pre data-language="python">mkdir helloworld-python</pre> 
+<pre data-language="python">cd helloworld-python</pre>
+</li> <li>
+<p>Create a new file named <code translate="no" dir="ltr">app.py</code>, then add the following code:</p> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="python">import os
+
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def hello_world():
+    target = os.environ.get('TARGET', 'World')
+    return 'Hello {}!\n'.format(target)
+
+if __name__ == "__main__":
+    app.run(debug=True,host='0.0.0.0',port=int(os.environ.get('PORT', 8080)))
+</pre> </div> <p>This code creates a basic web server that listens on the port defined by the <code translate="no" dir="ltr">PORT</code> environment variable.</p>
+</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+<ol> <li>
+<p>Install <a href="https://www.oracle.com/technetwork/java/javase/downloads/index.html" class="external">Java SE 8 or later JDK</a> and <a href="https://curl.haxx.se" class="external">CURL</a>.</p> <p>Note that we only need to do this to create the new web project in the next step. The Dockerfile, which is described later, will load all dependencies into the container.</p>
+</li> <li>
+<p>From the console, create a new empty web project using cURL then unzip commands:</p> 
+<pre data-language="java">curl https://start.spring.io/starter.zip \
+    -d dependencies=web \
+    -d name=helloworld \
+    -d artifactId=helloworld \
+    -o helloworld.zip</pre> 
+<pre data-language="java">unzip helloworld.zip</pre> <p>This creates a SpringBoot project.</p>
+</li> <li>
+<p>Update the <code translate="no" dir="ltr">SpringBootApplication</code> class in <code translate="no" dir="ltr">src/main/java/com/example/helloworld/HelloworldApplication.java</code> by adding a <code translate="no" dir="ltr">@RestController</code> to handle the <code translate="no" dir="ltr">/</code> mapping and also add a <code translate="no" dir="ltr">@Value</code> field to provide the <code translate="no" dir="ltr">TARGET</code> environment variable:</p> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="java">package com.example.helloworld;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@SpringBootApplication
+public class HelloworldApplication {
+
+  @Value("${TARGET:World}")
+  String target;
+
+  @RestController
+  class HelloworldController {
+    @GetMapping("/")
+    String hello() {
+      return "Hello " + target + "!";
+    }
+  }
+
+  public static void main(String[] args) {
+    SpringApplication.run(HelloworldApplication.class, args);
+  }
+}
+</pre> </div> <p>This code creates a basic web server that listens on the port defined by the <code translate="no" dir="ltr">PORT</code> environment variable.</p>
+</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> </div> <h2 id="containerize">
+<strong>Step 2</strong>: Containerize an app and upload it to Artifact Registry</h2> <ol> <li>
+<p>Containerize the sample app by creating a new file named <code translate="no" dir="ltr">Dockerfile</code> in the same directory as the source files. Copy the following content into your file.</p> <div> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<div class="github-docwidget-gitinclude-code"> 
+<pre data-language="go"># Use the official Golang image to create a build artifact.
+# This is based on Debian and sets the GOPATH to /go.
+FROM golang:latest AS builder
+
+ARG TARGETOS
+ARG TARGETARCH
+
+# Create and change to the app directory.
+WORKDIR /app
+
+# Copy local code to the container image.
+COPY . ./
+
+# Install dependencies and tidy up the go.mod and go.sum files.
+RUN go mod tidy
+
+# Build the binary.
+# -mod=readonly ensures immutable go.mod and go.sum in container builds.
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -mod=readonly -v -o server
+
+# Use the official Alpine image for a lean production container.
+# https://hub.docker.com/_/alpine
+# https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
+FROM alpine:3
+RUN apk add --no-cache ca-certificates
+
+# Copy the binary to the production image from the builder stage.
+COPY --from=builder /app/server /server
+
+# Run the web service on container startup.
+CMD ["/server"]
+</pre> </div> </section> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<div class="github-docwidget-gitinclude-code"> 
+<pre data-language="javascript"># Use the official lightweight Node.js 12 image.
+# https://hub.docker.com/_/node
+FROM node:12-slim
+
+# Create and change to the app directory.
+WORKDIR /usr/src/app
+
+# Copy application dependency manifests to the container image.
+# A wildcard is used to ensure both package.json AND package-lock.json are copied.
+# Copying this separately prevents re-running npm install on every code change.
+COPY package*.json ./
+
+# Install production dependencies.
+RUN npm install --only=production
+
+# Copy local code to the container image.
+COPY . ./
+
+# Run the web service on container startup.
+CMD [ "npm", "start" ]
+</pre> </div> </section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<div class="github-docwidget-gitinclude-code"> 
+<pre data-language="python"># Use the official lightweight Python image.
+# https://hub.docker.com/_/python
+FROM python:3.7-slim
+
+# Allow statements and log messages to immediately appear in the Knative logs
+ENV PYTHONUNBUFFERED True
+
+# Copy local code to the container image.
+ENV APP_HOME /app
+WORKDIR $APP_HOME
+COPY . ./
+
+# Install production dependencies.
+RUN pip install Flask gunicorn
+
+# Run the web service on container startup. Here we use the gunicorn
+# webserver, with one worker process and 8 threads.
+# For environments with multiple CPU cores, increase the number of workers
+# to be equal to the cores available.
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
+</pre> </div> </section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<div class="github-docwidget-gitinclude-code"> 
+<pre data-language="java"># Use the official maven/Java 8 image to create a build artifact: https://hub.docker.com/_/maven
+FROM maven:3.5-jdk-8-alpine AS builder
+
+# Copy local code to the container image.
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+
+# Build a release artifact.
+RUN mvn package -DskipTests
+
+# Use the Official OpenJDK image for a lean production stage of our multi-stage build.
+# https://hub.docker.com/_/openjdk
+# https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
+FROM openjdk:8-jre-alpine
+
+# Copy the jar to the production image from the builder stage.
+COPY --from=builder /app/target/helloworld-*.jar /helloworld.jar
+
+# Run the web service on container startup.
+CMD ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/helloworld.jar"]
+</pre> </div> </section> </div>
+</li> <li>
+<p>Build your container image using Cloud Build by running the following command from the directory containing your Dockerfile:</p> 
+<pre>gcloud builds submit --tag gcr.io/PROJECT_ID/helloworld</pre> <p>Upon success, you will see a SUCCESS message containing the image name<br> (<code translate="no" dir="ltr">gcr.io/<var translate="no">PROJECT_ID</var>/helloworld</code>).</p>
+</li> </ol> <p>The container image is now stored in Artifact Registry and can be re-used if desired.</p> <p>Note that, instead of Cloud Build, you can use a locally installed version of Docker to <a href="https://cloud.google.com/run/docs/building/containers#building_locally_and_pushing_using_docker" class="external">build your container locally</a>.</p> <h2 id="deploy">
+<strong>Step 3</strong>: Deploy the container image to Cloud Run</h2> <p><section class="expandable" id="cloudrun-regions-allowed"> <p class="showalways" id="pintag-in-rewrites-to-run"><b>Allowed Cloud Run regions</b></p></section></p> <p>For the best performance, colocate your Cloud Run service with Hosting using the following regions:</p> <ul> <li><code translate="no" dir="ltr">us-west1</code></li> <li><code translate="no" dir="ltr">us-central1</code></li> <li><code translate="no" dir="ltr">us-east1</code></li> <li><code translate="no" dir="ltr">europe-west1</code></li> <li><code translate="no" dir="ltr">asia-east1</code></li> </ul> <p>Rewrites to Cloud Run from Hosting are supported in the following regions:</p> <ul> <li><code translate="no" dir="ltr">asia-east1</code></li> <li><code translate="no" dir="ltr">asia-east2</code></li> <li><code translate="no" dir="ltr">asia-northeast1</code></li> <li><code translate="no" dir="ltr">asia-northeast2</code></li> <li><code translate="no" dir="ltr">asia-northeast3</code></li> <li><code translate="no" dir="ltr">asia-south1</code></li> <li><code translate="no" dir="ltr">asia-south2</code></li> <li><code translate="no" dir="ltr">asia-southeast1</code></li> <li><code translate="no" dir="ltr">asia-southeast2</code></li> <li><code translate="no" dir="ltr">asia-southeast3</code></li> <li><code translate="no" dir="ltr">australia-southeast1</code></li> <li><code translate="no" dir="ltr">australia-southeast2</code></li> <li><code translate="no" dir="ltr">europe-central2</code></li> <li><code translate="no" dir="ltr">europe-north1</code></li> <li><code translate="no" dir="ltr">europe-southwest1</code></li> <li><code translate="no" dir="ltr">europe-west1</code></li> <li><code translate="no" dir="ltr">europe-west12</code></li> <li><code translate="no" dir="ltr">europe-west2</code></li> <li><code translate="no" dir="ltr">europe-west3</code></li> <li><code translate="no" dir="ltr">europe-west4</code></li> <li><code translate="no" dir="ltr">europe-west6</code></li> <li><code translate="no" dir="ltr">europe-west8</code></li> <li><code translate="no" dir="ltr">europe-west9</code></li> <li><code translate="no" dir="ltr">me-central1</code></li> <li><code translate="no" dir="ltr">me-central2</code></li> <li><code translate="no" dir="ltr">me-west1</code></li> <li><code translate="no" dir="ltr">northamerica-northeast1</code></li> <li><code translate="no" dir="ltr">northamerica-northeast2</code></li> <li><code translate="no" dir="ltr">southamerica-east1</code></li> <li><code translate="no" dir="ltr">southamerica-west1</code></li> <li><code translate="no" dir="ltr">us-central1</code></li> <li><code translate="no" dir="ltr">us-east1</code></li> <li><code translate="no" dir="ltr">us-east4</code></li> <li><code translate="no" dir="ltr">us-east5</code></li> <li><code translate="no" dir="ltr">us-south1</code></li> <li><code translate="no" dir="ltr">us-west1</code></li> <li><code translate="no" dir="ltr">us-west2</code></li> <li><code translate="no" dir="ltr">us-west3</code></li> <li><code translate="no" dir="ltr">us-west4</code></li> <li><code translate="no" dir="ltr">us-west1</code></li> <li><code translate="no" dir="ltr">us-central1</code></li> <li><code translate="no" dir="ltr">us-east1</code></li> <li><code translate="no" dir="ltr">europe-west1</code></li> <li><code translate="no" dir="ltr">asia-east1</code></li> </ul>  <ol> <li>
+<p>Deploy using the following command:</p> 
+
+<pre>gcloud run deploy --image gcr.io/PROJECT_ID/helloworld</pre>
+</li> <li>
+<p>When prompted:</p> <ul> <li>Select a region (for example <code translate="no" dir="ltr">us-central1</code>)</li> <li>Confirm the service name (for example, <code translate="no" dir="ltr">helloworld</code>)</li> <li>Respond <code translate="no" dir="ltr">Y</code> to <strong><a href="https://cloud.google.com/run/docs/securing/authenticating#public" class="external">allow unauthenticated invocations</a></strong>
+</li> </ul> <aside class="special"><strong>Important:</strong><span> Remember the region and the service name so that you can use these values when defining the <code translate="no" dir="ltr">region</code> and <code translate="no" dir="ltr">serviceID</code>, respectively, in the <a href="#direct_requests_to_container"><code translate="no" dir="ltr">firebase.json</code> rewrite rule</a> later.</span></aside>
+</li> <li><p>Wait a few moments for the deploy to complete. On success, the command line displays the service URL. For example: <code translate="no" dir="ltr"><nobr>https://helloworld-<var translate="no">RANDOM_HASH</var>-us-central1.a.run.app</nobr></code></p></li> <li><p>Visit your deployed container by opening the service URL in a web browser.</p></li> </ol> <aside class="note"><strong>Note:</strong><span> Consider applying a <a href="https://cloud.google.com/run/docs/about-instance-autoscaling#max-instances" class="external">maximum instance limit</a> to prevent unexpected scaling of the Cloud Run service.</span></aside> <p>The next step walks you through how to access this containerized app <strong><em>from a Firebase Hosting URL</em></strong> so that it can generate dynamic content for your Firebase-hosted site.</p> <h2 id="direct_requests_to_container">
+<strong>Step 4:</strong> Direct hosting requests to your containerized app</h2> <p>With <a href="full-config#rewrites">rewrite rules</a>, you can direct requests that match specific patterns to a single destination.</p> <p>The following example shows how to direct all requests from the page <code translate="no" dir="ltr">/helloworld</code> on your Hosting site to trigger the startup and running of your <code translate="no" dir="ltr">helloworld</code> container instance.</p> <ol> <li>
+<p>Make sure that:</p> <ul> <li><p>You have the <a href="../cli#update-cli">latest version of the Firebase CLI</a>.</p></li> <li><p>You have initialized Firebase Hosting.</p></li> </ul> <p>For detailed instructions about installing the CLI and initializing Hosting, see the <a href="quickstart">Get Started guide for Hosting</a>.</p>
+</li> <li><p>Open your <a href="../cli#the_firebasejson_file"><code translate="no" dir="ltr">firebase.json</code> file</a>.</p></li> <li>
+<p>Add the following <code translate="no" dir="ltr">rewrite</code> configuration under the <code translate="no" dir="ltr">hosting</code> section:</p> 
+<pre>"hosting": {
+  // ...
+
+  // Add the "rewrites" attribute within "hosting"
+  "rewrites": [ {
+    "source": "/helloworld",
+    "run": {
+      "serviceId": "helloworld",  // "service name" (from when you deployed the container image)
+      "region": "us-central1",    // optional (if omitted, default is us-central1)
+      "pinTag": true              // optional (see note below)
+    }
+  } ]
+}</pre>
+</li> <li>
+<p>Deploy your hosting configuration to your site by running the following command from the root of your project directory:</p> 
+<pre>firebase deploy --only hosting</pre>
+</li> </ol> <p><section class="expandable" id="pintag-in-rewrites-to-run"> <p class="showalways" id="pintag-in-rewrites-to-run"><b>How <code translate="no" dir="ltr">pinTag</code> works within the <code translate="no" dir="ltr">run</code> block</b></p></section></p> <blockquote> <p>With this feature, you can ensure that the revision of your Cloud Run service for generating your site's dynamic content is kept in sync with your static Hosting resources and Hosting config. Also, this feature allows you to preview your rewrites to Cloud Run on Hosting preview channels.</p> <p>If you add <code translate="no" dir="ltr">"pinTag": true</code> to a <code translate="no" dir="ltr">run</code> block of the <code translate="no" dir="ltr">hosting.rewrites</code> config, your static Hosting resources and configuration will be pinned to the most recent revision of the Cloud Run service, at the time of deploy. If you roll back a version of your site, the revision of the "pinned" Cloud Run service is also rolled back.</p> <p>This feature relies on <a href="https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration#tags" class="external">Cloud Run tags</a>, which have a limit of 1000 tags per service and 2000 tags per region. This means that after hundreds of deploys, the oldest versions of a site may stop working.</p> </blockquote>  <p>Your container is now reachable via the following URLs:</p> <ul> <li><p>Your Firebase subdomains:<br> <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.web.app/</code> and <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebaseapp.com/</code></p></li> <li><p>Any connected <a href="custom-domain">custom domains</a>:<br> <code translate="no" dir="ltr"><var translate="no">CUSTOM_DOMAIN</var>/</code></p></li> </ul> <aside class="note"><strong>Note:</strong><span> Firebase Hosting is subject to a 60-second request timeout. If your app requires more than 60 seconds to run, you'll receive an HTTPS status code <code translate="no" dir="ltr">504</code> (request timeout). To support dynamic content that requires longer compute time, consider using an <a href="https://cloud.google.com/appengine/docs/flexible/" class="external">App Engine flexible environment</a>.</span></aside> <p>Visit the Hosting configuration page for <a href="full-config#rewrites">more details about rewrite rules</a>. You can also learn about the <a href="full-config#hosting_priority_order">priority order of responses</a> for various Hosting configurations.</p> <h2 id="test_locally">Test locally</h2> <p>During development, you can run and test your container image locally. For detailed instructions, visit the <a href="https://cloud.google.com/run/docs/testing/local" class="external">Cloud Run documentation</a>.</p> <h2 id="next_steps">Next steps</h2> <ul> <li><p><a href="manage-cache">Set up caching</a> of your dynamic content on a global CDN.</p></li> <li><p>Interact with other Firebase services using the <a href="../admin/setup">Firebase Admin SDK</a>.</p></li> <li><p>Learn more about Cloud Run, including <a href="https://cloud.google.com/run/docs/how-to" class="external">detailed how-to guides</a> for setting up, managing, and configuring containers.</p></li> <li><p>Review the <a href="https://cloud.google.com/run/pricing">pricing</a> and the <a href="https://cloud.google.com/run/quotas" class="external">quotas and limits</a> for Cloud Run.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/hosting/cloud-run" class="_attribution-link">https://firebase.google.com/docs/hosting/cloud-run</a>
+  </p>
+</div>

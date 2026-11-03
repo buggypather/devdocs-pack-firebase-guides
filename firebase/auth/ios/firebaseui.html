@@ -1,0 +1,709 @@
+<h1>Add sign-in to your iOS app with FirebaseUI</h1> <p><img src="https://firebase.google.com/static/docs/auth/images/firebaseui-ios.png" class="screenshot attempt-right" style="max-width: calc((100% - 40px)/3);"></p> <p><a href="https://github.com/firebase/firebaseui-ios">FirebaseUI</a> for SwiftUI is a modern, SwiftUI-first library built on top of Firebase Authentication that provides prebuilt sign-in flows to your app.</p> <p>FirebaseUI for SwiftUI has the following benefits:</p> <ul> <li>
+<strong>Opinionated default UI</strong>: add a complete sign-in flow with <code translate="no" dir="ltr">AuthPickerView</code>.</li> <li>
+<strong>Customizable</strong>: render the default buttons in your own layout, or build a fully custom experience.</li> <li>
+<strong>Anonymous account linking</strong>: optionally upgrade anonymous users instead of replacing them.</li> <li>
+<strong>Account management</strong>: built-in flows for sign-up, password recovery, and account management.</li> <li>
+<strong>Multiple providers</strong>: email/password, email link, phone authentication, Apple, Google, Facebook, Twitter, and standard OAuth2/OIDC providers.</li> <li>
+<strong>Modern auth features</strong>: built-in support for multi-factor authentication (MFA) and async/await APIs.</li> </ul> <h2 id="before-you-begin">Before you begin</h2> <ul> <li><p><a href="../../ios/setup">Add Firebase to your Apple project</a>. Be sure to complete the SwiftUI steps.</p></li> <li><p>Make sure your app targets iOS 17 or later.</p></li> </ul> <h2 id="install">Installation</h2> <p>FirebaseUI for SwiftUI is provided as a Swift package. To install the package in your Xcode project, do the following:</p> <ol> <li><p>In Xcode, click <strong>File &gt; Add Package Dependencies</strong>.</p></li> <li>
+<p>Enter the package URL:</p> 
+<pre>https://github.com/firebase/FirebaseUI-iOS
+</pre>
+</li> <li><p>In the <strong>Dependency Rule</strong> menu, select <strong>Up to Next Major Version</strong> and set the minimum version to <a href="https://github.com/firebase/FirebaseUI-iOS/releases" class="external">the latest release</a>.</p></li> <li>
+<p>Click <strong>Add Package</strong>, then select the libraries to add to your project.</p> <p>The following library is always required. It includes the core dependencies as well as support for email-password sign-in and email link sign-in.</p> <ul> <li><code translate="no" dir="ltr">FirebaseAuthSwiftUI</code></li> </ul> <p> If you want to support other sign-in methods, also select one or more of the following libraries:</p> <ul> <li>
+<code translate="no" dir="ltr">FirebaseAppleSwiftUI</code> (Sign in with Apple)</li> <li>
+<code translate="no" dir="ltr">FirebaseGoogleSwiftUI</code> (Sign in with Google)</li> <li>
+<code translate="no" dir="ltr">FirebaseFacebookSwiftUI</code> (Sign in with Facebook)</li> <li>
+<code translate="no" dir="ltr">FirebasePhoneAuthSwiftUI</code> (Phone authentication)</li> <li>
+<code translate="no" dir="ltr">FirebaseTwitterSwiftUI</code> (Sign in with Twitter)</li> <li>
+<code translate="no" dir="ltr">FirebaseOAuthSwiftUI</code> (Standard OAuth and OIDC providers like GitHub, Microsoft, Yahoo)</li> </ul>
+</li> <li><p>Click <strong>Add Package</strong> to install the selected libraries.</p></li> <li>
+<p>Configure FirebaseUI's <code translate="no" dir="ltr">AuthService</code> in the initializer of your top-level <code translate="no" dir="ltr">View</code> and pass the service to child views using the environment.</p> 
+<pre>import FirebaseAuthSwiftUI
+import SwiftUI
+
+struct ContentView: View {
+  let authService: AuthService
+
+  init() {
+    let configuration = AuthConfiguration()
+
+    authService = AuthService(configuration: configuration)
+      .withEmailSignIn() // Or whatever sign-in methods you want to support.
+                         // See the next section.
+  }
+
+  var body: some View {
+    AuthPickerView { // AuthPickerView (the prebuilt View) or a custom View.
+        Text("Welcome to your app!")
+    }
+    .environment(authService)
+  }
+}
+</pre>
+</li> </ol> <h2 id="set-up-sign-in-methods">Set up sign-in methods</h2> <p>Each of the supported sign-in methods require some additional setup steps. Expand the sections below and follow the instructions to set up individual providers.</p>  <h3 id="password" class="showalways">Email address and password</h3> <ol> <li><p>From the <strong>Security &gt; Authentication &gt;</strong> <a href="https://console.firebase.google.com/project/_/authentication/providers"><strong>Sign-in method</strong></a> section of the Firebase console, enable the <strong>Email/Password</strong> provider.</p></li> <li>
+<p>Register the provider in your <code translate="no" dir="ltr">AuthService</code> instance:</p> 
+<pre>let authService = AuthService()
+  .withEmailSignIn()
+</pre> 
+</li> </ol>  <h3 id="email-link" class="showalways">Email link authentication</h3> <p>To use passwordless email link sign-in:</p> <ol> <li><p>From the <strong>Security &gt; Authentication &gt;</strong> <a href="https://console.firebase.google.com/project/_/authentication/providers"><strong>Sign-in method</strong></a> section of the Firebase console, enable <strong>Email/Password</strong>, then enable email link sign-in. Note that email or password sign-in must be enabled to use email link sign-in.</p></li> <li><p>Add the link domain to <strong>Authorized domains</strong>.</p></li> <li>
+<p>Configure <code translate="no" dir="ltr">ActionCodeSettings</code>, pass it into <code translate="no" dir="ltr">AuthConfiguration</code> and register the provider:</p> 
+<pre>let actionCodeSettings = ActionCodeSettings()
+actionCodeSettings.handleCodeInApp = true
+actionCodeSettings.url = URL(string: "https://yourapp.firebaseapp.com")
+
+guard let bundleID = Bundle.main.bundleIdentifier else {
+  fatalError("Missing bundle identifier for email link authentication setup.")
+}
+actionCodeSettings.setIOSBundleID(bundleID)
+
+let configuration = AuthConfiguration(
+  emailLinkSignInActionCodeSettings: actionCodeSettings
+)
+
+let authService = AuthService(configuration: configuration)
+  .withEmailLinkSignIn()
+</pre>
+</li> <li>
+<p>In the same <code translate="no" dir="ltr">AppDelegate</code> in which you call <code translate="no" dir="ltr">FirebaseApp.configure()</code>, add logic to the <code translate="no" dir="ltr">application(_:open:options:)</code> method that returns <code translate="no" dir="ltr">true</code> when the URL opened is a Firebase Authentication sign-in link. This logic indicates that the link was handled by FirebaseUI and shouldn't be processed by other link handlers.</p> 
+<pre>import FacebookCore
+import FirebaseAuth
+import UIKit
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+  func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -&gt; Bool {
+    FirebaseApp.configure()
+    return true
+  }
+
+  func application(
+    _ application: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -&gt; Bool {
+    if Auth.auth().canHandle(url) {
+      return true
+    }
+    return false
+  }
+}
+</pre>
+</li> <li><p>If you build custom views, call <code translate="no" dir="ltr">authService.handleSignInLink(url:)</code> when the link opens your app. </p></li> </ol>  <h3 id="ios" class="showalways">Apple</h3> <p>To use Sign in with Apple:</p> <ol> <li>
+<p>Configure Sign In with Apple:</p> <ol> <li>Enable Sign In with Apple for your app on the <a href="https://developer.apple.com/account/resources" class="external">Certificates, Identifiers &amp; Profiles</a> page of Apple's developer site.</li> <li>Associate your website with your app as described in the first section of <a href="https://developer.apple.com/help/account/configure-app-capabilities/configure-sign-in-with-apple-for-the-web" class="external">Configure Sign In with Apple for the web</a>. When prompted, register the following URL as a Return URL: 
+<pre>https://YOUR_FIREBASE_PROJECT_ID.firebaseapp.com/__/auth/handler</pre> You can get your Firebase project ID on the <a href="https://console.firebase.google.com/project/_/settings/general/">Firebase console settings page</a>. When you're done, take note of your new Service ID, which you'll need in the next section.</li> <li>
+<a href="https://developer.apple.com/help/account/configure-app-capabilities/create-a-sign-in-with-apple-private-key/" class="external">Create a Sign In with Apple private key</a>. You'll need your new private key and key ID in the next section.</li> <li>If you use any of Firebase Authentication's features that send emails to users, including email link sign-in, email address verification, account change revocation, and others, <a href="https://developer.apple.com/help/account/configure-app-capabilities/configure-private-email-relay-service/" class="external">configure the Apple private email relay service</a> and register <code translate="no" dir="ltr">noreply@<var translate="no">YOUR_FIREBASE_PROJECT_ID</var>.firebaseapp.com</code> (or your customized email template domain) so Apple can relay emails sent by Firebase Authentication to anonymized Apple email addresses.</li> </ol>
+</li> <li>
+<p>From the <strong>Security &gt; Authentication &gt;</strong> <a href="https://console.firebase.google.com/project/_/authentication/providers"><strong>Sign-in method</strong></a> section of the Firebase console, enable <strong>Apple</strong>.</p> <ul> <li>Specify the Service ID you created in the previous section.</li> <li>In the <strong>OAuth code flow configuration section</strong>, specify your Apple Team ID and the private key and key ID you created in the previous section.</li> </ul>
+</li> <li><p>In Xcode, open the <strong>Signing &amp; Capabilities</strong> section of the project editor and add the <strong>Sign in with Apple</strong> capability.</p></li> <li>
+<p>Register the provider in your <code translate="no" dir="ltr">AuthService</code> instance:</p> 
+<pre>let authService = AuthService()
+  .withAppleSignIn()
+</pre> 
+</li> </ol>  <h3 id="google" class="showalways">Google</h3> <p>To use Google Sign-In:</p> <ol> <li><p>From the <strong>Security &gt; Authentication &gt;</strong> <a href="https://console.firebase.google.com/project/_/authentication/providers"><strong>Sign-in method</strong></a> section of the Firebase console, enable the <strong>Google</strong> provider.</p></li> <li><p>Download a new copy of your project's <code translate="no" dir="ltr">GoogleService-Info.plist</code> file and copy it to your Xcode project. Overwrite any existing versions with the new one.</p></li> <li>
+<p>Add custom URL schemes to your Xcode project:</p> <ol> <li><p>Open your project configuration: click the project name in the left tree view. Select your app from the <strong>TARGETS</strong> section, then select the <strong>Info</strong> tab, and expand the <strong>URL Types</strong> section.</p></li> <li>
+<p>Click the <strong>+</strong> button, and add a URL scheme for your reversed client ID. To find this value, open the <code translate="no" dir="ltr"><code translate="no" dir="ltr"><nobr>GoogleService-Info.plist</nobr></code></code> configuration file, and look for the <code translate="no" dir="ltr">REVERSED_CLIENT_ID</code> key. Copy the value of that key, and paste it into the <strong>URL Schemes</strong> box on the configuration page. Leave the other fields untouched.</p> <p>When completed, your config should look something similar to the following (but with your application-specific values):</p> <p><img src="https://firebase.google.com/static/docs/auth/images/xcode_infotab_url_type_values.png" class="screenshot"></p>
+</li> </ol>
+</li> <li>
+<p>Register the provider in your <code translate="no" dir="ltr">AuthService</code> instance:</p> 
+<pre>let authService = AuthService()
+  .withGoogleSignIn()
+</pre> 
+</li> </ol>  <h3 id="facebook" class="showalways">Facebook</h3> <p>To use Facebook Login:</p> <ol> <li><p>Set up the Facebook Login for iOS SDK by following the <a href="https://developers.facebook.com/documentation/facebook-login/ios" class="external">instructions</a> on the Meta for Developers site. Skip the final step, "Add Facebook Login to Your Code".</p></li> <li><p>From the <strong>Security &gt; Authentication &gt;</strong> <a href="https://console.firebase.google.com/project/_/authentication/providers"><strong>Sign-in method</strong></a> section of the Firebase console, enable the <strong>Facebook</strong> provider. You will need the Facebook App ID and App Secret from the Meta for Developers site.</p></li> <li>
+<p>Register the provider in your <code translate="no" dir="ltr">AuthService</code> instance:</p> 
+<pre>let authService = AuthService()
+ .withFacebookSignIn()
+</pre> 
+</li> </ol>  <h3 id="phone" class="showalways">Phone number</h3> <p>To use phone authentication:</p> <ol> <li><p>From the <strong>Security &gt; Authentication &gt;</strong> <a href="https://console.firebase.google.com/project/_/authentication/providers"><strong>Sign-in method</strong></a> section of the Firebase console, enable the <strong>Phone</strong> provider.</p></li> <li><p>Configure APNs for your app as instructed in the <a href="phone-auth#start-receiving-silent-notifications">Start receiving silent notifications</a> section.</p></li> <li>
+<p>Add custom URL schemes to your Xcode project:</p> <ol> <li><p>Open your project configuration: click the project name in the left tree view. Select your app from the <strong>TARGETS</strong> section, then select the <strong>Info</strong> tab, and expand the <strong>URL Types</strong> section.</p></li> <li>
+<p>Click the <strong>+</strong> button, and add your Encoded App ID as a URL scheme. To find this value, open <strong>Settings &gt;</strong> <a href="https://console.firebase.google.com/project/_/settings/general"><strong>General</strong></a> in the Firebase console.</p> <p>When completed, your config should look something similar to the following (but with your application-specific values):</p> <p><img src="https://firebase.google.com/static/docs/auth/images/xcode_infotab_url_type_values.png" class="screenshot"></p>
+</li> </ol>
+</li> <li>
+<p>In the same <code translate="no" dir="ltr">AppDelegate</code> in which you call <code translate="no" dir="ltr">FirebaseApp.configure()</code>, add APNs token handlers:</p> 
+<pre>import FacebookCore
+import FirebaseAuth
+import UIKit
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+  func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -&gt; Bool {
+    FirebaseApp.configure()
+    return true
+  }
+
+  func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    #if DEBUG
+    Auth.auth().setAPNSToken(deviceToken, type: .sandbox)
+    #else
+    Auth.auth().setAPNSToken(deviceToken, type: .prod)
+    #endif
+  }
+}
+</pre>
+</li> <li>
+<p>Register the provider in your <code translate="no" dir="ltr">AuthService</code> instance:</p> 
+<pre>let authService = AuthService()
+  .withPhoneSignIn()
+</pre> 
+</li> </ol>  <h3 id="twitter" class="showalways">Twitter (X)</h3> <p>To use Twitter Login:</p> <ol> <li><p>Generate X API credentials by following the <a href="https://docs.x.com/fundamentals/developer-portal#getting-started" class="external">instructions</a> on the X Developers site.</p></li> <li><p>From the <strong>Security &gt; Authentication &gt;</strong> <a href="https://console.firebase.google.com/project/_/authentication/providers"><strong>Sign-in method</strong></a> section of the Firebase console, enable the <strong>Twitter</strong> provider. You will need the API key and API secret from the X Developer console.</p></li> <li>
+<p>Register the provider in your <code translate="no" dir="ltr">AuthService</code> instance:</p> 
+<pre>let authService = AuthService()
+  .withTwitterSignIn()
+</pre> 
+</li> </ol>  <h3 id="oidc" class="showalways">Standard OAuth2 and OIDC providers</h3> <p>FirebaseUI also supports built-in OAuth providers such as GitHub, Microsoft, and Yahoo, as well as custom OIDC providers configured in Firebase Authentication.</p> 
+<pre> let authService = AuthService()
+  .withOAuthSignIn(OAuthProviderSwift.github())
+  .withOAuthSignIn(OAuthProviderSwift.microsoft())
+  .withOAuthSignIn(OAuthProviderSwift.yahoo())
+</pre> <p>For custom OIDC providers, configure the provider first in Firebase Authentication, then create an <code translate="no" dir="ltr">OAuthProviderSwift</code> with your provider ID and button configuration:</p> 
+<pre>let lineProvider = OAuthProviderSwift(
+  providerId: "oidc.line",
+  buttonLabel: "Sign in with LINE",
+  displayName: "LINE",
+  iconSystemName: "person.crop.circle.badge.checkmark",
+  buttonBackgroundColor: .green,
+  buttonForegroundColor: .white
+)
+
+let authService = AuthService()
+  .withOAuthSignIn(lineProvider)
+</pre>  <h2 id="prebuilt-view">Using the prebuilt authentication view</h2> <p>FirebaseUI for SwiftUI provides <code translate="no" dir="ltr">AuthPickerView</code>, a prebuilt, opinionated authentication UI that handles the entire authentication flow for you. This is the easiest way to add authentication to your app.</p> <h3 id="example">Example</h3> <p>Here's an example of <code translate="no" dir="ltr">AuthPickerView</code> in use, with multiple providers and configuration options:</p> 
+<pre>import FirebaseAppleSwiftUI
+import FirebaseAuthSwiftUI
+import FirebaseGoogleSwiftUI
+import SwiftUI
+
+struct ContentView: View {
+  let authService: AuthService
+
+  init() {
+    // Create configuration with options
+    let configuration = AuthConfiguration(
+      tosUrl: URL(string: "https://example.com/tos"),
+      privacyPolicyUrl: URL(string: "https://example.com/privacy"),
+      shouldAutoUpgradeAnonymousUsers: true
+    )
+
+    // Initialize AuthService with multiple providers
+    authService = AuthService(configuration: configuration)
+      .withEmailSignIn()
+      .withAppleSignIn()
+      .withGoogleSignIn()
+  }
+
+  var body: some View {
+    AuthPickerView {
+      authenticatedContent
+    }
+    .environment(authService)
+  }
+
+  var authenticatedContent: some View {
+    NavigationStack {
+      VStack(spacing: 20) {
+        if authService.authenticationState == .authenticated {
+          Text("Authenticated")
+          
+          Button("Manage Account") {
+            authService.isPresented = true
+          }
+          .buttonStyle(.bordered)
+          
+          Button("Sign Out") {
+            Task {
+              try? await authService.signOut()
+            }
+          }
+          .buttonStyle(.borderedProminent)
+        } else {
+          Text("Not Authenticated")
+          
+          Button("Sign In") {
+            authService.isPresented = true
+          }
+          .buttonStyle(.borderedProminent)
+        }
+      }
+      .navigationTitle("My App")
+    }
+    .onChange(of: authService.authenticationState) { _, newValue in
+      // Automatically show auth UI when not authenticated
+      if newValue != .authenticating {
+        authService.isPresented = (newValue == .unauthenticated)
+      }
+    }
+  }
+}
+</pre> <h3 id="typical-customization">Typical customization</h3> <p>Although all of the <code translate="no" dir="ltr">AuthConfiguration</code> parameters are optional, most apps customize the following settings at a minimum:</p> 
+<pre>let configuration = AuthConfiguration(
+    logo: ImageResource.exampleLogoAsset,
+    customStringsBundle: .main,
+    tosUrl: URL(string: "https://example.com/tos"),
+    privacyPolicyUrl: URL(string: "https://example.com/privacy"),
+)
+</pre> <ul> <li><p><code translate="no" dir="ltr">logo</code>: the logo image displayed on the authentication sheet. For information on including your own image asset, see <a href="https://developer.apple.com/documentation/xcode/adding-images-to-your-xcode-project" class="external">Adding images to your Xcode project</a>.</p></li> <li>
+<p><code translate="no" dir="ltr">customStringsBundle</code>: use custom strings from the specified Bundle. This is used for localization, but also for customizing the default strings used by <code translate="no" dir="ltr">AuthPickerView</code>. For example, to set the message displayed at the top of the authentication sheet, create <code translate="no" dir="ltr">Localizable.strings</code> with the contents:</p> 
+<pre>"Sign in with Firebase" = "Sign in to use ExampleApp";
+</pre>
+</li> </ul> <h3 id="whats-included">What's included in the prebuilt view</h3> <p>When you use <code translate="no" dir="ltr">AuthPickerView</code>, you get:</p> <ol> <li>
+<strong>Sheet Presentation</strong>: Authentication UI appears as a modal sheet</li> <li>
+<strong>Built-in Navigation</strong>: Automatic navigation between sign-in, password recovery, MFA, email link, and phone verification screens</li> <li>
+<strong>Authentication State Management</strong>: Automatically switches between auth UI and your content based on <code translate="no" dir="ltr">authService.authenticationState</code>
+</li> <li>
+<strong>Control via <code translate="no" dir="ltr">isPresented</code></strong>: Control when the auth sheet appears by setting <code translate="no" dir="ltr">authService.isPresented = true/false</code>
+</li> </ol> <h4 id="opinionated_behaviors">Opinionated behaviors</h4> <p>The default <code translate="no" dir="ltr">AuthPickerView</code> is opinionated about how to handle several complex scenarios:</p> <h5 id="1_account_conflict_resolution">1. <strong>Account conflict resolution</strong>
+</h5> <p>When an account conflict occurs (e.g., signing in with a credential that's already linked to another account), <code translate="no" dir="ltr">AuthPickerView</code> automatically handles it:</p> <ul> <li>
+<strong>Anonymous Upgrade Conflicts</strong>: If <code translate="no" dir="ltr">shouldAutoUpgradeAnonymousUsers</code> is enabled and a conflict occurs during anonymous upgrade, the system automatically signs out the anonymous user and signs in with the new credential.</li> <li>
+<strong>Other Conflicts</strong>: For credential conflicts between non-anonymous accounts, the system stores the pending credential and attempts to link it after successful sign-in.</li> </ul> <p>This is handled by the <code translate="no" dir="ltr">AccountConflictModifier</code> applied at the NavigationStack level.</p> <h5 id="2_multi-factor_authentication_mfa">2. <strong>Multi-factor authentication (MFA)</strong>
+</h5> <p>When MFA is enabled in your configuration:</p> <ul> <li>Automatically detects when MFA is required during sign-in</li> <li>Presents appropriate MFA resolution screens (SMS or TOTP)</li> <li>Handles MFA enrollment and management flows</li> <li>Supports both SMS-based and Time-based One-Time Password (TOTP) factors</li> </ul> <h5 id="3_error_handling">3. <strong>Error handling</strong>
+</h5> <p>The default views include built-in error handling:</p> <ul> <li>Displays user-friendly error messages in alert dialogs</li> <li>Automatically filters out errors that are handled internally (e.g., cancellation errors, auto-handled conflicts)</li> <li>Uses localized error messages via <code translate="no" dir="ltr">StringUtils</code>
+</li> <li>Errors are propagated through the <code translate="no" dir="ltr">reportError</code> environment key</li> </ul> <h5 id="4_email_link_sign-in">4. <strong>Email link sign-in</strong>
+</h5> <p>When email link sign-in is configured:</p> <ul> <li>Automatically stores the email address in app storage</li> <li>Handles deep link navigation from email</li> <li>Manages the complete email verification flow</li> <li>Supports anonymous user upgrades via email link</li> </ul> <h5 id="5_anonymous_user_auto-upgrade">5. <strong>Anonymous user auto-upgrade</strong>
+</h5> <p>When <code translate="no" dir="ltr">shouldAutoUpgradeAnonymousUsers</code> is enabled:</p> <ul> <li>Automatically attempts to link anonymous accounts with new sign-in credentials</li> <li>Preserves user data by upgrading instead of replacing anonymous sessions</li> <li>Handles upgrade conflicts gracefully</li> </ul> <h5 id="6_reauthentication_in_default_views">6. Reauthentication in default views</h5> <p>Sensitive operations like deleting accounts, updating passwords, or unenrolling MFA factors require recent authentication. When using default views, reauthentication is handled automatically based on the user's sign-in provider.</p> <p>When a sensitive operation requires reauthentication, the default views automatically:</p> <ul> <li><p><strong>OAuth Providers (Google, Apple, Facebook, Twitter, etc.)</strong>: Display an alert asking the user to confirm, then automatically obtain fresh credentials and complete the operation.</p></li> <li><p><strong>Email/Password</strong>: Present a sheet prompting the user to enter their password before continuing.</p></li> <li><p><strong>Email Link</strong>: Show an alert asking to send a verification email, then present a sheet with instructions to check email. The user taps the link in their email to complete reauthentication.</p></li> <li><p><strong>Phone</strong>: Show an alert explaining verification is needed, then present a sheet for SMS code verification.</p></li> </ul> <p>The operation automatically retries after successful reauthentication. No additional code is required when using <code translate="no" dir="ltr">AuthPickerView</code> or the built-in account management views (<code translate="no" dir="ltr">UpdatePasswordView</code>, <code translate="no" dir="ltr">SignedInView</code>, etc.).</p> <h2 id="custom-views">Advanced: Building custom auth views</h2> <p>If you need more control over the UI or navigation flow, you can build your own custom authentication views while still leveraging the <code translate="no" dir="ltr">AuthService</code> for authentication logic.</p> <p>You can mix elements of FirebaseUI with custom logic in many ways. The following sections contain examples of some of the customization approaches you might use.</p> <h3 id="custom-buttons">Approach 1: Custom buttons with <code translate="no" dir="ltr">registerProvider()</code>
+</h3> <p>For complete control over button appearance, you can create your own custom <code translate="no" dir="ltr">AuthProviderUI</code> implementation that wraps any provider and returns your custom button view.</p> <h4 id="creating_a_custom_provider_ui">Creating a custom provider UI</h4> <p>Here's how to create a custom Twitter button as an example:</p> 
+<pre>import FirebaseAuthSwiftUI
+import FirebaseTwitterSwiftUI
+import SwiftUI
+
+// Step 1: Create your custom button view
+struct CustomTwitterButton: View {
+  let provider: TwitterProviderSwift
+  @Environment(AuthService.self) private var authService
+  @Environment(\.mfaHandler) private var mfaHandler
+
+  var body: some View {
+    Button {
+      Task {
+        do {
+          let outcome = try await authService.signIn(provider)
+
+          // Handle MFA if required
+          if case let .mfaRequired(mfaInfo) = outcome,
+             let onMFA = mfaHandler {
+            onMFA(mfaInfo)
+          }
+        } catch {
+          // Do Something Else
+        }
+      }
+    } label: {
+      HStack { // Your custom icon
+        Text("Sign in with Twitter")
+          .fontWeight(.semibold)
+      }
+      .frame(maxWidth: .infinity)
+      .padding()
+      .background(
+        LinearGradient(
+          colors: [Color.blue, Color.cyan],
+          startPoint: .leading,
+          endPoint: .trailing
+        )
+      )
+      .foregroundColor(.white)
+      .cornerRadius(12)
+      .shadow(radius: 4)
+    }
+  }
+}
+
+// Step 2: Create a custom AuthProviderUI wrapper
+class CustomTwitterProviderAuthUI: AuthProviderUI {
+  private let typedProvider: TwitterProviderSwift
+  var provider: AuthProviderSwift { typedProvider }
+  let id: String = "twitter.com"
+
+  init(provider: TwitterProviderSwift = TwitterProviderSwift()) {
+    typedProvider = provider
+  }
+
+  @MainActor func authButton() -&gt; AnyView {
+    AnyView(CustomTwitterButton(provider: typedProvider))
+  }
+}
+
+// Step 3: Use it in your app
+struct ContentView: View {
+  let authService: AuthService
+
+  init() {
+    let configuration = AuthConfiguration()
+    authService = AuthService(configuration: configuration)
+
+    // Register your custom provider UI
+    authService.registerProvider(
+      providerWithButton: CustomTwitterProviderAuthUI()
+    )
+    authService.isPresented = true
+  }
+
+  var body: some View {
+    AuthPickerView {
+      usersApp
+    }
+    .environment(authService)
+  }
+
+  var usersApp: some View {
+    NavigationStack {
+      VStack {
+        Button {
+          authService.isPresented = true
+        } label: {
+          Text("Authenticate")
+        }
+      }
+    }
+  }
+}
+</pre> <h4 id="simplified_custom_button_example">Simplified custom button example</h4> <p>You can also create simpler custom buttons for any provider:</p> 
+<pre>import FirebaseAuthSwiftUI
+import FirebaseGoogleSwiftUI
+import FirebaseAppleSwiftUI
+import SwiftUI
+
+// Custom Google Provider UI
+class CustomGoogleProviderAuthUI: AuthProviderUI {
+  private let typedProvider: GoogleProviderSwift
+  var provider: AuthProviderSwift { typedProvider }
+  let id: String = "google.com"
+  
+  init() {
+    typedProvider = GoogleProviderSwift()
+  }
+  
+  @MainActor func authButton() -&gt; AnyView {
+    AnyView(CustomGoogleButton(provider: typedProvider))
+  }
+}
+
+struct CustomGoogleButton: View {
+  let provider: GoogleProviderSwift
+  @Environment(AuthService.self) private var authService
+  
+  var body: some View {
+    Button {
+      Task {
+        try? await authService.signIn(provider)
+      }
+    } label: {
+      HStack {
+        Image(systemName: "g.circle.fill")
+        Text("My Custom Google Button")
+      }
+      .frame(maxWidth: .infinity)
+      .padding()
+      .background(Color.purple) // Your custom color
+      .foregroundColor(.white)
+      .cornerRadius(10)
+    }
+  }
+}
+
+// Then use it
+struct ContentView: View {
+  let authService: AuthService
+  
+  init() {
+    let configuration = AuthConfiguration()
+    authService = AuthService(configuration: configuration)
+      .withAppleSignIn() // Use default Apple button
+    
+    // Use custom Google button
+    authService.registerProvider(
+      providerWithButton: CustomGoogleProviderAuthUI()
+    )
+  }
+  
+  var body: some View {
+    AuthPickerView {
+      Text("App Content")
+    }
+    .environment(authService)
+  }
+}
+</pre> <p>This approach works for all providers: Google, Apple, Twitter, Facebook, Phone, and OAuth providers. Simply create your custom button view and wrap it in a class conforming to <code translate="no" dir="ltr">AuthProviderUI</code>.</p> <h3 id="default-buttons">Approach 2: Default buttons with custom views</h3> <p>You can use <code translate="no" dir="ltr">AuthService.renderButtons()</code> and bypass <code translate="no" dir="ltr">AuthPickerView</code> to render the default authentication buttons while providing your own layout and navigation:</p> 
+<pre>import FirebaseAuthSwiftUI
+import FirebaseGoogleSwiftUI
+import FirebaseAppleSwiftUI
+import SwiftUI
+
+struct CustomAuthView: View {
+  @Environment(AuthService.self) private var authService
+
+  var body: some View {
+    VStack(spacing: 30) {
+      // Your custom logo/branding
+      Image("app-logo")
+        .resizable()
+        .frame(width: 150, height: 150)
+      
+      Text("Welcome to My App")
+        .font(.largeTitle)
+        .fontWeight(.bold)
+      
+      Text("Sign in to continue")
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+      
+      // Render default auth buttons
+      authService.renderButtons(spacing: 12)
+        .padding()
+    }
+    .padding()
+  }
+}
+
+struct ContentView: View {
+  init() {
+    let configuration = AuthConfiguration()
+    
+    authService = AuthService(configuration: configuration)
+      .withGoogleSignIn()
+      .withAppleSignIn()
+  }
+  
+  let authService: AuthService
+
+  var body: some View {
+    NavigationStack {
+      if authService.authenticationState == .authenticated {
+        Text("Authenticated!")
+      } else {
+        CustomAuthView()
+      }
+    }
+    .environment(authService)
+  }
+}
+</pre> <h3 id="custom-navigation">Approach 3: Custom views with custom navigation</h3> <p>For complete control over the entire flow, you can bypass <code translate="no" dir="ltr">AuthPickerView</code> and build your own navigation system:</p> 
+<pre>import FirebaseAuth
+import FirebaseAuthSwiftUI
+import FirebaseGoogleSwiftUI
+import SwiftUI
+
+enum CustomAuthRoute {
+  case signIn
+  case phoneVerification
+  case mfaResolution
+}
+
+struct ContentView: View {
+  private let authService: AuthService
+  @State private var navigationPath: [CustomAuthRoute] = []
+  @State private var errorMessage: String?
+
+  init() {
+    let configuration = AuthConfiguration()
+    self.authService = AuthService(configuration: configuration)
+      .withGoogleSignIn()
+      .withPhoneSignIn()
+  }
+
+  var body: some View {
+    NavigationStack(path: $navigationPath) {
+      Group {
+        if authService.authenticationState == .authenticated {
+          authenticatedView
+        } else {
+          customSignInView
+        }
+      }
+      .navigationDestination(for: CustomAuthRoute.self) { route in
+        switch route {
+        case .signIn:
+          customSignInView
+        case .phoneVerification:
+          customPhoneVerificationView
+        case .mfaResolution:
+          customMFAView
+        }
+      }
+    }
+    .environment(authService)
+    .alert("Error", isPresented: .constant(errorMessage != nil)) {
+      Button("OK") {
+        errorMessage = nil
+      }
+    } message: {
+      Text(errorMessage ?? "")
+    }
+  }
+
+  var customSignInView: some View {
+    VStack(spacing: 20) {
+      Text("Custom Sign In")
+        .font(.title)
+      
+      Button("Sign in with Google") {
+        Task {
+          do {
+            let provider = GoogleProviderSwift(clientID: Auth.auth().app?.options.clientID ?? "")
+            let outcome = try await authService.signIn(provider)
+            
+            // Handle MFA if required
+            if case .mfaRequired = outcome {
+              navigationPath.append(.mfaResolution)
+            }
+          } catch {
+            errorMessage = error.localizedDescription
+          }
+        }
+      }
+      .buttonStyle(.borderedProminent)
+      
+      Button("Phone Sign In") {
+        navigationPath.append(.phoneVerification)
+      }
+      .buttonStyle(.bordered)
+    }
+    .padding()
+  }
+
+  var customPhoneVerificationView: some View {
+    Text("Custom Phone Verification View")
+    // Implement your custom phone auth UI here
+  }
+
+  var customMFAView: some View {
+    Text("Custom MFA Resolution View")
+    // Implement your custom MFA UI here
+  }
+
+  var authenticatedView: some View {
+    VStack(spacing: 20) {
+      Text("Welcome!")
+      Text("Email: \(authService.currentUser?.email ?? "N/A")")
+      
+      Button("Sign Out") {
+        Task {
+          try? await authService.signOut()
+        }
+      }
+      .buttonStyle(.borderedProminent)
+    }
+  }
+}
+</pre> <h3 id="considerations">Important considerations for custom views</h3> <p>When building custom views, you need to handle several things yourself that <code translate="no" dir="ltr">AuthPickerView</code> handles automatically:</p> <ol> <li>
+<strong>Account Conflicts</strong>: Implement your own conflict resolution strategy using <code translate="no" dir="ltr">AuthServiceError.accountConflict</code>
+</li> <li>
+<strong>MFA Handling</strong>: Check <code translate="no" dir="ltr">SignInOutcome</code> for <code translate="no" dir="ltr">.mfaRequired</code> and handle MFA resolution manually</li> <li>
+<strong>Anonymous User Upgrades</strong>: Handle the linking of anonymous accounts if <code translate="no" dir="ltr">shouldAutoUpgradeAnonymousUsers</code> is enabled</li> <li>
+<strong>Navigation State</strong>: Manage navigation between different auth screens (phone verification, password recovery, etc.)</li> <li>
+<strong>Loading States</strong>: Show loading indicators during async authentication operations by observing <code translate="no" dir="ltr">authService.authenticationState</code>
+</li> <li>
+<strong>Reauthentication</strong>: Handle reauthentication errors for sensitive operations (see <a href="#reauth">Reauthentication in Custom Views</a> below)</li> </ol> <h3 id="reauth">Reauthentication in custom views</h3> <p>When building custom views, handle reauthentication by catching specific errors and implementing your own flow. Sensitive operations throw four types of reauthentication errors, each containing context information.</p> <h4 id="implementation_patterns">Implementation patterns</h4> <p><strong>OAuth Providers (Google, Apple, Facebook, Twitter, etc.):</strong></p> <p>Catch the error and call <code translate="no" dir="ltr">reauthenticate(context:)</code> which automatically handles the OAuth flow:</p> 
+<pre>do {
+  try await authService.deleteUser()
+} catch let error as AuthServiceError {
+  if case .oauthReauthenticationRequired(let context) = error {
+    try await authService.reauthenticate(context: context)
+    try await authService.deleteUser() // Retry operation
+  }
+}
+</pre> <p><strong>Email/Password:</strong></p> <p>Catch the error, prompt for password, create credential, and call <code translate="no" dir="ltr">reauthenticate(with:)</code>:</p> 
+<pre>do {
+  try await authService.updatePassword(to: newPassword)
+} catch let error as AuthServiceError {
+  if case .emailReauthenticationRequired(let context) = error {
+    // Show your password prompt UI
+    let password = await promptUserForPassword()
+    let credential = EmailAuthProvider.credential(
+      withEmail: context.email,
+      password: password
+    )
+    try await authService.reauthenticate(with: credential)
+    try await authService.updatePassword(to: newPassword) // Retry
+  }
+}
+</pre> <p><strong>Phone:</strong></p> <p>Catch the error, verify phone, create credential, and call <code translate="no" dir="ltr">reauthenticate(with:)</code>:</p> 
+<pre>do {
+  try await authService.deleteUser()
+} catch let error as AuthServiceError {
+  if case .phoneReauthenticationRequired(let context) = error {
+    // Send verification code
+    let verificationId = try await authService.verifyPhoneNumber(
+      phoneNumber: context.phoneNumber
+    )
+    // Show your SMS code input UI
+    let code = await promptUserForSMSCode()
+    let credential = PhoneAuthProvider.provider().credential(
+      withVerificationID: verificationId,
+      verificationCode: code
+    )
+    try await authService.reauthenticate(with: credential)
+    try await authService.deleteUser() // Retry
+  }
+}
+</pre> <p><strong>Email Link:</strong></p> <p>Catch the error, send verification email, and handle the incoming URL:</p> 
+<pre>do {
+  try await authService.updatePassword(to: newPassword)
+} catch let error as AuthServiceError {
+  if case .emailLinkReauthenticationRequired(let context) = error {
+    // Send verification email
+    try await authService.sendEmailSignInLink(
+      email: context.email,
+      isReauth: true
+    )
+    // Show your "Check your email" UI
+    await showCheckEmailUI()
+    // When user taps the link, it opens your app with a URL
+    // Handle it in your URL handler:
+    // try await authService.handleSignInLink(url: url)
+    // The handleSignInLink method automatically completes reauthentication
+    try await authService.updatePassword(to: newPassword) // Retry
+  }
+}
+</pre> <p>All reauthentication context objects include a <code translate="no" dir="ltr">.displayMessage</code> property for user-facing text.</p> <h3 id="custom-providers">Custom OAuth providers</h3> <p>You can create custom OAuth providers for services beyond the built-in ones:</p> <blockquote> <p><strong>⚠️ Important:</strong> OIDC (OpenID Connect) providers must be configured in your Firebase project's Authentication settings before they can be used. In the Firebase Console, go to <strong>Authentication → Sign-in method</strong> and add your OIDC provider with the required credentials (Client ID, Client Secret, Issuer URL). You must also register the OAuth redirect URI provided by Firebase in your provider's developer console. See the <a href="openid-connect">Firebase OIDC documentation</a> for detailed setup instructions.</p> </blockquote> 
+<pre>import FirebaseAuthSwiftUI
+import FirebaseOAuthSwiftUI
+import SwiftUI
+
+struct ContentView: View {
+  let authService: AuthService
+
+  init() {
+    let configuration = AuthConfiguration()
+    
+    authService = AuthService(configuration: configuration)
+      .withOAuthSignIn(
+        OAuthProviderSwift(
+          providerId: "oidc.line",  // LINE OIDC provider
+          scopes: ["profile", "openid", "email"],  // LINE requires these scopes
+          displayName: "Sign in with LINE",
+          buttonIcon: Image("line-logo"),
+          buttonBackgroundColor: .green,
+          buttonForegroundColor: .white
+        )
+      )
+      .withOAuthSignIn(
+        OAuthProviderSwift(
+          providerId: "oidc.custom-provider",
+          scopes: ["profile", "openid"],
+          displayName: "Sign in with Custom",
+          buttonIcon: Image(systemName: "person.circle"),
+          buttonBackgroundColor: .purple,
+          buttonForegroundColor: .white
+        )
+      )
+  }
+
+  var body: some View {
+    AuthPickerView {
+      Text("App Content")
+    }
+    .environment(authService)
+  }
+}
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/ios/firebaseui" class="_attribution-link">https://firebase.google.com/docs/auth/ios/firebaseui</a>
+  </p>
+</div>

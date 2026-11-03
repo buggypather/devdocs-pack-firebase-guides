@@ -1,0 +1,108 @@
+<h1>Get started using App Check with a custom provider on Apple platforms</h1> <p>This page shows you how to enable App Check in an Apple app, using <a href="custom-provider">your custom App Check provider</a>. When you enable App Check, you help ensure that only your app can access your project's Firebase resources.</p> <p>If you want to use App Check with the built-in providers, see the docs for <a href="app-attest-provider">App Check with App Attest</a> and <a href="devicecheck-provider">App Check with DeviceCheck</a>.</p> <h2 id="before_you_begin">Before you begin</h2> <ul> <li><p><a href="../../ios/setup">Add Firebase to your Apple project</a> if you haven’t already done so.</p></li> <li><p><a href="../custom-provider">Implement your custom App Check provider's server-side logic</a>.</p></li> </ul> <h2 id="install-sdk">1. Add the App Check library to your app</h2> <ol> <li>
+<p>Use <a href="../../ios/swift-package-manager">Swift Package Manager</a> to install and manage Firebase dependencies.</p> <p>In Xcode, with your app project open, navigate to <strong>File &gt; Add Packages</strong>, add the Firebase Apple platforms SDK repository (<code translate="no" dir="ltr">https://github.com/firebase/firebase-ios-sdk</code>), and choose the <strong>FirebaseAppCheck</strong> library.</p> <aside class="note"><b>Note:</b> If you've already added the Firebase Apple platforms SDK to your project, you can add <b>FirebaseAppCheck</b> to your app target using the <b>Frameworks, Libraries, and Embedded Content</b> section of your target's settings.</aside>
+</li> </ol> <h2 id="implement-classes">2. Implement the App Check protocols</h2> <p>First, you need to create classes that implement the <code translate="no" dir="ltr">AppCheckProvider</code> and <code translate="no" dir="ltr">AppCheckProviderFactory</code> protocols.</p> <p>Your <code translate="no" dir="ltr">AppCheckProvider</code> class must have a <code translate="no" dir="ltr">getToken(completion:)</code> method, which collects whatever information your custom App Check provider requires as proof of authenticity, and sends it to your token acquisition service in exchange for an App Check token. The App Check SDK handles token caching, so always get a new token in your implementation of <code translate="no" dir="ltr">getToken(completion:)</code>.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">class YourCustomAppCheckProvider: NSObject, AppCheckProvider {
+  var app: FirebaseApp
+
+  init(withFirebaseApp app: FirebaseApp) {
+    self.app = app
+    super.init()
+  }
+
+  func getToken() async throws -&gt; AppCheckToken {
+    let getTokenTask = Task { () -&gt; AppCheckToken in
+      // ...
+
+      // Create AppCheckToken object.
+      let exp = Date(timeIntervalSince1970: expirationFromServer)
+      let token = AppCheckToken(
+        token: tokenFromServer,
+        expirationDate: exp
+      )
+
+      if Date() &gt; exp {
+        throw NSError(domain: "ExampleError", code: 1, userInfo: nil)
+      }
+
+      return token
+    }
+
+    return try await getTokenTask.value
+  }
+
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">@interface YourCustomAppCheckProvider : NSObject &lt;FIRAppCheckProvider&gt;
+
+@property FIRApp *app;
+
+- (id)initWithApp:(FIRApp *)app;
+
+@end
+
+@implementation YourCustomAppCheckProvider
+
+- (id)initWithApp:app {
+    self = [super init];
+    if (self) {
+        self.app = app;
+    }
+    return self;
+}
+
+- (void)getTokenWithCompletion:(nonnull void (^)(FIRAppCheckToken * _Nullable,
+                                                 NSError * _Nullable))handler {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // Logic to exchange proof of authenticity for an App Check token.
+        // ...
+
+        // Create FIRAppCheckToken object.
+        NSTimeInterval exp = expirationFromServer;
+        FIRAppCheckToken *token
+            = [[FIRAppCheckToken alloc] initWithToken:tokenFromServer
+                                       expirationDate:[NSDate dateWithTimeIntervalSince1970:exp]];
+
+        // Pass the token or error to the completion handler.
+        handler(token, nil);
+    });
+}
+
+@end</pre></section> </div> <p>Also, implement a <code translate="no" dir="ltr">AppCheckProviderFactory</code> class that creates instances of your <code translate="no" dir="ltr">AppCheckProvider</code> implementation:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">class YourCustomAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
+  func createProvider(with app: FirebaseApp) -&gt; AppCheckProvider? {
+    return YourCustomAppCheckProvider(withFirebaseApp: app)
+  }
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">@interface YourCustomAppCheckProviderFactory : NSObject &lt;FIRAppCheckProviderFactory&gt;
+@end
+
+@implementation YourCustomAppCheckProviderFactory
+
+- (nullable id&lt;FIRAppCheckProvider&gt;)createProviderWithApp:(FIRApp *)app {
+    return [[YourCustomAppCheckProvider alloc] initWithApp:app];
+}
+
+@end</pre></section> </div> <h2 id="initialize">3. Initialize App Check</h2> <p>Add the following initialization code to your app delegate or app initializer:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">let providerFactory = YourAppCheckProviderFactory()
+AppCheck.setAppCheckProviderFactory(providerFactory)
+
+FirebaseApp.configure()</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">YourAppCheckProviderFactory *providerFactory =
+        [[YourAppCheckProviderFactory alloc] init];
+[FIRAppCheck setAppCheckProviderFactory:providerFactory];
+
+[FIRApp configure];</pre></section> </div> <h2 id="next_steps">Next steps</h2> <p>Once the App Check library is installed in your app, start distributing the updated app to your users.</p> <p>The updated client app will begin sending App Check tokens along with every request it makes to Firebase, but Firebase products will not require the tokens to be valid until you enable enforcement in the App Check section of the Firebase console.</p> <h3 id="monitor">Monitor metrics and enable enforcement</h3> <p>Before you enable enforcement, however, you should make sure that doing so won't disrupt your existing legitimate users. On the other hand, if you're seeing suspicious use of your app resources, you might want to enable enforcement sooner.</p> <p>To help make this decision, you can look at App Check metrics for the services you use:</p> <ul> <li>
+<a href="../monitor-metrics">Monitor App Check request metrics</a> for <span class='\"notranslate\"'>Firebase AI Logic</span>, SQL Connect, Realtime Database, Cloud Firestore, Cloud Storage, Authentication, Google Identity for iOS, Maps JavaScript API, and Places API (New).</li> <li>
+<a href="../monitor-functions-metrics">Monitor App Check request metrics for Cloud Functions</a>.</li> </ul> <h3 id="enforce">Enable App Check enforcement</h3> <p>When you understand how App Check will affect your users and you're ready to proceed, you can enable App Check enforcement:</p> <ul> <li>
+<a href="../enable-enforcement">Enable App Check enforcement</a> for <span class='\"notranslate\"'>Firebase AI Logic</span>, SQL Connect, Realtime Database, Cloud Firestore, Cloud Storage, Authentication, Google Identity for iOS, Maps JavaScript API, and Places API (New).</li> <li>
+<a href="../cloud-functions">Enable App Check enforcement for Cloud Functions</a>.</li> </ul> <h3 id="debug">Use App Check in debug environments</h3> <p>If, after you have registered your app for App Check, you want to run your app in an environment that App Check would normally not classify as valid, such as a simulator during development, or from a continuous integration (CI) environment, you can create a debug build of your app that uses the App Check debug provider instead of a real attestation provider.</p> <p>See <a href="debug-provider">Use App Check with the debug provider on Apple platforms</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/ios/custom-provider" class="_attribution-link">https://firebase.google.com/docs/app-check/ios/custom-provider</a>
+  </p>
+</div>

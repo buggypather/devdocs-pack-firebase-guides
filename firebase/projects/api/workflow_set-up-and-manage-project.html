@@ -1,0 +1,304 @@
+<h1>Set up and manage a Firebase project using the Management REST API</h1> <p>The <a href="https://firebase.google.com/docs/reference/firebase-management/rest">Firebase Management REST API</a> enables programmatic setup and management of Firebase projects, including a project's Firebase resources and Firebase Apps.</p> <p>This overview describes the general workflow to add Firebase resources and apps to an existing <a href="https://cloud.google.com/resource-manager/reference/rest/v1/projects">Google Cloud project</a> that doesn't yet use Firebase services.</p> <p>You can jump to specific sections of this page if you just want to:</p> <ul> <li><a href="#add-firebase">Add Firebase services to your project</a></li> <li><a href="#add-apps">Add Firebase Apps to your Firebase project</a></li> <li><a href="#link-ga-account">Link your Firebase project to a Google Analytics account</a></li> </ul> <p>Before following any steps on this page, make sure that you <a href="#enable-api">enable the API</a>.</p> <p>For information about access management for the Firebase Management API, visit the <a href="https://cloud.google.com/iam/reference/rest/">Cloud Identity Access Management (IAM) API documentation</a>.</p> <aside class="note"><strong>Note:</strong><span> If you don't already have an existing Google Cloud project, you can create one using the <a href="https://cloud.google.com/resource-manager/reference/rest/v1/projects/create"><code translate="no" dir="ltr">projects.create</code></a> method in the <a href="https://cloud.google.com/resource-manager/reference/rest/v1/projects">Google Cloud Resource Manager API</a> or by using the <a href="https://console.cloud.google.com/">Google Cloud console</a>.<br><br> Visit <a href="../learn-more#general-limits-projects-apps-sites">Understand Firebase projects</a> for details about the number of projects allowed per account.</span></aside> <h2 id="before-you-begin">Before you begin</h2> <p>Before you begin, you'll need to <a href="#enable-api">enable the Management API</a> for your Google Cloud project and <a href="#generate-access-token">generate your access token</a>.</p> <h3 id="enable-api">Enable the Management REST API for your Google Cloud project</h3> <p>If you haven't already, you'll need to enable the <a href="https://console.cloud.google.com/apis/library/firebase.googleapis.com">Firebase Management API</a> for use with your Google Cloud project.</p> <ol> <li>Open the <a href="https://console.cloud.google.com/apis/library/firebase.googleapis.com">Firebase Management API</a> page in the Google APIs console.</li> <li>When prompted, select your Google Cloud project.</li> <li>Click <strong>Enable</strong> on the Firebase Management API page.</li> </ol> <h3 id="generate-access-token">Generate your API access token</h3> <p>Here's an example for Node.js that retrieves your access token.</p> <p>First, if you aren't in a Google Cloud environment, set the <code translate="no" dir="ltr">GOOGLE_APPLICATION_CREDENTIALS</code> environment variable to the path to your service account key.</p> <div> <section><p class="_firebase-tab"><strong>Linux or macOS</strong></p>
+
+<pre data-language="">export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/service-account-file.json"
+</pre></section> <section><p class="_firebase-tab"><strong>Windows</strong></p>
+<p>With PowerShell:</p> 
+<pre data-language="">$env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\your\service-account-file.json"
+</pre></section> </div> <p>Then, use the Firebase Admin SDK to get an access token from your service account credentials:</p> 
+<pre>import { initializeApp, applicationDefault } from "firebase-admin/app";
+
+initializeApp();
+
+async function getAccessToken() {
+  try {
+    const accessToken = await applicationDefault().getAccessToken();
+    return accessToken.access_token;
+  } catch (err) {
+    console.error('Unable to get access token');
+    console.error(err);
+  }
+}
+</pre> <h3 id="find-resource-name">Find the resource name of your project</h3> <p>You can find the Google Cloud projects which are available for adding Firebase services.</p> <aside class="note">To call this endpoint: <ul> <li>You must have an existing Google Cloud project and an <a href="#generate-access-token">API access token</a>.</li> <li>A project member must be a <a href="../iam/roles">Viewer</a>, at minimum, of the existing Google Cloud project.</li> </ul> </aside> <h4 id="request-list-available-projects">REQUEST</h4> <p>Call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/availableProjects/list"><code translate="no" dir="ltr">availableProjects.list</code></a>. The request body for this call must be empty.</p> <p>Here's an example for Node.js to request a list of available Google Cloud projects:</p> 
+<pre>const fetch = require('node-fetch');
+
+async function listProjects() {
+  const accessToken = getAccessToken();
+  const uri = 'https://firebase.googleapis.com/v1beta1/availableProjects';
+  const options = {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+    },
+  };
+
+  try {
+    const rawResponse = await fetch(uri, options);
+    const resp = await rawResponse.json();
+    const projects = resp['projectInfo'];
+    console.log('Project total: ' + projects.length);
+    console.log('');
+    for (let i in projects) {
+      const project = projects[i];
+      console.log('Project ' + i);
+      console.log('ID: ' + project['project']);
+      console.log('Display Name: ' + project['displayName']);
+      console.log('');
+    }
+  } catch(err) {
+    console.error(err);
+  }
+}
+</pre> <h4 id="result-list-available-projects">RESULT</h4> <p>The response body from a call to <code translate="no" dir="ltr">availableProjects.list</code> contains a list of <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/availableProjects/list#ProjectInfo"><code translate="no" dir="ltr">ProjectInfo</code></a> objects. If the list of projects is too long, the response body also contains a <code translate="no" dir="ltr">nextPageToken</code> that you can use as a query parameter to get the next page of projects.</p> <p>Here's an example response body of an <code translate="no" dir="ltr">availableProjects.list</code> call:</p> 
+<pre>{
+  "projectInfo": [
+    {
+      "project": "projects/first-cloud-project",
+      "displayName": "First Cloud Project"
+    },
+    {
+      "project": "projects/second-cloud-project",
+      "displayName": "Second Cloud Project"
+    }
+  ]
+}
+</pre> <p>This example response has two Google Cloud projects that can have Firebase services added to them. Note that the <code translate="no" dir="ltr">project</code> field provides the globally unique resource name for a project.</p> <p>You can use any <code translate="no" dir="ltr">project</code> value listed in the response from <code translate="no" dir="ltr">availableProjects.list</code> to <a href="#add-firebase">add Firebase services</a> or <a href="#add-apps">add apps</a> to your project.</p> <p>In the next section, we'll add Firebase services to <code translate="no" dir="ltr">First Cloud Project</code> using the <code translate="no" dir="ltr">projects/first-gcp-project</code> resource name.</p> <h2 id="add-firebase">Add Firebase services to your project</h2> <p>Google Cloud projects can take advantage of the services offered by Firebase. In this section, you'll learn how to add Firebase services to your existing Google Cloud project programmatically. Note that you can also add Firebase services to your existing Google Cloud project in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>.</p> <aside class="note">To call this endpoint: <ul> <li>You must have an existing Google Cloud project, an <a href="#generate-access-token">API access token</a>, and the unique <a href="#find-resource-name">resource name</a> of your <code translate="no" dir="ltr">project</code>. </li> <li>A project member or service account must have the following permissions. If you are an <a href="../iam/roles">Editor or Owner</a> of the existing Google Cloud project, then you have these permissions. <br> <code translate="no" dir="ltr">firebase.projects.update</code><br> <code translate="no" dir="ltr">resourcemanager.projects.get</code><br> <code translate="no" dir="ltr">serviceusage.services.enable</code><br> <code translate="no" dir="ltr">serviceusage.services.get</code> </li> </ul> </aside> <h4 id="request-add-firebase">REQUEST</h4> <p>Call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects/addFirebase"><code translate="no" dir="ltr">projects.addFirebase</code></a>. The request body for this call must be empty.</p> <p>Here's an example for Node.js to add Firebase services to your Google Cloud project:</p> 
+<pre>const fetch = require('node-fetch');
+
+async function addFirebase(projectId) {
+  const accessToken = getAccessToken();
+  const uri = 'https://firebase.googleapis.com/v1beta1/projects/' + projectId + ':addFirebase';
+  const options = {
+    method: 'POST',
+    // Use a manual access token here since explicit user access token is required.
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+    },
+  };
+
+  try {
+    const rawResponse = await fetch(uri, options);
+    const resp = await rawResponse.json();
+    console.log(resp);
+  } catch(err) {
+    console.error(err['message']);
+  }
+}
+</pre> <h4 id="result-add-firebase">RESULT</h4> <p>The result of a call to <code translate="no" dir="ltr">projects.addFirebase</code> is an <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/operations"><code translate="no" dir="ltr">Operation</code></a>. Before you can call other Firebase-related endpoints for your project, the operation must be successful.</p> <p>To check if the operation is successful, you can call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/operations/get"><code translate="no" dir="ltr">operations.get</code></a> on the operation until the value of <code translate="no" dir="ltr">done</code> is <code translate="no" dir="ltr">true</code> and its <code translate="no" dir="ltr">response</code> is of type <code translate="no" dir="ltr">FirebaseProject</code>. If the operation fails, its <code translate="no" dir="ltr">error</code> is set to <code translate="no" dir="ltr">google.rpc.Status</code>.</p> <p>Here's the response body of an <code translate="no" dir="ltr">operations.get</code> call:</p> 
+<pre>{
+  "name": "operations/...",
+  "done": true,
+  "response": {
+    "@type": "type.googleapis.com/google.firebase.service.v1beta1.FirebaseProject",
+    "projectId": "first-cloud-project",
+    "projectNumber": "...",
+    "displayName": "First Cloud Project",
+    "name": "projects/first-cloud-project",
+    "resources": {
+      "hostingSite": "first-cloud-project",
+      "realtimeDatabaseInstance": "first-cloud-project"
+    }
+  }
+}
+</pre> <p>Since <code translate="no" dir="ltr">done</code> is <code translate="no" dir="ltr">true</code> and the <code translate="no" dir="ltr">response</code> type is a <code translate="no" dir="ltr">FirebaseProject</code>, the Google Cloud project now has Firebase services. The response also contains other useful information about your newly created <code translate="no" dir="ltr">FirebaseProject</code>, like its <code translate="no" dir="ltr">projectNumber</code> and its default <code translate="no" dir="ltr">resources</code>. The <code translate="no" dir="ltr">Operation</code> is automatically deleted after completion.</p> <h2 id="add-apps">Add Firebase Apps to your project</h2> <p>Many different apps can use a <code translate="no" dir="ltr">FirebaseProject</code>, including iOS, Android, and web apps. In this section, you'll learn how to add Firebase Apps to your existing <code translate="no" dir="ltr">FirebaseProject</code> programmatically. Note that you can also add Firebase Apps to your existing Firebase project in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>.</p> <aside class="note">To call the endpoints in this section: <ul> <li>You must have an <a href="#generate-access-token">API access token</a> and an existing <a href="#add-firebase"><code translate="no" dir="ltr">FirebaseProject</code></a>.</li> <li>A project member must be an <a href="../iam/roles">Editor or Owner</a> of the existing Firebase project.</li> </ul> </aside> <p><strong>Select a type of Firebase App to add to your Firebase project.</strong></p> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<p>You can add a <strong>Firebase iOS App</strong> to your existing Firebase project.</p> <h4 id="request-add-ios-app">REQUEST</h4> <p>Call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects.iosApps/create"><code translate="no" dir="ltr">projects.iosApps.create</code></a>. Here's how to construct your request body:</p> <ul> <li>
+<p>Required:</p> <ul> <li>
+<code translate="no" dir="ltr">bundleId</code>: The canonical bundle ID of the iOS app as it would appear in the iOS App Store.</li> </ul>
+</li> <li>
+<p>Optional, but recommended:</p> <ul> <li><p><code translate="no" dir="ltr">displayName</code>: The user-assigned display name of the app. This value is useful for finding the app later in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>.</p></li> <li><p><code translate="no" dir="ltr">appStoreId</code>: The automatically generated Apple ID assigned to your app by Apple. Specify an <code translate="no" dir="ltr">appStoreId</code> if it has already been assigned by Apple.</p></li> </ul>
+</li> </ul> <p>In the request body for our example, we'll only use a <code translate="no" dir="ltr">displayName</code> and <code translate="no" dir="ltr">bundleId</code>:</p> 
+<pre data-language="">{
+  "displayName": "My Firebase iOS App",
+  "bundleId": "com.firebase.ios"
+}
+</pre> <p>Here's an example for Node.js to add a Firebase iOS App to your Firebase project:</p> 
+<pre data-language="">const fetch = require('node-fetch');
+
+async function addIosApp(projectId, displayName, bundleId) {
+  const accessToken = getAccessToken();
+  const uri = 'https://firebase.googleapis.com/v1beta1/projects/' + projectId + '/iosApps';
+  const options = {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+    },
+    body: JSON.stringify({
+      'displayName': displayName,
+      'bundleId': bundleId
+    }),
+  };
+
+  try {
+    const rawResponse = await fetch(uri, options);
+    const resp = await rawResponse.json();
+    console.log(resp);
+  } catch(err) {
+    console.error(err['message']);
+  }
+}
+</pre> <h4 id="result-add-ios-app">RESULT</h4> <p>The result of a call to <code translate="no" dir="ltr">projects.iosApps.create</code> is an <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/operations"><code translate="no" dir="ltr">Operation</code></a>. Before you can call other Firebase-related endpoints for your project, the operation must be successful.</p> <p>To check if the operation is successful you can call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/operations/get"><code translate="no" dir="ltr">operations.get</code></a> on the operation until the value of <code translate="no" dir="ltr">done</code> is <code translate="no" dir="ltr">true</code> and its <code translate="no" dir="ltr">response</code> is of type <code translate="no" dir="ltr">IosApp</code>. If the operation fails, its <code translate="no" dir="ltr">error</code> is set to <code translate="no" dir="ltr">google.rpc.Status</code>.</p> <p>Here's the response body of an <code translate="no" dir="ltr">operations.get</code> call:</p> 
+<pre data-language="">{
+  "name": "operations/...",
+  "done": true,
+  "response": {
+    "@type": "type.googleapis.com/google.firebase.service.v1beta1.IosApp",
+    "name": "projects/first-cloud-project/iosApps/...",
+    "appId": "...",
+    "displayName": "My Firebase iOS App",
+    "projectId": "first-cloud-project",
+    "bundleId": "com.firebase.ios"
+  }
+}
+</pre> <p>Since <code translate="no" dir="ltr">done</code> is <code translate="no" dir="ltr">true</code> and the <code translate="no" dir="ltr">response</code> type is an <code translate="no" dir="ltr">IosApp</code>, the <code translate="no" dir="ltr">FirebaseProject</code> now has an <code translate="no" dir="ltr">IosApp</code>. The response also contains other useful information about your newly created Firebase iOS App, like the unique Firebase <code translate="no" dir="ltr">appId</code>. The <code translate="no" dir="ltr">Operation</code> is automatically deleted after completion.</p></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<p>You can add a <strong>Firebase Android App</strong> to your existing Firebase project.</p> <h4 id="request-add-android-app">REQUEST</h4> <p>Call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects.androidApps/create"><code translate="no" dir="ltr">projects.androidApps.create</code></a>. Here's how to construct your request body:</p> <ul> <li>
+<p>Required:</p> <ul> <li>
+<code translate="no" dir="ltr">packageName</code>: The canonical package name of the Android app as it would appear in the Google Play Developer console.</li> </ul>
+</li> <li>
+<p>Optional, but recommended:</p> <ul> <li>
+<code translate="no" dir="ltr">displayName</code>: The user-assigned display name of the app. This value is useful for finding your app later in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>.</li> </ul>
+</li> </ul> <p>In the request body for our example, we'll use <code translate="no" dir="ltr">packageName</code> and <code translate="no" dir="ltr">displayName</code>:</p> 
+<pre data-language="java">{
+  "displayName": "My Firebase Android App"
+  "packageName": "com.firebase.android"
+}
+</pre> <p>Here's an example for Node.js to add a Firebase Android App to your Firebase project:</p> 
+<pre data-language="java">const fetch = require('node-fetch');
+
+async function addAndroidApp(projectId, displayName, packageName) {
+  const accessToken = getAccessToken();
+  const uri = 'https://firebase.googleapis.com/v1beta1/projects/' + projectId + '/androidApps';
+  const options = {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+    },
+    body: JSON.stringify({
+      'displayName': displayName,
+      'packageName': packageName
+    }),
+  };
+
+  try {
+    const rawResponse = await fetch(uri, options);
+    const resp = await rawResponse.json();
+    console.log(resp);
+  } catch(err) {
+    console.error(err['message']);
+  }
+}
+</pre> <h4 id="result-add-android-app">RESULT</h4> <p>The result of a call to <code translate="no" dir="ltr">projects.androidApps.create</code> is an <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/operations"><code translate="no" dir="ltr">Operation</code></a>. Before you can call other Firebase-related endpoints for your project, the operation must be successful.</p> <p>To check if the operation is successful, you can call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/operations/get"><code translate="no" dir="ltr">operations.get</code></a> on the operation until the value of <code translate="no" dir="ltr">done</code> is <code translate="no" dir="ltr">true</code> and its <code translate="no" dir="ltr">response</code> is of type <code translate="no" dir="ltr">AndroidApp</code>. If the operation fails, its <code translate="no" dir="ltr">error</code> is set to <code translate="no" dir="ltr">google.rpc.Status</code>.</p> <p>Here's the response body of an <code translate="no" dir="ltr">operations.get</code> call:</p> 
+<pre data-language="java">{
+  "name": "operations/...",
+  "done": true,
+  "response": {
+    "@type": "type.googleapis.com/google.firebase.service.v1beta1.AndroidApp",
+    "name": "projects/first-cloud-project/androidApps/...",
+    "appId": "...",
+    "displayName": "My Firebase Android App",
+    "projectId": "first-cloud-project",
+    "packageName": "com.firebase.android"
+  }
+}
+</pre> <p>Since <code translate="no" dir="ltr">done</code> is <code translate="no" dir="ltr">true</code> and the <code translate="no" dir="ltr">response</code> type is an <code translate="no" dir="ltr">AndroidApp</code>, the <code translate="no" dir="ltr">FirebaseProject</code> now has an <code translate="no" dir="ltr">AndroidApp</code>. The response also contains other useful information about your newly created Firebase Android App, like the unique Firebase <code translate="no" dir="ltr">appId</code>. The <code translate="no" dir="ltr">Operation</code> is automatically deleted after completion.</p> <h4 id="add_sha_certificates">Add SHA certificates</h4> <p>You can add SHA certificates to any existing Firebase Android App by calling <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects.androidApps.sha/create"><code translate="no" dir="ltr">projects.androidApps.sha.create</code></a>. The request body for this method call must have an empty <code translate="no" dir="ltr">name</code> field. The result of this call is a newly created instance of <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects.androidApps.sha#ShaCertificate"><code translate="no" dir="ltr">ShaCertificate</code></a>.</p> <p>When calling <code translate="no" dir="ltr">projects.androidApps.sha.create</code>, you need to provide a valid SHA-1 or SHA-256 certificate hash. You can get the SHA hash of your signing certificate with the gradle <code translate="no" dir="ltr">signingReport</code> command: </p>
+
+<pre data-language="java">./gradlew signingReport</pre> <p>For more information, visit <a href="https://developers.google.com/android/guides/client-auth">Google APIs for Android</a>.</p></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>You can add a <strong>Firebase Web App</strong> to your existing Firebase project.</p> <h4 id="request-add-web-app">REQUEST</h4> <p>Call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects.webApps/create"><code translate="no" dir="ltr">projects.webApps.create</code></a>. Here's how to construct your request body:</p> <ul> <li>
+<p>Optional:</p> <ul> <li>
+<code translate="no" dir="ltr">displayName</code>: The user-assigned display name of app. This value is useful for finding your app later in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>.</li> </ul>
+</li> <li>
+<p><em>Not</em> recommended:</p> <ul> <li>
+<code translate="no" dir="ltr">appUrls</code>: The fully qualified URLs where the app is hosted. When a Firebase Web App is associated with a Firebase Hosting site, Firebase automatically populates these fields, so leave these fields empty in your request body.</li> </ul>
+</li> </ul> <p>We'll only specify a <code translate="no" dir="ltr">displayName</code> in the request body for our example:</p> 
+<pre data-language="javascript">{
+  "displayName": "My Firebase Web App"
+}
+</pre> <p>Here's an example for Node.js to add a Firebase Web App to your Firebase project:</p> 
+<pre data-language="javascript">const fetch = require('node-fetch');
+
+async function addWebApp(projectId, displayName) {
+  const accessToken = getAccessToken();
+  const uri = 'https://firebase.googleapis.com/v1beta1/projects/' + projectId + '/webApps';
+  const options = {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+    },
+    body: JSON.stringify({
+      'displayName': displayName
+    }),
+  };
+
+  try {
+    const rawResponse = await fetch(uri, options);
+    const resp = await rawResponse.json();
+    console.log(resp);
+  } catch(err) {
+    console.error(err['message']);
+  }
+}
+</pre> <h4 id="result-add-web-app">RESULT</h4> <p>The result of a call to <code translate="no" dir="ltr">projects.webApps.create</code> is an <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/operations"><code translate="no" dir="ltr">Operation</code></a>. Before you can call other Firebase-related endpoints for your project, the operation must be successful.</p> <p>To check if the operation is successful you can call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/operations/get"><code translate="no" dir="ltr">operations.get</code></a> on the operation until the value of <code translate="no" dir="ltr">done</code> is <code translate="no" dir="ltr">true</code> and its <code translate="no" dir="ltr">response</code> is of type <code translate="no" dir="ltr">WebApp</code>. If the operation fails, its <code translate="no" dir="ltr">error</code> is set to <code translate="no" dir="ltr">google.rpc.Status</code>.</p> <p>Here's the response body of an <code translate="no" dir="ltr">operations.get</code> call:</p> 
+<pre data-language="javascript">{
+  "name": "operations/...",
+  "done": true,
+  "response": {
+    "@type": "type.googleapis.com/google.firebase.service.v1beta1.WebApp",
+    "name": "projects/first-cloud-project/webApps/...",
+    "appId": "...",
+    "displayName": "My Firebase Web App",
+    "projectId": "first-cloud-project"
+  }
+}
+</pre> <p>Since <code translate="no" dir="ltr">done</code> is <code translate="no" dir="ltr">true</code> and the <code translate="no" dir="ltr">response</code> type is a <code translate="no" dir="ltr">WebApp</code>, the <code translate="no" dir="ltr">FirebaseProject</code> now has a <code translate="no" dir="ltr">WebApp</code>. The response also contains other useful information about your newly created Firebase Web App, like the unique Firebase <code translate="no" dir="ltr">appId</code>. The <code translate="no" dir="ltr">Operation</code> is automatically deleted after completion.</p></section> </div> <h2 id="link-ga-account">Link your Firebase project to a Google Analytics account (Optional)</h2> <p>You can link an existing <a href="http://www.google.com/analytics/">Google Analytics account</a> to your existing <code translate="no" dir="ltr">FirebaseProject</code> programmatically. Note that you can also link your existing Firebase project to Google Analytics in the <a href="https://console.firebase.google.com/project/_/settings/integrations"><strong>Integrations</strong></a> tab of your <strong>Project Settings</strong>.</p> <aside class="note">To call this endpoint: <ul> <li>You must have an <a href="#generate-access-token">API access token</a> and an existing <a href="#add-firebase"><code translate="no" dir="ltr">FirebaseProject</code></a>.</li> <li>A project member must be an <a href="../iam/roles">Owner</a> of the existing Firebase project.</li> </ul> </aside> <p>The call to <code translate="no" dir="ltr">projects.addGoogleAnalytics</code> requires an <code translate="no" dir="ltr">analytics_resource</code>, which can either be an <code translate="no" dir="ltr">analyticsAccountId</code> or an <code translate="no" dir="ltr">analyticsPropertyId</code>:</p> <ul> <li><p>Specify an existing <code translate="no" dir="ltr">analyticsAccountId</code> to provision a new Google Analytics property within the specified account and associate the new property with your Firebase project.</p></li> <li><p>Specify an existing <code translate="no" dir="ltr">analyticsPropertyId</code> to associate the Google Analytics property with your Firebase project.</p></li> </ul> <p>You can find both your <code translate="no" dir="ltr">analyticsAccountId</code> and any existing <code translate="no" dir="ltr">analyticsPropertyId</code> on the <a href="https://analytics.google.com/analytics/web/">Google Analytics website</a>.</p> <p><strong>When you call <code translate="no" dir="ltr">projects.addGoogleAnalytics</code>:</strong></p> <ol> <li><p>The first check determines if any existing data streams in the Google Analytics property correspond to any existing Firebase Apps in your <code translate="no" dir="ltr">FirebaseProject</code> (based on the <code translate="no" dir="ltr">packageName</code> or <code translate="no" dir="ltr">bundleId</code> associated with the data stream). Then, as applicable, the data streams and apps are linked. Note that this auto-linking only applies to Android Apps and iOS Apps.</p></li> <li><p>If no corresponding data streams are found for your Firebase Apps, new data streams are provisioned in the Google Analytics property for each of your Firebase Apps. Note that a new data stream is always provisioned for a Web App even if it was previously associated with a data stream in your Analytics property.</p></li> </ol> <p>Learn more about the hierarchy and structure of Google Analytics accounts in the <a href="https://support.google.com/analytics/answer/9303323">Analytics documentation</a>.</p> <aside class="note"><strong>Note:</strong><span> If you have Firebase Web Apps in your Firebase project before linking your project with Google Analytics, the Firebase configuration objects for those apps will be updated with a new <code translate="no" dir="ltr">measurementId</code> field. This updated config object is required for your Web App to use Analytics. Call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects.webApps/getConfig"><code translate="no" dir="ltr">projects.webApps.getConfig</code></a> to obtain updated config objects.</span></aside> <h4 id="request-add-analytics">REQUEST</h4> <p>Call <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects/addGoogleAnalytics"><code translate="no" dir="ltr">projects.addGoogleAnalytics</code></a>.</p> <p>In the request body for our example call to <code translate="no" dir="ltr">project.addGoogleAnalytics</code>, we'll specify our Google Analytics account <code translate="no" dir="ltr">analyticsAccountId</code>. This call will provision a new Google Analytics property and associate the new property with the <code translate="no" dir="ltr">FirebaseProject</code>.</p> 
+<pre>{
+  "analyticsAccountId": "&lt;your-google-analytics-account-id&gt;"
+}
+</pre> <p>Here's an example for Node.js to link a Firebase project with a Google Analytics account:</p> 
+<pre>const fetch = require('node-fetch');
+
+async function addGoogleAnalytics(projectId, analyticsAccountId) {
+  const accessToken = getAccessToken();
+  const uri = 'https://firebase.googleapis.com/v1beta1/projects/' + projectId + ':addGoogleAnalytics';
+  const options = {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+    },
+    body: JSON.stringify({
+      'analyticsAccountId': analyticsAccountId
+    }),
+  };
+
+  try {
+    const rawResponse = await fetch(uri, options);
+    const resp = await rawResponse.json();
+    console.log(resp);
+  } catch(err) {
+    console.error(err['message']);
+  }
+}
+</pre> <h4 id="result-add-analytics">RESULT</h4> <p>The result of a call to <code translate="no" dir="ltr">projects.addGoogleAnalytics</code> is an <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/operations"><code translate="no" dir="ltr">Operation</code></a>. Before you can call other Firebase-related endpoints for your project, the operation must be successful.</p> <p>To check if the operation is successful, you can call <code translate="no" dir="ltr">operations.get</code> on the operation until the value of <code translate="no" dir="ltr">done</code> is <code translate="no" dir="ltr">true</code> and the <code translate="no" dir="ltr">response</code> is of type <code translate="no" dir="ltr">analyticsDetails</code>. If the operation fails, its <code translate="no" dir="ltr">error</code> is set to <code translate="no" dir="ltr">google.rpc.Status</code>.</p> <p>Here's the response body of an <code translate="no" dir="ltr">operations.get</code> call:</p> 
+<pre>{
+  "name": "operations/...",
+  "none": true,
+  "response": {
+    "@type": "type.googleapis.com/google.firebase.service.v1beta1.AnalyticsDetails",
+    "analyticsProperty": [
+      {
+        "id": "...",
+        "displayName": "..."
+      }
+    ],
+    "streamMappings": [
+      {
+        "app": "...",
+        "streamId": "...",
+        "measurementId": "..."
+      }
+    ]
+  }
+}
+</pre> <p>Since <code translate="no" dir="ltr">done</code> is true and the <code translate="no" dir="ltr">response</code> type is <code translate="no" dir="ltr">analyticsDetails</code>, the <code translate="no" dir="ltr">FirebaseProject</code> is now linked to the specified Google Analytics account. The <code translate="no" dir="ltr">Operation</code> is automatically deleted after completion.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/projects/api/workflow_set-up-and-manage-project" class="_attribution-link">https://firebase.google.com/docs/projects/api/workflow_set-up-and-manage-project</a>
+  </p>
+</div>

@@ -1,0 +1,138 @@
+<h1>Configure internationalization (i18n) rewrites</h1> <p>Use internationalization rewrites ("i18n rewrites") to serve different content depending on a user's country or preferred language. Here are some example configurations that you could set up:</p> <ul> <li><p><strong>Serve the same French content to <em>all</em> users who prefer French (regardless of country).</strong><br> Example: a homepage with French text</p></li> <li><p><strong>Serve Standard French content to users who prefer French, but for <em>Canadian</em> users who prefer French, serve Canadian French content instead.</strong><br> Example: a homepage with Standard French phrasing versus a homepage with Canadian French phrasing</p></li> <li><p><strong>Serve the same content to <em>all</em> Canadian users (regardless of their language preference).</strong><br> Example: a homepage with your site's "default" language but with a Canada-specific feature (like a holiday theme)</p></li> <li><p><strong>Serve Canadian French content to Canadian users who prefer French.</strong><br> Example: a homepage with Canadian French phrasing and a Canada-specific feature (like a holiday theme)</p></li> </ul> <p>Firebase Hosting determines a user's country from their IP address and a user's language preferences from the <code translate="no" dir="ltr">Accept-Language</code> request header (usually <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language#wikiArticle" class="external">set automatically by their web browser</a>).</p> <h2 id="set-up-i18n-rewrites">Set up i18n rewrites</h2> <p>To set up i18n rewrites for your Hosting site, you need to create an "i18n content" directory for all your localized content, then add the <code translate="no" dir="ltr">i18n</code> attribute to your <code translate="no" dir="ltr">firebase.json</code> file to point to your new "i18n content" directory.</p> <p>Here are the detailed steps:</p> <ol> <li>
+<p>Within your local app directory's <code translate="no" dir="ltr">public</code> folder, make a separate directory for your "i18n content", then create subfolders for each language and country combination supported by your site.</p> <p>In each subfolder, add the content specific for that combination, like holiday-themed homepages or language-specific 404 pages.</p> <p>Here's an example "i18n content" directory called <code translate="no" dir="ltr">localized-files</code>:</p> 
+<pre>public/
+    index.html  // your site's default homepage
+    404.html  // your site's custom 404 page
+
+    localized-files/
+        ALL_ca/
+            index.html
+        es_ALL/
+            index.html
+            404.html
+        fr/
+            index.html
+            404.html
+        fr_ca/
+            index.html</pre> <p><section class="expandable"> <p class="showalways"><b>View the matching requests for each subfolder's content</b></p></section></p> 
+<pre>public/
+    // matches requests that aren't specified by your "i18n content" subfolders
+    // example: display your homepage in the "default" language for your site with no country-specific features
+    index.html  // your site's default homepage
+    404.html  // your site's custom 404 page
+
+    localized-files/
+
+        // matches requests from Canada with any language preference
+        // example: display your homepage in the "default" language for your site with a Canada-specific feature
+        ALL_ca/
+            index.html
+
+        // matches requests from any country with a language preference of `es` or `es-foo`
+        // example: display your homepage in Spanish with no country-specific features
+        es_ALL/
+            index.html
+            404.html  // your site's custom 404 page in Spanish
+
+        // matches requests from any country with a language preference of `fr` or `fr-foo`
+        // example: display your homepage in Standard French with no country-specific features
+        fr/
+            index.html
+            404.html  // your site's custom 404 page in French
+
+        // matches requests from Canada with a language preference of `fr` or `fr-foo`
+        // example: display your homepage in Canadian French and/or with a Canada-specific feature
+        fr_ca/
+            index.html</pre>  <p>The <code translate="no" dir="ltr">localized-files/</code> directory contains separate subfolders for each language and country combination supported by your site. The naming pattern for each subfolder must follow either of these formats:</p> <ul> <li><p><strong><code translate="no" dir="ltr">languageCode_countryCode</code></strong>: Contains content specific for users who have that language preference <em>and</em> that country code</p></li> <li><p><strong><code translate="no" dir="ltr">languageCode</code></strong>: Contains content specific for users who have that language preference, but the content isn't country-specific; basically equivalent to <code translate="no" dir="ltr">languageCode_ALL</code></p></li> </ul> <p>Refer to the subsection <a href="#country-and-language-codes">Country and language codes</a> below for more details about these codes. You can use the value of <code translate="no" dir="ltr">ALL</code> (case-sensitive) to indicate <em>any</em> country (like <code translate="no" dir="ltr">es_ALL/</code>) or <em>any</em> language (like <code translate="no" dir="ltr">ALL_ca/</code>).</p> <p>The files in a subfolder don't need to have analogous files in the <code translate="no" dir="ltr">public</code> directory or other subfolders. You can create content that is entirely specific to a language and/or country.</p> <aside class="note"><strong>Note:</strong><span> Review <a href="#priority-order">Priority order for "i18n content"</a> below to learn the order in which Hosting serves your "i18n content" files.</span></aside>
+</li> <li>
+<p>Add the <code translate="no" dir="ltr">i18n</code> attribute to your <code translate="no" dir="ltr">firebase.json</code> file and specify the directory that contains your "i18n content". Continuing our example:</p> 
+<pre>// firebase.json
+
+"hosting": {
+
+  "public": "public",
+
+  "ignore": [
+    "firebase.json",
+    "**/.*",
+    "**/node_modules/**"
+  ],
+
+  "i18n": {
+    "root": "/localized-files"  // directory that contains your "i18n content"
+  }
+
+  ...
+}</pre> <p>The directory specified for <code translate="no" dir="ltr">root</code> must be the name of the directory that contains all your "i18n content" subfolders. If you placed all your "i18n content" subfolders at the root of your <code translate="no" dir="ltr">public</code> directory, use <code translate="no" dir="ltr">/</code> for the value of <code translate="no" dir="ltr">root</code>. Leading and trailing slashes in the <code translate="no" dir="ltr">root</code> value are optional.</p>
+</li> <li><p>Deploy your "i18n content" and config to your Hosting site.</p></li> </ol> <p>You can test your setup using <a href="#cookie-overrides">cookie overrides</a>.</p> <h3 id="country-and-language-codes">Country and language codes</h3> <p>When naming "i18n content" subfolders, you must use lowercase for both country and language codes. You can use the value of <code translate="no" dir="ltr">ALL</code> (case-sensitive) to indicate <em>any</em> country (like <code translate="no" dir="ltr">es_ALL/</code>) or <em>any</em> language (like <code translate="no" dir="ltr">ALL_ca/</code>).</p> <p>Hosting obtains the country code from the user's IP address. Country codes are two-letter <a href="https://en.wikipedia.org/wiki/ISO_3166-1" class="external">ISO 3166-1 alpha-2 codes</a>.</p> <p>The language codes are obtained from the user's <code translate="no" dir="ltr">Accept-Language</code> request header (usually <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language#wikiArticle" class="external">set automatically by their web browser</a>). They are <a href="https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes" class="external">ISO 639-1 codes</a>. Keep the following in mind when using language codes:</p> <ul> <li><p>When Hosting searches for which "i18n content" to serve, it orders the languages based on the quality values in the <code translate="no" dir="ltr">Accept-Language</code> header.</p></li> <li>
+<p>Hosting drops any regional and country subtags in the <code translate="no" dir="ltr">Accept-Language</code> header, so the language code in a "i18n content" subfolder name cannot contain these subtags. For example, you can't use <code translate="no" dir="ltr">es-419</code> or <code translate="no" dir="ltr">es-US</code> as a language code in a subfolder name, but you can use <code translate="no" dir="ltr">es</code>.</p> <p>If you want to serve specific regional or country content, you can create subfolders that contain the specific language-country content you want to support.</p> <p><section class="expandable"> <p class="showalways">View examples to support specific regional or country content</p></section></p> <p><section class="expandable"> <p class="showalways"><b>Serve Spanish content applicable for Spain versus <em>any</em> other country (mimic the behavior of <code translate="no" dir="ltr">es-419</code>)</b> </p></section></p> <p>In this example, a request from Spain with the language preference of <code translate="no" dir="ltr">es</code>, <code translate="no" dir="ltr">es-es</code>, or even <code translate="no" dir="ltr">es-419</code> would receive content from the <code translate="no" dir="ltr">es_es/</code> subfolder because Hosting treats all those language codes as <code translate="no" dir="ltr">es</code>.</p> <p>A request from the United States, Mexico, or any other country with the language preference of <code translate="no" dir="ltr">es-419</code> would receive content from the <code translate="no" dir="ltr">es_ALL/</code> subfolder because Hosting treats <code translate="no" dir="ltr">es-419</code> as <code translate="no" dir="ltr">es</code>.</p> 
+<pre>public/
+    // matches requests that aren't specified by your "i18n content" subfolders
+    index.html  // the site's default homepage
+
+    localized-files/
+
+        // matches requests from Spain with a language preference of `es` or `es-foo`
+        es_es/
+            index.html
+
+        // matches requests from any other country with a language preference of `es` or `es-foo`
+        es_ALL/
+            index.html</pre>  <p><section class="expandable"> <p class="showalways"><b>Serve Spanish content applicable for <em>specific</em> countries</b> </p></section></p> <p>In this example, a request from Mexico with the language preference of <code translate="no" dir="ltr">es-419</code> would receive content from the <code translate="no" dir="ltr">es_mx/</code> subfolder because Hosting treats the language code <code translate="no" dir="ltr">es-419</code> as <code translate="no" dir="ltr">es</code>.</p> <p>However, a request from the United States with the language preference of <code translate="no" dir="ltr">es-419</code> would receive content from the <code translate="no" dir="ltr">es_ALL/</code> subfolder because Hosting treats <code translate="no" dir="ltr">es-419</code> as <code translate="no" dir="ltr">es</code> <em>and</em> there's no <code translate="no" dir="ltr">es_us/</code> subfolder.</p> 
+<pre>public/
+    // matches requests that aren't specified by your "i18n content" subfolders
+    index.html  // the site's default homepage
+
+    localized-files/
+
+        // matches requests from Argentina with a language preference of `es` or `es-foo` (mimics behavior of `es-ar` header tag)
+        es_ar/
+            index.html
+
+        // matches requests from Spain with a language preference of `es` or `es-foo` (mimics behavior of `es-es` header tag)
+        es_es/
+            index.html
+
+        // matches requests from Mexico with a language preference of `es` or `es-foo` (mimics behavior of `es-mx` header tag)
+        es_mx/
+            index.html
+
+        // matches requests from any other country with a language preference of `es` or `es-foo` (mimics behavior of `es-419` header tag)
+        es_ALL/
+            index.html</pre>  
+</li> </ul> <h2 id="priority-order">Priority order for "i18n content"</h2> <p>If you set up i18n rewrites, Hosting serves content based on the following priority order:</p> <ol> <li><p>Reserved namespaces that begin with a <code translate="no" dir="ltr">/__/*</code> path segment</p></li> <li><p>Configured <a href="full-config#redirects">redirects</a></p></li> <li>
+<p>Exact-match static content</p> <ol> <li><p>Language code + Country code (for example, content from <code translate="no" dir="ltr">fr_ca/</code>)<br> The order follows the quality values for each language in the request's <code translate="no" dir="ltr">Accept-Language</code> header.</p></li> <li><p>Country code only (for example, content from <code translate="no" dir="ltr">ALL_ca/</code>)</p></li> <li><p>Language code only (for example, content from <code translate="no" dir="ltr">fr/</code> or <code translate="no" dir="ltr">es_ALL/</code>)<br> The order follows the quality values for each language in the request's <code translate="no" dir="ltr">Accept-Language</code> header.</p></li> <li><p>"Default" exact-match static content<br> This is content that's outside the "i18n content" directory, like at the root of the <code translate="no" dir="ltr">public</code> directory.</p></li> </ol>
+</li> <li><p>Configured <a href="full-config#rewrites">rewrites</a></p></li> <li>
+<p>404 handling</p> <ol> <li><p>i18n 404 pages<br> This follows the same priority order listed above for exact-match static content.</p></li> <li><p><a href="full-config#404">Custom 404</a> page</p></li> <li><p>Default 404 page (provided by Firebase)</p></li> </ol>
+</li> </ol> <h3 id="priority-order-example">Example for priority order</h3> <p>Let's continue our example from above. We'll use the same example directory and an example request.</p> <ul> <li>
+<p><strong>Example local project directory with an "i18n content" directory (called <code translate="no" dir="ltr">localized-files</code>)</strong></p> 
+<pre>public/
+    index.html  // your site's default homepage
+    404.html  // your site's custom 404 page
+
+    localized-files/
+        ALL_ca/
+            index.html
+        es_ALL/
+            index.html
+            404.html
+        fr/
+            index.html
+            404.html
+        fr_ca/
+            index.html</pre>
+</li> <li>
+<p><strong>Example request information</strong></p> <ul> <li><p>Language codes: <code translate="no" dir="ltr">fr</code>, <code translate="no" dir="ltr">en</code> (French, then English)<br> The language codes are ordered based on quality values in the <code translate="no" dir="ltr">Accept-Language</code> header.</p></li> <li><p>Country code: <code translate="no" dir="ltr">ca</code> (Canada)</p></li> </ul>
+</li> </ul> <p>According to the exact-match priority order and the quality values for the language preferences, Hosting will search the directories for a requested page in the following order.</p> <ol> <li><p><code translate="no" dir="ltr">public/localized-files/fr_ca/</code></p></li> <li><p><code translate="no" dir="ltr">public/localized-files/en_ca/</code></p></li> <li><p><code translate="no" dir="ltr">public/localized-files/ALL_ca/</code></p></li> <li><p><code translate="no" dir="ltr">public/localized-files/fr_ALL/</code></p></li> <li><p><code translate="no" dir="ltr">public/localized-files/fr/</code></p></li> <li><p><code translate="no" dir="ltr">public/localized-files/en_ALL/</code></p></li> <li><p><code translate="no" dir="ltr">public/localized-files/en/</code></p></li> <li><p><code translate="no" dir="ltr">public/</code></p></li> <li><p>404 handling</p></li> </ol> <p><strong>Which page will be served to the user?</strong></p> <ul> <li>
+<p>Requested page: <code translate="no" dir="ltr">index.html</code></p> <p><section class="expandable"> <p class="showalways">Answer</p></section></p> <blockquote> <p><code translate="no" dir="ltr">index.html</code> from the <code translate="no" dir="ltr">fr_ca/</code> subfolder</p> <p>Since Hosting searches the <code translate="no" dir="ltr">fr_ca/</code> subfolder first, it will find the exact-match for <code translate="no" dir="ltr">index.html</code> in that subfolder.</p> </blockquote> 
+</li> <li>
+<p>Requested page: <code translate="no" dir="ltr">awesome-page.html</code></p> <p><section class="expandable"> <p class="showalways">Answer</p></section></p> <blockquote> <p><code translate="no" dir="ltr">404.html</code> from the <code translate="no" dir="ltr">fr/</code> subfolder</p> <p>Hosting first searches the entire directory (including all the "i18n content" subfolders and root directory) in priority order for an exact-match, but there's not an exact-match for <code translate="no" dir="ltr">awesome-page.html</code>.</p> <p>So, Hosting will start its 404 handling, which follows the same i18n priority order as exact-match searches. The <code translate="no" dir="ltr">fr/</code> subfolder is the first subfolder searched that contains a 404 page.</p> </blockquote> 
+</li> </ul> <p>Note the following about this search-and-serve of the "i18n content" directory:</p> <ul> <li><p>The <code translate="no" dir="ltr">localized-files/</code> directory doesn't actually contain <code translate="no" dir="ltr">en_ca/</code>, <code translate="no" dir="ltr">en_ALL/</code>, or <code translate="no" dir="ltr">en/</code> subfolders, so Hosting will just skip down the priority list until it finds a matching subfolder for the request's language-country combination.</p></li> <li><p>Even though the <code translate="no" dir="ltr">localized-files/</code> directory contains an <code translate="no" dir="ltr">es_ALL/</code> subfolder, the example <em>request</em> above doesn't include an <code translate="no" dir="ltr">es</code> or <code translate="no" dir="ltr">es-foo</code> language code, so Hosting will not search for "i18n content" that matches <code translate="no" dir="ltr">es</code>.</p></li> <li><p>Subfolders called <code translate="no" dir="ltr">fr/</code> and <code translate="no" dir="ltr">fr_ALL/</code> are equivalent from the perspective of a user's country and language preferences. However, if both subfolders exist, Hosting will serve <code translate="no" dir="ltr">fr_ALL/</code> content before <code translate="no" dir="ltr">fr/</code> content.</p></li> </ul> <h2 id="cookie-overrides">Override language and country codes with cookies</h2> <p>You can change what content is served by using cookies to override the country and language headers.</p> <p>Here are some ways you can use cookie overrides:</p> <ul> <li><p>Test a feature with different language/country combinations to check which content is served.</p></li> <li><p>Enable your users to change the content that they see. For example, you can implement a language picker, then set the user's <code translate="no" dir="ltr">firebase-language-override</code> cookie accordingly.</p></li> </ul> <p>To configure cookie overrides, set cookies with both or either of these names: <code translate="no" dir="ltr">firebase-country-override</code> and <code translate="no" dir="ltr">firebase-language-override</code>. For example, the following JavaScript code snippet overrides the country code to be <code translate="no" dir="ltr">ca</code> and the <code translate="no" dir="ltr">Accept-Language</code> header to be <code translate="no" dir="ltr">fr,en</code>:</p> 
+<pre>document.cookie = "firebase-country-override=ca";
+document.cookie = "firebase-language-override=fr,en";
+</pre> <p>Language cookie overrides must be a comma-separated list of language codes in order of preference, without subtags or quality values.</p> <p>Cookie overrides are not reflected in logs.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/hosting/i18n-rewrites" class="_attribution-link">https://firebase.google.com/docs/hosting/i18n-rewrites</a>
+  </p>
+</div>

@@ -1,0 +1,59 @@
+<h1>auth:import and auth:export</h1> <ul> <li><p>The <a href="#auth-import"><code translate="no" dir="ltr">auth:import</code></a> command imports user accounts into Firebase projects.</p></li> <li><p>The <a href="#auth-export"><code translate="no" dir="ltr">auth:export</code></a> command exports user accounts to JSON and CSV files.</p></li> </ul> <h2 id="password_hash_parameters">Password hash parameters</h2> <p>To determine the password hash parameters used for your project navigate to the <strong>Authentication</strong> &gt; <strong>Users</strong> section of the Firebase console and click the three dots icon above the list of users. You will see a dialog with a list of password hash parameters you can use with the <code translate="no" dir="ltr">auth:import</code> and <code translate="no" dir="ltr">auth:export</code> commands:</p> 
+<pre>hash_config {
+  algorithm: SCRYPT,
+  base64_signer_key: &lt;...sensitive...&gt;,
+  base64_salt_separator: &lt;...sensitive...&gt;,
+  rounds: 8,
+  mem_cost: 14,
+}
+</pre> <p>These values are sensitive, so store them with care. Most Firebase projects use <code translate="no" dir="ltr">SCRYPT</code>, a <a href="https://github.com/firebase/scrypt">modified version of the scrypt hashing algorithm</a>, which is the default for new projects.</p> <h2 id="auth-import">auth:import</h2> 
+<pre>
+firebase auth:import ACCOUNT_FILE    \
+    --hash-algo=HASH_ALGORITHM         \
+    --hash-key=KEY                     \
+    --salt-separator=SALT_SEPARATOR    \
+    --rounds=ROUNDS                    \
+    --mem-cost=MEM_COST                \
+    --parallelization=PARALLELIZATION  \
+    --block-size=BLOCK_SIZE            \
+    --dk-len=DK_LEN                    \
+    --hash-input-order=HASH_INPUT_ORDER
+</pre> <table class="responsive"> <tr><th colspan="2">Parameters</th></tr> <tr> <td>account_file</td> <td>The CSV or JSON file that contains the user accounts to import. See <a href="#file_format">File format</a>.</td> </tr> <tr> <td>hash-algo</td> <td>The algorithm used to hash passwords in the user account file.<br> Required to import accounts with password fields. One of the following values: <code translate="no" dir="ltr">BCRYPT</code>, <code translate="no" dir="ltr">SCRYPT</code>, <code translate="no" dir="ltr">STANDARD_SCRYPT</code>, <code translate="no" dir="ltr">HMAC_SHA512</code>, <code translate="no" dir="ltr">HMAC_SHA256</code>, <code translate="no" dir="ltr">HMAC_SHA1</code>, <code translate="no" dir="ltr">HMAC_MD5</code>, <code translate="no" dir="ltr">MD5</code>, <code translate="no" dir="ltr">SHA512</code>, <code translate="no" dir="ltr">SHA256</code>, <code translate="no" dir="ltr">SHA1</code>, <code translate="no" dir="ltr">PBKDF_SHA1</code>, <code translate="no" dir="ltr">PBKDF2_SHA256</code>.</td> </tr> <tr> <td>hash-key</td> <td>Key used to hash passwords.<br> Required for the <code translate="no" dir="ltr">SCRYPT</code>, <code translate="no" dir="ltr">HMAC_SHA512</code>, <code translate="no" dir="ltr">HMAC_SHA256</code>, <code translate="no" dir="ltr">HMAC_SHA1</code>, and <code translate="no" dir="ltr">HMAC_MD5</code> algorithms. This argument must be formatted as a <strong>base64-encoded</strong> string.</td> </tr> <tr> <td>salt-separator</td> <td>Salt separator which will be appended to salt when verifying password.<br> Optional for all algorithms. This argument must be formatted as a <strong>base64-encoded</strong> string.</td> </tr> <tr> <td>rounds</td> <td>The number of rounds used to hash passwords.<br> Required for the <code translate="no" dir="ltr">SCRYPT</code>, <code translate="no" dir="ltr">MD5</code>, <code translate="no" dir="ltr">SHA512</code>, <code translate="no" dir="ltr">SHA256</code>, <code translate="no" dir="ltr">SHA1</code>, <code translate="no" dir="ltr">PBKDF_SHA1</code> and <code translate="no" dir="ltr">PBKDF2_SHA256</code> algorithms.</td> </tr> <tr> <td>mem-cost</td> <td>This parameter represents either the memory cost required for the <code translate="no" dir="ltr">SCRYPT</code> algorithm OR the CPU/memory cost required for the <code translate="no" dir="ltr">STANDARD_SCRYPT</code> algorithm. </td> </tr> <tr> <td>parallelization</td> <td>The parallelization of the hashing algorithm.<br> Required for the <code translate="no" dir="ltr">STANDARD_SCRYPT</code> algorithm.</td> </tr> <tr> <td>block-size</td> <td>The block size (normally is 8) of the hashing algorithm.<br> Required for the <code translate="no" dir="ltr">STANDARD_SCRYPT</code> algorithm.</td> </tr> <tr> <td>dk-len</td> <td>The derived key length of the hashing algorithm.<br> Required for the <code translate="no" dir="ltr">STANDARD_SCRYPT</code> algorithm.</td> </tr> <tr> <td>hash-input-order</td> <td>The order of password and salt.<br> Possible values are <code translate="no" dir="ltr">SALT_FIRST</code> and <code translate="no" dir="ltr">PASSWORD_FIRST</code>. This flag applies to <code translate="no" dir="ltr">SHA512</code>, <code translate="no" dir="ltr">SHA256</code>, <code translate="no" dir="ltr">SHA1</code>, <code translate="no" dir="ltr">MD5</code>, <code translate="no" dir="ltr">HMAC_SHA512</code>, <code translate="no" dir="ltr">HMAC_SHA256</code>, <code translate="no" dir="ltr">HMAC_SHA1</code>, and <code translate="no" dir="ltr">HMAC_MD5</code>.</td> </tr> </table> <aside class="note"><strong>Note:</strong><span> <code translate="no" dir="ltr">STANDARD_SCRYPT</code> is the standard <a href="https://en.wikipedia.org/wiki/Scrypt">scrypt algorithm</a>. <code translate="no" dir="ltr">SCRYPT</code> is Firebase Auth internal modified version of scrypt. When you migrate from one Firebase project to another, you still need to specify <code translate="no" dir="ltr">SCRYPT</code> in <code translate="no" dir="ltr">auth:import</code>.</span></aside> <h2 id="auth-export">auth:export</h2> 
+<pre>
+firebase auth:export ACCOUNT_FILE --format=FILE_FORMAT
+</pre> <aside class="note"><strong>Note:</strong><span> the <code translate="no" dir="ltr">auth:export</code> command only exports passwords hashed using the scrypt algorithm, which is used by the Firebase backend. Account records with passwords hashed using other algorithms are exported with empty <code translate="no" dir="ltr">passwordHash</code> and <code translate="no" dir="ltr">salt</code> fields. Projects might have passwords hashed with other algorithms after importing user records from a file, since passwords are only re-hashed with scrypt when an imported user signs in for the first time.</span></aside> <table class="responsive"> <tr><th colspan="2">Parameters</th></tr> <tr> <td>account_file</td> <td>The CSV or JSON file to export to. See <a href="#file_format">File format</a>.</td> </tr> <tr> <td>file_format</td> <td>
+<b>Optional.</b> The file format to export: either CSV or JSON.<br> If the file name specified in the <code translate="no" dir="ltr">account_file</code> parameter ends with <code translate="no" dir="ltr">.csv</code> or <code translate="no" dir="ltr">.json</code>, that format is used and this parameter is ignored. </td> </tr> </table> <h2 id="file_format">File format</h2> <p>The user account file can be formatted as <a href="#CSV">CSV</a> or <a href="#JSON">JSON</a>.</p> <h3 id="CSV">CSV</h3> <p>A CSV user account file has the following format:</p> <table> <thead> <tr> <th>Column number</th> <th>Field description</th> <th>Field type</th> <th>Comments</th> </tr> </thead> <tbody> <tr> <td>1</td> <td>UID</td> <td>String</td> <td>Required<br>This ID should be unique among all accounts in your Firebase projects. If you import an account with a UID that already exists, then the account will be overwritten.</td> </tr> <tr> <td>2</td> <td>Email</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>3</td> <td>Email Verified</td> <td>Boolean</td> <td>Optional</td> </tr> <tr> <td>4</td> <td>Password Hash</td> <td>String</td> <td>Optional<br>A base64 encoded string. This field requires the caller to have <a href="../projects/iam/roles-basic">Editor or Owner role</a>.</td> </tr> <tr> <td>5</td> <td>Password Salt</td> <td>String</td> <td>Optional<br>A base64 encoded string. This field requires the caller to have <a href="../projects/iam/roles-basic">Editor or Owner role</a>.</td> </tr> <tr> <td>6</td> <td>Name</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>7</td> <td>Photo URL</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>8</td> <td>Google ID</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>9</td> <td>Google Email</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>10</td> <td>Google Display Name</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>11</td> <td>Google Photo URL</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>12</td> <td>Facebook ID</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>13</td> <td>Facebook Email</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>14</td> <td>Facebook Display Name</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>15</td> <td>Facebook Photo URL</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>16</td> <td>Twitter ID</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>17</td> <td>Twitter Email</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>18</td> <td>Twitter Display Name</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>19</td> <td>Twitter Photo URL</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>20</td> <td>GitHub ID</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>21</td> <td>GitHub Email</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>22</td> <td>GitHub Display Name</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>23</td> <td>GitHub Photo URL</td> <td>String</td> <td>Optional</td> </tr> <tr> <td>24</td> <td>User Creation Time</td> <td>Long</td> <td>Optional<br>Epoch Unix Timestamp in milliseconds.</td> </tr> <tr> <td>25</td> <td>Last Sign-In Time</td> <td>Long</td> <td>Optional<br>Epoch Unix Timestamp in milliseconds.</td> </tr> <tr> <td>26</td> <td>Phone Number</td> <td>String</td> <td>Optional</td> </tr> </tbody> </table> <p>If you leave an optional value unspecified, ensure that you still include an empty field for the value. An empty field can be any number of space characters.</p> <p>For example, the following line represents a user account:</p> 
+<pre>111, test@test.org, false, Jlf7onfLbzqPNFP/1pqhx6fQF/w=, c2FsdC0x, Test User, http://photo.com/123, , , , , 123, test@test.org, Test FB User, http://photo.com/456, , , , , , , , , 1486324027000, 1486324027000
+</pre> <h3 id="JSON">JSON</h3> <p>A JSON user account file has the following format:</p> 
+<pre>{
+  "users": [
+    {
+      "localId": UID,
+      "email": EMAIL_ADDRESS
+      "emailVerified": EMAIL_VERIFIED,
+      "passwordHash": BASE64_ENCODED_PASSWORD_HASH,
+      "salt": BASE64_ENCODED_PASSWORD_SALT,
+      "displayName": NAME,
+      "photoUrl": PHOTO_URL,
+      "createdAt": CREATED_AT_IN_MILLIS,
+      "lastSignedInAt": LAST_SIGNEDIN_AT_IN_MILLIS,
+      "phoneNumber": PHONE_NUMBER
+      "providerUserInfo": [
+        {
+          "providerId": PROVIDER_ID,
+          "rawId": PROVIDER_UID,
+          "email":  PROVIDER_EMAIL,
+          "displayName": PROVIDER_NAME,
+          "photoUrl": PROVIDER_PHOTO_URL
+        },
+        ...
+      ]
+    },
+    ...
+  ]
+}</pre> <p>Replace <var translate="no">PROVIDER_ID</var> with one of the following values:</p> <ul> <li><code translate="no" dir="ltr">google.com</code></li> <li><code translate="no" dir="ltr">facebook.com</code></li> <li><code translate="no" dir="ltr">github.com</code></li> <li><code translate="no" dir="ltr">twitter.com</code></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cli/auth-import" class="_attribution-link">https://firebase.google.com/docs/cli/auth-import</a>
+  </p>
+</div>

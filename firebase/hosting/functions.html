@@ -1,0 +1,127 @@
+<h1>Serve dynamic content and host microservices with Cloud Functions</h1>  <p>Pair Cloud Functions with Firebase Hosting to generate and serve your dynamic content or build REST APIs as microservices.</p> <p><a href="../functions">Cloud Functions for Firebase</a> lets you automatically run backend code in response to HTTPS requests. Your code is stored in Google's cloud and runs in a managed environment. There's no need to manage and scale your own servers.</p> <p><strong>For example use cases and samples for Cloud Functions integrated with Firebase Hosting, visit our <a href="serverless-overview">serverless overview</a>.</strong></p> <h2 id="connect-functions-to-hosting">Connect Cloud Functions to Firebase Hosting</h2> <p>This section provides a walk-through example for connecting a function to Firebase Hosting.</p> <p>Note that to improve the performance of serving dynamic content, you can optionally tune your <a href="manage-cache">cache settings</a>.</p> <h3 id="set-up-functions">
+<strong>Step 1:</strong> Set up Cloud Functions</h3> <ol> <li>
+<p>Make sure that you have the latest version of the Firebase CLI and that you've initialized Firebase Hosting.</p> <p>For detailed instructions about installing the CLI and initializing Hosting, see the <a href="quickstart">Get Started guide for Hosting</a>.</p>
+</li> <li>
+<p>Make sure that you've set up Cloud Functions:</p> <ul> <li><p>If you've <em>already</em> set up Cloud Functions, you can proceed to <a href="#create-test-function">Step 2: Create and test an HTTPS function</a>.</p></li> <li>
+<p>If you've <em>not</em> set up Cloud Functions:</p> <ol> <li>
+<p>Initialize Cloud Functions by running the following command from the root of your project directory:</p> 
+<pre>firebase init functions</pre>
+</li> <li><p>When prompted, select JavaScript (this walk-through example uses JS).</p></li> <li><p>Check that you have a <code translate="no" dir="ltr">functions</code> directory in your local project directory (created by the Firebase command you just ran). This <code translate="no" dir="ltr">functions</code> directory is where the code for Cloud Functions lives.</p></li> </ol>
+</li> </ul>
+</li> </ol> <h3 id="create-test-function">
+<strong>Step 2:</strong> Create and test an HTTPS function for your Hosting site</h3> <ol> <li><p>Open <code translate="no" dir="ltr">/functions/index.js</code> in your favorite editor.</p></li> <li>
+<p>Replace the file's contents with the following code.</p> <p>This code creates an HTTPS function (named <code translate="no" dir="ltr">bigben</code>) that replies to HTTPS requests with a <code translate="no" dir="ltr">BONG</code> for each hour of the day, just like a clock.</p> 
+<pre>const functions = require('firebase-functions/v1');
+
+exports.bigben = functions.https.onRequest((req, res) =&gt; {
+  const hours = (new Date().getHours() % 12) + 1  // London is UTC + 1hr;
+  res.status(200).send(`&lt;!doctype html&gt;
+    &lt;head&gt;
+      &lt;title&gt;Time&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      ${'BONG '.repeat(hours)}
+    &lt;/body&gt;
+  &lt;/html&gt;`);
+});
+</pre>
+</li> <li>
+<p>Test your functions locally using the <a href="../emulator-suite">Firebase Local Emulator Suite</a>.</p> <ol> <li>
+<p>From the root of your local project directory, run the following command:</p> 
+<pre>firebase emulators:start</pre>
+</li> <li><p>Access the function via the local URL returned by the CLI, for example: <code translate="no" dir="ltr"><nobr>http://localhost:5001/<var translate="no">PROJECT_ID</var>/us-central1/bigben</nobr></code>.</p></li> </ol>
+</li> </ol> <p>Visit the <a href="../functions/http-events">Cloud Functions documentation</a> to learn more about HTTPS requests.</p> <p>The next step walks you through how to access this HTTPS function <em>from a Firebase Hosting URL</em> so that it can generate dynamic content for your Firebase-hosted site.</p> <h3 id="direct-requests-to-function">
+<strong>Step 3:</strong> Direct HTTPS requests to your function</h3> <p>With <a href="full-config#rewrites">rewrite rules</a>, you can direct requests that match specific patterns to a single destination. The following steps show you how to direct all requests from the path <code translate="no" dir="ltr">../bigben</code> on your Hosting site to execute the <code translate="no" dir="ltr">bigben</code> function.</p> <ol> <li><p>Open your <a href="../cli#the_firebasejson_file"><code translate="no" dir="ltr">firebase.json</code> file</a>.</p></li> <li>
+<p>Add the following <code translate="no" dir="ltr">rewrite</code> configuration under the <code translate="no" dir="ltr">hosting</code> section:</p> 
+<pre>"hosting": {
+  // ...
+
+  // Add the "rewrites" attribute within "hosting"
+  "rewrites": [ {
+    "source": "/bigben",
+    "function": {
+      "functionId": "bigben",
+      "region": "us-central1"  // optional (see note below)
+      "pinTag": true           // optional (see note below)
+    }
+  } ]
+}
+</pre>
+</li> <li>
+<p>Confirm that your redirect works as expected by testing again with the Firebase emulators.</p> <ol> <li>
+<p>From the root of your local project directory, run the following command:</p> 
+<pre>firebase emulators:start</pre>
+</li> <li><p>Visit the locally hosted URL for your site as returned by the CLI (usually <code translate="no" dir="ltr">localhost:5000</code>), but append the URL with <code translate="no" dir="ltr">bigben</code>, like so: <code translate="no" dir="ltr"><nobr>http://localhost:5000/bigben</nobr></code></p></li> </ol>
+</li> <li><p>Iterate on your function and its functionality for your site. Use the Firebase emulators to test these iterations.</p></li> </ol> <p><section class="expandable" id="region-in-rewrites"> <p class="showalways" id="region-in-rewrites"><b>How <code translate="no" dir="ltr">region</code> works within the <code translate="no" dir="ltr">function</code> block</b></p></section></p> <blockquote> <p>If <code translate="no" dir="ltr">region</code> is omitted from a <code translate="no" dir="ltr">function</code> block of the <code translate="no" dir="ltr">hosting.rewrites</code> config, the Firebase CLI attempts to automatically detect the region from the function's source code which, if unspecified, defaults to <code translate="no" dir="ltr">us-central1</code>. If the function's source code is unavailable, the CLI attempts to detect the region from the deployed function. If the function is in multiple regions, the CLI requires <code translate="no" dir="ltr">region</code> to be specified in the <code translate="no" dir="ltr">hosting.rewrites</code> config.</p> </blockquote>  <p><section class="expandable" id="pintag-in-rewrites-to-function"> <p class="showalways" id="pintag-in-rewrites-to-function"><b>How <code translate="no" dir="ltr">pinTag</code> works within the <code translate="no" dir="ltr">function</code> block</b></p></section></p> <blockquote> <p>The <code translate="no" dir="ltr">pinTag</code> feature is only available in Cloud Functions for Firebase (2nd gen). With this feature, you can ensure that each function for generating your site's dynamic content is kept in sync with your static Hosting resources and Hosting config. Also, this feature allows you to preview your rewrites to functions on Hosting preview channels.</p> <p>If you add <code translate="no" dir="ltr">"pinTag": true</code> to a <code translate="no" dir="ltr">function</code> block of the <code translate="no" dir="ltr">hosting.rewrites</code> config, then the "pinned" function will be deployed along with your static Hosting resources and configuration, even when running <code translate="no" dir="ltr"><nobr>firebase deploy --only hosting</nobr></code>. If you roll back a version of your site, the "pinned" function is also rolled back.</p> <aside class="note"><strong>Note:</strong><span> If you add a <code translate="no" dir="ltr">pinTag</code> to an <em>existing</em> rewrite, you must first deploy the updated rewrite to your "live" channel. After that deploy, you can then preview changes to your function's code in Hosting preview channels without affecting production.</span></aside> <p>This feature relies on <a href="https://cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration#tags" class="external">Cloud Run tags</a>, which have a limit of 1000 tags per service and 2000 tags per region. This means that after hundreds of deploys, the oldest versions of a site may stop working.</p> </blockquote>  <p>For the best performance, colocate your functions with Hosting by choosing one of the following regions:</p> <ul> <li><code translate="no" dir="ltr">us-west1</code></li> <li><code translate="no" dir="ltr">us-central1</code></li> <li><code translate="no" dir="ltr">us-east1</code></li> <li><code translate="no" dir="ltr">europe-west1</code></li> <li><code translate="no" dir="ltr">asia-east1</code></li> </ul> <aside class="note"><strong>Note:</strong><span> Firebase Hosting is subject to a 60-second request timeout. Even if you configure your HTTPS function with a longer request timeout, you'll still receive an HTTPS status code <code translate="no" dir="ltr">504</code> (request timeout) if your function requires more than 60 seconds to run. To support dynamic content that requires longer compute time, consider using an <a href="https://cloud.google.com/appengine/docs/flexible/" class="external">App Engine flexible environment</a>.</span></aside> <p>Visit the Hosting configuration page for <a href="full-config#rewrites">more details about rewrite rules</a>. You can also learn about the <a href="full-config#hosting_priority_order">priority order of responses</a> for various Hosting configurations.</p> <p>Note that to improve the performance of serving dynamic content, you can optionally tune your <a href="manage-cache">cache settings</a>.</p> <h3 id="deploy-function">
+<strong>Step 4:</strong> Deploy your function</h3> <p>Once your function is working as desired in the emulator, you can proceed to deploying, testing, and running it with <em>real</em> project resources. This is a good time to consider setting runtime options to <a href="../functions/manage-functions#min-max-instances">control scaling behavior</a> for functions running in production.</p> <aside class="note"><strong>Note:</strong><span> To deploy to a runtime environment of Node.js 10 and higher, your Firebase project must be on the <a href="https://firebase.google.com/pricing">Blaze pricing plan</a>. For more details, refer to <a href="../functions/faq-and-troubleshooting#functions-pricing">Cloud Functions pricing</a>.</span></aside> <ol> <li>
+<p>Deploy your function as well as your Hosting content and config to your site by running the following command from the root of your local project directory:</p> 
+<pre>firebase deploy --only functions,hosting</pre>
+</li> <li>
+<p>Access your live site and your function at the following URLs:</p> <ul> <li><p>Your Firebase subdomains:<br> <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.web.app/bigben</code> and <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebaseapp.com/bigben</code></p></li> <li><p>Any connected <a href="custom-domain">custom domains</a>:<br> <code translate="no" dir="ltr"><var translate="no">CUSTOM_DOMAIN</var>/bigben</code></p></li> </ul>
+</li> </ol> <aside class="caution"><strong>Caution:</strong><span> New HTTP and HTTP callable functions deployed with any Firebase CLI lower than version 7.7.0 are private by default and throw HTTP 403 errors when invoked. Either explicitly <a href="https://cloud.google.com/functions/docs/securing/managing-access-iam#allowing_unauthenticated_http_function_invocation">make these functions public</a> or <a href="../cli#setup_update_cli">update your Firebase CLI</a> before you deploy any new functions.</span></aside> <h2 id="use_a_web_framework">Use a web framework</h2> <p>You can use web frameworks, like <a href="https://expressjs.com/" class="external">Express.js</a>, in Cloud Functions to serve your app's dynamic content and write complex web apps more easily.</p> <aside class="note">Firebase Hosting also supports HTTPS requests to Cloud Run containers. Learn more about this serverless, highly scalable service in the <a href="cloud-run">Hosting paired with Cloud Run documentation</a>. </aside> <p>The following section provides a walk-through example for using Express.js with Firebase Hosting and Cloud Functions.</p> <ol> <li>
+<p>Install Express.js in your local project by running the following command from your <code translate="no" dir="ltr">functions</code> directory:</p> 
+<pre>npm install express --save</pre>
+</li> <li>
+<p>Open your <code translate="no" dir="ltr">/functions/index.js</code> file, then import and initialize Express.js:</p> 
+<pre>const functions = require('firebase-functions/v1');
+const express = require('express');
+const app = express();</pre>
+</li> <li>
+<p>Add the following two endpoints:</p> <ol> <li>
+<p>Add the first endpoint to serve the index of our website at <code translate="no" dir="ltr">/</code>.</p> <aside class="note"><strong>Note:</strong><span> This walk-through example requires a couple of static files (<a href="https://github.com/firebase/functions-samples/tree/Node-8/quickstarts/big-ben/public" class="external">script.js and style.css</a>).</span></aside>
+<pre>app.get('/', (req, res) =&gt; {
+  const date = new Date();
+  const hours = (date.getHours() % 12) + 1;  // London is UTC + 1hr;
+  res.send(`
+    &lt;!doctype html&gt;
+    &lt;head&gt;
+      &lt;title&gt;Time&lt;/title&gt;
+      &lt;link rel="stylesheet" href="/style.css"&gt;
+      &lt;script src="/script.js"&gt;&lt;/script&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+      &lt;p&gt;In London, the clock strikes:
+        &lt;span id="bongs"&gt;${'BONG '.repeat(hours)}&lt;/span&gt;&lt;/p&gt;
+      &lt;button onClick="refresh(this)"&gt;Refresh&lt;/button&gt;
+    &lt;/body&gt;
+  &lt;/html&gt;`);
+});
+</pre>
+</li> <li>
+<p>And another endpoint to return the <code translate="no" dir="ltr">BONG</code> count as an API, in JSON format, under <code translate="no" dir="ltr">/api</code>:</p> 
+<pre>app.get('/api', (req, res) =&gt; {
+  const date = new Date();
+  const hours = (date.getHours() % 12) + 1;  // London is UTC + 1hr;
+  res.json({bongs: 'BONG '.repeat(hours)});
+});
+</pre>
+</li> </ol>
+</li> <li>
+<p>Export the Express.js app as an HTTPS function:</p> 
+<pre>exports.app = functions.https.onRequest(app);</pre>
+</li> <li>
+<p>In your <code translate="no" dir="ltr">firebase.json</code> file, direct all requests to the <code translate="no" dir="ltr">app</code> function. This rewrite allows Express.js to serve the different subpath that we configured (in this example, <code translate="no" dir="ltr">/</code> and <code translate="no" dir="ltr">/api</code>).</p> 
+<pre>{
+ "hosting": {
+   // ...
+
+   // Add the "rewrites" attribute within "hosting"
+   "rewrites": [ {
+     "source": "**",
+     "function": "app"
+   } ]
+ }
+}</pre>
+</li> </ol> <aside class="note"><strong>Note:</strong><span> The static files in the <a href="full-config#specify-files-to-deply"><code translate="no" dir="ltr">public</code> directory</a> take precedence over the rewrites, so any static files will be served alongside the Cloud Functions endpoints.</span></aside> <h3 id="add_middleware">Add middleware</h3> <p>Continuing our example, now that you're using Express.js, you can add <a href="https://expressjs.com/en/resources/middleware.html" class="external">Express.js middleware</a> in the typical way. For example, you can enable <a href="https://expressjs.com/en/resources/middleware/cors.html" class="external">CORS</a> requests on our endpoints.</p> <ol> <li>
+<p>Install the <code translate="no" dir="ltr">cors</code> middleware by running the following command:</p> 
+<pre>npm install --save cors</pre>
+</li> <li>
+<p>Open your <code translate="no" dir="ltr">/functions/index.js</code> file, then add <code translate="no" dir="ltr">cors</code> to your Express.js app, like so:</p> 
+<pre>const cors = require('cors')({origin: true});
+app.use(cors);</pre>
+</li> </ol> <p>Visit the <a href="../functions/http-events">Cloud Functions documentation</a> to learn more about using Firebase with Express apps and middleware modules.</p> <h2 id="next_steps">Next steps</h2> <ul> <li><p><a href="manage-cache">Set up caching</a> for your dynamic content on a global CDN.</p></li> <li><p>Interact with other Firebase services using the <a href="../functions/get-started#import-the-required-modules-and-initialize-an-app">Firebase Admin SDK</a>.</p></li> <li><p>Review the <a href="https://firebase.google.com/pricing#cloud-functions">pricing</a> and the <a href="../functions/quotas">quotas and limits</a> for Cloud Functions.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/hosting/functions" class="_attribution-link">https://firebase.google.com/docs/hosting/functions</a>
+  </p>
+</div>

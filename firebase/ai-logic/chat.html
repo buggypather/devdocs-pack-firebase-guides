@@ -1,0 +1,761 @@
+<h1>Build multi-turn conversations (chat) using the Gemini API</h1> <p>Using the <span class='\"notranslate\"'>Gemini API</span>, you can build freeform conversations across multiple turns. The <span class='\"notranslate\"'>Firebase AI Logic</span> SDK simplifies the process by managing the state of the conversation, so unlike with <code translate="no" dir="ltr">generateContent()</code> (or <code translate="no" dir="ltr">generateContentStream()</code>), you don't have to store the conversation history yourself.</p> <p><a href="#chat-prompt" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code for text-only chat</a> <a href="#iterative-image-editing" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code for iterative image editing</a> <a href="#streaming" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code for streamed responses</a> </p> <h2 id="before-you-begin">Before you begin</h2> 
+<table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>If you haven't already, complete the <a href="get-started">getting started guide</a>, which describes how to set up your Firebase project, connect your app to Firebase, add the SDK, initialize the backend service for your chosen <span class='\"notranslate\"'>Gemini API</span> provider, and create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> <p> <aside class="note">All our docs assume that you're using the <a href="https://firebase.google.com/support/releases">latest versions</a> of the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs. </aside> </p> For testing and iterating on your prompts, we recommend using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <h3 id="helpful-resources">Check out helpful resources</h3> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<h4 id="try_out_the_quickstart_app">Try out the quickstart app</h4> <p>Use the quickstart app to try out the SDK quickly and see a complete implementation of various use cases. Or use the quickstart app if you don't have your own Apple platforms app. To use the quickstart app, you'll need to <a href="get-started#set-up-firebase">connect it to a Firebase project</a>.</p> <p><a href="https://github.com/firebase/quickstart-ios/tree/main/firebaseai" class="button external">Go to the quickstart app</a> </p> <h4 id="watch_a_video_tutorial">Watch a video tutorial</h4>  <p>This video demonstrates how to implement chat with <span class='\"notranslate\"'>Firebase AI Logic</span> by building a real-world AI-powered meal planning app that allows users to chat with a kitchen chef about any recipes they'd like to prepare.</p> <p>You can also download and explore the codebase for the app in the video.</p> <p><a href="https://github.com/FirebaseExtended/firebase-video-samples/tree/main/firebase-ai-friendly-meals/apple" class="button external">View the codebase for the video's app</a> </p> <p><br> <br></p></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<h4 id="try_out_the_quickstart_app_2">Try out the quickstart app</h4> <p>Use the quickstart app to try out the SDK quickly and see a complete implementation of various use cases. Or use the quickstart app if you don't have your own Android app. To use the quickstart app, you'll need to <a href="get-started#set-up-firebase">connect it to a Firebase project</a>.</p> <p><a href="https://github.com/firebase/quickstart-android/tree/master/firebase-ai" class="button external">Go to the quickstart app</a> </p></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<h4 id="try_out_the_quickstart_app_3">Try out the quickstart app</h4> <p>Use the quickstart app to try out the SDK quickly and see a complete implementation of various use cases. Or use the quickstart app if you don't have your own Android app. To use the quickstart app, you'll need to <a href="get-started#set-up-firebase">connect it to a Firebase project</a>.</p> <p><a href="https://github.com/firebase/quickstart-android/tree/master/firebase-ai" class="button external">Go to the quickstart app</a> </p></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<h4 id="try_out_the_quickstart_app_4">Try out the quickstart app</h4> <p>Use the quickstart app to try out the SDK quickly and see a complete implementation of various use cases. Or use the quickstart app if you don't have your own web app. To use the quickstart app, you'll need to <a href="get-started#set-up-firebase">connect it to a Firebase project</a>.</p> <p><a href="https://github.com/firebase/quickstart-js/tree/master/ai/ai-react-app" class="button external">Go to the quickstart app</a> </p> <h4 id="watch_a_video_tutorial_2">Watch a video tutorial</h4>  <p>This video demonstrates how to implement chat with <span class='\"notranslate\"'>Firebase AI Logic</span> by building a real-world AI-powered meal planning app that allows users to chat with a kitchen chef about any recipes they'd like to prepare.</p> <p>You can also download and explore the codebase for the app in the video.</p> <p><a href="https://github.com/FirebaseExtended/firebase-video-samples/tree/main/firebase-ai-friendly-meals/web" class="button external">View the codebase for the video's app</a> </p> <p><br> <br></p></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<h4 id="try_out_the_quickstart_app_5">Try out the quickstart app</h4> <p>Use the quickstart app to try out the SDK quickly and see a complete implementation of various use cases. Or use the quickstart app if you don't have your own Flutter app. To use the quickstart app, you'll need to <a href="get-started#set-up-firebase">connect it to a Firebase project</a>.</p> <p><a href="https://github.com/firebase/flutterfire/tree/main/packages/firebase_ai/firebase_ai/example" class="button external">Go to the quickstart app</a> </p></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<h4 id="try_out_the_quickstart_app_6">Try out the quickstart app</h4> <p>Use the quickstart app to try out the SDK quickly and see a complete implementation of various use cases. Or use the quickstart app if you don't have your own Unity game. To use the quickstart app, you'll need to <a href="get-started#set-up-firebase">connect it to a Firebase project</a>.</p> <p><a href="https://github.com/firebase/quickstart-unity/tree/master/firebaseai/testapp" class="button external">Go to the quickstart app</a> </p></section> </div> <h2 id="chat-prompt">Build a text-only chat experience</h2> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>To build a multi-turn conversation (like chat), start off by initializing the chat by calling <code translate="no" dir="ltr">startChat()</code>. Then use <code translate="no" dir="ltr">sendMessage()</code> to send a new user message, which will also append the message and the response to the chat history.</p> <p>There are two possible options for <code translate="no" dir="ltr">role</code> associated with the content in a conversation:</p> <ul> <li><p><code translate="no" dir="ltr">user</code>: the role which provides the prompts. This value is the default for calls to <code translate="no" dir="ltr">sendMessage()</code>, and the function throws an exception if a different role is passed.</p></li> <li>
+<p><code translate="no" dir="ltr">model</code>: the role which provides the responses. This role can be used when calling <code translate="no" dir="ltr">startChat()</code> with existing <code translate="no" dir="ltr">history</code>.</p> <p>Note that for <code translate="no" dir="ltr">gemini-4-argon</code>, the <code translate="no" dir="ltr">gemini-3.x-flash</code> models (except for <code translate="no" dir="ltr">gemini-3.5-flash</code>), and <code translate="no" dir="ltr">gemini-3.5-flash-lite</code>, prefilling model turns is not supported. If the last non-empty turn in the request is a <code translate="no" dir="ltr">model</code> turn, the request fails with a 400 error.</p>
+</li> </ul> <aside class="note"><strong>Note:</strong><span> If you'd like to provide more initial context for the model to help steer its behavior based on your specific needs and use cases, consider <a href="system-instructions">setting system instructions</a>.</span></aside><div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/GenerativeModel#startchathistory:"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/Chat#sendmessage_:"><code translate="no" dir="ltr">sendMessage()</code></a> to send a new user message:</p> 
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+let model = ai.generativeModel(modelName: "gemini-3.8-flash")
+
+
+// Optionally specify existing chat history
+let history = [
+  ModelContent(role: "user", parts: "Hello, I have 2 dogs in my house."),
+  ModelContent(role: "model", parts: "Great to meet you. What would you like to know?"),
+]
+
+// Initialize the chat with optional chat history
+let chat = model.startChat(history: history)
+
+// To generate text output, call sendMessage and pass in the message
+let response = try await chat.sendMessage("How many paws are in my house?")
+print(response.text ?? "No text in response.")
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#startChat(kotlin.collections.List)"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/Chat"><code translate="no" dir="ltr">sendMessage()</code></a> to send a new user message:</p> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+                        .generativeModel("gemini-3.8-flash")
+
+
+// Initialize the chat
+val chat = model.startChat(
+  history = listOf(
+    content(role = "user") { text("Hello, I have 2 dogs in my house.") },
+    content(role = "model") { text("Great to meet you. What would you like to know?") }
+  )
+)
+
+val response = chat.sendMessage("How many paws are in my house?")
+print(response.text)
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/GenerativeModel#startChat(kotlin.collections.List)"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/Chat"><code translate="no" dir="ltr">sendMessage()</code></a> to send a new user message:</p> <sup><em>For Java, the methods in this SDK return a <a href="https://developer.android.com/guide/background/asynchronous/listenablefuture" class="external"><code translate="no" dir="ltr">ListenableFuture</code></a>.</em></sup> 
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+        .generativeModel("gemini-3.8-flash");
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+
+// (optional) Create previous chat history for context
+Content.Builder userContentBuilder = new Content.Builder();
+userContentBuilder.setRole("user");
+userContentBuilder.addText("Hello, I have 2 dogs in my house.");
+Content userContent = userContentBuilder.build();
+
+Content.Builder modelContentBuilder = new Content.Builder();
+modelContentBuilder.setRole("model");
+modelContentBuilder.addText("Great to meet you. What would you like to know?");
+Content modelContent = userContentBuilder.build();
+
+List&lt;Content&gt; history = Arrays.asList(userContent, modelContent);
+
+// Initialize the chat
+ChatFutures chat = model.startChat(history);
+
+// Create a new user message
+Content.Builder messageBuilder = new Content.Builder();
+messageBuilder.setRole("user");
+messageBuilder.addText("How many paws are in my house?");
+
+Content message = messageBuilder.build();
+
+// Send the message
+ListenableFuture&lt;GenerateContentResponse&gt; response = chat.sendMessage(message);
+Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;() {
+    @Override
+    public void onSuccess(GenerateContentResponse result) {
+        String resultText = result.getText();
+        System.out.println(resultText);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelstartchat"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://firebase.google.com/docs/reference/js/ai.chatsession#chatsessionsendmessage"><code translate="no" dir="ltr">sendMessage()</code></a> to send a new user message:</p> 
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+const model = getGenerativeModel(ai, { model: "gemini-3.8-flash" });
+
+
+async function run() {
+  const chat = model.startChat({
+    history: [
+      {
+        role: "user",
+        parts: [{ type: "text", text: "Hello, I have 2 dogs in my house." }],
+      },
+      {
+        role: "model",
+        parts: [{ type: "text", text: "Great to meet you. What would you like to know?" }],
+      },
+    ],
+    generationConfig: {
+      maxOutputTokens: 100,
+    },
+  });
+
+  const msg = "How many paws are in my house?";
+
+  const result = await chat.sendMessage(msg);
+
+  const text = result.response.text();
+  console.log(text);
+}
+
+run();
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>You can call <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/StartChatExtension/startChat.html" class="external"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/ChatSession/sendMessage.html" class="external"><code translate="no" dir="ltr">sendMessage()</code></a> to send a new user message:</p> 
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+final model =
+      FirebaseAI.googleAI().generativeModel(model: 'gemini-3.8-flash');
+
+
+// Initialize the chat with history
+final chat = model.startChat(
+  history: [
+    Content.text('Hello, I have 2 dogs in my house.'),
+    Content.model([const TextPart('Great to meet you. What would you like to know?')]),
+  ],
+);
+// Send a message to the chat
+final response = await chat.sendMessage(Content.text('How many paws are in my house?'));
+print(response.text);
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/generative-model#startchat"><code translate="no" dir="ltr">StartChat()</code></a> and <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/chat#sendmessageasync"><code translate="no" dir="ltr">SendMessageAsync()</code></a> to send a new user message:</p> 
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+var model = ai.GetGenerativeModel(modelName: "gemini-3.8-flash");
+
+
+// Optionally specify existing chat history
+var history = new [] {
+  ModelContent.Text("Hello, I have 2 dogs in my house."),
+  new ModelContent("model", new ModelContent.TextPart("Great to meet you. What would you like to know?")),
+};
+
+// Initialize the chat with optional chat history
+var chat = model.StartChat(history);
+
+// To generate text output, call SendMessageAsync and pass in the message
+var response = await chat.SendMessageAsync("How many paws are in my house?");
+UnityEngine.Debug.Log(response.Text ?? "No text in response.");
+</pre></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p> <h2 id="iterative-image-editing">Iterate and edit images using multi-turn chat</h2> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <aside class="special"><strong>Important:</strong><span> Image output is supported by the Gemini Nano Banana models (like <code translate="no" dir="ltr">gemini-nano-banana-2.1</code>), but it's <em>not</em> supported by the general-use <span class='\"notranslate\"'>Gemini</span> models (like <code translate="no" dir="ltr">gemini-4-argon</code> and <code translate="no" dir="ltr">gemini-3.8-flash</code>).</span></aside> <p>Using multi-turn chat, you can iterate with a Gemini Nano Banana model on the images that it generates or that you supply.</p> <p>Create a <code translate="no" dir="ltr">GenerativeModel</code> instance, include the response modality of <code translate="no" dir="ltr">IMAGE</code> in your model configuration, and call <code translate="no" dir="ltr">startChat()</code> and <code translate="no" dir="ltr">sendMessage()</code> to send new user messages.</p> <aside class="special"><strong>Important:</strong><span> If you're not familiar with the chat capability of the SDKs, we recommend reviewing the <a href="chat#chat-prompt">text-only chat example</a>.</span></aside><div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
+  modelName: "gemini-nano-banana-2.1",
+  // Configure the model to respond with images only.
+  generationConfig: GenerationConfig(responseModalities: [.image])
+)
+
+// Initialize the chat
+let chat = model.startChat()
+
+guard let image = UIImage(named: "scones") else { fatalError("Image file not found.") }
+
+// Provide an initial text prompt instructing the model to edit the image
+let prompt = "Edit this image to make it look like a cartoon"
+
+// To generate an initial response, send a user message with the image and text prompt
+let response = try await chat.sendMessage(image, prompt)
+
+// Inspect the generated image
+guard let inlineDataPart = response.inlineDataParts.first else {
+  fatalError("No image data in response.")
+}
+guard let uiImage = UIImage(data: inlineDataPart.data) else {
+  fatalError("Failed to convert data to UIImage.")
+}
+
+// Follow up requests do not need to specify the image again
+let followUpResponse = try await chat.sendMessage("But make it old-school line drawing style")
+
+// Inspect the edited image after the follow up request
+guard let followUpInlineDataPart = followUpResponse.inlineDataParts.first else {
+  fatalError("No image data in response.")
+}
+guard let followUpUIImage = UIImage(data: followUpInlineDataPart.data) else {
+  fatalError("Failed to convert data to UIImage.")
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = "gemini-nano-banana-2.1",
+    // Configure the model to respond with images only.
+    generationConfig = generationConfig {
+responseModalities = listOf(ResponseModality.IMAGE) }
+)
+
+// Provide an image for the model to edit
+val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.scones)
+
+// Create the initial prompt instructing the model to edit the image
+val prompt = content {
+    image(bitmap)
+    text("Edit this image to make it look like a cartoon")
+}
+
+// Initialize the chat
+val chat = model.startChat()
+
+// To generate an initial response, send a user message with the image and text prompt
+var response = chat.sendMessage(prompt)
+// Inspect the returned image
+var generatedImageAsBitmap = response
+    .candidates.first().content.parts.filterIsInstance&lt;ImagePart&gt;().firstOrNull()?.image
+
+// Follow up requests do not need to specify the image again
+response = chat.sendMessage("But make it old-school line drawing style")
+generatedImageAsBitmap = response
+    .candidates.first().content.parts.filterIsInstance&lt;ImagePart&gt;().firstOrNull()?.image
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI()).generativeModel(
+    "gemini-nano-banana-2.1",
+    // Configure the model to respond with images only.
+    new GenerationConfig.Builder()
+        .setResponseModalities(Arrays.asList(ResponseModality.IMAGE))
+        .build()
+);
+
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+// Provide an image for the model to edit
+Bitmap bitmap = BitmapFactory.decodeResource(resources, R.drawable.scones);
+
+// Initialize the chat
+ChatFutures chat = model.startChat();
+
+// Create the initial prompt instructing the model to edit the image
+Content prompt = new Content.Builder()
+        .setRole("user")
+        .addImage(bitmap)
+        .addText("Edit this image to make it look like a cartoon")
+        .build();
+
+// To generate an initial response, send a user message with the image and text prompt
+ListenableFuture&lt;GenerateContentResponse&gt; response = chat.sendMessage(prompt);
+// Extract the image from the initial response
+ListenableFuture&lt;@Nullable Bitmap&gt; initialRequest = Futures.transform(response, result -&gt; {
+    for (Part part : result.getCandidates().get(0).getContent().getParts()) {
+        if (part instanceof ImagePart) {
+            ImagePart imagePart = (ImagePart) part;
+            return imagePart.getImage();
+        }
+    }
+    return null;
+}, executor);
+
+// Follow up requests do not need to specify the image again
+ListenableFuture&lt;GenerateContentResponse&gt; modelResponseFuture = Futures.transformAsync(
+        initialRequest,
+        generatedImage -&gt; {
+            Content followUpPrompt = new Content.Builder()
+                    .addText("But make it old-school line drawing style")
+                    .build();
+            return chat.sendMessage(followUpPrompt);
+        },
+        executor);
+
+// Add a final callback to check the reworked image
+Futures.addCallback(modelResponseFuture, new FutureCallback&lt;GenerateContentResponse&gt;() {
+    @Override
+    public void onSuccess(GenerateContentResponse result) {
+        for (Part part : result.getCandidates().get(0).getContent().getParts()) {
+            if (part instanceof ImagePart) {
+                ImagePart imagePart = (ImagePart) part;
+                Bitmap generatedImageAsBitmap = imagePart.getImage();
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend, ResponseModality } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case
+const model = getGenerativeModel(ai, {
+  model: "gemini-nano-banana-2.1",
+  // Configure the model to respond with images only.
+  generationConfig: {
+    responseModalities: [ResponseModality.IMAGE],
+  },
+});
+
+// Prepare an image for the model to edit
+async function fileToGenerativePart(file) {
+  const base64EncodedDataPromise = new Promise((resolve) =&gt; {
+    const reader = new FileReader();
+    reader.onloadend = () =&gt; resolve(reader.result.split(',')[1]);
+    reader.readAsDataURL(file);
+  });
+  return {
+    type: "inlineData",
+    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+  };
+}
+
+const fileInputEl = document.querySelector("input[type=file]");
+const imagePart = await fileToGenerativePart(fileInputEl.files[0]);
+
+// Provide an initial text prompt instructing the model to edit the image
+const prompt = "Edit this image to make it look like a cartoon";
+
+// Initialize the chat
+const chat = model.startChat();
+
+// To generate an initial response, send a user message with the image and text prompt
+const result = await chat.sendMessage([prompt, imagePart]);
+
+// Request and inspect the generated image
+try {
+  const inlineDataParts = result.response.inlineDataParts();
+  if (inlineDataParts?.[0]) {
+    // Inspect the generated image
+    const image = inlineDataParts[0].inlineData;
+    console.log(image.mimeType, image.data);
+  }
+} catch (err) {
+  console.error('Prompt or candidate was blocked:', err);
+}
+
+// Follow up requests do not need to specify the image again
+const followUpResult = await chat.sendMessage("But make it old-school line drawing style");
+
+// Request and inspect the returned image
+try {
+  const followUpInlineDataParts = followUpResult.response.inlineDataParts();
+  if (followUpInlineDataParts?.[0]) {
+    // Inspect the generated image
+    const followUpImage = followUpInlineDataParts[0].inlineData;
+    console.log(followUpImage.mimeType, followUpImage.data);
+  }
+} catch (err) {
+  console.error('Prompt or candidate was blocked:', err);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'gemini-nano-banana-2.1',
+  // Configure the model to respond with images only.
+  generationConfig: GenerationConfig(responseModalities: [ResponseModalities.image]),
+);
+
+// Prepare an image for the model to edit
+final image = await File('scones.jpg').readAsBytes();
+final imagePart = InlineDataPart('image/jpeg', image);
+
+// Provide an initial text prompt instructing the model to edit the image
+final prompt = TextPart("Edit this image to make it look like a cartoon");
+
+// Initialize the chat
+final chat = model.startChat();
+
+// To generate an initial response, send a user message with the image and text prompt
+final response = await chat.sendMessage([
+  Content.multi([prompt,imagePart])
+]);
+
+// Inspect the returned image
+if (response.inlineDataParts.isNotEmpty) {
+  final imageBytes = response.inlineDataParts[0].bytes;
+  // Process the image
+} else {
+  // Handle the case where no images were generated
+  print('Error: No images were generated.');
+}
+
+// Follow up requests do not need to specify the image again
+final followUpResponse = await chat.sendMessage([
+  Content.text("But make it old-school line drawing style")
+]);
+
+// Inspect the returned image
+if (followUpResponse.inlineDataParts.isNotEmpty) {
+  final followUpImageBytes = response.inlineDataParts[0].bytes;
+  // Process the image
+} else {
+  // Handle the case where no images were generated
+  print('Error: No images were generated.');
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+var model = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI()).GetGenerativeModel(
+  modelName: "gemini-nano-banana-2.1",
+  // Configure the model to respond with images only.
+  generationConfig: new GenerationConfig(
+    responseModalities: new[] { ResponseModality.Image })
+);
+
+// Prepare an image for the model to edit
+var imageFile = System.IO.File.ReadAllBytes(System.IO.Path.Combine(
+  UnityEngine.Application.streamingAssetsPath, "scones.jpg"));
+var image = ModelContent.InlineData("image/jpeg", imageFile);
+
+// Provide an initial text prompt instructing the model to edit the image
+var prompt = ModelContent.Text("Edit this image to make it look like a cartoon.");
+
+// Initialize the chat
+var chat = model.StartChat();
+
+// To generate an initial response, send a user message with the image and text prompt
+var response = await chat.SendMessageAsync(new [] { prompt, image });
+
+// Inspect the returned image
+var imageParts = response.Candidates.First().Content.Parts
+                         .OfType&lt;ModelContent.InlineDataPart&gt;()
+                         .Where(part =&gt; part.MimeType == "image/png");
+// Load the image into a Unity Texture2D object
+UnityEngine.Texture2D texture2D = new(2, 2);
+if (texture2D.LoadImage(imageParts.First().Data.ToArray())) {
+  // Do something with the image
+}
+
+// Follow up requests do not need to specify the image again
+var followUpResponse = await chat.SendMessageAsync("But make it old-school line drawing style");
+
+// Inspect the returned image
+var followUpImageParts = followUpResponse.Candidates.First().Content.Parts
+                         .OfType&lt;ModelContent.InlineDataPart&gt;()
+                         .Where(part =&gt; part.MimeType == "image/png");
+// Load the image into a Unity Texture2D object
+UnityEngine.Texture2D followUpTexture2D = new(2, 2);
+if (followUpTexture2D.LoadImage(followUpImageParts.First().Data.ToArray())) {
+  // Do something with the image
+}
+</pre></section> </div> <h2 id="streaming">Stream the response</h2> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can achieve faster interactions by not waiting for the entire result from the model generation, and instead use streaming to handle partial results. To stream the response, call <code translate="no" dir="ltr">sendMessageStream()</code>.</p> <p><section class="expandable" id="chat-prompt-streaming"> <h4 class="showalways" id="chat-prompt-streaming">View example: Stream chat responses</h4></section></p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/GenerativeModel#startchathistory:"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/Chat#sendmessagestream_:"><code translate="no" dir="ltr">sendMessageStream()</code></a> to stream responses from the model:</p> 
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+let model = ai.generativeModel(modelName: "gemini-3.8-flash")
+
+
+// Optionally specify existing chat history
+let history = [
+  ModelContent(role: "user", parts: "Hello, I have 2 dogs in my house."),
+  ModelContent(role: "model", parts: "Great to meet you. What would you like to know?"),
+]
+
+// Initialize the chat with optional chat history
+let chat = model.startChat(history: history)
+
+// To stream generated text output, call sendMessageStream and pass in the message
+let contentStream = try chat.sendMessageStream("How many paws are in my house?")
+for try await chunk in contentStream {
+  if let text = chunk.text {
+    print(text)
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#startChat(kotlin.collections.List)"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/Chat"><code translate="no" dir="ltr">sendMessageStream()</code></a> to stream responses from the model:</p> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+                        .generativeModel("gemini-3.8-flash")
+
+
+// Initialize the chat
+val chat = model.startChat(
+  history = listOf(
+    content(role = "user") { text("Hello, I have 2 dogs in my house.") },
+    content(role = "model") { text("Great to meet you. What would you like to know?") }
+  )
+)
+
+chat.sendMessageStream("How many paws are in my house?").collect { chunk -&gt;
+  print(chunk.text)
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#startChat(kotlin.collections.List)"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/Chat"><code translate="no" dir="ltr">sendMessageStream()</code></a> to stream responses from the model:</p> <sup><em>For Java, the streaming methods in this SDK return a <code translate="no" dir="ltr">Publisher</code> type from the <a href="https://www.reactive-streams.org/" class="external">Reactive Streams library</a>.</em></sup> 
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+        .generativeModel("gemini-3.8-flash");
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+
+// (optional) Create previous chat history for context
+Content.Builder userContentBuilder = new Content.Builder();
+userContentBuilder.setRole("user");
+userContentBuilder.addText("Hello, I have 2 dogs in my house.");
+Content userContent = userContentBuilder.build();
+
+Content.Builder modelContentBuilder = new Content.Builder();
+modelContentBuilder.setRole("model");
+modelContentBuilder.addText("Great to meet you. What would you like to know?");
+Content modelContent = userContentBuilder.build();
+
+List&lt;Content&gt; history = Arrays.asList(userContent, modelContent);
+
+// Initialize the chat
+ChatFutures chat = model.startChat(history);
+
+// Create a new user message
+Content.Builder messageBuilder = new Content.Builder();
+messageBuilder.setRole("user");
+messageBuilder.addText("How many paws are in my house?");
+
+Content message = messageBuilder.build();
+
+// Send the message
+Publisher&lt;GenerateContentResponse&gt; streamingResponse =
+        chat.sendMessageStream(message);
+
+final String[] fullResponse = {""};
+
+streamingResponse.subscribe(new Subscriber&lt;GenerateContentResponse&gt;() {
+    @Override
+    public void onNext(GenerateContentResponse generateContentResponse) {
+        String chunk = generateContentResponse.getText();
+            fullResponse[0] += chunk;
+    }
+
+    @Override
+    public void onComplete() {
+        System.out.println(fullResponse[0]);
+    }
+
+    // ... other methods omitted for brevity
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelstartchat"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://firebase.google.com/docs/reference/js/ai.chatsession#chatsessionsendmessagestream"><code translate="no" dir="ltr">sendMessageStream()</code></a> to stream responses from the model:</p> 
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+const model = getGenerativeModel(ai, { model: "gemini-3.8-flash" });
+
+
+async function run() {
+  const chat = model.startChat({
+    history: [
+      {
+        role: "user",
+        parts: [{ type: "text", text: "Hello, I have 2 dogs in my house." }],
+      },
+      {
+        role: "model",
+        parts: [{ type: "text", text: "Great to meet you. What would you like to know?" }],
+      },
+    ],
+    generationConfig: {
+      maxOutputTokens: 100,
+    },
+  });
+
+  const msg = "How many paws are in my house?";
+  const result = await chat.sendMessageStream(msg);
+
+  let text = '';
+  for await (const chunk of result.stream) {
+    const chunkText = chunk.text();
+    console.log(chunkText);
+    text += chunkText;
+  }
+}
+
+run();
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>You can call <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/StartChatExtension/startChat.html" class="external"><code translate="no" dir="ltr">startChat()</code></a> and <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/ChatSession/sendMessageStream.html" class="external"><code translate="no" dir="ltr">sendMessageStream()</code></a> to stream responses from the model:</p> 
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+final model =
+      FirebaseAI.googleAI().generativeModel(model: 'gemini-3.8-flash');
+
+
+// Initialize the chat with history
+final chat = model.startChat(
+  history: [
+    Content.text('Hello, I have 2 dogs in my house.'),
+    Content.model([const TextPart('Great to meet you. What would you like to know?')]),
+  ],
+);
+// Send a message to the chat
+final response = await chat.sendMessageStream(Content.text('How many paws are in my house?'));
+await for (final chunk in response) {
+  print(chunk.text);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/generative-model#startchat"><code translate="no" dir="ltr">StartChat()</code></a> and <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/chat#sendmessagestreamasync"><code translate="no" dir="ltr">SendMessageStreamAsync()</code></a> to stream responses from the model:</p> 
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+var model = ai.GetGenerativeModel(modelName: "gemini-3.8-flash");
+
+
+// Optionally specify existing chat history
+var history = new [] {
+  ModelContent.Text("Hello, I have 2 dogs in my house."),
+  new ModelContent("model", new ModelContent.TextPart("Great to meet you. What would you like to know?")),
+};
+
+// Initialize the chat with optional chat history
+var chat = model.StartChat(history);
+
+// To stream generated text output, call SendMessageStreamAsync and pass in the message
+var responseStream = chat.SendMessageStreamAsync("How many paws are in my house?");
+await foreach (var response in responseStream) {
+  if (!string.IsNullOrWhiteSpace(response.Text)) {
+    UnityEngine.Debug.Log(response.Text);
+  }
+}
+</pre></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p>  <p><br></p> <hr class="full-width"> <h2 id="what-else-can-you-do">What else can you do?</h2> <ul> <li> Learn how to <a href="count-tokens">count tokens</a> before sending long prompts to the model. </li> <li> <a href="solutions/cloud-storage">Set up Cloud Storage for Firebase</a> so that you can include large files in your multimodal requests and have a more managed solution for providing files in prompts. Files can include images, PDFs, video, and audio. </li> <li> Start thinking about preparing for production (see the <a href="production-checklist">production checklist</a>): <ul> <li> <a href="app-check">Enforce Firebase App Check</a> <em>as early as possible</em> to help protect the <span class='\"notranslate\"'>Gemini API</span> from abuse by unauthorized clients. </li> <li> Use <a href="change-model-name-remotely">Firebase Remote Config</a> or <a href="server-prompt-templates/get-started">server prompt templates</a> so that you can make on-demand changes to configurations for your AI feature (like model name) without releasing a new version of your app. </li> </ul> </li> </ul> 
+<h4 id="try-capabilities-of-gemini-api">Try out other capabilities</h4> <ul> <li> Generate text from <a href="generate-text">text-only prompts</a>. </li> <li> Generate text by prompting with various file types, like <a href="analyze-images">images</a>, <a href="analyze-documents">PDFs</a>, <a href="analyze-video">video</a>, and <a href="analyze-audio">audio</a>. </li> <li> <a href="generate-structured-output">Generate structured output (like JSON)</a> from both text and multimodal prompts. </li> <li> <a href="generate-images-gemini">Generate and edit images</a> from both text and multimodal prompts. </li> <li> Use tools (like <a href="function-calling">function calling</a> and Grounding with <a href="grounding-google-search"><nobr>Google Search</nobr></a> or <a href="grounding-google-maps"><nobr>Google Maps</nobr></a>) to connect a <span class='\"notranslate\"'>Gemini</span> model to other parts of your app and external systems and information. </li> </ul> 
+<h4 id="next-steps-control-content-generation">Learn how to control content generation</h4> <ul> <li> <a href="prompt-design">Understand prompt design</a>, including best practices, strategies, and example prompts. </li> <li> <a href="model-parameters">Configure model parameters</a> like max output tokens, the probability of repeated output tokens, etc. </li> <li> <a href="safety-settings">Use safety settings</a> to adjust the likelihood of getting responses that may be considered harmful. </li> </ul> You can also experiment with prompts and model configurations and even get a generated code snippet using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. 
+<h4 id="next-steps-gemini-models">Learn more about the supported models</h4> Learn about the <a href="models">models available for various use cases</a> and their <a href="quotas">quotas</a> and <a href="pricing">pricing</a>. <p><br></p> <p><a class="button button-primary" href="feedback">Give feedback about your experience with <span class='\"notranslate\"'>Firebase AI Logic</span></a></p> <p><br></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/chat" class="_attribution-link">https://firebase.google.com/docs/ai-logic/chat</a>
+  </p>
+</div>

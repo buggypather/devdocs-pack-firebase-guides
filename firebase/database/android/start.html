@@ -1,0 +1,84 @@
+<h1>Connect your App to Firebase</h1> <p>If you haven't already, <a href="../../android/setup">add Firebase to your Android project</a>.</p> <h2 id="create_a_database">Create a Database</h2> <ol> <li><p>In the Firebase console, navigate to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/database/" class="external gc-analytics-event" data-category="firebasedb_test_0220" data-label="console_rtdb_creation_event_test_0220"><strong>Realtime Database</strong></a>.</p></li> <li><p>Click <strong>Create database</strong>.</p></li> <li>
+<p>Select a starting mode for your Firebase Security Rules:</p> <dl> <dt>Test mode</dt> <dd><p>Good for getting started with the mobile and web client libraries, but allows anyone to read and overwrite your data. After testing, <strong>make sure to review the <a href="../security">Understand Firebase Realtime Database Rules</a> section.</strong></p></dd> <dd><aside class="note"><strong>Note:</strong><span> If you create a database in Test mode and make no changes to the default world-readable and world-writeable Security Rules within a trial period, you will be alerted by email, then your database rules will deny all requests. Note the expiration date during the Firebase console setup flow.</span></aside></dd> <dd><p>To get started with the web, Apple, or Android SDK, select testmode.</p></dd> <dt>Locked mode</dt> <dd><p>Denies all reads and writes from mobile and web clients. Your authenticated application servers can still access your database.</p></dd> </dl>
+</li> <li>
+<p>Choose a location for the database.</p> <p>Depending on the <a href="../../projects/locations#rtdb-locations">location of the database</a>, the URL for the new database will be in one of the following forms:</p> <ul> <li><p><nobr><code translate="no" dir="ltr"><var translate="no">DATABASE_NAME</var>.firebaseio.com</code></nobr> (for databases in <code translate="no" dir="ltr">us-central1</code>)</p></li> <li><p><nobr><code translate="no" dir="ltr"><var translate="no">DATABASE_NAME</var>.<var translate="no">REGION</var>.firebasedatabase.app</code></nobr> (for databases in all other locations)</p></li> </ul>
+</li> <li><p>Click <strong>Done</strong>.</p></li> </ol> <p>When you enable Realtime Database, it also enables the API in the <a href="https://console.cloud.google.com/projectselector/apis/api/firebasedatabase.googleapis.com/overview">Cloud API Manager</a>.</p> <h2 id="add-sdk">Add the Realtime Database SDK to your app</h2> In your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the dependency for the Realtime Database library for Android. We recommend using the <a href="../../android/learn-more#bom">Firebase Android BoM</a> to control library versioning. 
+<pre>dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Add the dependency for the Realtime Database library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-database")
+}</pre> <p>By using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, your app will always use compatible versions of Firebase Android libraries. </p>  <p class="showalways"><em>(Alternative)</em> Add Firebase library dependencies <em>without</em> using the BoM </p> <p>If you choose not to use the Firebase BoM, you must specify each Firebase library version in its dependency line.</p> <p><strong>Note that if you use <em>multiple</em> Firebase libraries in your app, we strongly recommend using the BoM to manage library versions, which ensures that all versions are compatible.</strong> </p> 
+<pre>dependencies {
+    // Add the dependency for the Realtime Database library
+    // When NOT using the BoM, you must specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-database:23.0.0")
+}</pre>  <h2 id="configure">Configure Realtime Database Security Rules</h2> <p>The Realtime Database provides a declarative rules language that allows you to define how your data should be structured, how it should be indexed, and when your data can be read from and written to.</p> <aside class="note"><strong>Note:</strong><span> By default, read and write access to your database is restricted so only authenticated users can read or write data. To get started without setting up <a href="../../auth">Authentication</a>, you can <a href="../../rules/basics#default_rules_locked_mode" target="_blank">configure your rules for public access</a>. This does make your database open to anyone, even people not using your app, so be sure to restrict your database again when you set up authentication.</span></aside> <h2 id="write_to_your_database">Write to your database</h2> <p>Retrieve an instance of your database using <code translate="no" dir="ltr">getInstance()</code> and reference the location you want to write to.</p> <aside class="note"><b>Important</b>: To get a reference to a database other than a <code translate="no" dir="ltr">us-central1</code> default database, you must pass the database URL to <code translate="no" dir="ltr">getInstance()</code> (or for Kotlin <code translate="no" dir="ltr">database()</code>). For a <code translate="no" dir="ltr">us-central1</code> default database, you can call <code translate="no" dir="ltr">getInstance()</code> (or <code translate="no" dir="ltr">database</code>) without arguments. <p>You can find your Realtime Database URL in the <i>Realtime Database</i> section of the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. Depending on the <a href="../../projects/locations#rtdb-locations">location of the database</a>, the database URL will be in one of the following forms:</p> <ul> <li>
+<nobr><code translate="no" dir="ltr">https://<var translate="no">DATABASE_NAME</var>.firebaseio.com</code></nobr> (for databases in <code translate="no" dir="ltr">us-central1</code>) </li>
+<li>
+<nobr><code translate="no" dir="ltr">https://<var translate="no">DATABASE_NAME</var>.<var translate="no">REGION</var>.firebasedatabase.app</code></nobr> (for databases in all other locations) </li>
+</ul> </aside> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Write a message to the database
+val database = Firebase.database
+val myRef = database.getReference("message")
+
+myRef.setValue("Hello, World!")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// Write a message to the database
+FirebaseDatabase database = FirebaseDatabase.getInstance();
+DatabaseReference myRef = database.getReference("message");
+
+myRef.setValue("Hello, World!");</pre></section> </div> <p>You can save a range of data types to the database this way, including Java objects. When you save an object the responses from any getters will be saved as children of this location.</p> <h2 id="read_from_your_database">Read from your database</h2> <p>To make your app data update in realtime, you should add a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/database/ValueEventListener"><code translate="no" dir="ltr">ValueEventListener</code></a> to the reference you just created.</p> <p>The <code translate="no" dir="ltr">onDataChange()</code> method in this class is triggered once when the listener is attached and again every time the data changes, including the children.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Read from the database
+myRef.addValueEventListener(object : ValueEventListener {
+    override fun onDataChange(dataSnapshot: DataSnapshot) {
+        // This method is called once with the initial value and again
+        // whenever data at this location is updated.
+        val value = dataSnapshot.getValue&lt;String&gt;()
+        Log.d(TAG, "Value is: $value")
+    }
+
+    override fun onCancelled(error: DatabaseError) {
+        // Failed to read value
+        Log.w(TAG, "Failed to read value.", error.toException())
+    }
+})</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// Read from the database
+myRef.addValueEventListener(new ValueEventListener() {
+    @Override
+    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+        // This method is called once with the initial value and again
+        // whenever data at this location is updated.
+        String value = dataSnapshot.getValue(String.class);
+        Log.d(TAG, "Value is: " + value);
+    }
+
+    @Override
+    public void onCancelled(@NonNull DatabaseError error) {
+        // Failed to read value
+        Log.w(TAG, "Failed to read value.", error.toException());
+    }
+});</pre></section> </div> <h2 id="proguard">Optional: Configure ProGuard</h2> <p>When using Firebase Realtime Database in your app along with ProGuard, you need to consider how your model objects will be serialized and deserialized after obfuscation. If you use <code translate="no" dir="ltr">DataSnapshot.getValue(Class)</code> or <code translate="no" dir="ltr">DatabaseReference.setValue(Object)</code> to read and write data, you will need to add rules to the <code translate="no" dir="ltr">proguard-rules.pro</code> file:</p> 
+<pre>    # Add this global rule
+    -keepattributes Signature
+
+    # This rule will properly ProGuard all the model classes in
+    # the package com.yourcompany.models.
+    # Modify this rule to fit the structure of your app.
+    -keepclassmembers class com.yourcompany.models.** {
+      *;
+    }
+</pre> <p>To get help for questions or issues related to ProGuard, visit the <a href="https://community.guardsquare.com/" class="external">Guardsquare Community forums</a> to get assistance from an expert.</p> <h2 id="prepare_for_launch">Prepare for Launch</h2> <p>Before launching your app, we recommend walking through our <a href="https://firebase.google.com/support/guides/launch-checklist">launch checklist</a> to make sure your app is ready to go!</p> <p>Be sure to enable <a href="../../app-check/android">App Check</a> to help ensure that only your apps can access your databases.</p> <h2 id="next_steps">Next Steps</h2> <ul> <li>Learn how to <a href="structure-data">structure data</a> for Realtime Database</li> <li>
+<a href="../usage/sharding">Scale your data across multiple database instances</a>.</li> <li>
+<a href="read-and-write">Read and write data</a>.</li> <li>
+<a href="https://console.firebase.google.com/project/_/database/data">View your database in the Firebase console</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/android/start" class="_attribution-link">https://firebase.google.com/docs/database/android/start</a>
+  </p>
+</div>

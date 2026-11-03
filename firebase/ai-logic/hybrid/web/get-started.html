@@ -1,0 +1,189 @@
+<h1>Build hybrid experiences in Web apps with on-device and cloud-hosted models</h1>  <p>Build AI-powered web apps and features with hybrid inference using <span class='\"notranslate\"'>Firebase AI Logic</span>. Hybrid inference enables running inference using on-device models when available and seamlessly falling back to cloud-hosted models otherwise (and vice versa).</p> <p>This page describes how to <a href="#get-started">get started using the client SDK</a>. After completing this standard setup, check out the <a href="#what-else-to-do">additional configuration options and capabilities</a> (like structured output).</p> <p>Note that on-device inference is supported for <em>web apps running on Chrome on Desktop</em>.</p> <p><a href="#call-api" class="button button-primary">Jump to the code examples</a> </p> <h2 id="use-cases-and-capabilities">Recommended use cases and supported capabilities</h2> <p><strong>Recommended use cases:</strong></p> <ul> <li>
+<p>Using an on-device model for inference offers:</p> <ul> <li>Enhanced privacy</li> <li>Local context</li> <li>Inference at no-cost</li> <li>Offline functionality</li> </ul>
+</li> <li>
+<p>Using hybrid functionality offers:</p> <ul> <li>Reach 100% of your audience, regardless of on-device model availability or internet connectivity</li> </ul>
+</li> </ul> <p><strong>Supported capabilities and features for on-device inference:</strong></p> <p>On-device inference only supports <strong>single-turn text generation (<em>not</em> chat)</strong>, with streaming or non-streaming output. It supports the following text-generation capabilities:</p> <ul> <li><p>Generating <a href="#text-in-text-out">text from text-only input</a></p></li> <li><p>Generating <a href="#image-in-text-out">text from text-and-image input</a>, specifically input image types of JPEG and PNG</p></li> </ul> <p>You can also <a href="generate-structured-output">generate structured output</a>, including JSON and enums.</p> <h2 id="before-you-begin">Before you begin</h2> <p>Take note of the following:</p> <ul> <li><p>Inference using an on-device model uses the <a href="https://developer.chrome.com/docs/extensions/ai/prompt-api" class="external">Prompt API from Chrome</a>; whereas inference using a cloud-hosted model uses your chosen <span class='\"notranslate\"'>Gemini API</span> provider (either the <span class='\"notranslate\"'>Gemini Developer API</span> or the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>).</p></li> <li>
+<p>This page describes how to <strong>get started developing using localhost</strong> (learn more about <a href="https://developer.chrome.com/docs/ai/get-started#use_apis_on_localhost" class="external">using APIs on localhost</a> in the Chrome documentation).</p> <p>After completing this standard setup, check out the <a href="#what-else-to-do">additional configuration options and capabilities</a> (like structured output).</p>
+</li> </ul> <h2 id="get-started">Get started on localhost</h2> <p>These get started steps describe the required general setup for any supported prompt request that you want to send.</p> <h3 id="set-up-chrome">
+<strong>Step 1</strong>: Set up Chrome and the Prompt API for on-device inference</h3> <ol> <li><p>Make sure you're using a recent version of Chrome. Update in <a href="chrome://settings/help">chrome://settings/help</a>.<br> On-device inference is available from Chrome v139 and higher.</p></li> <li>
+<p>Enable the on-device multimodal model by setting the following flag to <strong>Enabled</strong>:</p> <ul> <li><code translate="no" dir="ltr">chrome://flags/#prompt-api-for-gemini-nano-multimodal-input</code></li> </ul>
+</li> <li><p>Restart Chrome.</p></li> <li>
+<p><em>(Optional)</em> Download the on-device model before the first request.</p> <p>The Prompt API is built into Chrome; however, the on-device model isn't available by default. If you haven't yet downloaded the model before your first request for on-device inference, the request will automatically start the model download in the background.</p> <aside class="note"><strong>Note:</strong><span> Downloading the model can take several minutes, so waiting to auto-download with the first request can significantly delay receiving a response to that request.</span></aside> <p><section class="expandable" id="instructions-to-download-on-device-model"> <p class="showalways" id="instructions-to-download-on-device-model">View instructions to download the on-device model</p></section></p> <ol> <li><p>Open <strong>Developer Tools &gt; Console</strong>.</p></li> <li>
+<p>Run the following:</p> 
+<pre>await LanguageModel.availability();
+</pre>
+</li> <li><p>Make sure that the output is <code translate="no" dir="ltr">available</code>, <code translate="no" dir="ltr">downloading</code>, or <code translate="no" dir="ltr">downloadable</code>.</p></li> <li>
+<p>If the output is <code translate="no" dir="ltr">downloadable</code>, start the model download by running:</p> 
+<pre>await LanguageModel.create();
+</pre>
+</li> <li>
+<p>You can use the following <code translate="no" dir="ltr">monitor</code> callback to listen for download progress and make sure that the model is <code translate="no" dir="ltr">available</code> before making requests:</p> 
+<pre>const session = await LanguageModel.create({
+  monitor(m) {
+    m.addEventListener("downloadprogress", (e) =&gt; {
+      console.log(`Downloaded ${e.loaded * 100}%`);
+    });
+  },
+});
+</pre>
+</li> </ol> 
+</li> </ol> <h3 id="set-up-firebase">
+<strong>Step 2</strong>: Set up a Firebase project and connect your app to Firebase</h3> <ol> <li>
+<p>Sign into the <a href="https://console.firebase.google.com/" class="external">Firebase console</a>, and then select your Firebase project.</p> <p><section class="expandable"> <p class="showalways">Don't already have a Firebase project?</p></section></p> <p>If you don't already have a Firebase project, click the button to create a new Firebase project, and then use either of the following options:</p> <ul> <li><p><strong>Option 1</strong>: Create a wholly new Firebase project (and its underlying Google Cloud project automatically) by entering a new project name in the first step of the workflow.</p></li> <li><p><strong>Option 2</strong>: "Add Firebase" to an existing Google Cloud project by clicking <strong>Add Firebase to Google Cloud project</strong> (at bottom of page). In the first step of the workflow, start entering the <strong>project name</strong> of the existing project, and then select the project from the displayed list.</p></li> </ul> <p>Complete the remaining steps of the on-screen workflow to create a Firebase project. Note that when prompted, you do <strong><em>not</em></strong> need to set up Google Analytics to use the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs.</p> 
+</li> <li><p>In the Firebase console, go to <strong>AI Services</strong> &gt; <a href="https://console.firebase.google.com/project/_/ailogic/" class="external"><b>AI Logic</b></a>.</p></li> <li><p>Click <strong>Get started</strong> to launch a guided workflow that helps you set up the <a href="../../faq-and-troubleshooting#required-apis">required APIs</a> and resources for your project.</p></li> <li><p>If prompted, follow the on-screen instructions to register your app and add your Firebase configuration to your app.</p></li> <li>
+<p>When asked to choose a "Gemini API provider", we recommend selecting the <strong>Gemini Developer API</strong>, which lets you get started quickly at no cost.</p> <p>At any point later, you can always <a href="https://console.firebase.google.com/project/_/ailogic">set up the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span></a> (and its requirement for billing).</p>
+</li> <li>
+<p>Continue in the workflow to set up the required APIs and associated services for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p>This stage of the workflow automatically <a href="../../app-check">enforces Firebase App Check for <span class='\"notranslate\"'>AI Logic</span></a>, which is a <em>critical</em> service to help protect the <span class='\"notranslate\"'>Gemini API</span> when it's directly accessed from your app. As part of getting started (see steps later in this guide), you'll need to configure the App Check <em>debug provider</em> for local development when App Check is enforced.</p> <aside class="note"><strong>Note:</strong><span> To release your app's AI feature to end users, you need to <a href="../../app-check">register your app with a production App Check attestation provider</a> so that they can use the feature when App Check is enforced.</span></aside>
+</li> <li><p>Continue to the next step in this guide to add the required SDKs to your app.</p></li> </ol> <h3 id="add-sdk">
+<strong>Step 3</strong>: Add the SDK</h3> <p>The Firebase library provides access to the APIs for interacting with generative models. The library is included as part of the Firebase JavaScript SDK for Web.</p> <ol> <li>
+<p>Install the Firebase JS SDK for Web using npm:</p> 
+<pre>npm install firebase
+</pre>
+</li> <li>
+<p>Initialize Firebase in your app:</p> 
+<pre>import { initializeApp } from "firebase/app";
+import { initializeAppCheck } from "firebase/app-check";
+
+// TODO(developer) Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+</pre>
+</li> </ol> <h3 id="configure-debug-provider">
+<strong>Step 4</strong>: Configure the App Check debug provider for local development</h3> <p>As part of the guided setup workflow for <span class='\"notranslate\"'>AI Logic</span> in the console, Firebase App Check is automatically enforced to protect the <span class='\"notranslate\"'>Gemini API</span>. For local development, you need to configure the App Check <em>debug provider</em> to bypass attestation while still maintaining the enforcement of App Check.</p> <aside class="special"><strong>Important:</strong><span> Make sure that App Check is enforced for <span class='\"notranslate\"'>AI Logic</span>. In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/products/" class="external"><strong>APIs</strong> tab</a>, and then find the row for <span class='\"notranslate\"'>Firebase AI Logic</span>. If it says <code translate="no" dir="ltr">Unenforced</code>, then follow the <a href="../../app-check#enforce-app-check-for-debug-provider-only">instructions to enforce App Check yourself</a>.</span></aside> <p>Here's how to use the debug provider while running your app from <code translate="no" dir="ltr">localhost</code> interactively (for example, during local development):</p> <aside class="warning"><strong>Warning:</strong><span> Do <em><strong>not</strong></em> try to enable <code translate="no" dir="ltr">localhost</code> debugging by adding <code translate="no" dir="ltr">localhost</code> to the allowed domains for reCAPTCHA. Doing so would allow anyone to run your app from their local machines!</span></aside> <ol> <li>
+<p>In your debug build, enable debug mode by setting <code translate="no" dir="ltr">self.FIREBASE_APPCHECK_DEBUG_TOKEN</code> to <code translate="no" dir="ltr">true</code> before you initialize App Check. For example:</p> 
+<pre>self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+initializeAppCheck(firebaseApp, { /* App Check options */ });
+</pre>
+</li> <li>
+<p>Visit your web app locally and open the browser's developer tools. In the debug console, you'll see a debug token:</p> 
+<pre>AppCheck debug token: "123a4567-b89c-12d3-e456-789012345678".
+You will need to safelist it in the Firebase console for it to work.
+</pre>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol>
+</li> </ol> <p>For details about the debug provider (including how to get a new debug token), check out the <a href="../../../app-check/web/debug-provider">official App Check docs</a>.</p> <aside class="caution"><strong>Here are some critical points about the App Check debug provider:</strong> <ul> <li> <strong>Keep your debug token and debug build private.</strong> Don't commit your debug token to a public repository, and don't ship your debug token or debug build in production builds of your app. </li> <li> <strong>Register your app with a production attestation provider before releasing to end users.</strong> You'll need to <a href="../../app-check" class="external">register your app with a production App Check attestation provider</a> (for example, Play Integrity) so that your end-users can use your feature with App Check enforced. </li> </ul> </aside> <h3 id="initialize-service-and-model">
+<strong>Step 5</strong>: Initialize the service and create a model instance</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>Set up the following before you send a prompt request to the model:</p> <ol> <li><p>Initialize the service for your chosen API provider.</p></li> <li>
+<p>Create a <code translate="no" dir="ltr">GenerativeModel</code> instance. Make sure to set the <code translate="no" dir="ltr">mode</code> to one of:</p> <ul> <li><p><strong><code translate="no" dir="ltr">PREFER_ON_DEVICE</code></strong>: Use the on-device model if it's available; otherwise, <em>fall back to the cloud-hosted model</em>.</p></li> <li><p><strong><code translate="no" dir="ltr">ONLY_ON_DEVICE</code></strong>: Use the on-device model if it's available; otherwise, <em>throw an exception</em>.</p></li> <li><p><strong><code translate="no" dir="ltr">PREFER_IN_CLOUD</code></strong>: Use the cloud-hosted model if it's available; otherwise, <em>fall back to the on-device model</em>.</p></li> <li><p><strong><code translate="no" dir="ltr">ONLY_IN_CLOUD</code></strong>: Use the cloud-hosted model if it's available; otherwise, <em>throw an exception</em>.</p></li> </ul>
+</li> </ol> <aside class="note"><strong>Note:</strong><span> For requests sent to the on-device model, make sure it's <a href="#features-not-yet-available">supported by on-device inference</a>. <br> For requests sent off-device, the device must be online. Also, the <strong>default cloud-hosted model is <nobr><code translate="no" dir="ltr">gemini-3.5-flash-lite</code></nobr></strong>, but you can <a href="configuration-options#override-default-cloud-model">override the default</a>.</span></aside> 
+<pre>import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode } from "firebase/ai";
+
+// TODO(developer) Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance
+// Set the mode (for example, use the on-device model if it's available)
+const model = getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE });
+</pre> <h3 id="initialize-on-device-model">
+<strong>Step 6</strong>: Initialize the on-device model</h3> <p>You must call <code translate="no" dir="ltr">initializeDeviceModel()</code> <em>after or on</em> an end-user page interaction (like a button click) and <em>before</em> you send a prompt request to the model. Learn more about the <a href="https://developer.chrome.com/docs/ai/get-started#user-activation" class="external">user activation requirement</a> in the Chrome documentation.</p> 
+<pre>import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend, InferenceMode } from "firebase/ai";
+
+// TODO(developer) Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance
+// Set the mode (for example, use the on-device model if it's available)
+const model = getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE });
+
+// `initializeDeviceModel` must be called:
+// (1) after or on an end-user page interaction such as a button click
+// and
+// (2) before any queries to the model (such as `generateContent()`)
+// You may want to `await` this promise if using `ONLY_ON_DEVICE` (see note below).
+model.initializeDeviceModel((val) =&gt;
+  // Example: "Download progress: 72.62%""
+  console.log(`Download progress: ${Math.round(val*10000) / 100}%`)
+);
+</pre> <aside class="note"> <b>Downloading the on-device model can take several minutes.</b> <p> If you haven't yet <a href="#instructions-to-download-on-device-model">downloaded the model before your first request for on-device inference</a>, calling <code translate="no" dir="ltr">initializeDeviceModel()</code> will automatically start the model download in the background. Waiting for <code translate="no" dir="ltr">initializeDeviceModel()</code> to complete ensures the model is ready for immediate queries but may take several minutes. </p> <p> Calling methods like <code translate="no" dir="ltr">generateContent()</code> before the download is complete will have different results based on the mode: </p> <ul> <li> <code translate="no" dir="ltr">ONLY_ON_DEVICE</code>: the request will wait until the download is complete, and then send the prompt to the on-device model and return the result. This may take several minutes. </li> <li> <code translate="no" dir="ltr">PREFER_IN_CLOUD</code> or <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>: the request will <em>not</em> wait for the download to complete and will automatically fall back to use the cloud-hosted model. </li> <li>
+<code translate="no" dir="ltr">ONLY_IN_CLOUD</code>: the request will automatically fall back to use the cloud-hosted model. </li> </ul> </aside> <h3 id="call-api">
+<strong>Step 7</strong>: Send a prompt request to a model</h3> <p>This section shows you how to send various types of input to generate different types of output, including:</p> <ul> <li><a href="#text-in-text-out">Generate text from text-only input</a></li> <li><a href="#image-in-text-out">Generate text from text-and-image (multimodal) input</a></li> </ul> <p>If you want to generate structured output (like JSON or enums), then use one of the following "generate text" examples and additionally <a href="generate-structured-output">configure the model to respond according to a provided schema</a>.</p> <h4 id="text-in-text-out">Generate text from text-only input</h4> <table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, make sure that you've completed the <a href="#get-started">Get started</a> section of this guide.</em> </td> </tr> </table> <p>You can use <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelgeneratecontent"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from a prompt that contains text:</p> 
+<pre>// Imports + initialization of FirebaseApp and backend service + creation of model instance
+
+// Wrap in an async function so you can use await
+async function run() {
+  // Provide a prompt that contains text
+  const prompt = "Write a story about a magic backpack."
+
+  // To generate text output, call `generateContent` with the text input
+  const result = await model.generateContent(prompt);
+
+  const response = result.response;
+  const text = response.text();
+  console.log(text);
+}
+
+run();
+</pre> <p>Note that <span class='\"notranslate\"'>Firebase AI Logic</span> also supports streaming of text responses using <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelgeneratecontentstream"><code translate="no" dir="ltr">generateContentStream</code></a> (instead of <code translate="no" dir="ltr">generateContent</code>).</p> <h4 id="image-in-text-out">Generate text from text-and-image (multimodal) input</h4> <table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, make sure that you've completed the <a href="#get-started">Get started</a> section of this guide.</em> </td> </tr> </table> <p>You can use <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelgeneratecontent"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from a prompt that contains text and image files—providing each input file's <code translate="no" dir="ltr">mimeType</code> and the file itself.</p> <p>The supported input image types for on-device inference are PNG and JPEG.</p> <aside class="special"><strong>Important:</strong><span> For on-device inference, the maximum token limit is 9216 tokens.</span></aside>
+<pre>// Imports + initialization of FirebaseApp and backend service + creation of model instance
+
+// Converts a File object to a Part object.
+async function fileToGenerativePart(file) {
+  const base64EncodedDataPromise = new Promise((resolve) =&gt; {
+    const reader = new FileReader();
+    reader.onloadend = () =&gt; resolve(reader.result.split(',')[1]);
+    reader.readAsDataURL(file);
+  });
+  return {
+    type: "inlineData",
+    inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+  };
+}
+
+async function run() {
+  // Provide a text prompt to include with the image
+  const prompt = "Write a poem about this picture:";
+
+  const fileInputEl = document.querySelector("input[type=file]");
+  const imagePart = await fileToGenerativePart(fileInputEl.files[0]);
+
+  // To generate text output, call `generateContent` with the text and image
+  const result = await model.generateContent([prompt, imagePart]);
+
+  const response = result.response;
+  const text = response.text();
+  console.log(text);
+}
+
+run();
+</pre> <p>Note that <span class='\"notranslate\"'>Firebase AI Logic</span> also supports streaming of text responses using <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelgeneratecontentstream"><code translate="no" dir="ltr">generateContentStream</code></a> (instead of <code translate="no" dir="ltr">generateContent</code>).</p> <h2 id="what-else-to-do">What else can you do?</h2> <p>You can use various additional configuration options and capabilities for your hybrid experiences:</p> <ul> <li><p><a href="configuration-options#inference-modes">Set an inference mode</a></p></li> <li><p><a href="configuration-options#override-default-cloud-model">Override the default cloud-hosted fallback model</a></p></li> <li><p><a href="configuration-options#model-config">Use model configuration to control responses</a></p></li> <li><p><a href="generate-structured-output">Generate structured output (like JSON)</a></p></li> </ul> <h2 id="features-not-yet-available">Features not yet available for on-device inference</h2> <p>Not all the capabilities of the Web SDK are available for <em>on-device</em> inference. <strong>The following features are <em>not yet supported for on-device inference</em> (but they are usually available for cloud-based inference).</strong></p> <aside class="note"><strong>Note:</strong><span> For many of these features, if you set the mode to <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>, the SDK will just automatically fall back to use the cloud-hosted model for these not-yet-available capabilities.</span></aside> <ul> <li>
+<p>Generating text from image file input types other than JPEG and PNG</p> <ul> <li>Can fallback to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an error.</li> </ul>
+</li> <li>
+<p>Generating text from audio, video, and documents (like PDFs) inputs</p> <ul> <li>Can fallback to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an error.</li> </ul>
+</li> <li>
+<p>Generating images using Gemini Nano Banana models</p> <ul> <li>Can fallback to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an error.</li> </ul>
+</li> <li><p>Providing files using URLs in multimodal requests. You must provide files as inline data to on-device models.</p></li> <li>
+<p>Multi-turn chat</p> <ul> <li>Can fallback to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an error.</li> </ul>
+</li> <li><p>Bi-directional streaming with the Gemini Live API</p></li> <li><p>Providing the model with <em>tools</em> to help it generate its response (like function calling, code execution, URL context, Grounding with <nobr>Google Search</nobr>, and Grounding with <nobr>Google Maps</nobr>)</p></li> <li>
+<p>Count tokens</p> <ul> <li>Always throws an error. The count will differ between cloud-hosted and on-device models, so there is no intuitive fallback.</li> </ul>
+</li> <li>
+<p>AI monitoring in the Firebase console for on-device inference.</p> <ul> <li>Note that any inference using the cloud-hosted models can be monitored just like other inference using the <span class='\"notranslate\"'>Firebase AI Logic</span> client SDK for Web.</li> </ul>
+</li> </ul> <p><br></p> <p><a class="button button-primary" href="../../feedback">Give feedback about your experience with <span class='\"notranslate\"'>Firebase AI Logic</span></a></p> <p><br></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/hybrid/web/get-started" class="_attribution-link">https://firebase.google.com/docs/ai-logic/hybrid/web/get-started</a>
+  </p>
+</div>

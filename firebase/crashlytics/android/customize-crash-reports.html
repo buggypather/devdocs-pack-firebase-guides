@@ -1,0 +1,118 @@
+<h1>Customize crash reports for Android</h1>   <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/customize-crash-reports">iOS+</a> <a class="button button-primary" href="customize-crash-reports">Android</a> <a class="button" href="../flutter/customize-crash-reports">Flutter</a> <a class="button" href="../unity/customize-crash-reports">Unity</a> </td> </tr> </table> <p><br></p> <p>You can click into an issue and get a detailed event report in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console. You can customize those reports to help you better understand what's happening in your app and the circumstances around events reported to Crashlytics.</p> <ul> <li><p>Instrument your app to log <a href="#add-keys">custom keys</a>, <a href="#add-logs">custom log messages</a>, and <a href="#set-user-ids">user identifiers</a>.</p></li> <li><p>Report <a href="#log-excepts">exceptions</a> to Crashlytics.</p></li> <li><p>Automatically get <a href="#get-breadcrumb-logs">breadcrumb logs</a> if your app uses the Firebase SDK for Google Analytics. These logs give you visibility into user actions leading up to a Crashlytics-collected event in your app.</p></li> <li><p>Turn off automatic crash reporting and <a href="#enable-reporting">enable opt-in reporting</a> for your users. Note that, by default, Crashlytics automatically collects crash reports for all your app's users.</p></li> </ul> <h2 id="add-keys">Add custom keys</h2> <p>Custom keys help you get the specific state of your app leading up to a crash. You can associate arbitrary key-value pairs with your crash reports, then use the custom keys to search and filter crash reports in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console.</p> <ul> <li><p>You can search for issues that match a custom key.</p></li> <li><p>When you're reviewing a specific issue in the console, you can view the associated custom keys for each event (<strong>Keys</strong> subtab) and even filter the events by custom keys (<strong>Filter</strong> menu at the top of the page).</p></li> </ul> <aside class="note"><strong>Note:</strong><span> Crashlytics supports a maximum of 64 key-value pairs. After you reach this threshold, additional values are not saved. Each key-value pair can be up to 1 kB in size.</span></aside> <p>Use the <code translate="no" dir="ltr">setCustomKey</code> instance method to set key-value pairs. Note that <code translate="no" dir="ltr">setCustomKey</code> is overloaded for the <code translate="no" dir="ltr">value</code> parameter to accept any primitive or <code translate="no" dir="ltr">String</code> argument. Here are some examples:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val crashlytics = Firebase.crashlytics
+crashlytics.setCustomKeys {
+    key("my_string_key", "foo") // String value
+    key("my_bool_key", true) // boolean value
+    key("my_double_key", 1.0) // double value
+    key("my_float_key", 1.0f) // float value
+    key("my_int_key", 1) // int value
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+
+crashlytics.setCustomKey("my_string_key", "foo" /* string value */);
+
+crashlytics.setCustomKey("my_bool_key", true /* boolean value */);
+
+crashlytics.setCustomKey("my_double_key", 1.0 /* double value */);
+
+crashlytics.setCustomKey("my_float_key", 1.0f /* float value */);
+
+crashlytics.setCustomKey("my_int_key", 1 /* int value */);</pre></section> </div> <p>You can also modify the value of an existing key by calling the key and setting it to a different value. For example:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val crashlytics = Firebase.crashlytics
+crashlytics.setCustomKeys {
+    key("current_level", 3)
+    key("last_UI_action", "logged_in")
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseCrashlytics crashlytics = FirebaseCrashlytics.getInstance();
+
+crashlytics.setCustomKey("current_level", 3);
+crashlytics.setCustomKey("last_UI_action", "logged_in");</pre></section> </div> <p>Add key-value pairs in bulk by passing an instance of <code translate="no" dir="ltr">CustomKeysAndValues</code> to the <code translate="no" dir="ltr">setCustomKeys</code> instance method:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>For Kotlin, the existing functionality is simpler than using the <code translate="no" dir="ltr">CustomKeysAndValues</code> builder.</p> 
+<pre data-language="kotlin">crashlytics.setCustomKeys {
+  key("str_key", "hello")
+  key("bool_key", true)
+  key("int_key", 1)
+  key("long_key", 1L)
+  key("float_key", 1.0f)
+  key("double_key", 1.0)
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">CustomKeysAndValues keysAndValues = new CustomKeysAndValues.Builder()
+.putString("string key", "string value")
+.putString("string key 2", "string  value 2")
+.putBoolean("boolean key", True)
+.putBoolean("boolean key 2", False)
+.putFloat("float key", 1.01)
+.putFloat("float key 2", 2.02)
+.build();
+
+FirebaseCrashlytics.getInstance().setCustomKeys(keysAndValues);</pre></section> </div> <h2 id="add-logs">Add custom log messages</h2> <p>To give yourself more context for the events leading up to a crash, you can add custom Crashlytics logs to your app. Crashlytics associates the logs with your crash data and displays them in the <strong>Logs</strong> tab when you view the details of an issue (see all your issues in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console).</p> <aside class="note"><strong>Note:</strong><span> To avoid slowing down your app, Crashlytics limits logs to 64kB and deletes older log entries when logs for a session go over that limit.</span></aside> <p>Use <code translate="no" dir="ltr">log</code> to help pinpoint issues. For example:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">Firebase.crashlytics.log("message")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseCrashlytics.getInstance().log("message");</pre></section> </div> <h2 id="set-user-ids">Set user identifiers</h2> <p>To diagnose an issue, it's often helpful to know which of your users experienced a given crash. Crashlytics includes a way to anonymously identify users in your crash reports.</p> <p>To add user IDs to your reports, assign each user a unique identifier in the form of an ID number, token, or hashed value:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">Firebase.crashlytics.setUserId("user123456789")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseCrashlytics.getInstance().setUserId("user123456789");</pre></section> </div> <p>If you ever need to clear a user identifier after you set it, reset the value to a blank string. Clearing a user identifier does not remove existing Crashlytics records. If you need to delete records associated with a user ID, <a href="https://firebase.google.com/support/troubleshooter/contact">contact Firebase support</a>.</p> <h2 id="metadata-in-ndk-reports">
+<em>(Android NDK only)</em> Add metadata to NDK crash reports</h2> <p>You can optionally include the <code translate="no" dir="ltr">crashlytics.h</code> header in your C++ code to add metadata to NDK crash reports, such as <a href="#add-keys">custom keys</a>, <a href="#add-logs">custom logs</a>, <a href="#set-user-ids">user identifiers</a>. All these options are described on this page above.</p> <p><code translate="no" dir="ltr">crashlytics.h</code> is available as a header-only C++ library in the <a href="https://github.com/firebase/firebase-android-sdk/blob/master/firebase-crashlytics-ndk/src/main/jni/libcrashlytics/include/crashlytics/external/crashlytics.h" class="external">Firebase Android SDK GitHub Repository</a>.</p> <p>Read the comments in the header file for instructions on using the NDK C++ APIs.</p> <h3 id="gwp-asan">Include GWP-ASan reports to debug memory corruption issues</h3> <p>Crashlytics can help you debug crashes caused by native memory errors by collecting GWP-ASan reports. These memory-related errors can be associated with memory corruption within your app, which is the leading cause of app security vulnerabilities.</p> <p>In the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console, you can do the following with this data:</p> <ul> <li><p>You can view this data in a new "Memory stack traces" tab when you click into the details of an issue.</p></li> <li><p>You can use the new "GWP-ASan report" signal and filter to quickly view all issues with this data.</p></li> </ul> <p>You can get GWP-ASan memory reports if you <a href="https://developer.android.com/ndk/guides/gwp-asan#opt-in" class="external">explicitly enable GWP-ASan</a> in your app and use the Crashlytics SDK for NDK v18.3.6+ (Firebase BoM v31.3.0+). You can test your GWP-ASan setup using the <a href="https://developer.android.com/ndk/guides/gwp-asan#example" class="external">example native code in the Android documentation</a>.</p> <h2 id="log-excepts">Report non-fatal exceptions</h2> <p>In addition to automatically reporting your app's crashes, Crashlytics lets you record non-fatal exceptions and sends them to you the next time your app launches.</p> <aside class="note"><strong>Note:</strong><span> Crashlytics only stores the most recent eight recorded exceptions. If your app throws more than eight exceptions, older exceptions are lost.</span></aside> <p>Use the <code translate="no" dir="ltr">recordException</code> method to record non-fatal exceptions in your app's <code translate="no" dir="ltr">catch</code> blocks. For example:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">try {
+    methodThatThrows()
+} catch (e: Exception) {
+    Firebase.crashlytics.recordException(e)
+    // handle your exception here
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">try {
+    methodThatThrows();
+} catch (Exception e) {
+    FirebaseCrashlytics.getInstance().recordException(e);
+    // handle your exception here
+}</pre></section> </div> <p>Additionally, you can also attach custom keys to the specific non-fatal exception. For example:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">try {
+    methodThatThrows()
+} catch (e: Exception) {
+    Firebase.crashlytics.recordException(e) {
+        key("string key", "string value")
+        key("boolean key", true)
+        key("float key", Float.MAX_VALUE)
+    }
+    // handle your exception here
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">try {
+    methodThatThrows();
+} catch (Exception e) {
+    CustomKeysAndValues keysAndValues = new CustomKeysAndValues.Builder()
+            .putString("string key", "string value")
+            .putBoolean("boolean key", true)
+            .putFloat("float key", Float.MAX_VALUE)
+            .build();
+    FirebaseCrashlytics.getInstance().recordException(e, keysAndValues);
+    // handle your exception here
+}</pre></section> </div>
+<aside class="warning"><strong>Warning:</strong><span> Avoid including a unique value (for example, a user ID or a timestamp) in your exception message; use a custom key instead. Adding values directly can result in several issues and may cause Crashlytics to limit reporting errors in your app.</span></aside> <p>All recorded exceptions appear as non-fatal issues in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console. The issue summary contains all the state information you normally get from crashes, along with breakdowns by Android version and hardware device.</p> <p>Crashlytics processes exceptions on a dedicated background thread to minimize the performance impact to your app. To reduce your users’ network traffic, Crashlytics batches logged exceptions together and sends them the next time the app launches.</p> <h2 id="get-breadcrumb-logs">Get breadcrumb logs</h2> <p>Breadcrumb logs give you a better understanding of the interactions that a user had with your app leading up to a crash, non-fatal, or ANR event. These logs can be helpful when trying to reproduce and debug an issue.</p> <p>Breadcrumb logs are powered by Google Analytics, so to get breadcrumb logs, you need to <a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">enable Google Analytics</a> for your Firebase project and <a href="../../analytics/get-started#add-sdk">add the Firebase SDK for Google Analytics</a> to your app. Once these requirements are met, breadcrumb logs are automatically included with an event's data within the <strong>Logs</strong> tab when you view the details of an issue (see all your issues in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console).</p> <p>The Analytics SDK <a href="../../analytics/screenviews">automatically logs the <code translate="no" dir="ltr">screen_view</code> event</a> which enables the breadcrumb logs to show a list of screens viewed before the crash, non-fatal, or ANR event. A <code translate="no" dir="ltr">screen_view</code> breadcrumb log contains a <code translate="no" dir="ltr">firebase_screen_class</code> parameter.</p> <p>Breadcrumb logs are also populated with any <a href="../../analytics/events">custom events</a> that you manually log within the user’s session, including the event's parameter data. This data can help show a series of user actions leading up to a crash, non-fatal, or ANR event.</p> <p>Note that you can <a href="../../analytics/configure-data-collection">control the collection and use of Google Analytics data</a>, which includes the data that populates breadcrumb logs.</p> <h2 id="enable-reporting">Enable opt-in reporting</h2> <aside class="caution">If you enable opt-in reporting by disabling automatic reporting, you will reduce the accuracy of your app's event count and crash-free metrics, which makes them less reflective of the overall stability of your app. <a href="../crash-free-metrics#impact-of-data-collection-settings">Learn more.</a> </aside> <p>By default, Crashlytics automatically collects crash reports for all your app's users. To give users more control over the data they send, you can enable opt-in reporting by disabling automatic reporting and only sending data to Crashlytics when you choose to in your code.</p> <ol> <li>
+<p>In the <code translate="no" dir="ltr">application</code> block of your <code translate="no" dir="ltr">AndroidManifest.xml</code> file, add a <code translate="no" dir="ltr">meta-data</code> tag to turn off automatic collection:</p> 
+<pre>&lt;meta-data
+    android:name="firebase_crashlytics_collection_enabled"
+    android:value="false" /&gt;
+</pre>
+</li> <li>
+<p>Enable collection for select users by calling the Crashlytics data collection override at runtime. The override value persists across all subsequent launches of your app so Crashlytics can automatically collect reports for that user.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">Firebase.crashlytics.setCrashlyticsCollectionEnabled(true)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(true);</pre></section> </div> <p>If the user later opts-out of data collection, you can pass <code translate="no" dir="ltr">false</code> as the override value, which will apply the next time the user launches the app and will persist across all subsequent launches for that user.</p>
+</li> </ol>
+<aside class="note"><strong>Note:</strong><span> When data collection is disabled for a user, Crashlytics will store crash information locally on the device. If data collection is subsequently enabled, any crash information stored on the device will be sent to Crashlytics for processing.</span></aside> <h2 id="manage-crash-insights">Manage Crash Insights data</h2> <p>Crash Insights helps you resolve issues by comparing your anonymized stack traces to traces from other Firebase apps and letting you know if your issue is part of a larger trend. For many issues, Crash Insights even provides resources to help you debug the crash.</p> <p>Crash Insights uses aggregated crash data to identify common stability trends. If you'd prefer not to share your app's data, you can opt-out of Crash Insights from the <strong>Crash Insights</strong> menu at the top of the issue list in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console.</p> <aside class="note"><strong>Note:</strong><span> Disabling data sharing also removes insights on your issues. Changes may take up to 24 hours to take effect.</span></aside> <h2 id="next-steps">Next steps</h2> <ul> <li> <a href="../export-data-to-cloud">Export your data to BigQuery or Cloud Logging</a> for advanced analysis and features, like querying your data, building custom dashboards, and setting up custom alerts. </li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/crashlytics/android/customize-crash-reports" class="_attribution-link">https://firebase.google.com/docs/crashlytics/android/customize-crash-reports</a>
+  </p>
+</div>

@@ -1,0 +1,75 @@
+<h1>Write</h1> <meta itemprop="name" content="Write"> <meta itemprop="path" content="/docs/firestore/reference/rest/v1beta1/Write"> <section id="/docs/firestore/reference/rest/v1beta1/Write"> <section id="description"> <p>A write on a document.</p> </section> <section id="SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "updateMask": {
+    object (DocumentMask)
+  },
+  "updateTransforms": [
+    {
+      object (FieldTransform)
+    }
+  ],
+  "currentDocument": {
+    object (Precondition)
+  },
+
+  // Union field operation can be only one of the following:
+  "update": {
+    object (Document)
+  },
+  "delete": string,
+  "transform": {
+    object (DocumentTransform)
+  }
+  // End of list of possible types for union field operation.
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="FIELDS"> <table class="properties responsive fixed" id="FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="FIELDS.update_mask"> <td><code translate="no" dir="ltr">updateMask</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="documentmask">DocumentMask</a></code>)</code></p> <p>The fields to update in this write.</p>
+<p>This field can be set only when the operation is <code translate="no" dir="ltr">update</code>. If the mask is not set for an <code translate="no" dir="ltr">update</code> and the document exists, any existing data will be overwritten. If the mask is set and the document on the server has fields not covered by the mask, they are left unchanged. Fields referenced in the mask, but not present in the input document, are deleted from the document on the server. The field paths in this mask must not contain a reserved field name.</p> </td> </tr> <tr id="FIELDS.update_transforms"> <td><code translate="no" dir="ltr">updateTransforms[]</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="write#FieldTransform">FieldTransform</a></code>)</code></p> <p>The transforms to perform after update.</p>
+<p>This field can be set only when the operation is <code translate="no" dir="ltr">update</code>. If present, this write is equivalent to performing <code translate="no" dir="ltr">update</code> and <code translate="no" dir="ltr">transform</code> to the same document atomically and in order.</p> </td> </tr> <tr id="FIELDS.current_document"> <td><code translate="no" dir="ltr">currentDocument</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="precondition">Precondition</a></code>)</code></p> <p>An optional precondition on the document.</p>
+<p>The write will fail if this is set and not met by the target document.</p> </td> </tr> <tr id="FIELDS.oneof_operation" class="alt"> <td colspan="2">Union field <code translate="no" dir="ltr">operation</code>. The operation to execute. <code translate="no" dir="ltr">operation</code> can be only one of the following:</td> </tr> <tr id="FIELDS.update"> <td><code translate="no" dir="ltr">update</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="projects.databases.documents#Document">Document</a></code>)</code></p> <p>A document to write.</p> </td> </tr> <tr id="FIELDS.delete"> <td><code translate="no" dir="ltr">delete</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string</code></p> <p>A document name to delete. In the format: <code translate="no" dir="ltr">projects/{projectId}/databases/{databaseId}/documents/{document_path}</code>.</p> </td> </tr> <tr id="FIELDS.transform"> <td><code translate="no" dir="ltr">transform</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="write#DocumentTransform">DocumentTransform</a></code>)</code></p> <p>Applies a transformation to a document.</p> </td> </tr> </tbody> </table> </section> <section id="DocumentTransform"> <h2 id="documenttransform">DocumentTransform</h2> <section id="DocumentTransform.description"> <p>A transformation of a document.</p> </section> <section id="DocumentTransform.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "document": string,
+  "fieldTransforms": [
+    {
+      object (FieldTransform)
+    }
+  ]
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="DocumentTransform.FIELDS"> <table class="properties responsive fixed" id="DocumentTransform.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="DocumentTransform.FIELDS.document"> <td><code translate="no" dir="ltr">document</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string</code></p> <p>The name of the document to transform.</p> </td> </tr> <tr id="DocumentTransform.FIELDS.field_transforms"> <td><code translate="no" dir="ltr">fieldTransforms[]</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="write#FieldTransform">FieldTransform</a></code>)</code></p> <p>The list of transformations to apply to the fields of the document, in order. This must not be empty.</p> </td> </tr> </tbody> </table> </section> </section> <section id="FieldTransform"> <h2 id="fieldtransform">FieldTransform</h2> <section id="FieldTransform.description"> <p>A transformation of a field of the document.</p> </section> <section id="FieldTransform.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "fieldPath": string,
+
+  // Union field transform_type can be only one of the following:
+  "setToServerValue": enum (ServerValue),
+  "increment": {
+    object (Value)
+  },
+  "maximum": {
+    object (Value)
+  },
+  "minimum": {
+    object (Value)
+  },
+  "appendMissingElements": {
+    object (ArrayValue)
+  },
+  "removeAllFromArray": {
+    object (ArrayValue)
+  }
+  // End of list of possible types for union field transform_type.
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="FieldTransform.FIELDS"> <table class="properties responsive fixed" id="FieldTransform.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="FieldTransform.FIELDS.field_path"> <td><code translate="no" dir="ltr">fieldPath</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string</code></p> <p>The path of the field. See <code translate="no" dir="ltr"><a href="projects.databases.documents#Document.FIELDS.fields">Document.fields</a></code> for the field path syntax reference.</p> </td> </tr> <tr id="FieldTransform.FIELDS.oneof_transform_type" class="alt"> <td colspan="2">Union field <code translate="no" dir="ltr">transform_type</code>. The transformation to apply on the field. <code translate="no" dir="ltr">transform_type</code> can be only one of the following:</td> </tr> <tr id="FieldTransform.FIELDS.set_to_server_value"> <td><code translate="no" dir="ltr">setToServerValue</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">enum (<code translate="no" dir="ltr"><a href="write#ServerValue">ServerValue</a></code>)</code></p> <p>Sets the field to the given server value.</p> </td> </tr> <tr id="FieldTransform.FIELDS.increment"> <td><code translate="no" dir="ltr">increment</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr">Value</code>)</code></p> <p>Adds the given value to the field's current value.</p>
+<p>This must be an integer or a double value. If the field is not an integer or double, or if the field does not yet exist, the transformation will set the field to the given value. If either of the given value or the current field value are doubles, both values will be interpreted as doubles. Double arithmetic and representation of double values follow IEEE 754 semantics. If there is positive/negative integer overflow, the field is resolved to the largest magnitude positive/negative integer.</p> </td> </tr> <tr id="FieldTransform.FIELDS.maximum"> <td><code translate="no" dir="ltr">maximum</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr">Value</code>)</code></p> <p>Sets the field to the maximum of its current value and the given value.</p>
+<p>This must be an integer or a double value. If the field is not an integer or double, or if the field does not yet exist, the transformation will set the field to the given value. If a maximum operation is applied where the field and the input value are of mixed types (that is - one is an integer and one is a double) the field takes on the type of the larger operand. If the operands are equivalent (e.g. 3 and 3.0), the field does not change. 0, 0.0, and -0.0 are all zero. The maximum of a zero stored value and zero input value is always the stored value. The maximum of any numeric value x and NaN is NaN.</p> </td> </tr> <tr id="FieldTransform.FIELDS.minimum"> <td><code translate="no" dir="ltr">minimum</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr">Value</code>)</code></p> <p>Sets the field to the minimum of its current value and the given value.</p>
+<p>This must be an integer or a double value. If the field is not an integer or double, or if the field does not yet exist, the transformation will set the field to the input value. If a minimum operation is applied where the field and the input value are of mixed types (that is - one is an integer and one is a double) the field takes on the type of the smaller operand. If the operands are equivalent (e.g. 3 and 3.0), the field does not change. 0, 0.0, and -0.0 are all zero. The minimum of a zero stored value and zero input value is always the stored value. The minimum of any numeric value x and NaN is NaN.</p> </td> </tr> <tr id="FieldTransform.FIELDS.append_missing_elements"> <td><code translate="no" dir="ltr">appendMissingElements</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr">ArrayValue</code>)</code></p> <p>Append the given elements in order if they are not already present in the current field value. If the field is not an array, or if the field does not yet exist, it is first set to the empty array.</p>
+<p>Equivalent numbers of different types (e.g. 3L and 3.0) are considered equal when checking if a value is missing. NaN is equal to NaN, and Null is equal to Null. If the input contains multiple equivalent values, only the first will be considered.</p>
+<p>The corresponding transform_result will be the null value.</p> </td> </tr> <tr id="FieldTransform.FIELDS.remove_all_from_array"> <td><code translate="no" dir="ltr">removeAllFromArray</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr">ArrayValue</code>)</code></p> <p>Remove all of the given elements from the array in the field. If the field is not an array, or if the field does not yet exist, it is set to the empty array.</p>
+<p>Equivalent numbers of the different types (e.g. 3L and 3.0) are considered equal when deciding whether an element should be removed. NaN is equal to NaN, and Null is equal to Null. This will remove all equivalent values if there are duplicates.</p>
+<p>The corresponding transform_result will be the null value.</p> </td> </tr> </tbody> </table> </section> </section> <section id="ServerValue"> <h2 id="servervalue">ServerValue</h2> <section id="ServerValue.description"> <p>A value that is calculated by the server.</p> </section> <section id="ServerValue.ENUM_VALUES"> <table class="constants responsive fixed" id="ServerValue.ENUM_VALUES-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Enums</th> </tr> </thead> <tbody> <tr id="ServerValue.ENUM_VALUES.SERVER_VALUE_UNSPECIFIED"> <td><code class="apitype" translate="no" dir="ltr">SERVER_VALUE_UNSPECIFIED</code></td> <td>Unspecified. This value must not be used.</td> </tr> <tr id="ServerValue.ENUM_VALUES.REQUEST_TIME"> <td><code class="apitype" translate="no" dir="ltr">REQUEST_TIME</code></td> <td>The time at which the server processed the request, with millisecond precision. If used on multiple fields (same or different documents) in a transaction, all the fields will get the same server timestamp.</td> </tr> </tbody> </table> </section> </section> </section><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Write" class="_attribution-link">https://firebase.google.com/docs/firestore/reference/rest/v1beta1/Write</a>
+  </p>
+</div>

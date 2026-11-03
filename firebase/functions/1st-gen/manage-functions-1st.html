@@ -1,0 +1,195 @@
+<h1>Manage functions (1st gen)</h1> <aside class="note"><strong>Note:</strong><span> The 1st-gen functionality described in this page is also supported in Cloud Functions (2nd gen) with improved features and performance. For more information about 2nd gen, see the <a href="../version-comparison">version comparison</a>. To go directly to the 2nd gen guide for this feature, see <a href="../manage-functions">Manage functions</a>.</span></aside> <p>You can deploy, delete, and modify functions using Firebase CLI commands or by setting runtime options in your functions source code.</p> <h2 id="deploy-functions">Deploy functions</h2> <p>To deploy functions, run this Firebase CLI command:</p> 
+<pre>
+firebase deploy --only functions
+</pre> <p>By default, the Firebase CLI deploys all of the functions inside your source at the same time. If your project contains more than 5 functions, we recommend that you use the <code translate="no" dir="ltr">--only</code> flag with specific function names to deploy only the functions that you've edited. <a href="../../cli#deploy_specific_functions">Deploying specific functions</a> this way speeds up the deployment process and helps you avoid running into deployment quotas. For example:</p> 
+<pre>
+firebase deploy --only functions:addMessage,functions:makeUppercase
+</pre> <p>When deploying large numbers of functions, you may exceed the standard quota and receive HTTP 429 or 500 error messages. To solve this, deploy functions in groups of 10 or fewer.</p> <p>See the <a href="../../cli">Firebase CLI reference</a> for the full list of available commands.</p> <p>By default, the Firebase CLI looks in the <code translate="no" dir="ltr">functions/</code> folder for the source code. If you prefer, you can <a href="organize-functions-1st">organize functions</a> in codebases or multiple sets of files.</p> <h2 id="delete-functions">Delete functions</h2> <p>You can delete previously deployed functions in these ways:</p> <ul> <li>
+<em>explicitly</em> in the Firebase CLI with <code translate="no" dir="ltr">functions:delete</code>
+</li> <li>
+<em>explicitly</em> in the <a href="https://console.cloud.google.com/functions/list">Google Cloud console</a>.</li> <li>
+<em>implicitly</em> by removing the function from source prior to deployment.</li> </ul> <p>All deletion operations prompt you to confirm before removing the function from production.</p> <p>Explicit function deletion in the Firebase CLI supports multiple arguments as well as functions groups, and allows you to specify a function running in a particular region. Also, you can override the confirmation prompt.</p> <ul> <li>
+<p>Deletes all functions that match the specified name in all regions: </p>
+
+<pre>firebase functions:delete FUNCTION-1_NAME</pre>
+</li> <li>
+<p>Deletes a specified function running in a non-default region: </p>
+
+<pre>firebase functions:delete FUNCTION-1_NAME --region REGION_NAME</pre>
+</li> <li>
+<p>Deletes more than one function: </p>
+
+<pre>firebase functions:delete FUNCTION-1_NAME FUNCTION-2_NAME</pre>
+</li> <li>
+<p>Deletes a specified functions group: </p>
+
+<pre>firebase functions:delete GROUP_NAME</pre>
+</li> <li>
+<p>Bypasses the confirmation prompt: </p>
+
+<pre>firebase functions:delete FUNCTION-1_NAME --force</pre>
+</li> </ul> <p>With implicit function deletion, <code translate="no" dir="ltr">firebase deploy</code> parses your source and removes from production any functions that have been removed from the file.</p> <h2 id="modify">Modify a function's name, region or trigger</h2> <p>If you are renaming or changing the regions or trigger for functions that are handling production traffic, follow the steps in this section to avoid losing events during modification. Before you follow these steps, first ensure that your function is <a href="../tips#write_idempotent_functions">idempotent</a>, since both the new version and the old version of your function will be running at the same time during the change.</p> <h3 id="modify-name">Rename a function</h3> <p>To rename a function, create a new renamed version of the function in your source and then run two separate deployment commands. The first command deploys the newly named function, and the second command removes the previously deployed version. For example, if you have a Node.js function called <code translate="no" dir="ltr">webhook</code> that you'd like to change to <code translate="no" dir="ltr">webhookNew</code>, revise the code as follows:</p> 
+<pre>// before
+const functions = require('firebase-functions/v1');
+
+exports.webhook = functions.https.onRequest((req, res) =&gt; {
+    res.send("Hello");
+});
+
+// after
+const functions = require('firebase-functions/v1');
+
+exports.webhookNew = functions.https.onRequest((req, res) =&gt; {
+    res.send("Hello");
+});
+</pre> <p>Then run the following commands to deploy the new function:</p> 
+<pre>
+# Deploy new function called webhookNew
+firebase deploy --only functions:webhookNew
+
+# Wait until deployment is done; now both webhookNew and webhook are running
+
+# Delete webhook
+firebase functions:delete webhook
+</pre> <h3 id="1stGen-modify-region">Change a function's region or regions</h3> <p>If you are changing the specified <a href="../locations">regions</a> for a function that's handling production traffic, you can prevent event loss by performing these steps in order:</p> <ol> <li>Rename the function, and change its region or regions as desired.</li> <li>Deploy the renamed function, which results in temporarily running the same code in both sets of regions.</li> <li>Delete the previous function.</li> </ol> <p>For example, if you have a function called <code translate="no" dir="ltr">webhook</code> that is currently deployed in <code translate="no" dir="ltr">us-central1</code>, and you want to migrate it to <code translate="no" dir="ltr">asia-northeast1</code>, you need to first modify your source code to rename the function and revise the region.</p> 
+<pre>// before
+const functions = require('firebase-functions/v1');
+
+exports.webhook = functions
+    .https.onRequest((req, res) =&gt; {
+            res.send("Hello");
+    });
+
+// after
+const functions = require('firebase-functions/v1');
+
+exports.webhookAsia = functions
+    .region('asia-northeast1')
+    .https.onRequest((req, res) =&gt; {
+            res.send("Hello");
+    });
+
+</pre> <p>Then deploy by running:</p> 
+<pre>
+firebase deploy --only functions:webhookAsia
+</pre> <p>Now there are two identical functions running: <code translate="no" dir="ltr">webhook</code> is running in <code translate="no" dir="ltr">us-central1</code>, and <code translate="no" dir="ltr">webhookAsia</code> is running in <code translate="no" dir="ltr">asia-northeast1</code>.</p> <p>Then, delete <code translate="no" dir="ltr">webhook</code>:</p> 
+<pre>
+firebase functions:delete webhook
+</pre> <p>Now there is only one function - <code translate="no" dir="ltr">webhookAsia</code>, which is running in <code translate="no" dir="ltr">asia-northeast1</code>.</p> <h3 id="1stGen-modify-trigger">Change a function's trigger type</h3> <p>As you develop your Cloud Functions for Firebase deployment over time, you may need to change a function's trigger type for various reasons. For example, you might want to change from one type of Firebase Realtime Database or Cloud Firestore event to another type.</p> <p>It is not possible to change a function's event type by just changing the source code and running <code translate="no" dir="ltr">firebase deploy</code>. To avoid errors, change a function's trigger type by this procedure:</p> <ol> <li>Modify the source code to include a new function with the desired trigger type.</li> <li>Deploy the function, which results in temporarily running both the old and new functions.</li> <li>Explicitly delete the old function from production using the Firebase CLI.</li> </ol> <p>For instance, if you had a Node.js function named <code translate="no" dir="ltr">objectChanged</code> that has the legacy <code translate="no" dir="ltr">onChange</code> event type, and you'd like to change it to <code translate="no" dir="ltr">onFinalize</code>, first rename the function and edit it to have the <code translate="no" dir="ltr">onFinalize</code> event type.</p> 
+<pre>// before
+const functions = require('firebase-functions/v1');
+
+exports.objectChanged = functions.storage.object().onChange((object) =&gt; {
+    return console.log('File name is: ', object.name);
+});
+
+// after
+const functions = require('firebase-functions/v1');
+
+exports.objectFinalized = functions.storage.object().onFinalize((object) =&gt; {
+    return console.log('File name is: ', object.name);
+});
+</pre> <p>Then run the following commands to create the new function first, before deleting the old function:</p> 
+<pre>
+# Create new function objectFinalized
+firebase deploy --only functions:objectFinalized
+
+# Wait until deployment is done; now both objectChanged and objectFinalized are running
+
+# Delete objectChanged
+firebase functions:delete objectChanged
+</pre> <h2 id="1g-set-runtime">Set runtime options</h2> <p>Cloud Functions for Firebase lets you select runtime options such as the Node.js runtime version and per-function timeout, memory allocation, and minimum/maximum function instances.</p> <p>As a best practice, these options (except for Node.js version) should be set on a configuration object inside the function code. This <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.runtimeoptions"><code translate="no" dir="ltr">RuntimeOptions</code></a> object is the source of truth for your function's runtime options, and will override options that were set using any other method (such as the Google Cloud console or gcloud CLI).</p> <p>If your development workflow involves manually setting runtime options using the Google Cloud console or gcloud CLI and you <em>don't</em> want these values to be overridden on each deploy, set the <code translate="no" dir="ltr">preserveExternalChanges</code> option to <code translate="no" dir="ltr">true</code>. With this option set to <code translate="no" dir="ltr">true</code>, Firebase merges the runtime options set in your code with the settings of the currently-deployed version of your function with the following priority:</p> <ol> <li>Option is set in functions code: override external changes.</li> <li>Option is set to <code translate="no" dir="ltr">RESET_VALUE</code> in functions code: override external changes with the default value.</li> <li>Option is not set in functions code, but is set in currently deployed function: use the option specified in the deployed function.</li> </ol> <p>Using the <code translate="no" dir="ltr">preserveExternalChanges: true</code> option is <em>not recommended</em> for most scenarios because your code will no longer be the full source of truth for runtime options for your functions. If you do use it, check the Google Cloud console or use the gcloud CLI to view a function's full configuration.</p> <h3 id="1g-set-node.js">Set Node.js version</h3> <p>The Firebase SDK for Cloud Functions allows a selection of Node.js runtime. You can choose to run all functions in a project exclusively on the runtime environment corresponding to one of these supported Node.js versions:</p> <ul> <li><strong>Node.js 22</strong></li> <li><strong>Node.js 20</strong></li> <li><strong>Node.js 18 (deprecated)</strong></li> </ul> <p>See the <a href="https://cloud.google.com/functions/docs/runtime-support#node.js">support schedule</a> for important information regarding ongoing support for these versions of Node.js.</p> <p>To set the Node.js version:</p> <p>You can set the version in the <code translate="no" dir="ltr">engines</code> field in the <code translate="no" dir="ltr">package.json</code> file that was created in your <code translate="no" dir="ltr">functions/</code> directory during initialization. For example, to use only version 20, edit this line in <code translate="no" dir="ltr">package.json</code>:</p> 
+<pre>  "engines": {"node": "22"}
+</pre> <p>If you are using Yarn package manager or have other specific requirements for the <code translate="no" dir="ltr">engines</code> field, you can set the runtime for the Firebase SDK for Cloud Functions in <code translate="no" dir="ltr">firebase.json</code> instead:</p> 
+<pre>  {
+    "functions": {
+      "runtime": "nodejs22"
+    }
+  }
+</pre> <p>The CLI uses the value set in <code translate="no" dir="ltr">firebase.json</code> in preference to any value or range that you set separately in <code translate="no" dir="ltr">package.json</code>.</p> <h4 id="1stGenupgrade-node">Upgrade your Node.js runtime</h4> <p>To upgrade your Node.js runtime:</p> <ol> <li>Make sure your project is on the <a href="https://console.firebase.google.com/project/_/overview" class="external">Blaze pricing plan</a>.</li> <li>Make sure you are using Firebase CLI v11.18.0 or later.</li> <li>Change the <code translate="no" dir="ltr">engines</code> value in the <code translate="no" dir="ltr">package.json</code> file that was created in your <code translate="no" dir="ltr">functions/</code> directory during initialization. For example, if you are upgrading from version 16 to version 18, the entry should look like this: <code translate="no" dir="ltr">"engines": {"node": "18"}</code>
+</li> <li>Optionally, test your changes using the <a href="../../emulator-suite">Firebase Local Emulator Suite</a>.</li> <li>Redeploy all functions.</li> </ol> <h3 id="1g-choose-module-system">Choose a Node.js module system</h3> <p>The default module system in Node.js is CommonJS (CJS), but current Node.js versions also support ECMAScript Modules (ESM). Cloud Functions supports both.</p> <p>By default, your functions use CommonJS. That means imports and exports look like this:</p> 
+<pre>const functions = require("firebase-functions/v1");
+
+exports.helloWorld = functions.https.onRequest(async (req, res) =&gt; res.send("Hello from Firebase!"));
+</pre> <p>To use ESM instead, set the <code translate="no" dir="ltr">"type": "module"</code> field in your <code translate="no" dir="ltr">package.json</code> file :</p> 
+<pre>  {
+   ...
+   "type": "module",
+   ...
+  }
+</pre> <p>Once you set this, use ESM <code translate="no" dir="ltr">import</code> and <code translate="no" dir="ltr">export</code> syntax:</p> 
+<pre>import functions from "firebase-functions/v1";
+
+export const helloWorld = functions.https.onRequest(async (req, res) =&gt; res.send("Hello from Firebase!"));
+</pre> <p>Both module systems are fully supported. You can choose whichever best fits your project. Learn more in the <a href="https://nodejs.org/api/esm.html">Node.js documentation on modules</a>.</p> <h3 id="control-scaling">Control scaling behavior</h3> <p>By default, Cloud Functions for Firebase scales the number of running instances based on the number of incoming requests, potentially scaling down to zero instances in times of reduced traffic. However, if your app requires reduced latency and you want to limit the number of cold starts, you can change this default behavior by specifying a minimum number of container instances to be kept warm and ready to serve requests.</p> <p>Similarly, you can set a maximum number to limit the scaling of instances in response to incoming requests. Use this setting as a way to control your costs or to limit the number of connections to a backing service such as to a database.</p> <h4 id="reduce_the_number_of_cold_starts">Reduce the number of cold starts</h4> <p>To set minimum number of instances for a function in source code, use the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.functionbuilder#functionbuilderrunwith"><code translate="no" dir="ltr">runWith</code></a> method. This method accepts a JSON object conforming to the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.runtimeoptions#runtimeoptions_interface"><code translate="no" dir="ltr">RuntimeOptions</code></a> interface, which defines the value for <code translate="no" dir="ltr">minInstances</code>. For example, this function sets a minimum of 5 instances to keep warm:</p> 
+<pre>exports.getAutocompleteResponse = functions
+    .runWith({
+      // Keep 5 instances warm for this latency-critical function
+      minInstances: 5,
+    })
+    .https.onCall((data, context) =&gt; {
+      // Autocomplete a user's search term
+    });
+</pre>
+<aside class="note"><strong>Note:</strong><span> A minimum number of instances kept running incur billing costs at idle rates. Typically, to keep one idle function instance warm costs less than $6.00 a month. The Firebase CLI provides a cost estimate at deployment time for functions with reserved minimum instances. Refer to <a href="https://cloud.google.com/run/pricing">Cloud Functions Pricing</a> to calculate costs.</span></aside> <p>Here are some things to consider when setting a value for <code translate="no" dir="ltr">minInstances</code>:</p> <ul> <li>If Cloud Functions for Firebase scales your app above your <code translate="no" dir="ltr">minInstances</code> setting, you'll experience a cold start for each instance above that threshold.</li> <li>Cold starts have the most severe effect on apps with spiky traffic. If your app has spiky traffic and you set a <code translate="no" dir="ltr">minInstances</code> value high enough that cold starts are reduced on each traffic increase, you'll see significantly reduced latency. For apps with constant traffic, cold starts are not likely to severely affect performance.</li> <li>
+<p>Setting minimum instances can make sense for production environments, but should usually be avoided in testing environments. To scale to zero in your test project but still reduce cold starts in your production project, you can set <code translate="no" dir="ltr">minInstances</code> based on the <code translate="no" dir="ltr">FIREBASE_CONFIG</code> environment variable:</p> 
+<pre>// Get Firebase project id from `FIREBASE_CONFIG` environment variable
+const envProjectId = JSON.parse(process.env.FIREBASE_CONFIG).projectId;
+
+exports.renderProfilePage = functions
+    .runWith({
+      // Keep 5 instances warm for this latency-critical function
+      // in production only. Default to 0 for test projects.
+      minInstances: envProjectId === "my-production-project" ? 5 : 0,
+    })
+    .https.onRequest((req, res) =&gt; {
+      // render some html
+    });
+</pre>
+</li> </ul> <h4 id="limit_the_maximum_number_of_instances_for_a_function">Limit the maximum number of instances for a function</h4> <p>To set maximum instances in function source code, use the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.functionbuilder#functionbuilderrunwith"><code translate="no" dir="ltr">runWith</code></a> method. This method accepts a JSON object conforming to the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.runtimeoptions#runtimeoptions_interface"><code translate="no" dir="ltr">RuntimeOptions</code></a> interface, which defines values for <code translate="no" dir="ltr">maxInstances</code>. For example, this function sets a limit of 100 instances in order to not overwhelm a hypothetical legacy database:</p> 
+<pre>exports.mirrorOrdersToLegacyDatabase = functions
+    .runWith({
+      // Legacy database only supports 100 simultaneous connections
+      maxInstances: 100,
+    })
+    .firestore.document("orders/{orderId}")
+    .onWrite((change, context) =&gt; {
+      // Connect to legacy database
+    });
+</pre> <p>If an HTTP function is scaled up to the <code translate="no" dir="ltr">maxInstances</code> limit, new requests are queued for 30 seconds and then rejected with a response code of <code translate="no" dir="ltr">429 Too Many Requests</code> if no instance is available by then.</p> <p>To learn more about best practices for using maximum instances settings, check out these <a href="https://cloud.google.com/functions/docs/max-instances#limits_best_practices" class="external">best practices for using <code translate="no" dir="ltr">maxInstances</code></a>.</p> <h3 id="1stGen-set-service-account">Set a service account</h3> <p>The default service account for 1st gen functions, <var translate="no">PROJECT_ID</var>@<wbr>appspot.gserviceaccount.com (named <em>App Engine default service account</em>), has a broad set of permissions to allow you to interact with other Firebase and Google Cloud services.</wbr></p> <p>You might want to override the default service account and limit a function to the exact resources needed. You can do this by creating a custom service account and assigning it to the appropriate function using the <code translate="no" dir="ltr">.runWith()</code> method. This method takes an object with configuration options, including the <code translate="no" dir="ltr">serviceAccount</code> property.</p> 
+<pre>const functions = require("firebase-functions/v1");
+
+exports.helloWorld = functions
+    .runWith({
+        // This function doesn't access other Firebase project resources, so it uses a limited service account.
+        serviceAccount:
+            "my-limited-access-sa@", // or prefer the full form: "my-limited-access-sa@my-project.iam.gserviceaccount.com"
+    })
+    .https.onRequest((request, response) =&gt; {
+        response.send("Hello from Firebase!");
+    });
+</pre> <h3 id="1g-set-timeout">Set timeout and memory allocation</h3> <p>In some cases, your functions may have special requirements for a long timeout value or a large allocation of memory. You can set these values either in the Google Cloud Console or in the function source code (Firebase only).</p> <p>To set memory allocation and timeout in functions source code, use the <a href="https://firebase.google.com/docs/reference/functions/function_builder.functionbuilder#runwith"><code translate="no" dir="ltr">runWith</code></a> parameter introduced in Firebase SDK for Cloud Functions 2.0.0. This runtime option accepts a JSON object conforming to the <a href="https://firebase.google.com/docs/reference/functions/function_configuration.runtimeoptions"><code translate="no" dir="ltr">RuntimeOptions</code></a> interface, which defines values for <code translate="no" dir="ltr">timeoutSeconds</code> and <code translate="no" dir="ltr">memory</code>. For example, this storage function uses 1GB of memory and times out after 300 seconds:</p> 
+<pre>exports.convertLargeFile = functions
+    .runWith({
+      // Ensure the function has enough memory and time
+      // to process large files
+      timeoutSeconds: 300,
+      memory: "1GB",
+    })
+    .storage.object()
+    .onFinalize((object) =&gt; {
+      // Do some complicated things that take a lot of memory and time
+    });
+</pre> <p>The maximum value for <code translate="no" dir="ltr">timeoutSeconds</code> is <code translate="no" dir="ltr">540</code>, or 9 minutes. The amount of memory granted to a function corresponds to the CPU allocated for the function, as detailed in this list of valid values for <code translate="no" dir="ltr">memory</code>:</p> <ul> <li>
+<code translate="no" dir="ltr">128MB</code> — 200MHz</li> <li>
+<code translate="no" dir="ltr">256MB</code> — 400MHz</li> <li>
+<code translate="no" dir="ltr">512MB</code> — 800MHz</li> <li>
+<code translate="no" dir="ltr">1GB</code> — 1.4 GHz</li> <li>
+<code translate="no" dir="ltr">2GB</code> — 2.4 GHz</li> <li>
+<code translate="no" dir="ltr">4GB</code> — 4.8 GHz</li> <li>
+<code translate="no" dir="ltr">8GB</code> — 4.8 GHz</li> </ul> <p>To set memory allocation and timeout in the Google Cloud console:</p> <ol> <li>In the Google Cloud console, select <strong>Cloud Functions</strong> from the left menu.</li> <li>Select a function by clicking on its name in the functions list.</li> <li>Click the <strong>Edit</strong> icon in the top menu.</li> <li>Select a memory allocation from the drop-down menu labeled <strong>Memory allocated</strong>.</li> <li>Click <strong>More</strong> to display the advanced options, and enter a number of seconds in the <strong>Timeout</strong> text box.</li> <li>Click <strong>Save</strong> to update the function.</li> </ol> <aside class="note"><strong>Note:</strong><span> For <a href="callable-1st">HTTP callable functions</a>, the client SDKs enforce a separate default request timeout of 70 seconds (or 60 seconds on Flutter). If you increase a callable function's server-side timeout beyond 70 seconds, you must also <a href="callable-1st#set-timeout-client">increase the client-side timeout</a> in your client app to avoid <code translate="no" dir="ltr">DEADLINE_EXCEEDED</code> (<code translate="no" dir="ltr">deadline-exceeded</code>) errors.</span></aside><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/1st-gen/manage-functions-1st" class="_attribution-link">https://firebase.google.com/docs/functions/1st-gen/manage-functions-1st</a>
+  </p>
+</div>

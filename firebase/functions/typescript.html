@@ -1,0 +1,52 @@
+<h1>Use TypeScript for Cloud Functions</h1> <p>For developers who prefer to write functions in TypeScript, Cloud Functions provides two types of support:</p> <ul> <li>Create and configure TypeScript projects for automatic transpilation at initialization (<code translate="no" dir="ltr">firebase init functions</code>).</li> <li>Transpile existing TypeScript source to JavaScript at deploy time via a <a href="../cli#hooks">predeploy hook</a>.</li> </ul> <p>Following instructions in this guide, you can migrate an existing JavaScript project to TypeScript and continue deploying functions using a predeploy hook to transpile your source code. TypeScript offers many benefits over vanilla JavaScript when writing functions:</p> <ul> <li>TypeScript supports latest JavaScript features like async/await, simplifying promise management</li> <li>A Cloud Functions linter highlights common problems while you're coding</li> <li>Type safety helps you avoid runtime errors in deployed functions</li> </ul> <p>If you're new to TypeScript, see <a href="http://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html">TypeScript in 5 minutes</a>.</p> <h2 id="initializing_a_new_project_with_typescript">Initializing a new Cloud Functions project with TypeScript</h2> <p>Run <code translate="no" dir="ltr">firebase init functions</code> in a new directory. The tool gives you options to build the project with JavaScript or TypeScript. Choose <strong>TypeScript</strong> to output the following project structure:</p> 
+<pre>myproject
+ +- functions/     # Directory containing all your functions code
+      |
+      +- package.json  # npm package file describing your Cloud Functions code
+      |
+      +- tsconfig.json
+      |
+      +- .eslintrc.js # Optional file if you enabled ESLint
+      +- tsconfig.dev.json # Optional file that references .eslintrc.js
+      |
+      +- src/     # Directory containing TypeScript source
+      |   |
+      |   +- index.ts  # main source file for your Cloud Functions code
+      |
+      +- lib/
+          |
+          +- index.js  # Built/transpiled JavaScript code
+          |
+          +- index.js.map # Source map for debugging
+</pre> <p>Once initialization is complete, uncomment the sample in index.ts and run <code translate="no" dir="ltr">npm run serve</code> to see a "Hello World" function in action.</p> <h2 id="using_an_existing_typescript_project">Using an existing TypeScript project</h2> <p>If you have an existing TypeScript project, you can add a predeploy hook to make sure your project is transpiled every time you deploy your code to Cloud Functions for Firebase. You'll need a properly formed <code translate="no" dir="ltr">tsconfig.json</code> file and a Firebase project, and you'll need to make the following modifications to your Firebase configuration:</p> <ol> <li>
+<p>Edit <code translate="no" dir="ltr">package.json</code> to add a bash script to build your TypeScript project. For example:</p> 
+<pre> {
+   "name": "functions",
+   "scripts": {
+     "build": "npm run lint &amp;&amp; tsc"
+   }
+ ...
+</pre>
+</li> <li>
+<p>Edit <code translate="no" dir="ltr">firebase.json</code> to add a predeploy hook to run the build script. For example:</p> 
+<pre> {
+   "functions": {
+     "predeploy": "npm --prefix functions run build",
+   }
+ }
+</pre>
+</li> </ol> <p>With this configuration, a <code translate="no" dir="ltr">firebase deploy --only functions</code> command builds your TypeScript code and deploys it as functions.</p> <h2 id="migrating_an_existing_javascript_project_to_typescript">Migrating an existing JavaScript project to TypeScript</h2> <p>If you have an existing Cloud Functions project that you initialized and developed in JavaScript, you can migrate it to TypeScript. You're strongly encouraged to create a git checkpoint or other backup before starting.</p> <p><strong>To migrate an existing JavaScript Cloud Functions project:</strong></p> <ol> <li>Create a git checkpoint and save copies of your existing JavaScript source files.</li> <li>In the project directory, run <code translate="no" dir="ltr">firebase init functions</code> and select <code translate="no" dir="ltr">TypeScript</code> when prompted for a language for writing functions.</li> <li>When prompted whether to overwrite the existing <code translate="no" dir="ltr">package.json</code> file, select <strong>No</strong> unless you are sure you don't want to keep the existing file.</li> <li>Delete <code translate="no" dir="ltr">index.ts</code> in the directory <code translate="no" dir="ltr">functions/src</code>, replacing it with your existing source code.</li> <li>In the <code translate="no" dir="ltr">tsconfig.json</code> file created at initialization, set the compiler options to allow JavaScript: <code translate="no" dir="ltr">"allowJs": true</code>.</li> <li>Copy your saved <code translate="no" dir="ltr">package.json</code> file into the <code translate="no" dir="ltr">functions</code> directory, and edit it to set <code translate="no" dir="ltr">"main"</code> to <code translate="no" dir="ltr">"lib/index.js"</code>.</li> <li>
+<p>Also in <code translate="no" dir="ltr">package.json</code>, add a build script for TypeScript like the following:</p> 
+<pre> {
+   "name": "functions",
+   "scripts": {
+     "build": "npm run lint &amp;&amp; tsc"
+   }
+ ...
+</pre>
+</li> <li><p>Add <code translate="no" dir="ltr">"typescript"</code> as a dev dependency by running <code translate="no" dir="ltr">npm install --save-dev typescript @typescript-eslint/eslint-plugin @typescript-eslint/parser</code>.</p></li> <li><p>For all dependencies, run <code translate="no" dir="ltr">npm install --save @types/&lt;dependency&gt;</code>.</p></li> <li><p>Rewrite source code from .js to .ts as desired.</p></li> </ol> <h2 id="emulating_typescript_functions">Emulating TypeScript functions</h2> <p>To test TypeScript functions locally, you can use the emulation tools described in <a href="local-emulator">Run functions locally</a>. It's important to compile your code before using these tools, so make sure to run <code translate="no" dir="ltr">npm run build</code> inside your functions directory before running <code translate="no" dir="ltr">firebase emulators:start</code> or <code translate="no" dir="ltr">firebase functions:shell</code>. Alternatively, run <code translate="no" dir="ltr">npm run serve</code> or <code translate="no" dir="ltr">npm run shell</code> as a shortcut; these commands both run the build and serve/start the functions shell.</p> <h2 id="functions_logs_for_typescript_projects">Functions logs for TypeScript projects</h2> <p>During <code translate="no" dir="ltr">firebase deploy</code>, your project's <code translate="no" dir="ltr">index.ts</code> is transpiled to <code translate="no" dir="ltr">index.js</code>, meaning that the Cloud Functions log will output line numbers from the <code translate="no" dir="ltr">index.js</code> file and not the code you wrote. To make it easier for you to find the corresponding paths and line numbers in <code translate="no" dir="ltr">index.ts</code>, <code translate="no" dir="ltr">firebase deploy</code> creates <code translate="no" dir="ltr">functions/lib/index.js.map</code>. You can use this source map in your preferred IDE or via a <a href="https://github.com/evanw/node-source-map-support">node module</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/typescript" class="_attribution-link">https://firebase.google.com/docs/functions/typescript</a>
+  </p>
+</div>

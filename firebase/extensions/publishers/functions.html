@@ -1,0 +1,520 @@
+<h1>Write Cloud Functions for an extension</h1> <p>When you create an extension, you write its logic using Cloud Functions, in much the same way as you would write a function that would only ever be used in your own project. You declare your functions in the <code translate="no" dir="ltr">extension.yaml</code> file, and when users install your extension, these functions get deployed into their project.</p> <p>See the <a href="../../functions">Cloud Functions</a> documentation for general information on using Cloud Functions.</p> <h2 id="gen">1st and 2nd generation Cloud Functions</h2> <p>Firebase supports both <a href="../../functions/version-comparison">1st-generation and 2nd-generation Cloud Functions</a>. However, Firebase Extensions currently have some restrictions on which generation of cloud function you can use with certain trigger types. For this reason, many extensions include a mix of 1st and 2nd generation functions.</p> <p>Function generation support is noted for each trigger type, below.</p> <h2 id="special-considerations">Special considerations</h2> <ul> <li>
+<p>Some function definitions require you to specify information that is also specified in the <code translate="no" dir="ltr">extension.yaml</code> file. For example, Cloud Firestore has a <code translate="no" dir="ltr">document()</code> method that specifies the document pattern to watch, and its corresponding declaration in <code translate="no" dir="ltr">extension.yaml</code> has a <code translate="no" dir="ltr">resource</code> field that specifies the same.</p> <p>In these situations, the configuration specified in the <code translate="no" dir="ltr">extension.yaml</code> file is used and the configuration specified in the function definition is ignored.</p> <p>It is common practice to specify the configured value in the function definition regardless, for the sake of documentation. The examples on this page follow this pattern.</p>
+</li> <li><p>The Cloud Functions 1st gen SDK has a <code translate="no" dir="ltr">functions.config()</code> method and <code translate="no" dir="ltr">functions:config:set</code> CLI command that you can use to work with parameterized values in 1st gen functions. This technique is deprecated in Cloud Functions and will <em>not work at all</em> in an extension. Instead, use the <code translate="no" dir="ltr">functions.params</code> module (recommended) or <code translate="no" dir="ltr">process.env</code>.</p></li> </ul> <h2 id="typescript">Using TypeScript</h2> <p>Most of the documentation for developing your own extension describes workflows using JavaScript for Cloud Functions for Firebase. However, you can instead write your functions using TypeScript.</p> <p>In fact, all the <a href="https://github.com/firebase/extensions" class="external">official Firebase extensions</a> are written in TypeScript. You can review those extensions for some best practices to use TypeScript for your extension.</p> <p><strong>If you do write your extension's functions in TypeScript, you must do the following before installing your extension:</strong></p> <ol> <li>
+<p>Compile your extension's functions source code to JavaScript.</p> <p>The <a href="get-started#setup"><code translate="no" dir="ltr">firebase ext:dev:init</code> command</a> allows you to choose TypeScript for writing your functions. The command provides you with a complete, installable extension <em>as well as a build script that you can run with <code translate="no" dir="ltr">npm run build</code></em>.</p>
+</li> <li><p>In your <code translate="no" dir="ltr">package.json</code> file, make sure to point the <code translate="no" dir="ltr">main</code> field at the generated JavaScript.</p></li> <li><p>If you're installing or uploading your extension from local source, compile your TypeScript files first.</p></li> </ol> <h2 id="supported">Supported function triggers</h2> <h3 id="http">HTTP triggers</h3> <p>An HTTP-triggered function is deployed to a public <code translate="no" dir="ltr">https</code> endpoint and runs when the endpoint is accessed.</p> <p>See <a href="../../functions/1st-gen/http-events-1st">Call functions via HTTP requests</a> in the Cloud Functions documentation for information on writing HTTP-triggered functions.</p> <h4 id="function_definition_1st-gen_only">Function definition (1st-gen only)</h4> 
+<pre>import { https } from "firebase-functions/v1";
+
+export const yourFunctionName = https.onRequest(async (req, resp) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      runtime: nodejs16
+      httpsTrigger: {}
+  - name: anotherFunction
+    type: ...
+</pre> <h3 id="callable">Callable functions</h3> <p>Callable functions are similar to HTTP-triggered functions, but they implement a protocol that makes them convenient to call from your client-side code.</p> <p>See <a href="../../functions/1st-gen/callable-1st">Call functions from your app</a> in the Cloud Functions documentation for information on using callable functions.</p> <h4 id="function_definition_1st-gen_only_2">Function definition (1st-gen only)</h4> 
+<pre>import { https } from "firebase-functions/v1";
+
+export const yourFunctionName = https.onCall(async (data, context) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_2">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      runtime: nodejs16
+      httpsTrigger: {}
+  - name: anotherFunction
+    type: ...
+</pre> <h3 id="scheduled">Scheduled function triggers</h3> <p>A scheduled function runs repeatedly based on a customizable schedule.</p> <p>See <a href="../../functions/1st-gen/schedule-functions-1st">Schedule functions</a> in the Cloud Functions documentation for information on writing scheduled functions.</p> <h4 id="function_definition_1st-gen_only_3">Function definition (1st-gen only)</h4> 
+<pre>import { pubsub } from "firebase-functions/v1";
+
+export const yourFunctionName = pubsub.schedule("every 6 hours").onRun((context) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_3">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      scheduleTrigger:
+        schedule: 'every 5 minutes'
+  - name: anotherFunction
+    type: ...
+</pre> <p>Here are the available subfields for <code translate="no" dir="ltr">scheduleTrigger</code>:</p> <table> <thead> <tr> <th><strong>Field</strong></th> <th><strong>Description</strong></th> </tr> </thead> <tbody> <tr id="schedule-field"> <td> <code translate="no" dir="ltr">schedule</code><br> <em>(required)</em> </td> <td> <p>The frequency at which you want the function to run.</p> <p>This field can accept strings that use either syntax (wrapping in <em>single-quotes</em> is required):</p> <ul> <li>
+<a href="https://cloud.google.com/scheduler/docs/configuring/cron-job-schedules" class="external">unix-cron syntax</a> (for example, <code translate="no" dir="ltr">'5 11 * * *'</code>) </li> <li>
+<a href="https://cloud.google.com/appengine/docs/standard/nodejs/scheduling-jobs-with-cron-yaml#defining_the_cron_job_schedule" class="external">App Engine syntax</a> (for example, <code translate="no" dir="ltr">'every 5 minutes'</code>) </li> </ul> </td> </tr> <tr id="time-zone-field"> <td> <code translate="no" dir="ltr">timeZone</code><br> <em>(optional)</em> </td> <td> <p>The time zone in which the schedule will run.</p> <ul> <li>Use <a href="https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations">standardardized time zone abbreviations.</a> </li> <li>Defaults to <code translate="no" dir="ltr">UTC</code> </li> </ul> </td> </tr> </tbody> </table> <p>If you want users to be able to configure the schedule when they install your extension, add a new parameter to your <code translate="no" dir="ltr">extension.yaml</code> file and reference the parameter in your function's <code translate="no" dir="ltr">resource</code> declaration:</p> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      scheduleTrigger:
+        schedule: ${SCHEDULE_FREQUENCY}
+  - name: anotherFunction
+    type: ...
+
+params:
+  - param: SCHEDULE_FREQUENCY
+    label: Schedule
+    description: How often do you want to run yourFunctionName()?
+    type: string
+    default: 'every 5 minutes'  # Specifying a default is optional.
+    required: true
+</pre> <aside class="caution">Cloud Scheduler allows 3 jobs at no cost per <em>billing account</em>. This is not at the project-level, but at the <em>billing account level</em>. So if you have multiple projects associated with the same billing account, you need to be aware of how many Cloud Scheduler jobs you may have. Learn more about <a href="https://cloud.google.com/scheduler#pricing" class="external">Cloud Scheduler pricing</a>. <p>Each installed instance of a scheduled extension will have a single Cloud Scheduler job provisioned for the project. Paused jobs are counted as jobs. </p> </aside> <h3 id="task-queue">Task queue triggers</h3> <p>A task queue function is triggered either on your extension's <a href="lifecycle-events">lifecycle events</a> or when manually added to your extension's task queue using the Admin SDK's <a href="https://firebase.google.com/docs/reference/admin/node/firebase-admin.functions.taskqueue#taskqueueenqueue"><code translate="no" dir="ltr">TaskQueue.enqueue()</code> method</a>.</p> <p>See <a href="lifecycle-events">Handle your extension's lifecycle events</a> for information on writing functions that handle lifecycle events.</p> <p>See <a href="../../functions/1st-gen/task-functions-1st">Enqueue functions with Cloud Tasks</a> in the Cloud Functions documentation for information on writing task queue functions.</p> <h4 id="function_definition_1st-gen_only_4">Function definition (1st-gen only)</h4> 
+<pre>import { tasks } from "firebase-functions/v1";
+
+export const yourFunctionName = tasks.taskQueue().onDispatch(async (data, context) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_4">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: myTaskFunction
+    type: firebaseextensions.v1beta.function
+    description: &gt;-
+      Perform a task when triggered by a lifecycle event
+    properties:
+      taskQueueTrigger: {}
+</pre> <p>Set the <code translate="no" dir="ltr">taskQueueTrigger</code> property set to either <code translate="no" dir="ltr">{}</code> or a map of options which tune the rate limits and retry behavior of the task queue (see <a href="lifecycle-events#task-queue-properties">Tuning the task queue</a>).</p> <p>If you want to trigger your function on your extension's lifecycle events, add <code translate="no" dir="ltr">lifecycleEvents</code> records with the name of the function and an optional processing message, which will be displayed in the Firebase console when processing begins.</p> 
+<pre>lifecycleEvents:
+  onInstall:
+    function: myTaskFunction
+    processingMessage: Resizing your existing images
+  onUpdate:
+    function: myOtherTaskFunction
+    processingMessage: Setting up your extension
+  onConfigure:
+    function: myOtherTaskFunction
+    processingMessage: Setting up your extension
+</pre>
+<aside class="note"><strong>Note:</strong><span> The message you specify here is automatically set as your extension's processing status in the Firebase console when triggering your function. To update or clear the processing status when your processing task finishes its work, call <a href="lifecycle-events#set-processing-state"><code translate="no" dir="ltr">setProcessingState()</code></a>.</span></aside> <h3 id="analytics">Analytics</h3> <p>An Analytics-triggered function runs when a specified Analytics event gets logged.</p> <p>See <a href="../../functions/1st-gen/analytics-events-1st">Google Analytics triggers</a> in the Cloud Functions documentation for information on writing Analytics-triggered functions.</p> <h4 id="function_definition_1st-gen_only_5">Function definition (1st-gen only)</h4> 
+<pre>import { analytics } from "firebase-functions/v1";
+
+export const yourFunctionName = analytics.event("event_name").onLog((event, context) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_5">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: providers/google.firebase.analytics/eventTypes/event.log
+        resource: projects/${PROJECT_ID}/events/ga_event
+  - name: anotherFunction
+    type: ...
+</pre> <p>If you want users to be able to configure the Analytics event to listen for when they install your extension, add a new parameter to your <code translate="no" dir="ltr">extension.yaml</code> file and reference the parameter in your function's <code translate="no" dir="ltr">resource</code> declaration:</p> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: providers/google.firebase.analytics/eventTypes/event.log
+        resource: projects/${PROJECT_ID}/events/${EVENT_NAME}
+  - name: anotherFunction
+    type: ...
+
+params:
+  - param: EVENT_NAME
+    label: Analytics event
+    description: What event do you want to respond to?
+    type: string
+    default: ga_event  # Specifying a default is optional.
+    required: true
+</pre> <h3 id="auth">Authentication</h3> <p>An authentication-triggered function runs when a user is created or deleted.</p> <p>See <a href="../../functions/1st-gen/auth-events-1st">Firebase Authentication triggers</a> in the Cloud Functions documentation for information on writing auth-triggered functions.</p> <h4 id="function_definition_1st-gen_only_6">Function definition (1st-gen only)</h4> 
+<pre>import { auth } from "firebase-functions/v1";
+
+export const yourFunctionName = auth.user().onCreate((user, context) =&gt; {
+  // ...
+});
+
+export const yourFunctionName2 = auth.user().onDelete((user, context) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_6">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: providers/firebase.auth/eventTypes/user.create
+        resource: projects/${PROJECT_ID}
+  - name: anotherFunction
+    type: ...
+</pre> <p>The following table shows how to specify each of the supported Authentication event types:</p> <table> <tr> <th>Cloud Functions event trigger</th> <th><code translate="no" dir="ltr">eventType</code></th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">onCreate()</code></td> <td><code translate="no" dir="ltr">providers/firebase.auth/eventTypes/user.create</code></td> <td>New user created</td> </tr> <tr> <td><code translate="no" dir="ltr">onDelete()</code></td> <td><code translate="no" dir="ltr">providers/firebase.auth/eventTypes/user.delete</code></td> <td>User deleted</td> </tr> </table> <h3 id="firestore">Cloud Firestore</h3> <p>A Cloud Firestore-triggered function runs when a document is created, updated, or deleted.</p> <p>See <a href="../../functions/1st-gen/firestore-events-1st">Cloud Firestore triggers</a> in the Cloud Functions documentation for information on writing Firestore-triggered functions.</p> <h4 id="function_definition_1st-gen_only_7">Function definition (1st-gen only)</h4> 
+<pre>import { firestore } from "firebase-functions/v1";
+
+export const yourFunctionName = firestore.document("collection/{doc_id}")
+  .onCreate((snapshot, context) =&gt; {
+    // ...
+  });
+
+export const yourFunctionName2 = firestore.document("collection/{doc_id}")
+  .onUpdate((change, context) =&gt; {
+    // ...
+  });
+
+export const yourFunctionName3 = firestore.document("collection/{doc_id}")
+  .onDelete((snapshot, context) =&gt; {
+    // ...
+  });
+
+export const yourFunctionName4 = firestore.document("collection/{doc_id}")
+  .onWrite((change, context) =&gt; {
+    // onWrite triggers on creation, update, and deletion.
+    // ...
+  });
+</pre> <h4 id="resource_declaration_extensionyaml_7">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: providers/cloud.firestore/eventTypes/document.write
+        resource: projects/${PROJECT_ID}/databases/(default)/documents/collection/{documentID}
+  - name: anotherFunction
+    type: ...
+</pre> <p>The following table shows how to specify each of the supported Cloud Firestore event types:</p> <table> <tr> <th>Cloud Functions event trigger</th> <th><code translate="no" dir="ltr">eventType</code></th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">onCreate()</code></td> <td><code translate="no" dir="ltr">providers/cloud.firestore/eventTypes/document.create</code></td> <td>New document created</td> </tr> <tr> <td><code translate="no" dir="ltr">onDelete()</code></td> <td><code translate="no" dir="ltr">providers/cloud.firestore/eventTypes/document.delete</code></td> <td>Document deleted</td> </tr> <tr> <td><code translate="no" dir="ltr">onUpdate()</code></td> <td><code translate="no" dir="ltr">providers/cloud.firestore/eventTypes/document.update</code></td> <td>Document updated</td> </tr> <tr> <td><code translate="no" dir="ltr">onWrite()</code></td> <td><code translate="no" dir="ltr">providers/cloud.firestore/eventTypes/document.write</code></td> <td>Document created, deleted, or updated</td> </tr> </table> <p>If you want users to be able to configure the document path when they install your extension, add a new parameter to your <code translate="no" dir="ltr">extension.yaml</code> file and reference the parameter in your function's <code translate="no" dir="ltr">resource</code> declaration:</p> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: providers/cloud.firestore/eventTypes/document.write
+        resource: projects/${PROJECT_ID}/databases/(default)/documents/${YOUR_DOCUMENT_PATH}
+  - name: anotherFunction
+    type: ...
+
+params:
+  - param: YOUR_DOCUMENT_PATH
+    label: Cloud Firestore path
+    description: Where do you want to watch for changes?
+    type: string
+    default: path/to/{documentID}  # Specifying a default is optional.
+    required: true
+</pre> <h3 id="pubsub">Pub/Sub</h3> <p>A Pub/Sub-triggered function runs when a message is published to a specific topic.</p> <p>See <a href="../../functions/1st-gen/pubsub-events-1st">Pub/Sub triggers</a> in the Cloud Functions documentation for information on writing Pub/Sub-triggered functions.</p> <h4 id="function_definition_1st-gen_only_8">Function definition (1st-gen only)</h4> 
+<pre>import { pubsub } from "firebase-functions/v1";
+
+export const yourFunctionName = pubsub.topic("topic_name").onPublish((message, context) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_8">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: google.pubsub.topic.publish
+        resource: projects/${PROJECT_ID}/topics/topic-name
+  - name: anotherFunction
+    type: ...
+</pre> <p>If you want users to be able to configure the Pub/Sub topic when they install your extension, add a new parameter to your <code translate="no" dir="ltr">extension.yaml</code> file and reference the parameter in your function's <code translate="no" dir="ltr">resource</code> declaration:</p> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: google.pubsub.topic.publish
+        resource: projects/${PROJECT_ID}/topics/${PUBSUB_TOPIC}
+  - name: anotherFunction
+    type: ...
+
+params:
+  - param: PUBSUB_TOPIC
+    label: Pub/Sub topic
+    description: Which Pub/Sub topic do you want to watch for messages?
+    type: string
+    default: topic-name  # Specifying a default is optional.
+    required: true
+</pre> <h3 id="rtdb">Realtime Database</h3> <p>A Realtime Database-triggered function runs when a path that matches a specified pattern is created, updated, or deleted.</p> <p>See <a href="../../functions/1st-gen/database-events-1st">Realtime Database triggers</a> in the Cloud Functions documentation for information on writing RTDB-triggered functions.</p> <h4 id="function_definition_1st-gen_only_9">Function definition (1st-gen only)</h4> 
+<pre>import { database } from "firebase-functions/v1";
+
+export const yourFunctionName = database.ref("path/to/{item}")
+  .onCreate((snapshot, context) =&gt; {
+    // ...
+  });
+
+export const yourFunctionName2 = database.ref("path/to/{item}")
+  .onUpdate((change, context) =&gt; {
+    // ...
+  });
+
+export const yourFunctionName3 = database.ref("path/to/{item}")
+  .onDelete((snapshot, context) =&gt; {
+    // ...
+  });
+
+export const yourFunctionName4 = database.ref("path/to/{item}")
+  .onWrite((change, context) =&gt; {
+    // onWrite triggers on creation, update, and deletion.
+    // ...
+  });
+</pre> <h4 id="resource_declaration_extensionyaml_9">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: providers/google.firebase.database/eventTypes/ref.create
+        # DATABASE_INSTANCE (project's default instance) is an auto-populated
+        # parameter value. You can also specify an instance.
+        resource: projects/_/instances/${DATABASE_INSTANCE}/refs/path/to/{itemId}
+  - name: anotherFunction
+    type: ...
+</pre> <p>The following table shows how to specify each of the supported Cloud Firestore event types:</p> <table> <tr> <th>Cloud Functions event trigger</th> <th><code translate="no" dir="ltr">eventType</code></th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">onCreate()</code></td> <td><code translate="no" dir="ltr">providers/google.firebase.database/eventTypes/ref.create</code></td> <td>Data created</td> </tr> <tr> <td><code translate="no" dir="ltr">onDelete()</code></td> <td><code translate="no" dir="ltr">providers/google.firebase.database/eventTypes/ref.delete</code></td> <td>Data deleted</td> </tr> <tr> <td><code translate="no" dir="ltr">onUpdate()</code></td> <td><code translate="no" dir="ltr">providers/google.firebase.database/eventTypes/ref.update</code></td> <td>Data updated</td> </tr> <tr> <td><code translate="no" dir="ltr">onWrite()</code></td> <td><code translate="no" dir="ltr">providers/google.firebase.database/eventTypes/ref.write</code></td> <td>Data created, deleted, or updated</td> </tr> </table> <p>If you want users to be able to configure the path to watch when they install your extension, add a new parameter to your <code translate="no" dir="ltr">extension.yaml</code> file and reference the parameter in your function's <code translate="no" dir="ltr">resource</code> declaration:</p> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: providers/google.firebase.database/eventTypes/ref.create
+        # DATABASE_INSTANCE (project's default instance) is an auto-populated
+        # parameter value. You can also specify an instance.
+        resource: projects/_/instances/${DATABASE_INSTANCE}/refs/${DB_PATH}
+  - name: anotherFunction
+    type: ...
+
+params:
+  - param: DB_PATH
+    label: Realtime Database path
+    description: Where do you want to watch for changes?
+    type: string
+    default: path/to/{itemId}  # Specifying a default is optional.
+    required: true
+</pre> <h3 id="remote-config">Remote Config</h3> <p>A Remote Config-triggered function runs when a project's parameter template is updated.</p> <p>See <a href="../../functions/1st-gen/rc-events-1st">Remote Config triggers</a> in the Cloud Functions documentation for information on writing Remote Config-triggered functions.</p> <h4 id="function_definition_1st-gen_only_10">Function definition (1st-gen only)</h4> 
+<pre>import { remoteConfig } from "firebase-functions/v1";
+
+export const yourFunctionName = remoteConfig.onUpdate((version, context) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_10">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: google.firebase.remoteconfig.update
+        resource: projects/${PROJECT_ID}
+  - name: anotherFunction
+    type: ...
+</pre> <h3 id="storage">Cloud Storage</h3> <p>A Cloud Storage-triggered function runs when an object is created, archived, or deleted, or when its metadata changes.</p> <p>See <a href="../../functions/1st-gen/gcp-storage-events-1st">Cloud Storage triggers</a> in the Cloud Functions documentation for information on writing Storage-triggered functions.</p> <h4 id="function_definition_1st-gen_only_11">Function definition (1st-gen only)</h4> 
+<pre>import { storage } from "firebase-functions/v1";
+
+export const yourFunctionName = storage.object().onFinalize((object, context) =&gt; {
+  // ...
+});
+
+export const yourFunctionName2 = storage.object().onMetadataUpdate((object, context) =&gt; {
+  // ...
+});
+
+export const yourFunctionName3 = storage.object().onArchive((object, context) =&gt; {
+  // ...
+});
+
+export const yourFunctionName4 = storage.object().onDelete((object, context) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_11">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: google.storage.object.finalize
+        # STORAGE_BUCKET (project's default bucket) is an auto-populated
+        # parameter. You can also specify a bucket.
+        resource: projects/_/buckets/${STORAGE_BUCKET}
+  - name: anotherFunction
+    type: ...
+</pre> <p>The following table shows how to specify each of the supported Cloud Storage event types:</p> <table> <tr> <th>Cloud Functions event trigger</th> <th><code translate="no" dir="ltr">eventType</code></th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">onFinalize()</code></td> <td><code translate="no" dir="ltr">google.storage.object.finalize</code></td> <td>Object created</td> </tr> <tr> <td><code translate="no" dir="ltr">onMetadataUpdate()</code></td> <td><code translate="no" dir="ltr">google.storage.object.metadataUpdate</code></td> <td>Object metadata updated</td> </tr> <tr> <td><code translate="no" dir="ltr">onArchive()</code></td> <td><code translate="no" dir="ltr">google.storage.object.archive</code></td> <td>Object was archived</td> </tr> <tr> <td><code translate="no" dir="ltr">onDelete()</code></td> <td><code translate="no" dir="ltr">google.storage.object.delete</code></td> <td>Object deleted</td> </tr> </table> <p>If you want users to be able to configure the storage bucket when they install your extension, add a new parameter to your <code translate="no" dir="ltr">extension.yaml</code> file and reference the parameter in your function's <code translate="no" dir="ltr">resource</code> declaration:</p> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: google.storage.object.finalize
+        resource: projects/_/buckets/${YOUR_BUCKET}
+  - name: anotherFunction
+    type: ...
+
+params:
+  - param: YOUR_BUCKET
+    label: Cloud Storage bucket
+    description: Which bucket do you want to watch for changes?
+    type: selectResource
+    resourceType: storage.googleapis.com/Bucket
+    default: ${STORAGE_BUCKET}  # Specifying a default is optional.
+    required: true
+</pre> <h3 id="testlab">Test Lab</h3> <p>A Test Lab-triggered function runs when a test matrix finishes its tests.</p> <p>See <a href="../../functions/1st-gen/test-lab-events-1st">Firebase Test Lab triggers</a> in the Cloud Functions documentation for information on writing Test Lab-triggered functions.</p> <h4 id="function_definition_1st-gen_only_12">Function definition (1st-gen only)</h4> 
+<pre>import { testLab } from "firebase-functions/v1";
+
+export const yourFunctionName = testLab.testMatrix().onComplete((matrix, context) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_12">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourFunctionName
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: google.testing.testMatrix.complete
+        resource: projects/${PROJECT_ID}/testMatrices/{matrixId}
+  - name: anotherFunction
+    type: ...
+</pre> <h3 id="crashlytics">Crashlytics alert triggers</h3> <p>A Crashlytics-triggered function runs when Crashlytics publishes an alert.</p> <p>See <a href="../../functions/alert-events">Firebase Alerts triggers</a> in the Cloud Functions documentation for information on writing alert-triggered functions.</p> <h4 id="function_definition_2nd-gen_only">Function definition (2nd-gen only)</h4> 
+<pre>import {
+  onNewFatalIssuePublished,
+  onNewNonfatalIssuePublished,
+  onNewAnrIssuePublished,
+  onRegressionAlertPublished,
+  onVelocityAlertPublished,
+  onStabilityDigestPublished,
+} from "firebase-functions/v2/alerts/crashlytics";
+
+export const yourFunctionName = onNewFatalIssuePublished((event) =&gt; {
+  // ...
+});
+
+export const yourFunctionName2 = onNewNonfatalIssuePublished((event) =&gt; {
+  // ...
+});
+
+export const yourFunctionName3 = onNewAnrIssuePublished((event) =&gt; {
+  // ...
+});
+
+export const yourFunctionName4 = onRegressionAlertPublished((event) =&gt; {
+  // ...
+});
+
+export const yourFunctionName5 = onVelocityAlertPublished((event) =&gt; {
+  // ...
+});
+
+export const yourFunctionName6 = onStabilityDigestPublished((event) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_13">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourfunctionname
+    type: firebaseextensions.v1beta.v2function
+    properties:
+      buildConfig:
+        runtime: nodejs16
+      serviceConfig:
+        availableMemory: 512M
+      eventTrigger:
+        eventType: google.firebase.firebasealerts.alerts.v1.published
+        triggerRegion: global
+        eventFilters:
+          - attribute: alerttype
+            value: crashlytics.newFatalIssue
+  - name: anotherFunction
+    type: ...
+</pre> <p>You can use the following values for <code translate="no" dir="ltr">alerttype</code></p> <ul> <li><code translate="no" dir="ltr">crashlytics.newFatalIssue</code></li> <li><code translate="no" dir="ltr">crashlytics.newNonfatalIssue</code></li> <li><code translate="no" dir="ltr">crashlytics.regression</code></li> <li><code translate="no" dir="ltr">crashlytics.stabilityDigest</code></li> <li><code translate="no" dir="ltr">crashlytics.velocity</code></li> <li><code translate="no" dir="ltr">crashlytics.newAnrIssue</code></li> </ul> <h3 id="perfmon">Performance Monitoring alert triggers</h3> <p>A Performance Monitoring-triggered function runs when Performance Monitoring publishes an alert.</p> <p>See <a href="../../functions/alert-events">Firebase Alerts triggers</a> in the Cloud Functions documentation for information on writing alert-triggered functions.</p> <h4 id="function_definition_2nd-gen_only_2">Function definition (2nd-gen only)</h4> 
+<pre>import { onThresholdAlertPublished } from "firebase-functions/v2/alerts/performance";
+
+export const yourFunctionName = onThresholdAlertPublished((event) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_14">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourfunctionname
+    type: firebaseextensions.v1beta.v2function
+    properties:
+      buildConfig:
+        runtime: nodejs16
+      serviceConfig:
+        availableMemory: 512M
+      eventTrigger:
+        eventType: google.firebase.firebasealerts.alerts.v1.published
+        triggerRegion: global
+        eventFilters:
+          - attribute: alerttype
+            value: performance.threshold
+  - name: anotherFunction
+    type: ...
+</pre> <h3 id="appdistro">App Distribution alert triggers</h3> <p>A App Distribution-triggered function runs when App Distribution publishes an alert.</p> <p>See <a href="../../functions/alert-events">Firebase Alerts triggers</a> in the Cloud Functions documentation for information on writing alert-triggered functions.</p> <h4 id="function_definition_2nd-gen_only_3">Function definition (2nd-gen only)</h4> 
+<pre>import {
+  onNewTesterIosDevicePublished,
+  onInAppFeedbackPublished
+} from "firebase-functions/v2/alerts/appDistribution";
+
+export const yourFunctionName = onNewTesterIosDevicePublished((event) =&gt; {
+  // ...
+});
+
+export const yourFunctionName2 = onInAppFeedbackPublished((event) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_15">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourfunctionname
+    type: firebaseextensions.v1beta.v2function
+    properties:
+      buildConfig:
+        runtime: nodejs16
+      serviceConfig:
+        availableMemory: 512M
+      eventTrigger:
+        eventType: google.firebase.firebasealerts.alerts.v1.published
+        triggerRegion: global
+        eventFilters:
+          - attribute: alerttype
+            value: appDistribution.inAppFeedback
+  - name: anotherFunction
+    type: ...
+</pre> <p>You can use the following values for <code translate="no" dir="ltr">alerttype</code></p> <ul> <li><code translate="no" dir="ltr">appDistribution.newTesterIosDevice</code></li> <li><code translate="no" dir="ltr">appDistribution.inAppFeedback</code></li> </ul> <h3 id="customevents">Custom event triggers (Eventarc)</h3> <p>An Eventarc-triggered function runs when a specific event type is published to a specific channel.</p> <p>See <a href="../../functions/custom-events">Create and handle custom event triggers</a> in the Cloud Functions documentation for information on writing Eventarc-triggered functions.</p> <p>You can also <em>publish</em> events from your extensions to give users a way to insert custom logic into your extension. See <a href="user-hooks">Use developer-provided custom logic in an extension</a>.</p> <h4 id="function_definition_2nd-gen_only_4">Function definition (2nd-gen only)</h4> 
+<pre>import { onCustomEventPublished } from "firebase-functions/v2/eventarc";
+
+export const yourFunctionName = onCustomEventPublished((event) =&gt; {
+  // ...
+});
+</pre> <h4 id="resource_declaration_extensionyaml_16">Resource declaration (extension.yaml)</h4> 
+<pre>resources:
+  - name: yourfunctionname
+    type: firebaseextensions.v1beta.v2function
+    properties:
+      # LOCATION is a user-configured parameter value specified by the user
+      # during installation.
+      location: ${param:LOCATION}
+      buildConfig:
+        runtime: nodejs16
+      serviceConfig:
+        availableMemory: 512M
+        timeoutSeconds: 60
+      eventTrigger:
+        eventType: firebase.extensions.storage-resize-images.v1.complete
+        channel: projects/${param:PROJECT_ID}/locations/us-central1/channels/firebase
+  - name: anotherFunction
+    type: ...
+</pre> <p>The channel must already exist when your extension is installed. For example, if you depend on custom events from another extension that creates the channel, instruct your users to install that extension first.</p> <p>The above example would create a custom event trigger for the "default" Firebase channel in <code translate="no" dir="ltr">us-central1</code> region. You can make the channel name and region customizable by using parameters. For example:</p> 
+<pre>
+params:
+  - param: EVENTARC_CHANNEL_NAME
+    label: Eventarc channel name
+    description: What is the name of the Eventarc channel.
+    default: firebase
+    type: string
+    required: true
+
+resources:
+  - name: yourfunctionname
+    type: firebaseextensions.v1beta.v2function
+    properties:
+      location: ${param:LOCATION}
+      eventTrigger:
+        eventType: firebase.extensions.storage-resize-images.v1.complete
+        channel: projects/${param:PROJECT_ID}/locations/${param:LOCATION}/channels/${param:EVENTARC_CHANNEL_NAME}
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/publishers/functions" class="_attribution-link">https://firebase.google.com/docs/extensions/publishers/functions</a>
+  </p>
+</div>

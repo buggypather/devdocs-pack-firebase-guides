@@ -1,0 +1,142 @@
+<h1>Download files with Cloud Storage on Web</h1> <p>Cloud Storage for Firebase allows you to quickly and easily download files from a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket provided and managed by Firebase.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside> <h2 id="create_a_reference">Create a Reference</h2> <p>To download a file, first <a href="create-reference">create a Cloud Storage reference</a> to the file you want to download.</p> <p>You can create a reference by appending child paths to the root of your Cloud Storage bucket, or you can create a reference from an existing <code translate="no" dir="ltr">gs://</code> or <code translate="no" dir="ltr">https://</code> URL referencing an object in Cloud Storage.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getStorage, ref } from "firebase/storage";
+
+// Create a reference with an initial file path and name
+const storage = getStorage();
+const pathReference = ref(storage, 'images/stars.jpg');
+
+// Create a reference from a Google Cloud Storage URI
+const gsReference = ref(storage, 'gs://bucket/images/stars.jpg');
+
+// Create a reference from an HTTPS URL
+// Note that in the URL, characters are URL escaped!
+const httpsReference = ref(storage, 'https://firebasestorage.googleapis.com/b/bucket/o/images%20stars.jpg');  </pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Create a reference with an initial file path and name
+var storage = firebase.storage();
+var pathReference = storage.ref('images/stars.jpg');
+
+// Create a reference from a Google Cloud Storage URI
+var gsReference = storage.refFromURL('gs://bucket/images/stars.jpg');
+
+// Create a reference from an HTTPS URL
+// Note that in the URL, characters are URL escaped!
+var httpsReference = storage.refFromURL('https://firebasestorage.googleapis.com/b/bucket/o/images%20stars.jpg');  </pre> </section> </div> <h2 id="download_data_via_url">Download Data via URL</h2> <p>You can get the download URL for a file by calling the <code translate="no" dir="ltr">getDownloadURL()</code> method on a Cloud Storage reference.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getStorage, ref, getDownloadURL } from "firebase/storage";
+
+const storage = getStorage();
+const starsRef = ref(storage, 'images/stars.jpg');
+
+getDownloadURL(starsRef)
+  .then((url) =&gt; {
+    // `url` is the download URL for 'images/stars.jpg'
+
+    // This can be downloaded directly:
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = 'blob';
+    xhr.onload = (event) =&gt; {
+      const blob = xhr.response;
+    };
+    xhr.open('GET', url);
+    xhr.send();
+
+    // Or inserted into an &lt;img&gt; element
+    const img = document.getElementById('myimg');
+    img.setAttribute('src', url);
+  })
+  .catch((error) =&gt; {
+    // Handle any errors
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">storageRef.child('images/stars.jpg').getDownloadURL()
+  .then((url) =&gt; {
+    // `url` is the download URL for 'images/stars.jpg'
+
+    // This can be downloaded directly:
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = 'blob';
+    xhr.onload = (event) =&gt; {
+      var blob = xhr.response;
+    };
+    xhr.open('GET', url);
+    xhr.send();
+
+    // Or inserted into an &lt;img&gt; element
+    var img = document.getElementById('myimg');
+    img.setAttribute('src', url);
+  })
+  .catch((error) =&gt; {
+    // Handle any errors
+  });</pre> </section> </div> <h2 id="download_data_directly_from_the_sdk">Download Data Directly from the SDK</h2> <p>From version 9.5 and higher, the SDK provides these functions for direct download:</p> <ul> <li><a href="https://firebase.google.com/docs/reference/js/storage#getblob"><code translate="no" dir="ltr">getBlob()</code></a></li> <li><a href="https://firebase.google.com/docs/reference/js/storage#getbytes"><code translate="no" dir="ltr">getBytes()</code></a></li> <li><a href="https://firebase.google.com/docs/reference/js/storage#getstream"><code translate="no" dir="ltr">getStream()</code></a></li> </ul> <p>Using these functions, you can bypass downloading from a URL, and instead return data in your code. This allows for finer-grained access control via <a href="../security">Firebase Security Rules</a>.</p> <aside class="note"><strong>Note:</strong><span> <code translate="no" dir="ltr">getStream()</code> is available only for Node.js, and <code translate="no" dir="ltr">getBlob()</code> is available only for browser-like environments.</span></aside> <h3 id="cors_configuration">CORS Configuration</h3> <p>To download data directly in the browser, you must configure your Cloud Storage bucket for cross-origin access (CORS). This can be done with the <code translate="no" dir="ltr">gsutil</code> command line tool, which you can <a href="https://cloud.google.com/storage/docs/gsutil_install" class="external">install from here</a>.</p> <p>If you don't want any domain-based restrictions (the most common scenario), copy this JSON to a file named <code translate="no" dir="ltr">cors.json</code>: </p>
+
+<pre>[
+  {
+    "origin": ["*"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
+  }
+]</pre> <p>Run <code translate="no" dir="ltr">gsutil cors set cors.json gs://&lt;your-cloud-storage-bucket&gt;</code> to deploy these restrictions.</p> <p>For more information, refer to the <a href="https://cloud.google.com/storage/docs/cross-origin" class="external">Google Cloud Storage documentation</a>.</p> <h2 id="handle_errors">Handle Errors</h2> <p>There are a number of reasons why errors may occur on download, including the file not existing, or the user not having permission to access the desired file. More information on errors can be found in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="full_example">Full Example</h2> <p>A full example of a download with error handling is shown below:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getStorage, ref, getDownloadURL } from "firebase/storage";
+
+// Create a reference to the file we want to download
+const storage = getStorage();
+const starsRef = ref(storage, 'images/stars.jpg');
+
+// Get the download URL
+getDownloadURL(starsRef)
+  .then((url) =&gt; {
+    // Insert url into an &lt;img&gt; tag to "download"
+  })
+  .catch((error) =&gt; {
+    // A full list of error codes is available at
+    // https://firebase.google.com/docs/storage/web/handle-errors
+    switch (error.code) {
+      case 'storage/object-not-found':
+        // File doesn't exist
+        break;
+      case 'storage/unauthorized':
+        // User doesn't have permission to access the object
+        break;
+      case 'storage/canceled':
+        // User canceled the download
+        break;
+
+      // ...
+
+      case 'storage/unknown':
+        // Unknown error occurred, inspect the server response
+        break;
+    }
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Create a reference to the file we want to download
+var starsRef = storageRef.child('images/stars.jpg');
+
+// Get the download URL
+starsRef.getDownloadURL()
+.then((url) =&gt; {
+  // Insert url into an &lt;img&gt; tag to "download"
+})
+.catch((error) =&gt; {
+  // A full list of error codes is available at
+  // https://firebase.google.com/docs/storage/web/handle-errors
+  switch (error.code) {
+    case 'storage/object-not-found':
+      // File doesn't exist
+      break;
+    case 'storage/unauthorized':
+      // User doesn't have permission to access the object
+      break;
+    case 'storage/canceled':
+      // User canceled the download
+      break;
+
+    // ...
+
+    case 'storage/unknown':
+      // Unknown error occurred, inspect the server response
+      break;
+  }
+});</pre> </section> </div> <p>You can also <a href="file-metadata">get or update metadata</a> for files that are stored in Cloud Storage.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/storage/web/download-files" class="_attribution-link">https://firebase.google.com/docs/storage/web/download-files</a>
+  </p>
+</div>

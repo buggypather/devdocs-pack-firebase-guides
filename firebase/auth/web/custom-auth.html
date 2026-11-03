@@ -1,0 +1,45 @@
+<h1>Authenticate with Firebase in JavaScript Using a Custom Authentication System</h1> <p>You can integrate Firebase Authentication with a custom authentication system by modifying your authentication server to produce custom signed tokens when a user successfully signs in. Your app receives this token and uses it to authenticate with Firebase.</p> <h2 id="before-you-begin">Before you begin</h2> <ol> <li>
+<a href="../../web/setup">Add Firebase to your JavaScript project</a>.</li> <li>Get your project's server keys: <ol> <li> In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk" class="external"><b>Service accounts</b> tab</a>. </li> <li> At the bottom of the <b>Firebase Admin SDK</b> section, click <b>Generate New Private Key</b>. </li> <li> The new service account's public/private key pair is automatically saved on your computer. Copy this file to your authentication server. </li> </ol> </li> </ol> <h2 id="authenticate-with-firebase">Authenticate with Firebase</h2> <ol> <li>When users sign in to your app, send their sign-in credentials (for example, their username and password) to your authentication server. Your server checks the credentials and returns a <a href="../admin/create-custom-tokens">custom token</a> if they are valid. </li> <li>After you receive the custom token from your authentication server, pass it to <code translate="no" dir="ltr">signInWithCustomToken</code> to sign in the user: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signInWithCustomToken } from "firebase/auth";
+
+const auth = getAuth();
+signInWithCustomToken(auth, token)
+  .then((userCredential) =&gt; {
+    // Signed in
+    const user = userCredential.user;
+    // ...
+  })
+  .catch((error) =&gt; {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    // ...
+  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().signInWithCustomToken(token)
+  .then((userCredential) =&gt; {
+    // Signed in
+    var user = userCredential.user;
+    // ...
+  })
+  .catch((error) =&gt; {
+    var errorCode = error.code;
+    var errorMessage = error.message;
+    // ...
+  });</pre> </section> </div> </li> </ol> <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signOut } from "firebase/auth";
+
+const auth = getAuth();
+signOut(auth).then(() =&gt; {
+  // Sign-out successful.
+}).catch((error) =&gt; {
+  // An error happened.
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().signOut().then(() =&gt; {
+  // Sign-out successful.
+}).catch((error) =&gt; {
+  // An error happened.
+});</pre> </section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/web/custom-auth" class="_attribution-link">https://firebase.google.com/docs/auth/web/custom-auth</a>
+  </p>
+</div>

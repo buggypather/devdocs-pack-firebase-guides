@@ -1,0 +1,441 @@
+<h1>Version templates using Remote Config</h1> <aside class="preview"><b>Preview</b>: Using server prompt templates is a feature that's in Preview, which means that it isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways. </aside> <p><br></p> <p>When you use server prompt templates, you can update values <em>within</em> a given template without releasing a new version of your app. However, since any changes to the template will nearly immediately be used by requests from your app, you need to be cautious about making changes that could break your app or cause unexpected changes in behavior.</p> <p>So, if you want to make more substantial changes or roll out changes gradually, then you won't want to change the template that's used in production code.</p> <p>Instead, we recommend using Firebase Remote Config to <em>control the value of template ID</em> used in the request to the model.</p> <p><a href="../../remote-config">Firebase Remote Config</a> lets you update parameter values in your app (like the template ID) dynamically and remotely from the Firebase console, without the need to release a new version of your app. It also has streamlined capabilities and integrations for rolling out changes as well as A/B testing.</p> <aside class="caution">We <strong>strongly recommend implementing Firebase Remote Config into your app as early as possible</strong>, even during development, so that you can update the template ID remotely in every version of your app. </aside> <p>This guide describes how to implement Remote Config in your app, specifically to <em><strong>control the template ID used in your app</strong></em>.</p> <h3 id="set-parameter-values-in-the-firebase-console">
+<strong>Step 1</strong>: Set the parameter value in the Firebase console</h3> <p>Create a Remote Config client template and configure a <code translate="no" dir="ltr">template_id</code> parameter and its value to fetch and use in the app.</p> <ol> <li><p>In the Firebase console, go to <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/config" class="external"><strong>Remote Config</strong></a>.</p></li> <li><p>From the <strong>Client/Server</strong> selector at the top of the page, select <strong>Client</strong>.</p></li> <li><p>Start a client template by clicking <strong>Create Configuration</strong> (or <strong>Add parameter</strong> if you've previously used client templates).</p></li> <li>
+<p>Define the <code translate="no" dir="ltr">template_id</code> parameter:</p> <table> <thead> <tr> <th>Parameter name</th> <th>Description</th> <th>Type</th> <th>Default value</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">template_id</code></td> <td>Template ID.</td> <td>String</td> <td><code translate="no" dir="ltr">my-first-template-v1-0-0</code></td> </tr> </tbody> </table>
+</li> <li><p>After adding this parameter, click <strong>Publish changes</strong>. If this is not a new Remote Config template, review the changes and click <strong>Publish changes</strong> again.</p></li> </ol> <h3 id="add-and-initialize-remote-config-in-your-app">
+<strong>Step 2</strong>: Add and initialize Remote Config in your app</h3> <p>Add the Remote Config library and set up Remote Config within your app.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>As part of <a href="../get-started#add-sdk"><span class='\"notranslate\"'>Firebase AI Logic</span> setup</a>, you've already added the Firebase SDK to your app, but will also need to add Remote Config.</p> <ol> <li><p>In Xcode, with the project open, navigate to <strong>File &gt; Add Package Dependencies</strong>.</p></li> <li><p>Select <strong>firebase-ios-sdk</strong> and then click <strong>Add package</strong>.</p></li> <li><p>From the Project navigator, select your app &gt; <strong>Targets</strong> &gt; your app.</p></li> <li><p>From the <strong>General</strong> tab, scroll to <strong>Frameworks, Libraries, and Embedded Content</strong>.</p></li> <li><p>Click <strong>+</strong> and choose <strong>FirebaseRemoteConfig</strong>, then click <strong>Add</strong>.</p></li> <li>
+<p>Add the <code translate="no" dir="ltr">FirebaseRemoteConfig</code> import to your code:</p> 
+<pre data-language="swift">import FirebaseRemoteConfig
+</pre>
+</li> <li>
+<p>Inside the appropriate class for your app, initialize Firebase and add Remote Config to your main application logic.</p> <p>Here, you'll include Remote Config and the <a href="../../remote-config/ios/real-time">Remote Config real-time listener</a> as imports so that the app can fetch new values in real-time, and add a minimum fetch interval:</p> 
+<pre data-language="swift">let remoteConfig = RemoteConfig.remoteConfig()
+let settings = RemoteConfigSettings()
+settings.minimumFetchInterval = 3600
+remoteConfig.configSettings = settings
+</pre>
+<aside class="note"><strong>Note:</strong><span> In this example, the default fetch interval is 3600 seconds, but we recommend that you set a relatively low minimum fetch interval inside your code during development.</span></aside>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<ol> <li>
+<p>Add the Remote Config dependency to your module (app-level) Gradle file (usually <code translate="no" dir="ltr">app/build.gradle.kts</code> or <code translate="no" dir="ltr">app/build.gradle</code>):</p> 
+<pre data-language="kotlin">dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+    implementation("com.google.firebase:firebase-ai")
+    implementation("com.google.firebase:firebase-config")
+    // ... other dependencies
+}
+</pre>
+</li> <li>
+<p>Add Remote Config to your main application logic. Here, you'll initialize Remote Config and add a minimum fetch interval:</p> 
+<pre data-language="kotlin">val remoteConfig: FirebaseRemoteConfig = Firebase.remoteConfig
+val configSettings = remoteConfigSettings {
+minimumFetchIntervalInSeconds = 3600
+}
+remoteConfig.setConfigSettingsAsync(configSettings)
+</pre>
+<aside class="note"><strong>Note:</strong><span> In this example, the default fetch interval is 3600 seconds, but we recommend that you set a relatively low minimum fetch interval inside your code during development.</span></aside>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<ol> <li>
+<p>Add the Remote Config dependency to your module (app-level) Gradle file (usually <code translate="no" dir="ltr">app/build.gradle.kts</code> or <code translate="no" dir="ltr">app/build.gradle</code>):</p> 
+<pre data-language="java">dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+    implementation("com.google.firebase:firebase-ai")
+    implementation("com.google.firebase:firebase-config")
+    // ... other dependencies
+}
+</pre>
+</li> <li>
+<p>Add Remote Config to your main application logic. Here, you'll initialize Remote Config and add a minimum fetch interval:</p> 
+<pre data-language="java">FirebaseRemoteConfig mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
+    .setMinimumFetchIntervalInSeconds(3600)
+    .build();
+mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
+</pre>
+<aside class="note"><strong>Note:</strong><span> In this example, the default fetch interval is 3600 seconds, but we recommend that you set a relatively low minimum fetch interval inside your code during development.</span></aside>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<ol> <li>
+<p>Open your code in a text editor and import Remote Config:</p> 
+<pre data-language="javascript">import { getRemoteConfig } from 'firebase/remote-config';
+</pre>
+</li> <li>
+<p>Inside your primary function and after the Firebase app is initialized for <span class='\"notranslate\"'>Firebase AI Logic</span> SDK, initialize Remote Config:</p> 
+<pre data-language="javascript">  // Initialize Remote Config and get a reference to the service
+  const remoteConfig = getRemoteConfig(app);
+</pre>
+</li> <li>
+<p>Set a minimum fetch interval:</p> 
+<pre data-language="javascript">remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+</pre>
+<aside class="note"><strong>Note:</strong><span> In this example, the default fetch interval is 3600 seconds, but we recommend that you set a relatively low minimum fetch interval inside your code during development.</span></aside>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<ol> <li>
+<p>From your Flutter project directory, install and add Remote Config using the following command:</p> 
+<pre data-language="dart">flutter pub add firebase_remote_config
+</pre>
+</li> <li>
+<p>Open <code translate="no" dir="ltr">./lib/main.dart</code> and add the import after the other imports you added to support <span class='\"notranslate\"'>Firebase AI Logic</span>:</p> 
+<pre data-language="dart">import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+</pre>
+</li> <li>
+<p>Add the <code translate="no" dir="ltr">_modelName</code> variable to your app so that you can use it later:</p> 
+<pre data-language="dart">late final String _modelName;
+late final String _systemInstructions;
+late final String _prompt;
+</pre>
+</li> <li>
+<p>Get the Remote Config object instance and set the minimum fetch interval to allow for frequent refreshes. Make sure to add this after Firebase is initialized.</p> 
+<pre data-language="dart">  final remoteConfig = FirebaseRemoteConfig.instance;
+  await remoteConfig.setConfigSettings(RemoteConfigSettings(
+    fetchTimeout: const Duration(seconds: 3600),
+    minimumFetchInterval: const Duration(seconds: 3600),
+  ));
+</pre>
+<aside class="note"><strong>Note:</strong><span> In this example, the default fetch interval is 3600 seconds, but we recommend that you set a relatively low minimum fetch interval inside your code during development.</span></aside>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<ol> <li><p>Add Remote Config to your Unity project, following these <a href="../../unity/setup#add-sdks">instructions</a>.</p></li> <li>
+<p>Get the Remote Config object instance and set the minimum fetch interval to allow for frequent refreshes. Make sure to add this after Firebase is initialized.</p> 
+<pre data-language="csharp">var remoteConfig = FirebaseRemoteConfig.DefaultInstance;
+const int MillisecondsPerSecond = 1000;
+await remoteConfig.SetConfigSettingsAsync(new ConfigSettings() {
+  FetchTimeoutInMilliseconds = 3600 * MillisecondsPerSecond,
+  MinimumFetchIntervalInMilliseconds = 3600 * MillisecondsPerSecond
+});
+</pre>
+<aside class="note"><strong>Note:</strong><span> In this example, the default fetch interval is 3600 seconds, but we recommend that you set a relatively low minimum fetch interval inside your code during development.</span></aside>
+</li> </ol></section> </div> <h3 id="set-in-app-parameter-values">
+<strong>Step 3</strong>: Set the in-app parameter value</h3> <p>You should set in-app default parameter values in the Remote Config object. This ensures that your app behaves as expected even if it cannot fetch values from the Remote Config service.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<ol> <li><p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Remote Config</strong> &gt; <a href="https://console.firebase.google.com/project/_/config" class="external"><strong>Parameters</strong> page</a>.</p></li> <li><p>Open the <nobr><span class="material-icons" aria-hidden="true" translate="no">more_vert</span> <strong>Menu</strong></nobr>, and select <strong>Download default values</strong>.</p></li> <li><p>When prompted, enable <strong>.plist for iOS</strong>, then click <strong>Download file</strong>.</p></li> <li><p>Save the file in the your application directory.</p></li> <li><p>In Xcode, right-click on your app and select <strong>Add Files</strong></p></li> <li><p>Select <strong>remote_config_defaults.plist</strong>, then click <strong>Add</strong>.</p></li> <li>
+<p>Update your app code to reference the defaults file:</p> 
+<pre data-language="swift">// Set default values for Remote Config parameters.
+remoteConfig.setDefaults(fromPlist: "remote_config_defaults")
+</pre>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<ol> <li><p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Remote Config</strong> &gt; <a href="https://console.firebase.google.com/project/_/config" class="external"><strong>Parameters</strong> page</a>.</p></li> <li><p>Open the <nobr><span class="material-icons" aria-hidden="true" translate="no">more_vert</span> <strong>Menu</strong></nobr>, and select <strong>Download default values</strong>.</p></li> <li><p>When prompted, enable <strong>.xml for Android</strong>, then click <strong>Download file</strong>.</p></li> <li><p>Save the file in your app's XML resources directory.</p></li> <li>
+<p>Update your main activity file to add the defaults after the <code translate="no" dir="ltr">configSettings</code> you added previously:</p> 
+<pre data-language="kotlin">// Set default values for Remote Config parameters.
+remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
+</pre>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<ol> <li><p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Remote Config</strong> &gt; <a href="https://console.firebase.google.com/project/_/config" class="external"><strong>Parameters</strong> page</a>.</p></li> <li><p>Open the <nobr><span class="material-icons" aria-hidden="true" translate="no">more_vert</span> <strong>Menu</strong></nobr>, and select <strong>Download default values</strong>.</p></li> <li><p>When prompted, enable <strong>.xml for Android</strong>, then click <strong>Download file</strong>.</p></li> <li><p>Save the file in your app's XML resources directory.</p></li> <li>
+<p>Update your main activity file to add the defaults after the <code translate="no" dir="ltr">configSettings</code> you added previously:</p> 
+<pre data-language="java">// Set default values for Remote Config parameters.
+mFirebaseRemoteConfig.setDefaultsAsync(R.xml.remote_config_defaults);
+</pre>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>You can set the default value for the model name directly in your code:</p> 
+<pre data-language="javascript">// Set default values for Remote Config parameters.
+remoteConfig.defaultConfig = {
+  template_id: 'my-first-template-v1-0-0',
+};
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>You can set the default value for the model name directly in your code:</p> 
+<pre data-language="dart">// Set default values for Remote Config parameters.
+remoteConfig.setDefaults(const {
+  "template_id": "my-first-template-v1-0-0"
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>You can set the default value for the model name directly in your code:</p> 
+<pre data-language="csharp">// Set default values for Remote Config parameters.
+await remoteConfig.SetDefaultsAsync(
+  new System.Collections.Generic.Dictionary&lt;string, object&gt;() {
+    { "template_id", "my-first-template-v1-0-0" }
+  }
+);
+</pre></section> </div> <h3 id="fetch-and-activate-values">
+<strong>Step 4</strong>: Fetch and activate the value</h3> <p>After setting the default value for the model name, add the following to fetch and activate values.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Fetch and activate Remote Config values
+remoteConfig.fetchAndActivate { status, error in
+  if let error = error {
+    print("Error fetching Remote Config: \(error.localizedDescription)")
+  }
+}
+</pre> <p>This should update the Remote Config object whenever a new Remote Config template is published.</p> <aside class="special"><strong>Important:</strong><span> Be sure to put any code that depends on these values <em>after</em> fetch and activate.</span></aside></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Fetch and activate Remote Config values
+remoteConfig.fetchAndActivate()
+      .addOnCompleteListener(this) { task -&gt;
+          if (task.isSuccessful) {
+              val updated = task.result
+              Log.d(TAG, "Remote Config values fetched and activated: $updated")
+          } else {
+              Log.e(TAG, "Error fetching Remote Config", task.exception)
+          }
+      }
+</pre>
+<aside class="special"><strong>Important:</strong><span> Be sure to put any code that depends on these values <em>after</em> fetch and activate.</span></aside></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">  // Fetch and activate Remote Config values
+  mFirebaseRemoteConfig.fetchAndActivate()
+    .addOnCompleteListener(this, new OnCompleteListener&lt;Boolean&gt;() {
+        @Override
+        public void onComplete(@NonNull Task&lt;Boolean&gt; task) {
+            if (task.isSuccessful()) {
+                boolean updated = task.getResult();
+                Log.d(TAG, "Config params updated: " + updated);
+            } else {
+                Log.e(TAG, "Error fetching Remote Config", task.exception)
+            }
+          }
+    });
+</pre>
+<aside class="special"><strong>Important:</strong><span> Be sure to put any code that depends on these values <em>after</em> fetch and activate.</span></aside></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<ol> <li>
+<p>Add <code translate="no" dir="ltr">getValue</code> and <code translate="no" dir="ltr">fetchAndActivate</code> to your imports:</p> 
+<pre data-language="javascript">import { getValue, fetchAndActivate } from 'firebase/remote-config';
+</pre>
+</li> <li>
+<p>Locate the code where you specify the default value for the model name. Directly after that code block, add the following code to fetch and activate the config and assign the fetched value to the <code translate="no" dir="ltr">templateID</code> constant.</p> 
+<pre data-language="javascript">// Fetch and activate Remote Config.
+try {
+  await fetchAndActivate(remoteConfig);
+} catch(err) {
+  console.error('Remote Config fetch failed', err);
+}
+
+console.log('Remote Config fetched.');
+
+// Assign Remote Config values.
+const templateID = getValue(remoteConfig, 'template_id').asString();
+</pre>
+</li> </ol> <aside class="special"><strong>Important:</strong><span> Be sure to put any code that depends on these values <em>after</em> fetch and activate.</span></aside></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">// Fetch and activate Remote Config.
+remoteConfig.fetchAndActivate();
+
+// Assign Remote Config values.
+String? _templateID = remoteConfig.getString("template_id");
+</pre>
+<aside class="special"><strong>Important:</strong><span> Be sure to put any code that depends on these values <em>after</em> fetch and activate.</span></aside></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">// Fetch and activate Remote Config values.
+await remoteConfig.FetchAndActivateAsync();
+</pre>
+<aside class="special"><strong>Important:</strong><span> Be sure to put any code that depends on these values <em>after</em> fetch and activate.</span></aside></section> </div> <h3 id="add-a-real-time-remote-config-listener">
+<strong>Step 5</strong>: Add a real-time Remote Config listener</h3> <p>Add a <a href="../../remote-config/ios/real-time">real-time Remote Config listener</a> to your app to ensure that changes you make to the Remote Config template are propagated to the client as soon as they're updated.</p> <p>The following code updates the Remote Config object whenever a parameter value changes.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Add real-time Remote Config
+remoteConfig.addOnConfigUpdateListener { configUpdate, error in
+  guard let configUpdate = configUpdate, error == nil else {
+    print("Error listening for config updates: \(error?.localizedDescription ?? "No error available")")
+    return
+  }
+
+  print("Updated keys: \(configUpdate.updatedKeys)")
+  remoteConfig.activate { changed, error in
+    guard error == nil else {
+      print("Error activating config: \(error?.localizedDescription ?? "No error available")")
+      return
+    }
+    print("Activated config successfully")
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Optionally, you can also configure an action inside the <code translate="no" dir="ltr">addOnCompleteListener</code> activation:</p> 
+<pre data-language="kotlin">      // Add a real-time Remote Config listener
+      remoteConfig.addOnConfigUpdateListener(object : ConfigUpdateListener {
+          override fun onUpdate(configUpdate : ConfigUpdate) {
+              Log.d(ContentValues.TAG, "Updated keys: " + configUpdate.updatedKeys);
+              remoteConfig.activate().addOnCompleteListener {
+                  // Optionally, add an action to perform on update here.
+              }
+          }
+
+          override fun onError(error : FirebaseRemoteConfigException) {
+              Log.w(ContentValues.TAG, "Config update error with code: " + error.code, error)
+          }
+      }
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>Optionally, you can also configure an action inside the <code translate="no" dir="ltr">addOnCompleteListener</code> activation:</p> 
+<pre data-language="java">  // Add a real-time Remote Config listener
+  remoteConfig.addOnConfigUpdateListener(new ConfigUpdateListener() {
+      @Override
+      public void onUpdate(ConfigUpdate configUpdate) {
+          Log.d(ContentValues.TAG, "Updated keys: " + configUpdate.getUpdatedKeys());
+                remoteConfig.activate().addOnCompleteListener(new OnCompleteListener&lt;Boolean&gt;() {
+                  @Override
+                  public void onComplete(@NonNull Task&lt;Boolean&gt; task) {
+                      // Optionally, add an action to perform on update here.
+                  }
+              });
+          }
+
+      @Override
+      public void onError(FirebaseRemoteConfigException error) {
+          Log.w(ContentValues.TAG, "Config update error with code: " + error.getCode(), error);
+      }
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript"> // Add a real-time Remote Config listener
+ onConfigUpdate(remoteConfig, {
+   next: (configUpdate) =&gt; {
+      console.log("Updated keys:", configUpdate.getUpdatedKeys());
+      if (configUpdate.getUpdatedKeys().has("welcome_message")) {
+         activate(remoteConfig).then(() =&gt; {
+         showWelcomeMessage();
+         });
+      }
+   },
+   error: (error) =&gt; {
+      console.log("Config update error:", error);
+   },
+   complete: () =&gt; {
+      console.log("Listening stopped.");
+   }
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">// Add a real-time Remote Config listener
+remoteConfig.onConfigUpdated.listen((event) async {
+  await remoteConfig.activate();
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">// Add a real-time Remote Config listener to automatically update whenever
+// a new template is published.
+// Note: the parameters can be anonymous as they are unused.
+
+remoteConfig.OnConfigUpdateListener += (_, _) =&gt; {
+  remoteConfig.ActivateAsync();
+};
+</pre></section> </div> <h3 id="update-gemini-api-requests-to-use-remote-config-values">
+<strong>Step 6</strong>: Update the <span class='\"notranslate\"'>Gemini API</span> requests to use the Remote Config value</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Now that Remote Config is fully configured, update your code to replace hard-coded values with values sourced from Remote Config.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">import FirebaseAILogic
+
+let templateID = remoteConfig.configValue(forKey: "template_id").stringValue
+let model = FirebaseAI.firebaseAI(backend: .googleAI()).templateGenerativeModel()
+let customerName = "Jane"
+
+// When making the `generateContent` call, source the template ID value from Remote Config
+let response = try await model.generateContent(
+  templateID: templateID,
+  // Provide the values for any input variables required by your template.
+  inputs: [
+    "customerName": customerName
+  ]
+)
+
+// ...
+</pre> </section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">// ...
+
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).templateGenerativeModel()
+val customerName = "Jane"
+
+// When making the `generateContent` call, source the template ID value from Remote Config
+val response = model.generateContent(
+  remoteConfig.getString("template_id"),
+  // Provide the values for any input variables required by your template.
+  mapOf(
+    "customerName" to customerName
+  )
+)
+
+val text = response.text
+println(text)
+</pre> </section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">// ...
+
+TemplateGenerativeModel ai = FirebaseAI.getInstance()
+    .templateGenerativeModel(null /* Request Options */);
+
+TemplateGenerativeModelFutures model = TemplateGenerativeModelFutures.from(ai);
+String customerName = "Jane";
+
+// When making the `generateContent` call, source the template ID value from Remote Config
+Future&lt;GenerateContentResponse&gt; response = model.generateContent(
+    remoteConfig.getString("template_id"),
+    // Provide the values for any input variables required by your template.
+    mapOf("customerName", customerName)
+
+);
+addCallback(response,
+      new FutureCallback&lt;GenerateContentResponse&gt;() {
+          public void onSuccess(GenerateContentResponse result) {
+            System.out.println(result.getText());
+          }
+          public void onFailure(Throwable t) {
+            reportError(t);
+          }
+    }
+executor);
+
+// ...
+</pre> </section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">// ...
+
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+const model = getTemplateGenerativeModel(ai);
+const templateID = getValue(remoteConfig, 'template_id').asString();
+const customerName = 'Jane';
+
+// When making the `generateContent` call, source the template ID value from Remote Config
+const result = await model.generateContent({
+  templateId: templateID,
+  // Provide the values for any input variables required by your template
+  templateVariables: {
+    customerName: customerName,
+  },
+});
+
+// ...
+</pre> </section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+<pre data-language="dart">// ...
+
+final model = FirebaseAI.googleAI().templateGenerativeModel();
+
+final templateID = remoteConfig.getString("template_id");
+final customerName = 'Jane';
+
+// When making the `generateContent` call, source the template ID value from Remote Config
+var response = await model.generateContent(
+  templateID,
+  // Provide the values for any input variables required by your template
+  inputs: {
+    'customerName': customerName,
+  },
+);
+
+// ...
+</pre> </section> <section><p class="_firebase-tab"><strong>Unity</strong></p> 
+<pre data-language="csharp">// ...
+
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+var templateID = remoteConfig.GetValue("template_id").StringValue;
+var model = ai.GetTemplateGenerativeModel();
+var customerName = "Jane";
+
+try
+{
+    // When making the `generateContent` call, source the template ID value from Remote Config
+    var response = await model.GenerateContentAsync(
+        templateID,
+        // Provide the values for any input variables required by your template
+        new Dictionary&lt;string, object&gt;
+        {
+            { "customerName", customerName },
+        }
+    );
+    Debug.Log($"Response Text: {response.Text}");
+}
+catch (Exception e)
+{
+    Debug.LogError($"An error occurred: {e.Message}");
+}
+
+// ...
+</pre> </section> </div> <h3 id="run-the-app">
+<strong>Step 7</strong>: Run the app</h3> <p>Build and run the app and verify that it works. Make changes to your configuration from the Remote Config page in the Firebase console, publish the changes, and verify the result.</p> <h3 id="next-steps">Next steps</h3> <ul> <li><p>Learn more about implementing other <a href="../solutions/remote-config">use cases for Remote Config and <span class='\"notranslate\"'>Firebase AI Logic</span></a>.</p></li> <li>
+<p>For mobile apps and games:</p> <ul> <li><p>Test your template changes with <a href="../../ab-testing/abtest-config">Remote Config and A/B Testing</a>.</p></li> <li><p>Gradually release changes using <a href="../../remote-config/rollouts">Remote Config rollouts</a> (iOS+ and Android only).</p></li> <li><p>Use <a href="../../remote-config/personalization">Remote Config personalization</a> to use machine learning to determine the best settings for individual users (iOS+, Android, and Unity only).</p></li> </ul>
+</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/server-prompt-templates/versioning-with-remote-config" class="_attribution-link">https://firebase.google.com/docs/ai-logic/server-prompt-templates/versioning-with-remote-config</a>
+  </p>
+</div>

@@ -1,0 +1,66 @@
+<h1>Create a Cloud Storage reference with Cloud Storage for C++</h1> <p>Your files are stored in a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket. The files in this bucket are presented in a hierarchical structure, just like the file system on your local hard disk, or the data in the Firebase Realtime Database. By creating a reference to a file, your app gains access to it. These references can then be used to upload or download data, get or update metadata or delete the file. A reference can either point to a specific file or to a higher level node in the hierarchy.</p> <p>If you've used the <a href="../../database">Firebase Realtime Database</a>, these paths should seem very familiar to you. However, your file data is stored in Cloud Storage, <strong>not</strong> in the Realtime Database.</p> <h2 id="create_a_reference">Create a Reference</h2> <p>Create a reference to upload, download, or delete a file, or to get or update its metadata. A reference can be thought of as a pointer to a file in the cloud. References are lightweight, so you can create as many as you need. They are also reusable for multiple operations.</p> <p>References are created from the <code translate="no" dir="ltr">storage</code> service on your Firebase app by calling the <code translate="no" dir="ltr">GetReferenceFromUrl()</code> method and passing in a URL of the form <code translate="no" dir="ltr">gs://&lt;your-cloud-storage-bucket&gt;</code>. You can find this URL in the <em>Storage</em> section of the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>.</p> 
+<pre>// Get a reference to the storage service, using the default Firebase App
+Storage* storage = Storage::GetInstance(app);
+
+// Create a Cloud Storage reference from our storage service
+StorageReference storage_ref = storage-&gt;GetReferenceFromUrl("gs://&lt;your-cloud-storage-bucket&gt;");</pre> <p>You can create a reference to a location lower in the tree, say <code translate="no" dir="ltr">'images/space.jpg'</code>, by using the <code translate="no" dir="ltr">child</code> method on an existing reference.</p> 
+<pre>// Create a child reference
+// images_ref now points to "images"
+StorageReference images_ref = storage_ref.Child("images");
+
+// Child references can also take paths delimited by '/'
+// space_ref now points to "images/space.jpg"
+// images_ref still points to "images"
+StorageReference space_ref = storage_ref.Child("images/space.jpg");
+
+// This is equivalent to creating the full reference
+StorageReference space_ref = storage.GetReferenceFromUrl("gs://&lt;your-cloud-storage-bucket&gt;/images/space.jpg");</pre> <h2 id="navigate_with_references">Navigate with References</h2> <p>You can also use the <code translate="no" dir="ltr">Parent</code> and <code translate="no" dir="ltr">Root</code> methods to navigate up in our file hierarchy. <code translate="no" dir="ltr">Parent</code> navigates up one level, while <code translate="no" dir="ltr">Root</code> navigates all the way to the top.</p> 
+<pre>// Parent allows us to move to the parent of a reference
+// images_ref now points to 'images'
+StorageReference images_ref = space_ref.Parent();
+
+// Root allows us to move all the way back to the top of our bucket
+// root_ref now points to the root
+StorageReference root_ref = space_ref.Root();</pre> <p><code translate="no" dir="ltr">Child</code>, <code translate="no" dir="ltr">Parent</code>, and <code translate="no" dir="ltr">Root</code> can be chained together multiple times, as each returns a reference. The exception is the <code translate="no" dir="ltr">Parent</code> of <code translate="no" dir="ltr">Root</code>, which is an invalid <code translate="no" dir="ltr">StorageReference</code>.</p> 
+<pre>// References can be chained together multiple times
+// earth_ref points to "images/earth.jpg"
+StorageReference earth_ref = space_ref.Parent().Child("earth.jpg");
+
+// null_ref is null, since the parent of root is an invalid StorageReference
+StorageReference null_ref = space_ref.Root().Parent();</pre> <h2 id="reference_methods">Reference Methods</h2> <p>You can inspect references to better understand the files they point to using the <code translate="no" dir="ltr">full_path</code>, <code translate="no" dir="ltr">name</code>, and <code translate="no" dir="ltr">bucket</code> methods. These methods get the file's full path, name, and bucket.</p> 
+<pre>// Reference's path is: "images/space.jpg"
+// This is analogous to a file path on disk
+space_ref.full_path();
+
+// Reference's name is the last segment of the full path: "space.jpg"
+// This is analogous to the file name
+space_ref.name();
+
+// Reference's bucket is the name of the Cloud Storage bucket where files are stored
+space_ref.bucket();</pre> <h2 id="limitations_on_references">Limitations on References</h2> <p>Reference paths and names can contain any sequence of valid Unicode characters, but certain restrictions are imposed including:</p> <ol> <li>Total length of reference.fullPath must be between 1 and 1024 bytes when UTF-8 encoded.</li> <li>No Carriage Return or Line Feed characters.</li> <li>Avoid using <code translate="no" dir="ltr">#</code>, <code translate="no" dir="ltr">[</code>, <code translate="no" dir="ltr">]</code>, <code translate="no" dir="ltr">*</code>, or <code translate="no" dir="ltr">?</code>, as these do not work well with other tools such as the <a href="../../database">Firebase Realtime Database</a> or <a href="https://cloud.google.com/storage/docs/gsutil">gsutil</a>.</li> </ol> <h2 id="full_example">Full Example</h2> 
+<pre>Storage* storage = Storage::GetInstance(app);
+
+// Points to the root reference
+StorageReference storage_ref = storage-&gt;GetReferenceFromUrl("gs://&lt;your-bucket-name&gt;");
+
+// Points to "images"
+StorageReference images_ref = storage_ref.Child("images");
+
+// Points to "images/space.jpg"
+// Note that you can use variables to create child values
+std::string filename = "space.jpg";
+StorageReference space_ref = images_ref.Child(filename);
+
+// File path is "images/space.jpg"
+std::string path = space_ref.full_path()
+
+// File name is "space.jpg"
+std::string name = space_ref.name()
+
+// Points to "images"
+StorageReference images_ref = space_ref.Parent();</pre> <h2 id="next_steps">Next Steps</h2> <p>Next, let's learn how to <a href="upload-files">upload files</a> to Cloud Storage.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/storage/cpp/create-reference" class="_attribution-link">https://firebase.google.com/docs/storage/cpp/create-reference</a>
+  </p>
+</div>

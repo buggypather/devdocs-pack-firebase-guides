@@ -1,0 +1,143 @@
+<h1>Saving Data</h1>  <div class="docs-section"> <table class="responsive"> <tr> <th colspan="2"><h2 id="section-ways-to-save">Ways to Save Data</h2></th> </tr> <tr> <td>PUT</td> <td>Write or replace data to a <strong>defined path</strong>, like <code translate="no" dir="ltr">fireblog/users/user1/&lt;data&gt;</code>
+</td> </tr> <tr> <td>PATCH</td> <td>Update some of the keys for a defined path without replacing all of the data.</td> </tr> <tr> <td>POST</td> <td>
+<strong>Add to a list of data</strong> in our Firebase database. Every time we send a <code translate="no" dir="ltr">POST</code> request, the Firebase client generates a unique key, like <code translate="no" dir="ltr">fireblog/users/&lt;unique-id&gt;/&lt;data&gt;</code>
+</td> </tr> <tr> <td>DELETE</td> <td>Remove data from the specified Firebase database reference.</td> </tr> </table> </div> <aside class="warning">Note that all examples use a read-only Firebase Realtime Database, <code translate="no" dir="ltr">docs-example.firebaseio.com</code>. Replace this Realtime Database URL with one from the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a> you have access to.</aside>  <div class="docs-section"> <h2 id="section-put" data-nav="Writing Data">Writing Data with PUT</h2> <p> The basic write operation through the REST API is <code translate="no" dir="ltr">PUT</code>. To demonstrate saving data, we'll build a blogging application with posts and users. All of the data for our application will be stored under the path of `fireblog`, at the Firebase database URL `https://docs-examples.firebaseio.com/fireblog`. </p> <aside class="special"> If we are making REST calls from a browser that does not support some of the above methods, Firebase supports the <strong>X-HTTP-Method-Override</strong> header. </aside> <p> Let's start by saving some user data to our Firebase database. We'll store each user by a unique username, and we'll also store their full name and date of birth. Since each user will have a unique username, it makes sense to use <code translate="no" dir="ltr">PUT</code> here instead of <code translate="no" dir="ltr">POST</code> since we already have the key and don't need to create one. </p> <p> Using <code translate="no" dir="ltr">PUT</code>, we can write a string, number, boolean, array or any JSON object to our Firebase database. In this case we'll pass it an object: </p> 
+<pre>
+curl -X PUT -d '{
+  "alanisawesome": {
+    "name": "Alan Turing",
+    "birthday": "June 23, 1912"
+  }
+}' 'https://docs-examples.firebaseio.com/fireblog/users.json'
+</pre> <p> When a JSON object is saved to the database, the object properties are automatically mapped to child locations in a nested fashion. If we navigate to the newly created node, we'll see the value "Alan Turing". We can also save data directly to a child location: </p> 
+<pre>
+curl -X PUT -d '"Alan Turing"' \
+  'https://docs-examples.firebaseio.com/fireblog/users/alanisawesome/name.json'
+</pre> 
+<pre>
+curl -X PUT -d '"June 23, 1912"' \
+  'https://docs-examples.firebaseio.com/fireblog/users/alanisawesome/birthday.json'
+</pre> <p> The above two examples—writing the value at the same time as an object and writing them separately to child locations—will result in the same data being saved to our Firebase database: </p> 
+<pre>{
+  "users": {
+    "alanisawesome": {
+      "date_of_birth": "June 23, 1912",
+      "full_name": "Alan Turing"
+    }
+  }
+}</pre> <p> A successful request will be indicated by a <code translate="no" dir="ltr">200 OK</code> HTTP status code, and the response will contain the data we wrote to the database. The first example will only trigger one event on clients that are watching the data, whereas the second example will trigger two. It is important to note that if data already existed at the users path, the first approach would overwrite it, but the second method would only modify the value of each separate child node while leaving other children unchanged. <code translate="no" dir="ltr">PUT</code> is equivalent to <a href="https://firebase.google.com/docs/reference/js/database#set"><code translate="no" dir="ltr">set()</code></a> in our JavaScript SDK. </p> <aside class="special"> Using <strong>PUT</strong> will overwrite the data at the specified location, including any child nodes. </aside> </div>  <div class="docs-section"> <h2 id="section-update" data-nav="Updating Data">Updating Data with PATCH</h2> <p> Using a <code translate="no" dir="ltr">PATCH</code> request, we can update specific children at a location without overwriting existing data. Let's add Turing's nickname to his user data with a <code translate="no" dir="ltr">PATCH</code> request: </p> 
+<pre>
+curl -X PATCH -d '{
+  "nickname": "Alan The Machine"
+}' \
+  'https://docs-examples.firebaseio.com/fireblog/users/alanisawesome.json'
+</pre> <p> The above request will write <code translate="no" dir="ltr">nickname</code> to our <code translate="no" dir="ltr">alanisawesome</code> object without deleting the <code translate="no" dir="ltr">name</code> or <code translate="no" dir="ltr">birthday</code> children. Note that if we had issued a <code translate="no" dir="ltr">PUT</code> request here instead, <code translate="no" dir="ltr">name</code> and <code translate="no" dir="ltr">birthday</code> would have been deleted since they were not included in the request. The data in our Firebase database now looks like this: </p> 
+<pre>{
+  "users": {
+    "alanisawesome": {
+      "date_of_birth": "June 23, 1912",
+      "full_name": "Alan Turing",
+      "nickname": "Alan The Machine"
+    }
+  }
+}</pre> <p> A successful request will be indicated by a <code translate="no" dir="ltr">200 OK</code> HTTP status code, and the response will contain the updated data written to the database. </p> <p> Firebase also supports multi-path updates. This means that <code translate="no" dir="ltr">PATCH</code> can now update values at multiple locations in your Firebase database at the same time, a powerful feature which allows helps you <a href="https://firebase.googleblog.com/2013/04/denormalizing-your-data-is-normal.html">denormalize your data</a>. Using multi-path updates, we can add nicknames to both Alan and Grace at the same time: </p> 
+<pre>
+curl -X PATCH -d '{
+  "alanisawesome/nickname": "Alan The Machine",
+  "gracehopper/nickname": "Amazing Grace"
+}' \
+  'https://docs-examples.firebaseio.com/fireblog/users.json'
+</pre> <p> After this update, both Alan and Grace have had their nicknames added: </p> 
+<pre>{
+  "users": {
+    "alanisawesome": {
+      "date_of_birth": "June 23, 1912",
+      "full_name": "Alan Turing",
+      "nickname": "Alan The Machine"
+    },
+    "gracehop": {
+      "date_of_birth": "December 9, 1906",
+      "full_name": "Grace Hopper",
+      "nickname": "Amazing Grace"
+    }
+  }
+}</pre> <p> Note that trying to update objects by writing objects with the paths included will result in different behavior. Let's take a look at what happens if we instead try to update Grace and Alan this way: </p> 
+<pre>
+curl -X PATCH -d '{
+  "alanisawesome": {"nickname": "Alan The Machine"},
+  "gracehopper": {"nickname": "Amazing Grace"}
+}' \
+  'https://docs-examples.firebaseio.com/fireblog/users.json'
+</pre> <p> This results in different behavior, namely overwriting the entire <code translate="no" dir="ltr">/fireblog/users</code> node: </p> 
+<pre>{
+  "users": {
+    "alanisawesome": {
+      "nickname": "Alan The Machine"
+    },
+    "gracehop": {
+      "nickname": "Amazing Grace"
+    }
+  }
+}</pre> </div>  <div class="docs-section"> <h2 id="section-conditional-requests" data-nav="Updating Data">Updating Data with Conditional Requests</h2> You can use conditional requests, the REST equivalent to transactions, to update data according to its existing state. For example, if you want to increase an upvote counter, and want to make sure the count accurately reflects multiple, simultaneous upvotes, use a conditional request to write the new value to the counter. Instead of two writes that change the counter to the same number, one of the write requests fails and you can then retry the request with the new value. <ol> <li>To perform a conditional request at a location, get the unique identifier for the current data at that location, or the ETag. If the data changes at that location, the ETag changes, too. You can request an ETag with any method other than <code translate="no" dir="ltr">PATCH</code>. The following example uses a <code translate="no" dir="ltr">GET</code> request. 
+<pre>curl -i 'https://test.example.com/posts/12345/upvotes.json' -H 'X-Firebase-ETag: true'</pre> Specifically calling the ETag in the header returns the ETag of the specified location in the HTTP response. 
+<pre>HTTP/1.1 200 OK
+Content-Length: 6
+Content-Type: application/json; charset=utf-8
+Access-Control-Allow-Origin: *
+ETag: [ETAG_VALUE]
+Cache-Control: no-cache
+
+10 // Current value of the data at the specified location</pre> </li> <li>Include the returned ETag in your next <code translate="no" dir="ltr">PUT</code> or <code translate="no" dir="ltr">DELETE</code> request to update data that specifically matches that ETag value. Following our example, to update the counter to 11, or 1 larger than the initial fetched value of 10, and fail the request if the value no longer matches, use the following code: 
+<pre>curl -iX PUT -d '11' 'https://[PROJECT_ID].firebaseio.com/posts/12345/upvotes.json' -H 'if-match:[ETAG_VALUE]'</pre> If the value of the data at the specified location is still 10, the ETag in the <code translate="no" dir="ltr">PUT</code> request matches, and the request succeeds, writing 11 to the database. 
+<pre>HTTP/1.1 200 OK
+Content-Length: 6
+Content-Type: application/json; charset=utf-8
+Access-Control-Allow-Origin: *
+Cache-Control: no-cache
+
+11 // New value of the data at the specified location, written by the conditional request</pre> If the location no longer matches the ETag, which might occur if another user wrote a new value to the database, the request fails without writing to the location. The return response includes the new value and ETag. 
+<pre>HTTP/1.1 412 Precondition Failed
+Content-Length: 6
+Content-Type: application/json; charset=utf-8
+Access-Control-Allow-Origin: *
+ETag: [ETAG_VALUE]
+Cache-Control: no-cache
+
+12 // New value of the data at the specified location</pre> </li> <li>Use the new information if you decide to retry the request. Realtime Database does not automatically retry conditional requests that have failed. However, you can use the new value and ETag to build a new conditional request with the information returned by the fail response.</li> </ol> <p>REST-based conditional requests implement the HTTP <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Match">if-match</a> standard. However, they differ from the standard in the following ways:</p> <ul> <li>You can only supply one ETag value for each if-match request, not multiple.</li> <li> While the standard suggests that ETags be returned with all requests, Realtime Database only returns ETags with requests including the <code translate="no" dir="ltr">X-Firebase-ETag</code> header. This reduces billing costs for standard requests.</li> </ul> <p>Conditional requests might also be slower than typical REST requests.</p> </div>  <div class="docs-section"> <h2 id="section-post">Saving Lists of Data</h2> <p> To generate a unique, timestamp-based key for every child added to a Firebase database reference we can send a <code translate="no" dir="ltr">POST</code> request. For our <code translate="no" dir="ltr">users</code> path, it made sense to define our own keys since each user has a unique username. But when users add blog posts to the app, we'll use a <code translate="no" dir="ltr">POST</code> request to auto-generate a key for each blog post: </p> 
+<pre>
+curl -X POST -d '{
+  "author": "alanisawesome",
+  "title": "The Turing Machine"
+}' 'https://docs-examples.firebaseio.com/fireblog/posts.json'
+</pre> <p> Our <code translate="no" dir="ltr">posts</code> path now has the following data: </p> 
+<pre>{
+  "posts": {
+    "-JSOpn9ZC54A4P4RoqVa": {
+      "author": "alanisawesome",
+      "title": "The Turing Machine"
+    }
+  }
+}</pre> <p> Notice that the key <code translate="no" dir="ltr">-JSOpn9ZC54A4P4RoqVa</code> was automatically generated for us because we used a <code translate="no" dir="ltr">POST</code> request. A successful request will be indicated by a <code translate="no" dir="ltr">200 OK</code> HTTP status code, and the response will contain the key of the new data that was added: </p> 
+<pre>{"name":"-JSOpn9ZC54A4P4RoqVa"}</pre> <aside class="note"> Interested in learning more about how push keys are generated? Check out <a href="https://firebase.googleblog.com/2015/02/the-2120-ways-to-ensure-unique_68.html">this blog post</a>. </aside> </div>  <div class="docs-section"> <h2 id="section-delete">Removing Data</h2> <p> To remove data from the database, we can send a <code translate="no" dir="ltr">DELETE</code> request with the URL of the path from which we'd like to delete data. The following would delete Alan from our <code translate="no" dir="ltr">users</code> path: </p> 
+<pre>
+curl -X DELETE \
+  'https://docs-examples.firebaseio.com/fireblog/users/alanisawesome.json'
+</pre> <p> A successful <code translate="no" dir="ltr">DELETE</code> request will be indicated by a <code translate="no" dir="ltr">200 OK</code> HTTP status code with a response containing JSON <code translate="no" dir="ltr">null</code>. </p> </div>  <div class="docs-section"> <h2 id="section-rest-uri-params">URI Parameters</h2> <p> The REST API accepts the following URI parameters when writing data to the database: </p> <h3 id="auth">auth</h3> <p> The <code translate="no" dir="ltr">auth</code> request parameter allows access to data protected by <a href="../security/rules-conditions">Firebase Realtime Database Security Rules</a>, and is supported by all request types. The argument can either be our Firebase app secret or an authentication token, which we'll cover in the <a href="../../auth/users">user authorization section</a>. In the following example we send a <code translate="no" dir="ltr">POST</code> request with an <code translate="no" dir="ltr">auth</code> parameter, where <code translate="no" dir="ltr">CREDENTIAL</code> is either our Firebase app secret or an authentication token: </p> 
+<pre>
+curl -X POST -d '{"Authenticated POST request"}' \
+  'https://docs-examples.firebaseio.com/auth-example.json?auth=CREDENTIAL'
+</pre> <aside class="note"> If the token <code translate="no" dir="ltr">debug</code> flag is set, debug information can be found in the <strong>X-Firebase-Auth-Debug</strong> header of the response. </aside> <h3 id="print">print</h3> <p> The <code translate="no" dir="ltr">print</code> parameter lets us specify the format of our response from the database. Adding <code translate="no" dir="ltr">print=pretty</code> to our request will return the data in a human-readable format. <code translate="no" dir="ltr">print=pretty</code> is supported by <code translate="no" dir="ltr">GET</code>, <code translate="no" dir="ltr">PUT</code>, <code translate="no" dir="ltr">POST</code>, <code translate="no" dir="ltr">PATCH</code>, and <code translate="no" dir="ltr">DELETE</code> requests. </p> <p> To suppress the output from the server when writing data, we can add <code translate="no" dir="ltr">print=silent</code> to our request. The resulting response will be empty and indicated by a <code translate="no" dir="ltr">204 No Content</code> HTTP status code if the request is successful. The <code translate="no" dir="ltr">print=silent</code> is supported by <code translate="no" dir="ltr">GET</code>, <code translate="no" dir="ltr">PUT</code>, <code translate="no" dir="ltr">POST</code>, and <code translate="no" dir="ltr">PATCH</code> requests. </p> </div>  <div class="docs-section"> <h2 id="section-rest-server-values">Writing Server Values</h2> <p> Server values can be written at a location using a placeholder value, which is an object with a single <code translate="no" dir="ltr">".sv"</code> key. The value for that key is the type of server value we wish to set. For example, to set a timestamp when a user is created we could do the following: </p> 
+<pre>
+curl -X PUT -d '{".sv": "timestamp"}' \
+  'https://docs-examples.firebaseio.com/alanisawesome/createdAt.json'
+</pre> <p> <code translate="no" dir="ltr">"timestamp"</code> is the only supported server value, and is the time since the UNIX epoch in milliseconds. </p> </div>  <div class="docs-section"> <h2 id="section-rest-write-performance" data-nav="Write Performance">Improving Write Performance</h2> <p> If we're writing large amounts of data to the database, we can use the <code translate="no" dir="ltr">print=silent</code> parameter to improve our write performance and decrease bandwidth usage. In the normal write behavior, the server responds with the JSON data that was written. When <code translate="no" dir="ltr">print=silent</code> is specified, the server immediately closes the connection once the data is received, reducing bandwidth usage. </p> <p> In cases where we're making many requests to the database, we can re-use the HTTPS connection by sending a <code translate="no" dir="ltr">Keep-Alive</code> request in the HTTP header. </p> </div>  <div class="docs-section"> <h2 id="section-rest-errors">Error Conditions</h2> <p> The REST API will return error codes under these circumstances: </p> <table class="responsive"> <tr> <th colspan="2">HTTP Status Codes</th> </tr> <tr> <td>
+<strong>400</strong> Bad Request</td> <td> <p>One of the following error conditions:</p> <ul> <li>Unable to parse <code translate="no" dir="ltr">PUT</code> or <code translate="no" dir="ltr">POST</code> data.</li> <li>Missing <code translate="no" dir="ltr">PUT</code> or <code translate="no" dir="ltr">POST</code> data.</li> <li>The request attempts to <code translate="no" dir="ltr">PUT</code> or <code translate="no" dir="ltr">POST</code> data that is too large.</li> <li>The REST API call contains invalid child names as part of the path.</li> <li>The REST API call path is too long.</li> <li>The request contains an unrecognized server value.</li> <li>The index for the query is not defined in your <a href="../security/indexing-data">Firebase Realtime Database Security Rules</a>.</li> <li>The request does not support one of the query parameters that is specified.</li> <li>The request mixes query parameters with a shallow <code translate="no" dir="ltr">GET</code> request.</li> </ul> </td> </tr> <tr> <td>
+<strong>401</strong> Unauthorized</td> <td> <p>One of the following error conditions:</p> <ul> <li>The auth token has expired.</li> <li>The auth token used in the request is invalid.</li> <li>Authenticating with an access_token failed.</li> <li>The request violates your <a href="../security">Firebase Realtime Database Security Rules.</a> </li> </ul> </td> </tr> <tr> <td>
+<strong>404</strong> Not Found</td> <td>The specified Firebase database was not found.</td> </tr> <tr> <td>
+<strong>500</strong> Internal Server Error</td> <td>The server returned an error. See the error message for further details.</td> </tr> <tr> <td>
+<strong>503</strong> Service Unavailable</td> <td>The specified Firebase Realtime Database is temporarily unavailable, which means the request was not attempted.</td> </tr> </table> </div>  <div class="docs-section"> <h2 id="section-securing-data">Securing Data</h2> <p> Firebase has a security language that lets us define which users have read and write access to different nodes of our data. You can read more about it in <a href="../security">Realtime Database Security Rules</a>. </p> </div> <p> Now that we've covered saving data, we can learn how to retrieve our data from the Firebase database through the REST API in the next section. </p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/rest/save-data" class="_attribution-link">https://firebase.google.com/docs/database/rest/save-data</a>
+  </p>
+</div>

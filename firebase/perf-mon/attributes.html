@@ -1,0 +1,48 @@
+<h1>Filter data using attributes</h1>   <p><br></p> <p>With Performance Monitoring, you can use attributes to segment performance data and focus on your app's performance in different real-world scenarios.</p> <p>After you click a trace name in the traces table (located at the bottom of the <a href="https://console.firebase.google.com/project/_/performance" class="external"><i>Performance</i> dashboard</a>), you can drill down into metrics of interest. Use the <nobr><b>Filter<span class="material-icons" aria-hidden="true" translate="no">add</span></b></nobr> button (top-left of the screen) to filter the data by attribute, for example: </p> <p><img src="https://firebase.google.com/static/docs/perf-mon/images/perf-mon-filter-by-attribute_native-1.png" class="attempt-right" width="350" alt="an image of &lt;span class=" notranslate>Firebase Performance Monitoring data being filtered by attribute" /&gt;</p> <ul> <li>Filter by <i>App version</i> to view data about a past release or your latest release </li> <li>Filter by <i>Device</i> to learn how older devices handle your app </li> <li>Filter by <i>Country</i> to make sure your database location isn't affecting a specific region </li> </ul> <p>For even more powerful analysis based on attributes, <a href="bigquery-export">export your performance data to BigQuery</a>.</p> <h2 id="default_attributes">Default attributes</h2> <p>Performance Monitoring automatically collects a variety of default attributes depending on the type of trace.</p> <p>In addition to these default attributes, you can also <a href="#create-custom-attributes">create custom attributes</a> on your <a href="custom-code-traces">custom code traces</a> to segment data by categories specific to your app. For example, in a game, you can segment data by game level.</p> <h3 id="default-attributes-native">Default attributes for Apple and Android apps</h3> <p>All traces for Apple and Android apps collect the following attributes by default:</p> <ul> <li>App version</li> <li>Country</li> <li>OS level</li> <li>Device</li> <li>Radio</li> <li>Carrier</li> </ul> <p>In addition, network request traces also collect the following attribute:</p> <ul> <li>MIME type</li> </ul> <h2 id="collecting-user-data">Collecting user data</h2> <aside class="key-point"> <p><strong>Collecting user data:</strong> Performance Monitoring does not itself collect any personally identifiable information (PII), such as names, email addresses, or phone numbers. Developers can collect additional data using Performance Monitoring by creating custom attributes on custom code traces. Such data collected through Performance Monitoring should not contain information that personally identifies an individual to Google.</p> <p> Here's an example of a log message that <em>does not</em> contain personally identifiable information:</p> 
+<pre>trace.putAttribute("experiment", "A");</pre> <p> Here's an example that <em>does</em> contain personally identifiable information (<strong><em>do not use</em></strong> this type of custom attribute in your app):</p> 
+<pre>trace.putAttribute("email", user.getEmailAddress());</pre> <p>Data that exposes any personally identifiable information is subject to deletion without notice.</p> </aside> <h2 id="create-custom-attributes">Create custom attributes</h2> <p>You can create custom attributes on any of your instrumented <a href="custom-code-traces">custom code traces</a>.</p> <p>Use the Performance Monitoring Trace API (<a href="https://firebase.google.com/docs/reference/swift/firebaseperformance/api/reference/Classes/Trace">Swift</a> | <a href="https://firebase.google.com/docs/reference/ios/firebaseperformance/api/reference/Classes/FIRTrace">Obj-C</a>) to add custom attributes to custom code traces.</p> <p>To use custom attributes, add code to your app that defines the attribute and associates it with a specific custom code trace. You can set the custom attribute anytime between when the trace starts and when the trace stops.</p> <p>Note the following:</p> <ul> <li>
+<p>Names for custom attributes must meet the following requirements:</p> <ul> <li>No leading or trailing whitespace, no leading underscore (<code translate="no" dir="ltr">_</code>) character</li> <li>No spaces</li> <li>Max length is 32 characters</li> <li>Allowed characters for the name are <code translate="no" dir="ltr">A-Z</code>, <code translate="no" dir="ltr">a-z</code>, and <code translate="no" dir="ltr">_</code>.</li> </ul>
+</li> <li><p>Each custom code trace can record up to 5 custom attributes.</p></li> <li>
+<p>Please ensure that custom attributes do not contain any information that personally identifies an individual to Google.</p> <div>  <p class="showalways">Learn more about this guideline</p> <aside class="key-point"> <p><strong>Collecting user data:</strong> Performance Monitoring does not itself collect any personally identifiable information (PII), such as names, email addresses, or phone numbers. Developers can collect additional data using Performance Monitoring by creating custom attributes on custom code traces. Such data collected through Performance Monitoring should not contain information that personally identifies an individual to Google.</p> <p> Here's an example of a log message that <em>does not</em> contain personally identifiable information:</p> 
+<pre>trace.putAttribute("experiment", "A");</pre> <p> Here's an example that <em>does</em> contain personally identifiable information (<strong><em>do not use</em></strong> this type of custom attribute in your app):</p> 
+<pre>trace.putAttribute("email", user.getEmailAddress());</pre> <p>Data that exposes any personally identifiable information is subject to deletion without notice.</p> </aside>  </div>
+</li> </ul> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="swift">let trace = Performance.startTrace(name: "CUSTOM_TRACE_NAME")
+
+trace.setValue("A", forAttribute: "experiment")
+
+// Update scenario.
+trace.setValue("B", forAttribute: "experiment")
+
+// Reading scenario.
+let experimentValue:String? = trace.valueForAttribute("experiment")
+
+// Delete scenario.
+trace.removeAttribute("experiment")
+
+// Read attributes.
+let attributes:[String, String] = trace.attributes;</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="objectivec">FIRTrace *trace = [FIRPerformance startTraceWithName:@"CUSTOM_TRACE_NAME"];
+
+[trace setValue:@"A" forAttribute:@"experiment"];
+
+// Update scenario.
+[trace setValue:@"B" forAttribute:@"experiment"];
+
+// Reading scenario.
+NSString *experimentValue = [trace valueForAttribute:@"experiment"];
+
+// Delete scenario.
+[trace removeAttribute:@"experiment"];
+
+// Read attributes.
+NSDictionary &lt;NSString *, NSString *&gt; *attributes = [trace attributes];</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/perf-mon/attributes" class="_attribution-link">https://firebase.google.com/docs/perf-mon/attributes</a>
+  </p>
+</div>

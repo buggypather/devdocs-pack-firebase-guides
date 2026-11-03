@@ -1,0 +1,159 @@
+<h1>Manage and deploy Firebase Security Rules</h1> <p>Firebase provides you with several tools to manage your Security Rules, each one useful in particular cases, and each one using the same backend Firebase Security Rules management API.</p> <p>No matter which tool is used to invoke it, the management API:</p> <ul> <li>Ingests a Rules <em>source</em>: a set of rules, typically a code file containing Firebase Security Rules statements.</li> <li>Stores ingested source as an immutable <em>ruleset</em>.</li> <li>Tracks deployment of each ruleset in a <em>release</em>. Firebase Security Rules-enabled services lookup the release for a project to evaluate each request for a secured resource.</li> <li>Provides the capability to run syntactic and semantic <em>tests</em> of a ruleset.</li> </ul> <h2 id="use_the">Use the Firebase CLI</h2> <p>With the <a href="../cli">Firebase CLI</a>, you can upload local <em>sources</em> and deploy <em>releases</em>. The CLI's Firebase Local Emulator Suite lets you perform full local testing of <em>sources</em>.</p> <p>Using the CLI allows you to keep your rules under version control with your application code and deploy rules as part of your existing deployment process.</p> <h3 id="generate_a_configuration_file">Generate a configuration file</h3> <p>When you configure your Firebase project using the Firebase CLI, you create a <code translate="no" dir="ltr">.rules</code> configuration file in your project directory. Use the following command to start configuring your Firebase project:</p> <div> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p>
+
+<pre data-language="">// Set up Firestore in your project directory, creates a .rules file
+firebase init firestore</pre></section> <section><p class="_firebase-tab"><strong>Realtime Database</strong></p>
+
+<pre data-language="">// Set up Realtime Database in your project directory, creates a .rules file
+firebase init database</pre></section> <section><p class="_firebase-tab"><strong>Cloud Storage</strong></p>
+
+<pre data-language="">// Set up Storage in your project directory, creates a .rules file
+firebase init storage</pre></section> </div> <h3 id="edit_and_update_your_rules">Edit and update your rules</h3> <p>Edit your rules source directly in the <code translate="no" dir="ltr">.rules</code> configuration file.</p> <p>Make sure that any edits you make in the Firebase CLI are reflected in the Firebase console, or that you consistently make updates using either the Firebase console or the Firebase CLI. Otherwise, you might overwrite any updates made in the Firebase console.</p> <aside class="note"><strong>Note:</strong><span> <strong>When you <a href="../cli/index#deployment">deploy security rules using the Firebase CLI</a>, the rules defined in your project directory overwrite any existing rules in the Firebase console.</strong> So, if you choose to define or edit your security rules using the Firebase console, make sure that you also update the rules defined in your project directory.</span></aside> <h3 id="test_your_updates">Test your updates</h3> <p>The Local Emulator Suite provides emulators for all Security Rules-enabled products. The Security Rules engine for each emulator performs both syntactic and semantic evaluation of rules, thus exceeding the syntactic testing the Security Rules management API offers.</p> <p>If you're working with the CLI, the Suite is an excellent tool for Firebase Security Rules testing. Use the <a href="emulator-setup">Local Emulator Suite</a> to test your updates locally and confirm that your app's Security Rules exhibit the behavior you want.</p> <h3 id="deploy_your_updates">Deploy your updates</h3> <p>Once you've updated and tested your Security Rules, deploy the sources to production.</p> <p>For Cloud Firestore Security Rules, associate <code translate="no" dir="ltr">.rules</code> files with your default and additional named databases by reviewing and updating your <a href="../cli#the_firebasejson_file"><code translate="no" dir="ltr">firebase.json</code> file</a>.</p> <p>Use the following commands to selectively deploy your Security Rules alone or deploy them as part of your normal deployment process.</p> <div> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p>
+
+<pre data-language="">// Deploy rules for all databases configured in your firebase.json
+firebase deploy --only firestore:rules
+// Deploy rules for the specified database configured in your firebase.json
+firebase deploy --only firestore:&lt;databaseId&gt;</pre></section> <section><p class="_firebase-tab"><strong>Realtime Database</strong></p>
+
+<pre data-language="">// Deploy your .rules file
+firebase deploy --only database</pre></section> <section><p class="_firebase-tab"><strong>Cloud Storage</strong></p>
+
+<pre data-language="">// Deploy your .rules file
+firebase deploy --only storage</pre></section> </div> <h2 id="use_the_firebase_console">Use the Firebase console</h2> <aside class="note"><strong>Note:</strong><span> The Firebase console supports deployment of Cloud Firestore Security Rules to your project's default database. Future updates will allow you to deploy Security Rules to additional databases in your project. You can use the <a href="#use_the">Firebase CLI</a> to work with Security Rules in your multi-database projects. </span></aside> <p>You can also edit Security Rules <em>sources</em> and deploy them as <em>releases</em> from the Firebase console. Syntactic <em>testing</em> is performed as you edit in the Firebase console UI, and semantic testing is available using the Security Rules Playground.</p> <h3 id="edit_and_update_your_rules_2">Edit and update your rules</h3> <ol> <li>Open the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a> and select your project.</li> <li>Then, select <strong>Realtime Database</strong>, <strong>Cloud Firestore</strong> or <strong>Storage</strong> from the product navigation, then click <strong>Rules</strong> to navigate to the Security Rules editor.</li> <li>Edit your rules directly in the editor.</li> </ol> <aside class="note"><strong>Note:</strong><span> <strong>When you <a href="../cli/index#deployment">deploy security rules using the Firebase CLI</a>, the rules defined in your project directory overwrite any existing rules in the Firebase console.</strong> So, if you choose to define or edit your security rules using the Firebase console, make sure that you also update the rules defined in your project directory.</span></aside> <h3 id="test_your_updates_2">Test your updates</h3> <p>In addition to testing syntax in the editor UI, you can test semantic Security Rules behavior, using your project's database and storage resources, directly in the Firebase console, using the <a href="simulator">Security Rules Playground</a>. Open the <strong>Rules Playground</strong> screen in the Security Rules editor, modify the settings and click <strong>Run</strong>. Look for the confirmation message at the top of the editor.</p> <h3 id="deploy_your_updates_2">Deploy your updates</h3> <p>Once you're satisfied that your updates are what you expect, click <strong>Publish</strong>.</p> <h2 id="use_the_admin_sdk">Use the Admin SDK</h2> <aside class="note"><strong>Note:</strong><span> The Firebase Admin SDK currently supports deployment of Cloud Firestore Security Rules to your project's default database. Future updates will allow you to deploy Security Rules to additional databases in your project. You can use the <a href="#use_the">Firebase CLI</a> to work with Security Rules in your multi-database projects. </span></aside> <p>You can use the Admin SDK for Node.js <em>rulesets</em>. With this programmatic access, you can:</p> <ul> <li>Implement custom tools, scripts, dashboards and CI/CD pipelines for managing rules.</li> <li>Manage rules more easily across multiple Firebase projects.</li> </ul> <p>When updating rules programmatically, it is very important to avoid making unintended changes to the access control for your app. Write your Admin SDK code with security foremost in mind, especially when updating or deploying rules.</p> <p>Another important thing to keep in mind is that Firebase Security Rules releases take a period of several minutes to fully propagate. When using the Admin SDK to deploy rules, make sure to avoid race conditions in which your app immediately relies on rules whose deployment is not yet complete. If your use case requires frequent updates to access control rules, consider solutions using Cloud Firestore, which is designed to reduce race conditions despite frequent updates.</p> <aside class="note"><strong>Note:</strong><span> Although it’s now possible to unit test your rules using the local Cloud Firestore and Realtime Database emulators, testing is not available via this SDK. If you want to make sure that your rules are tested before deployment, we don’t recommend updating your rules via the Admin SDK.</span></aside> <p>Also note these limits:</p> <ul> <li>Rules must be smaller than 256 KiB of UTF-8 encoded text when serialized.</li> <li>A project can have at most 2500 total deployed rulesets. Once this limit is reached, you must delete some old rulesets before creating new ones.</li> </ul> <h3 id="create_and_deploy_or_rulesets">Create and deploy Cloud Storage or Cloud Firestore rulesets</h3> <p>A typical workflow for managing security rules with the Admin SDK could include three discrete steps:</p> <ol> <li>Create a rules file source (optional)</li> <li>Create a ruleset</li> <li>Release, or deploy, the new ruleset</li> </ol> <p>The SDK provides a method to combine these steps into a single API call for Cloud Storage and Cloud Firestore security rules. For example:</p> 
+<pre>    const source = `service cloud.firestore {
+      match /databases/{database}/documents {
+        match /carts/{cartID} {
+          allow create: if request.auth != null &amp;&amp; request.auth.uid == request.resource.data.ownerUID;
+          allow read, update, delete: if request.auth != null &amp;&amp; request.auth.uid == resource.data.ownerUID;
+        }
+      }
+    }`;
+    // Alternatively, load rules from a file
+    // const fs = require('fs');
+    // const source = fs.readFileSync('path/to/firestore.rules', 'utf8');
+
+    await admin.securityRules().releaseFirestoreRulesetFromSource(source);
+</pre> <p>This same pattern works for Cloud Storage rules with <code translate="no" dir="ltr">releaseFirestoreRulesetFromSource()</code>.</p> <p>Alternatively, you can create the rules file as an in-memory object, create the ruleset, and deploy the ruleset separately for closer control of these events. For example:</p> 
+<pre>    const rf = admin.securityRules().createRulesFileFromSource('firestore.rules', source);
+    const rs = await admin.securityRules().createRuleset(rf);
+    await admin.securityRules().releaseFirestoreRuleset(rs);
+</pre> <h3 id="update_rulesets">Update Realtime Database rulesets</h3> <p>To update Realtime Database rulesets with the Admin SDK, use the <code translate="no" dir="ltr">getRules()</code> and <code translate="no" dir="ltr">setRules()</code> methods of <code translate="no" dir="ltr">admin.database</code>. You can retrieve rulesets in JSON format, or as a string with comments included.</p> <p>To update a ruleset:</p> 
+<pre>    const source = `{
+      "rules": {
+        "scores": {
+          ".indexOn": "score",
+          "$uid": {
+            ".read": "$uid == auth.uid",
+            ".write": "$uid == auth.uid"
+          }
+        }
+      }
+    }`;
+    await admin.database().setRules(source);
+</pre> <h3 id="manage_rulesets">Manage rulesets</h3> <p>To help manage large rulesets, the Admin SDK lets you list all existing rules with <code translate="no" dir="ltr">admin.securityRules().listRulesetMetadata</code>. For example:</p> 
+<pre>    const allRulesets = [];
+    let pageToken = null;
+    while (true) {
+      const result = await admin.securityRules().listRulesetMetadata(pageToken: pageToken);
+      allRulesets.push(...result.rulesets);
+      pageToken = result.nextPageToken;
+      if (!pageToken) {
+        break;
+      }
+    }
+</pre> <p>For very large deployments that reach the 2500 ruleset limit over time, you can create logic to delete the oldest rules on a fixed time cycle. For example, to delete <em>all</em> rulesets deployed for longer than 30 days:</p> 
+<pre>    const thirtyDays = new Date(Date.now() - THIRTY_DAYS_IN_MILLIS);
+    const promises = [];
+    allRulesets.forEach((rs) =&gt; {
+      if (new Date(rs.createTime) &lt; thirtyDays) {
+        promises.push(admin.securityRules().deleteRuleset(rs.name));
+      }
+    });
+    await Promise.all(promises);
+    console.log(`Deleted ${promises.length} rulesets.`);
+</pre> <h2 id="use_the_rest_api">Use the REST API</h2> <p>The tools described above are well suited to various workflows, including Firebase Security Rules management for multiple Cloud Firestore databases in your project, but you may want to manage and deploy Firebase Security Rules using the management API itself. The management API gives you the greatest flexibility.</p> <aside class="note"><strong>Note:</strong><span> This section covers basic management use cases similar to those presented above. For more use cases and examples available with this API, refer to the complete Rules management REST API reference documentation.</span></aside> <p>Also note these limits:</p> <ul> <li>Rules must be smaller than 256 KiB of UTF-8 encoded text when serialized.</li> <li>A project can have at most 2500 total deployed rulesets. Once this limit is reached, you must delete some old rulesets before creating new ones.</li> </ul> <h3 id="create_and_deploy_or_rulesets_with_rest">Create and deploy Cloud Firestore or Cloud Storage rulesets with REST</h3> <p>The examples in this section use Firestore Security Rules, though they apply to Cloud Storage Security Rules as well.</p> <p>The examples also use cURL to make API calls. Steps to set up and pass authentication tokens are omitted. You can experiment with this API using the API Explorer integrated with the reference documentation.</p> <p>Typical steps for creating and deploying a ruleset using the management API are:</p> <ol> <li>Create rules file sources</li> <li>Create a ruleset</li> <li>Release (deploy) the new ruleset.</li> </ol> <h4 id="create_a_source">Create a source</h4> <p>Let's assume you're working on your <code translate="no" dir="ltr">secure_commerce</code> Firebase project and want to deploy locked-down Cloud Firestore Security Rules to a database in your project named <code translate="no" dir="ltr">east_store</code>.</p> <p>You can implement these rules in a <code translate="no" dir="ltr">firestore.rules</code> file.</p> 
+<pre>service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+</pre> <h4 id="create_a_ruleset">Create a ruleset</h4> <p>Now, generate a base64-encoded fingerprint for this file. You can then use the source in this file to populate the payload needed to create a ruleset with the <code translate="no" dir="ltr">projects.rulesets.create</code> REST call. Here, use the <code translate="no" dir="ltr">cat</code> command to insert the contents of <code translate="no" dir="ltr">firestore.rules</code> into the REST payload.</p> <p>For tracking, to associate this with your <code translate="no" dir="ltr">east_store</code> database, set the <code translate="no" dir="ltr">attachment_point</code> to <code translate="no" dir="ltr">east_store</code>.</p> 
+<pre>curl -X POST -d '{
+  "source": {
+    "files": [
+      {
+        "content": "' $(cat storage.rules) '",
+        "name": "firestore.rules",
+        "fingerprint": &lt;sha fingerprint&gt;
+      },
+    "attachment_point": "firestore.googleapis.com/databases/east_store"
+    ]
+  }
+}' 'https://firebaserules.googleapis.com/v1/projects/secure_commerce/rulesets'</pre> <p>The API returns a validation response and a ruleset name, for example <code translate="no" dir="ltr">projects/secure_commerce/rulesets/uuid123</code>.</p> <h4 id="release_deploy_a_ruleset">Release (deploy) a ruleset</h4> <p>If the ruleset is valid, the final step is to deploy the new ruleset in a named release.</p> 
+<pre>curl -X POST -d '{
+  "name": "projects/secure_commerce/releases/cloud.firestore/east_store"  ,
+  "rulesetName": "projects/secure_commerce/rulesets/uuid123"
+}' 'https://firebaserules.googleapis.com/v1/projects/secure_commerce/releases'</pre>
+<aside class="note"><strong>Note:</strong><span> For release to the (default) database, the path <code translate="no" dir="ltr">projects/<project-id>/releases/cloud.firestore/(default)</project-id></code> is equivalent to <code translate="no" dir="ltr">projects/<project-id>/releases/cloud.firestore</project-id></code>.</span></aside> <p>Be aware that Firebase Security Rules releases take a period of several minutes to fully propagate. When using the management REST API to deploy, make sure to avoid race conditions in which your app immediately relies on rules whose deployment is not yet complete.</p> <h3 id="update_rulesets_with_rest">Update Realtime Database rulesets with REST</h3> <p>Realtime Database provides its own REST interface for managing Security Rules. See <a href="../database/rest/app-management">Managing Firebase Realtime Database Security Rules via REST</a>.</p> <h3 id="manage_rulesets_with_rest">Manage rulesets with REST</h3> <p>To help manage large rules deployments, in addition to a REST method for creating rulesets and releases, the management API provides methods to:</p> <ul> <li>list, get, and delete <em>rulesets</em>
+</li> <li>list, get, and delete rules <em>releases</em>
+</li> </ul> <p>For very large deployments that reach the 2500 ruleset limit over time, you can create logic to delete the oldest rules on a fixed time cycle. For example, to delete <em>all</em> rulesets deployed for longer than 30 days, you can call the <code translate="no" dir="ltr">projects.rulesets.list</code> method, parse the JSON list of <code translate="no" dir="ltr">Ruleset</code> objects on their <code translate="no" dir="ltr">createTime</code> keys, then call <code translate="no" dir="ltr">project.rulesets.delete</code> on the corresponding rulesets by <code translate="no" dir="ltr">ruleset_id</code>.</p> <h3 id="test_your_updates_with_rest">Test your updates with REST</h3> <p>Finally, the management API allows you to run syntactic and semantic tests on Cloud Firestore and Cloud Storage resources in your production projects.</p> <aside class="note"><strong>Note:</strong><span> Tests run using the REST API use production databases, storage buckets, and related resources. Such testing can incur usage charges. We strongly recommend that you use Firebase Local Emulator Suite to perform Firebase Security Rules testing, since you can run tests on offline, non-production resources without usage charges. See our guide on <a href="emulator-setup">testing Firebase Security Rules with Local Emulator Suite</a>.</span></aside> <p>Testing with this component of the API consists of:</p> <ol> <li>Defining a <code translate="no" dir="ltr">TestSuite</code> JSON object to represent a set of <code translate="no" dir="ltr">TestCase</code> objects</li> <li>Submitting the <code translate="no" dir="ltr">TestSuite</code>
+</li> <li>Parsing returned <code translate="no" dir="ltr">TestResult</code> objects</li> </ol> <p>Let's define a <code translate="no" dir="ltr">TestSuite</code> object with a single <code translate="no" dir="ltr">TestCase</code> in a <code translate="no" dir="ltr">testcase.json</code> file. In this example, we pass the Security Rules language source inline with the REST payload, alongside the test suite to run on those rules. We specify a Rules evaluation expectation, and the client request against which the ruleset is to be tested. You can also specify how complete the test report is, using value "FULL" to indicate results for all Security Rules language expressions should be included in the report, including expressions that were not matched to the request.</p> 
+<pre> {
+  "source":
+  {
+    "files":
+    [
+      {
+        "name": "firestore.rules",
+        "content": "service cloud.firestore {
+          match /databases/{database}/documents {
+            match /users/{userId}{
+              allow read: if (request.auth.uid == userId);
+            }
+            function doc(subpath) {
+              return get(/databases/$(database)/documents/$(subpath)).data;
+            }
+            function isAccountOwner(accountId) {
+              return request.auth.uid == accountId 
+                  || doc(/users/$(request.auth.uid)).accountId == accountId;
+            }
+            match /licenses/{accountId} {
+              allow read: if isAccountOwner(accountId);
+            }
+          }
+        }"
+      }
+    ]
+  },
+  "testSuite":
+  {
+    "testCases":
+    [
+      {
+        "expectation": "ALLOW",
+        "request": {
+           "auth": {"uid": "123"},
+           "path": "/databases/(default)/documents/licenses/abcd",
+           "method": "get"},
+        "functionMocks": [
+            {
+            "function": "get",
+            "args": [{"exact_value": "/databases/(default)/documents/users/123"}],
+            "result": {"value": {"data": {"accountId": "abcd"}}}
+            }
+          ]
+      }
+    ]
+  }
+}</pre> <p>We can then submit this <code translate="no" dir="ltr">TestSuite</code> for evalution with the <code translate="no" dir="ltr">projects.test</code> method.</p> 
+<pre>curl -X POST -d '{
+    ' $(cat testcase.json) '
+}' 'https://firebaserules.googleapis.com/v1/projects/secure_commerce/rulesets/uuid123:test'</pre> <p>The returned <code translate="no" dir="ltr">TestReport</code> (containing test SUCCESS/FAILURE status, lists of debug messages, lists of visited Rules expressions and their evaluation reports) would confirm with status SUCCESS that access is properly allowed.</p> <h2 id="manage_permissions_for_cross-service">Manage permissions for cross-service Cloud Storage Security Rules</h2> <p>If you create Cloud Storage Security Rules that use <a href="../storage/security/rules-conditions#enhance_with_firestore">Cloud Firestore document contents to evaluate security conditions</a>, you'll be prompted in the Firebase console or Firebase CLI to enable permissions to connect the two products.</p> <p>If you decide to disable such cross-service security:</p> <ol> <li><p>First, before disabling the feature, edit your rules, removing all statements that use Security Rules functions to access Cloud Firestore. Otherwise, after the feature is disabled, Security Rules evaluations will cause your Storage requests to fail.</p></li> <li>
+<p>Use the <strong>IAM</strong> page in the Google Cloud Console to delete the "Firebase Rules Firestore Service Agent" role by following the <a href="https://cloud.google.com/iam/docs/granting-changing-revoking-access#revoke-single-role">Cloud guide for revoking roles</a>.</p> <aside class="note"><strong>Note:</strong><span> On the <strong>IAM</strong> page, check the box "Include Google-provided role grants" to view all roles.</span></aside><aside class="note"><strong>Note:</strong><span> On the <strong>IAM</strong> page, you should find the Firebase Storage service account, with ID ending in <code translate="no" dir="ltr">@gcp-sa-firebasestorage.iam.gserviceaccount.com</code>. If cross-service Rules are enabled, you will see the "Firebase Rules Firestore Service Agent" role listed.</span></aside>
+</li> </ol> <p>You will be prompted to re-enable the feature the next time you save cross-service Rules from the Firebase CLI or the Firebase console.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/rules/manage-deploy" class="_attribution-link">https://firebase.google.com/docs/rules/manage-deploy</a>
+  </p>
+</div>

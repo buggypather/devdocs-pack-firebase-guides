@@ -1,0 +1,182 @@
+<h1>Understanding message delivery</h1>     <aside class="tip"><strong>Tip:</strong><span> Transition your Android server-side requests to <code translate="no" dir="ltr">AndroidConfigV2</code> for timely delivery of user-visible notifications. For guidance, see <a href="send/v2-api">Migrate from AndroidConfig to AndroidConfigV2</a>.</span></aside> <p>For troubleshooting ongoing message delivery failures, use the <strong><a href="https://firebase.google.com/support/troubleshooter/fcm">FCM troubleshooter</a></strong> and see this <strong><a href="https://firebase.blog/posts/2024/07/understand-fcm-delivery-rates/">blog post</a></strong> to understand the different reasons why you may not see your message. You can also visit the <strong><a href="https://status.firebase.google.com/cloud-messaging/">FCM status dashboard</a></strong> to identify if there are any ongoing service disruptions affecting FCM.</p> <p>FCM also provides three sets of tools to help you get insight into broad evaluation of messaging success and strategy:</p> <ul> <li>Firebase console message delivery reports</li> <li>Aggregated Android SDK delivery metrics from the Firebase Cloud Messaging Data API</li> <li>Comprehensive data export to Google BigQuery</li> </ul> <p><a href="#bigquery-data-export">Exporting data to BigQuery</a> and the <a href="#message-delivery-reports"><strong>Reports</strong> tab</a> in the Firebase console both require Google Analytics in order to function. You can enable Google Analytics in the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/integrations" class="external"><strong>Integrations</strong> tab</a> of the Firebase console. <a href="#aggregated-delivery-data">Aggregated Delivery Data</a> does not require Google Analytics to function.</p> <p>Keep in mind that the reporting of many of the statistics on this page, are subject to delays up to 24 hours due to batching of analytics data.</p> <h2 id="message-delivery-reports">Message delivery reports</h2> <p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Messaging</strong> &gt; <a href="https://console.firebase.google.com/project/_/messaging/reports" class="external"><strong>Reports</strong> tab</a> to view the following data for messages sent to Android or Apple platform FCM SDKs, including those sent using the Notifications composer and the FCM APIs:</p> <ul> <li>Sends — The data message or notification message has been enqueued for delivery or has been successfully passed to a third-party service like APNs for delivery. Note that Sends statistics might lag for a couple of hours. See <a href="customize-messages/setting-message-lifespan#message-lifetime">lifetime of a message</a> for more information.</li> <li>Received (available only on Android devices) — The data message or notification message has been received by the app. This data is available when the receiving Android device has FCM SDK 18.0.1 or higher installed.</li> <li>Impressions (available only for notification messages on Android devices) — The display notification has been displayed on the device while the app is in the background.</li> <li>Opens — The user opened the notification message. Reported only for notifications received when the app is in the background.</li> </ul> <p>This data is available for all messages with a notification payload and all <strong>labeled</strong> <a href="customize-messages/set-message-type#data-messages">data messages</a>. To learn more about labels, see <a href="understand-delivery#adding-analytics-labels-to-messages">Adding analytics labels to messages</a>.</p> <p>When viewing message reports, you can set a date range for the data displayed, with the option to export to CSV. You can also filter by these criteria:</p> <ul> <li>Platform (iOS or Android)</li> <li>App</li> <li>Custom analytics labels</li> </ul> <h3 id="adding-analytics-labels-to-messages">Adding analytics labels to messages</h3> <p>Labeling messages is very useful for custom analysis, allowing you to filter delivery statistics by labels or sets of labels. You can add a label to any message sent using the HTTP v1 API by setting the <code translate="no" dir="ltr">fcmOptions.analyticsLabel</code> field in the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages">message</a> object, or in the platform-specific <code translate="no" dir="ltr">AndroidFcmOptions</code> or <code translate="no" dir="ltr">ApnsFcmOptions</code> fields.</p> <aside class="special"><strong>Important:</strong><span> To use this feature, you must include the Analytics SDK in your app and enable <a href="https://support.google.com/firebase/answer/6383877">data sharing</a> with Firebase. An analytics label is required to display all types of statistics for data messages.</span></aside> <p>Analytics labels are text strings in the format <code translate="no" dir="ltr">^[a-zA-Z0-9-_.~%]{1,50}$</code>. Labels can include lower and upper case letters, numbers, and the following symbols:</p> <ul> <li><code translate="no" dir="ltr">-</code></li> <li><code translate="no" dir="ltr">~</code></li> <li><code translate="no" dir="ltr">%</code></li> </ul> <p>Max length is 50 characters. You can specify up to 100 unique labels per day; messages with labels added beyond that limit are not reported.</p> <p>In the Firebase console messaging <strong>Reports</strong> tab, you can search a list of all existing labels and apply them singly or in combination to filter the statistics displayed.</p> <h2 id="aggregated-delivery-data">Aggregated delivery data using the FCM Data API</h2> <p>The Firebase Cloud Messaging Data API lets you retrieve information that can help you understand the outcomes of message requests targeted to Android applications. The API provides aggregated data across all data collection-enabled Android devices in a project. This includes details on the percentage of messages delivered without delay as well as how many messages were delayed or dropped within the <a href="fcm-architecture">Android Transport Layer</a>. Evaluating this data can reveal broad trends in message delivery and help you find effective ways to improve the performance of your send requests. See <a href="#aggregate-data-timelines">Aggregate data timelines</a> for information on date range availability in the reports.</p> <p>The API provides all data available for a given application. See the <a href="https://firebase.google.com/docs/reference/fcmdata/rest/v1beta1/projects.androidApps.deliveryData">API reference documentation</a>.</p> <h3 id="how_is_the_data_broken_down">How is the data broken down?</h3> <p>Delivery data is broken down by application, date, and <a href="understand-delivery#adding-analytics-labels-to-messages">analytics label</a>. A call to the API will return data for every combination of date, application, and analytics label. For example, a single <code translate="no" dir="ltr">androidDeliveryData</code> JSON object would look like this:</p> 
+<pre> {
+  "appId": "1:23456789:android:a93a5mb1234efe56",
+  "date": {
+    "year": 2021,
+    "month": 1,
+    "day": 1
+  },
+  "analyticsLabel": "foo",
+  "data": {
+    "countMessagesAccepted": "314159",
+    "messageOutcomePercents": {
+      "delivered": 71,
+      "pending": 15
+    },
+   "deliveryPerformancePercents": {
+      "deliveredNoDelay": 45,
+      "delayedDeviceOffline": 11
+    }
+  }
+</pre> <h3 id="how_to_interpret_the_metrics">How to Interpret the Metrics</h3> <p>Delivery data outlines the percentage of messages that fit each of the following metrics. It is possible that a single message fits multiple metrics. Due to limitations in how we collect the data and the level of granularity at which we aggregated the metrics, <strong>some message outcomes are not represented in the metrics at all, so the percentages below will not sum to 100%.</strong></p> <h4 id="count_messages_accepted">Count Messages Accepted</h4> <p>The only count included in the dataset is the count of messages that were accepted by FCM for delivery to Android devices. All percentages use this value as the denominator. Keep in mind that this count won't include messages targeted to users who have disabled the collection of usage and diagnostic information on their devices.</p> <h4 id="message_outcome_percentages">Message Outcome Percentages</h4> <p>The fields included in the <a href="https://firebase.google.com/docs/reference/fcmdata/rest/v1beta1/projects.androidApps.deliveryData/list#messageoutcomepercents"><code translate="no" dir="ltr">MessageOutcomePercents</code></a> object provide information on the outcomes of message requests. The categories are all mutually exclusive. It can answer questions such as "Are my messages being delivered?" and "What is causing messages to be dropped?"</p> <p>For example, a high value for the <code translate="no" dir="ltr">droppedTooManyPendingMessages</code> field could signal that app instances are receiving volumes of <a href="customize-messages/collapsible-message-types">non-collapsible messages</a> exceeding FCM's limit of 100 pending messages. To mitigate this, make sure your app handles calls to <a href="android/receive#override-ondeletedmessages"><code translate="no" dir="ltr">onDeletedMessages</code></a>, and consider sending collapsible messages. Similarly, high percentages for <code translate="no" dir="ltr">droppedDeviceInactive</code> could be a signal to update registration tokens on your server, removing stale tokens and unsubscribing them from topics. See <a href="manage-tokens">Manage FCM registration tokens</a> for best practices in this area.</p> <h4 id="delivery_performance_percentages">Delivery Performance Percentages</h4> <p>The fields in the <a href="https://firebase.google.com/docs/reference/fcmdata/rest/v1beta1/projects.androidApps.deliveryData/list#deliveryperformancepercents"><code translate="no" dir="ltr">DeliveryPerformancePercents</code></a> object provide information about messages that were successfully delivered. It can answer questions such as "Were my messages delayed?" and "Why are messages delayed?" For example, a high value for <code translate="no" dir="ltr">delayedMessageThrottled</code> would clearly indicate that you are exceeding <a href="throttling-and-quotas#device_throttling">per-device maximum limits</a>, and should adjust the rate at which you are sending messages.</p> <aside class="tip"><strong>Tip:</strong><span> To more accurately estimate FCM performance for your app, you should remove devices that weren't active for the entire day by using this calculation: <code translate="no" dir="ltr">deliveredNoDelay</code>/<code translate="no" dir="ltr">messageOutcomePercents.delivered</code>. You can use this calculation for other fields within <code translate="no" dir="ltr">DeliveryPerformancePercents</code> as well. Dividing a given metric by the <code translate="no" dir="ltr">delivered</code> percentage isolates the outcome relative only to messages that were successfully delivered.</span></aside> <h4 id="message_insight_percentages">Message Insight Percentages</h4> <p>This object provides additional information about all message sends. The <code translate="no" dir="ltr">priorityLowered</code> field expresses the percentage of accepted messages that had priority lowered from <code translate="no" dir="ltr">HIGH</code> to <code translate="no" dir="ltr">NORMAL</code>. If this value is high, try sending fewer high priority messages or ensure that you always display a notification when a high priority message is sent. See <a href="android/message-priority">our documentation on message priority for more info</a></p> <h3 id="how_does_this_data_differ_from_data_exported_to_bigquery">How does this data differ from data exported to BigQuery?</h3> <p>The BigQuery export provides individual message logs about message acceptance by the FCM backend and message delivery in the SDK on the device (Steps 2 and 4 of the <a href="fcm-architecture">FCM Architecture</a>). This data is useful for ensuring individual messages were accepted and delivered. Read more about <a href="#bigquery-data-export">BigQuery data export</a> in the next section.</p> <p>By contrast, the Firebase Cloud Messaging Data API provides aggregated details about what happens specifically in the Android Transport Layer (or Step 3 of the <a href="fcm-architecture">FCM Architecture</a>). This data specifically provides insight into the delivery of messages from FCM backends to the Android SDK. It’s particularly useful for showing trends as to why messages were delayed or dropped during this transport.</p> <p>In some cases, it is possible that the two data sets might not match precisely due to the following:</p> <ul> <li>The aggregated metrics only sample a portion of all messages</li> <li>The aggregated metrics are rounded</li> <li>We don’t present metrics below a privacy threshold</li> <li>A portion of message outcomes are missing due to optimizations in how we manage the large volume of traffic.</li> </ul> <h3 id="limitations_of_the_api">Limitations of the API</h3> <h4 id="aggregate-data-timelines">Aggregate Data Timelines</h4> <p>The API will return 7 days of historical data; however, data returned by this API will be delayed by up to 5 days. For example, on January 20th, the data for January 9th - January 15th would be available, but not for January 16th or later. Additionally, the data is provided at best effort. In the event of a data outage, FCM will work to fix forward and won't backfill the data after the issue is fixed. In larger outages, the data could be unavailable for a week or more.</p> <h4 id="data_coverage">Data Coverage</h4> <p>The metrics provided by the Firebase Cloud Messaging Data API are meant to provide insight into broad trends of message delivery. However, they don't provide 100% coverage of all message scenarios. The following scenarios are known outcomes not reflected in the metrics.</p> <p><strong>Expired messages</strong></p> <p>If the <a href="customize-messages/setting-message-lifespan">Time To Live (TTL)</a> expires after the end of the given log date, the message won't be counted as <code translate="no" dir="ltr">droppedTtlExpired</code> on this date.</p> <p><strong>Messages to inactive devices</strong></p> <p>Messages sent to inactive devices may or may not show up in the dataset depending on which data path they take. This can lead to some miscounting in the <code translate="no" dir="ltr">droppedDeviceInactive</code> and <code translate="no" dir="ltr">pending</code> fields.</p> <p><strong>Messages to devices with certain user preferences</strong></p> <p>Users who have disabled the collection of usage and diagnostic information on their devices won't have their messages included in our counting, in keeping with their preferences.</p> <h4 id="rounding_and_minimums">Rounding and Minimums</h4> <p>FCM deliberately rounds and excludes counts where the volumes are not large enough.</p> <h2 id="bigquery-data-export">BigQuery data export</h2> <p>You can export your message data into <a href="https://bigquery.cloud.google.com/">BigQuery</a> for further analysis. BigQuery lets you analyze the data using BigQuery SQL, export it to another cloud provider, or use the data for your custom ML models. An export to BigQuery includes all available data for messages, regardless of message type or whether the message is sent using the API or the Notifications composer.</p> <p>For messages sent to devices with the following FCM SDK minimum versions, you have the additional option to enable the export of message delivery data for your app:</p> <ul> <li>Android 20.1.0 or higher.</li> <li>iOS 8.6.0 or higher</li> <li>Firebase Web SDK 12.14.0 or higher</li> </ul> <aside class="note"><strong>Note:</strong><span> Make sure that you have the <a href="../projects/bigquery-export#permissions-and-roles">required level of access</a> to view or manage settings for data export to BigQuery.</span></aside> <p>To get started, link your project to BigQuery using the Firebase console:</p> <ol> <li>
+<p>Choose one of the following options:</p> <ul> <li><p>Go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Messaging</strong> &gt; <a href="https://console.firebase.google.com/project/_/notification" class="external">the Notifications composer</a>, then click <strong>Access BigQuery</strong> at the bottom of the page.</p></li> <li>
+<p>Go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/integrations" class="external"><strong>Integrations</strong> tab</a>. Then in the BigQuery, click <strong>Link</strong>.</p> <p>This page displays FCM export options for all FCM-enabled apps in the project.</p>
+</li> </ul>
+</li> <li><p>Follow the on-screen instructions to enable BigQuery.</p></li> </ol> <p>Refer to <a href="https://support.google.com/firebase/answer/6318765">Link Firebase to BigQuery</a> for more information.</p> <p>When you enable BigQuery export for Cloud Messaging:</p> <ul> <li>
+<p>Firebase <a href="#what-data-exported">exports your data</a> to BigQuery. Note that the initial propagation of data for export may take up to 48 hours to complete.</p> <ul> <li>You can <a href="https://cloud.google.com/bigquery/docs/working-with-transfers#manually_trigger_a_transfer" class="external">manually schedule data backfills</a> for up to the past 30 days.</li> </ul>
+</li> <li><p>After the dataset is created, the location can't be changed, but you can copy the dataset to a different location or manually move (recreate) the dataset in a different location. To learn more, see <a href="../projects/bigquery-export">Change dataset location</a>.</p></li> <li><p>Firebase sets up regular syncs of your data from your Firebase project to BigQuery. These daily export operations begin at 4:00 AM Pacific Time and usually finish in 24 hours.</p></li> <li><p>By default, all apps in your project are linked to BigQuery and any apps that you later add to the project are automatically linked to BigQuery. You can <a href="https://support.google.com/firebase/answer/6318765#manage" class="external">manage which apps send data</a>.</p></li> </ul> <p>To deactivate BigQuery export, <a href="https://support.google.com/firebase/answer/6318765#unlink" class="external">unlink your project</a> in the Firebase console.</p> <aside class="note"><strong>Note:</strong><span> There is no charge for exporting data from FCM, and BigQuery provides generous no-cost usage limits. Refer to <a href="https://cloud.google.com/bigquery/pricing">BigQuery pricing</a> or the <a href="https://cloud.google.com/bigquery/docs/sandbox">BigQuery sandbox</a>.</span></aside> <h3 id="enable-message-delivery-data-export">Enable message delivery data export</h3> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<p> iOS devices with the FCM SDK 8.6.0 or higher can enable their app's message delivery data export. FCM supports data export for both alert and background notifications. Data export is disabled by default at the <b>app level</b>. Programmatically enabling it at the <b>app instance level</b> lets you ask end users for permission to analyze their message delivery data (recommended). When both are set, the app instance level value overrides the app level value. </p> <p> Before enabling these options, you must first create the FCM-BiqQuery link for your project as described in <a href="#bigquery-data-export">BigQuery data export</a>. </p> <h4 id="enable-delivery-data-export-for-alert-notifications">Enable delivery data export for alert notifications</h4> <p> Because only alert notifications can trigger notification service app extensions, you must add a notification service extension to your app and call this API inside a service extension to enable display message tracking. See Apple's documentation on <a href="https://developer.apple.com/documentation/usernotifications/modifying_content_in_newly_delivered_notifications">Modifying Content in Newly Delivered Notifications</a> </p> The following call must be made for every notification received: <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// For alert notifications, call the API inside the service extension:
+class NotificationService: UNNotificationServiceExtension {
+  override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -&gt; Void) {
+    Messaging.serviceExtension().exportDeliveryMetrics(withMessageInfo:request.content.userInfo)
+  }
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// For alert notifications, call the API inside the service extension:
+@implementation NotificationService
+- (void)didReceiveNotificationRequest:(UNNotificationRequest *)request
+                   withContentHandler:(void (^)(UNNotificationContent *_Nonnull))contentHandler {
+  [[FIRMessaging extensionHelper] exportDeliveryMetricsToBigQueryWithMessageInfo:request.content.userInfo];
+}
+@end</pre> </section> </div> <p> If you are building send requests using the HTTP v1 API, make sure to specify `mutable-content = 1` in the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#ApnsConfig">payload object</a>. </p> <h4 id="enable-delivery-data-export-for-background-notifications">Enable delivery data export for background notifications</h4> <p> For background messages received when the app is in the foreground or background, you can call the data export API inside the main app's data message handler. This call must be made for every notification received: </p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// For background notifications, call the API inside the
+// UIApplicationDelegate or NSApplicationDelegate method:
+func application(_ application: UIApplication,
+didReceiveRemoteNotification userInfo: [AnyHashable : Any]) {
+  Messaging.serviceExtension().exportDeliveryMetricsToBigQuery(withMessageInfo:userInfo)
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// For background notifications, call the API inside the
+// UIApplicationDelegate or NSApplicationDelegate method:
+@implementation AppDelegate
+- (void)application:(UIApplication *)application
+    didReceiveRemoteNotification:(NSDictionary *)userInfo
+          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
+  [[FIRMessaging extensionHelper] exportDeliveryMetricsToBigQueryWithMessageInfo:userInfo];
+}
+@end</pre> </section> </div></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<p>Android devices with the FCM SDK 20.1.0 or higher can enable their app's message delivery data export. Data export is disabled by default at the <b>app level</b>. Programmatically enabling it at the <b>app instance level</b> lets you ask end users for permission to analyze their message delivery data (recommended). When both are set, the app instance level value overrides the app level value.</p> <p>Before enabling these options, you must first create the FCM-BiqQuery link for your project as described in <a href="#bigquery-data-export">BigQuery data export</a>.</p> <h4 id="enable-delivery-data-export-for-app-instances">Enable delivery data export for app instances</h4> <p>For most cases, we recommend that you enable message delivery data export only at the app instance level and leave it disabled at the app level.</p> 
+<pre data-language="java">FirebaseMessaging.getInstance().setDeliveryMetricsExportToBigQuery(true);</pre> <h4 id="enable-delivery-data-export-for-an-app">Enable delivery data export for an app</h4> <p>If you prefer to enable export at the app level, make sure to <b>not</b> call the <code translate="no" dir="ltr">setDeliveryMetricsExportToBigQuery</code> method, and add the following property to the application object in your app manifest:</p> 
+<pre data-language="java">&lt;application&gt;
+  &lt;meta-data android:name="delivery_metrics_exported_to_big_query_enabled"
+      android:value="true" /&gt;
+&lt;/application&gt;</pre></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p> The FCM SDK for Web 12.14.0 or higher allows a delivery data export. Data export is disabled by default at the <b>app level</b>. Programmatically enabling it at the <b>app instance level</b> lets you ask end users for permission to analyze their message delivery data (recommended). When both are set, the app instance level value overrides the app level value. When an end user gives consent or rejects data collection, the app should set the experimental enable or disable flag for each app instance as shown: </p> 
+<pre data-language="javascript">// userConsent holds the decision of the user to give big query export consent.
+const userConsent = ...;
+
+const messaging = getMessagingInSw(app);
+
+experimentalSetDeliveryMetricsExportedToBigQueryEnabled(messaging, userConsent);</pre></section> </div> <h3 id="what-data-exported">What data is exported to BigQuery?</h3> <p>Note that targeting stale tokens or inactive registrations may inflate some of these statistics.</p> <p>The schema of the exported table is:</p> <table> <tr> <td>_PARTITIONTIME</td> <td>TIMESTAMP</td> <td>This pseudo column contains a timestamp for the start of the day (in UTC) in which the data was loaded. For the YYYYMMDD partition, this pseudo column contains the value TIMESTAMP('YYYY-MM-DD').</td> </tr> <tr> <td>event_timestamp</td> <td>TIMESTAMP</td> <td>Event timestamp as recorded by the server</td> </tr> <tr> <td>project_number</td> <td>INTEGER</td> <td>The project number identifies the project that sent the message</td> </tr> <tr> <td>message_id</td> <td>STRING</td> <td>The message ID identifies a message. Generated from the App ID and timestamp, the message ID might, in some cases, not be globally unique.</td> </tr> <tr> <td>instance_id</td> <td>STRING</td> <td>The unique id of the app the message is sent to (when available). It can be an instance ID or an Firebase installation ID.</td> </tr> <tr> <td>message_type</td> <td>STRING</td> <td>The type of the message. Can be Notification message or Data message. Topic is used to identify the original message for a topic or campaign send; the subsequent messages is either a notification or data message.</td> </tr> <tr> <td>sdk_platform</td> <td>STRING</td> <td>The platform of the recipient app</td> </tr> <tr> <td>app_name</td> <td>STRING</td> <td>The package name for Android apps or the bundle id for iOS apps</td> </tr> <tr> <td>collapse_key</td> <td>STRING</td> <td>The collapse key identifies a group of messages that can be collapsed. When a device is not connected, only the last message with a given collapse key is queued for eventual delivery </td> </tr> <tr> <td>priority</td> <td>INTEGER</td> <td>The priority of the message. 5 is "normal" priority and 10 is "high" priority. </td> </tr> <tr> <td>ttl</td> <td>INTEGER</td> <td>This parameter specifies how long (in seconds) the message should be kept in FCM storage if the device is offline </td> </tr> <tr> <td>topic</td> <td>STRING</td> <td>The name of the topic to which a message was sent (when applicable) </td> </tr> <tr> <td>bulk_id</td> <td>INTEGER</td> <td>The bulk ID identifies a group of related messages, such as a particular send to a topic </td> </tr> <tr> <td>event</td> <td>STRING</td> <td>The type of the event. Possible values are: <ul> <li>MESSAGE_ACCEPTED: the message was received by the FCM server and the request is valid;</li> <li>MESSAGE_DELIVERED: the message has been delivered to the app's FCM SDK on the device. By default, this field is not propagated. To enable, follow the instructions provided in <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessaging#setDeliveryMetricsExportToBigQuery(boolean)"><code translate="no" dir="ltr">setDeliveryMetricsExportToBigQuery(boolean)</code></a>. </li> <li>MISSING_REGISTRATIONS: the request was rejected due to a missing registration;</li> <li>UNAUTHORIZED_REGISTRATION: the message was rejected because the sender is not authorized to send to the registration;</li> <li>MESSAGE_RECEIVED_INTERNAL_ERROR: there was an unspecified error when processing the message request;</li> <li>MISMATCH_SENDER_ID: the request to send a message was rejected due to a mismatch between the sender id sending the message, and the one declared for the end-point;</li> <li>QUOTA_EXCEEDED: the request to send a message was rejected due to insufficient quota;</li> <li>INVALID_REGISTRATION: the request to send a message was rejected due to an invalid registration;</li> <li>INVALID_PACKAGE_NAME: the request to send a message was rejected due to an invalid package name;</li> <li>INVALID_APNS_CREDENTIAL: the request to send a message was rejected due to an invalid APNS certificate;</li> <li>INVALID_PARAMETERS: the request to send a message was rejected due to invalid parameters;</li> <li>PAYLOAD_TOO_LARGE: the request to send a message was rejected due to a payload larger than the limit;</li> <li>AUTHENTICATION_ERROR: the request to send a message was rejected due to an authentication error (check the API Key used to send the message);</li> <li>INVALID_TTL: the request to send a message was rejected due to an invalid TTL.</li> </ul> </td> </tr> <tr> <td>analytics_label</td> <td>STRING</td> <td>With the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages">HTTP v1 API</a>, the analytics label can be set when sending the message, in order to mark the message for analytics purposes</td> </tr> </table> <h2 id="what-can-you-do-with-the-exported-data">What can you do with the exported data?</h2> <p>The following sections offer examples of queries that you can run in BigQuery against your exported FCM data.</p> <h3 id="count-sent-messages-by-app">Count sent messages by app</h3> 
+<pre>SELECT app_name, COUNT(1)
+FROM `project ID.firebase_messaging.data`
+WHERE
+  _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+  AND event = 'MESSAGE_ACCEPTED'
+  AND message_id != ''
+GROUP BY 1;</pre> <h3 id="count-unique-app-instances-targeted-by-messages">Count unique app instances targeted by messages</h3> 
+<pre>SELECT COUNT(DISTINCT instance_id)
+FROM `project ID.firebase_messaging.data`
+WHERE
+  _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+  AND event = 'MESSAGE_ACCEPTED';</pre> <h3 id="count-notification-messages-sent">Count notification messages sent</h3> 
+<pre>SELECT COUNT(1)
+FROM `project ID.firebase_messaging.data`
+WHERE
+  _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+  AND event = 'MESSAGE_ACCEPTED'
+  AND message_type = 'DISPLAY_NOTIFICATION';</pre> <h3 id="count-data-messages-sent">Count data messages sent</h3> 
+<pre>SELECT COUNT(1)
+FROM `project ID.firebase_messaging.data`
+WHERE
+  _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+  AND event = 'MESSAGE_ACCEPTED'
+  AND message_type = 'DATA_MESSAGE';</pre> <h3 id="count-messages-sent-to-a-topic-or-campaign">Count messages sent to a topic or campaign</h3> 
+<pre>SELECT COUNT(1)
+FROM `project ID.firebase_messaging.data`
+WHERE
+  _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+  AND event = 'MESSAGE_ACCEPTED'
+  AND bulk_id = your bulk id AND message_id != '';</pre> <p>To track events for a message sent to particular topic, modify this query to replace <code translate="no" dir="ltr">AND message_id != ''</code> with <code translate="no" dir="ltr">AND message_id = &lt;your message id&gt;;</code>.</p> <h3 id="compute-fanout-duration-for-a-given-topic-or-campaign">Compute fanout duration for a given topic or campaign</h3> <p>The fanout start time is when the original request is received, and the end time is the time the last individual message targeting a single instance is created.</p> 
+<pre>SELECT
+  TIMESTAMP_DIFF(
+    end_timestamp, start_timestamp, MILLISECOND
+  ) AS fanout_duration_ms,
+  end_timestamp,
+  start_timestamp
+FROM (
+    SELECT MAX(event_timestamp) AS end_timestamp
+    FROM `project ID.firebase_messaging.data`
+    WHERE
+      _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+      AND event = 'MESSAGE_ACCEPTED'
+      AND bulk_id = your bulk id
+  ) sent
+  CROSS JOIN (
+    SELECT event_timestamp AS start_timestamp
+    FROM `project ID.firebase_messaging.data`
+    WHERE
+      _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+      AND event = 'MESSAGE_ACCEPTED'
+      AND bulk_id = your bulk id
+      AND message_type = 'TOPIC'
+  ) initial_message;</pre> <h3 id="count-percentage-of-delivered-messages">Count percentage of delivered messages</h3> 
+<pre>SELECT
+  messages_sent,
+  messages_delivered,
+  messages_delivered / messages_sent * 100 AS percent_delivered
+FROM (
+    SELECT COUNT(DISTINCT CONCAT(message_id, instance_id)) AS messages_sent
+    FROM `project ID.firebase_messaging.data`
+    WHERE
+      _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+      AND event = 'MESSAGE_ACCEPTED'
+  ) sent
+  CROSS JOIN (
+    SELECT COUNT(DISTINCT CONCAT(message_id, instance_id)) AS messages_delivered
+    FROM `project ID.firebase_messaging.data`
+    WHERE
+      _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+      AND (event = 'MESSAGE_DELIVERED'
+      AND message_id
+      IN (
+        SELECT message_id FROM `project ID.firebase_messaging.data`
+        WHERE
+          _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+          AND event = 'MESSAGE_ACCEPTED'
+        GROUP BY 1
+      )
+  ) delivered;</pre> <h3 id="track-all-events-for-a-given-message-id-and-instance-id">Track all events for a given message id and instance id</h3> 
+<pre>SELECT *
+FROM `project ID.firebase_messaging.data`
+WHERE
+    _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+    AND message_id = 'your message id'
+    AND instance_id = 'your instance id'
+ORDER BY event_timestamp;</pre> <h3 id="compute-latency-for-a-given-message-id-and-instance-id">Compute latency for a given message id and instance id</h3> 
+<pre>SELECT
+  TIMESTAMP_DIFF(
+    MAX(delivered_time), MIN(accepted_time), MILLISECOND
+  ) AS latency_ms
+FROM (
+    SELECT event_timestamp AS accepted_time
+    FROM `project ID.firebase_messaging.data`
+    WHERE
+      _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD')
+      AND message_id = 'your message id'
+      AND instance_id = 'your instance id'
+      AND event = 'MESSAGE_ACCEPTED'
+  ) sent
+  CROSS JOIN (
+    SELECT event_timestamp AS delivered_time
+    FROM `project ID.firebase_messaging.data`
+    WHERE
+      _PARTITIONTIME = TIMESTAMP('date as YYYY-MM-DD') AND
+      message_id = 'your message id' AND instance_id = 'your instance id'
+      AND (event = 'MESSAGE_DELIVERED'
+  ) delivered;
+  </pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/understand-delivery" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/understand-delivery</a>
+  </p>
+</div>

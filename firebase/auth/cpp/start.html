@@ -1,0 +1,64 @@
+<h1>Get Started with Firebase Authentication in C++</h1> <p>You can use Firebase Authentication to allow users to sign in to your app using one or more sign-in methods, including email address and password sign-in, and federated identity providers such as Google Sign-in and Facebook Login. This tutorial gets you started with Firebase Authentication by showing you how to add email address and password sign-in to your app.</p> <h2 id="connect_your_c_project_to_firebase">Connect your C++ project to Firebase</h2> <p>Before you can use <a href="https://firebase.google.com/docs/reference/unity/namespace/firebase/auth">Firebase Authentication</a>, you need to:</p> <ul> <li>
+<p>Register your C++ project and configure it to use Firebase.</p> <p>If your C++ project already uses Firebase, then it's already registered and configured for Firebase.</p>
+</li> <li><p>Add the <a href="https://firebase.google.com/download/cpp">Firebase C++ SDK</a> to your C++ project.</p></li> </ul> <aside class="objective"><strong>Find detailed instructions for these initial setup tasks in <a href="../../cpp/setup#note-select-platform">Add Firebase to your C++ project</a>.</strong> </aside> <p>Note that adding Firebase to your C++ project involves tasks both in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a> and in your open C++ project (for example, you download Firebase config files from the console, then move them into your C++ project).</p> <h2 id="sign_up_new_users">Sign up new users</h2> <p>Create a form that allows new users to register with your app using their email address and a password. When a user completes the form, validate the email address and password provided by the user, then pass them to the <code translate="no" dir="ltr">CreateUserWithEmailAndPassword</code> method:</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;CreateUserWithEmailAndPassword(email, password);
+</pre> <p>You can check the status of the account creation operation either by registering a callback on the <code translate="no" dir="ltr">CreateUserWithEmailAndPasswordLastResult</code> Future object, or, if you're writing a game or app with some kind of periodic update loop, by polling the status in the update loop.</p> <p>For example, using a Future:</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;CreateUserWithEmailAndPasswordLastResult();
+
+// The lambda has the same signature as the callback function.
+result.OnCompletion(
+    [](const firebase::Future&lt;firebase::auth::AuthResult&gt;&amp; result,
+       void* user_data) {
+      // `user_data` is the same as &amp;my_program_context, below.
+      // Note that we can't capture this value in the [] because std::function
+      // is not supported by our minimum compiler spec (which is pre C++11).
+      MyProgramContext* program_context =
+          static_cast&lt;MyProgramContext*&gt;(user_data);
+
+      // Process create user result...
+      (void)program_context;
+    },
+    &amp;my_program_context);
+</pre> <p>Or, to use polling, do something like the following example in your game's update loop:</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;CreateUserWithEmailAndPasswordLastResult();
+if (result.status() == firebase::kFutureStatusComplete) {
+  if (result.error() == firebase::auth::kAuthErrorNone) {
+    firebase::auth::AuthResult* auth_result = *result.result();
+    printf("Create user succeeded for email %s\n", auth_result.user.email().c_str());
+  } else {
+    printf("Created user failed with error '%s'\n", result.error_message());
+  }
+}
+</pre> <h2 id="sign_in_existing_users">Sign in existing users</h2> <p>Create a form that allows existing users to sign in using their email address and password. When a user completes the form, call the <code translate="no" dir="ltr">SignInWithEmailAndPassword</code> method:</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;SignInWithEmailAndPassword(email, password);
+</pre> <p>Get the result of the sign-in operation the same way you got the sign-up result.</p> <h2 id="set_an_authentication_state_listener_and_get_account_data">Set an authentication state listener and get account data</h2> <p>To respond to sign-in and sign-out events, attach a listener to the global authentication object. This listener gets called whenever the user's sign-in state changes. Because the listener runs only after the authentication object is fully initialized and after any network calls have completed, it is the best place to get information about the signed-in user.</p> <p>Create the listener by implementing the <code translate="no" dir="ltr">firebase::auth::AuthStateListener</code> abstract class. For example, to create a listener that gets information about the user when a user successfully signs in:</p> 
+<pre>class MyAuthStateListener : public firebase::auth::AuthStateListener {
+ public:
+  void OnAuthStateChanged(firebase::auth::Auth* auth) override {
+    firebase::auth::User user = auth.current_user();
+    if (user.is_valid()) {
+      // User is signed in
+      printf("OnAuthStateChanged: signed_in %s\n", user.uid().c_str());
+      const std::string displayName = user.DisplayName();
+      const std::string emailAddress = user.Email();
+      const std::string photoUrl = user.PhotoUrl();
+    } else {
+      // User is signed out
+      printf("OnAuthStateChanged: signed_out\n");
+    }
+    // ...
+  }
+};
+</pre> <p>Attach the listener with the <code translate="no" dir="ltr">firebase::auth::Auth</code> object's <code translate="no" dir="ltr">AddAuthStateListener</code> method:</p> 
+<pre>MyAuthStateListener state_change_listener;
+auth-&gt;AddAuthStateListener(&amp;state_change_listener);
+</pre> <h2 id="next_steps">Next steps</h2> <p>Learn how to add support for other identity providers and anonymous guest accounts:</p> <ul> <li><a href="google-signin">Google Sign-in</a></li> <li><a href="facebook-login">Facebook Login</a></li> <li><a href="apple">Apple Login</a></li> <li><a href="twitter-login">Twitter Login</a></li> <li><a href="github-auth">GitHub Login</a></li> <li><a href="microsoft-oauth">Microsoft Login</a></li> <li><a href="yahoo-oauth">Yahoo Login</a></li> <li><a href="anonymous-auth">Anonymous sign-in</a></li> <li><a href="phone-auth">Phone Authentication</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/cpp/start" class="_attribution-link">https://firebase.google.com/docs/auth/cpp/start</a>
+  </p>
+</div>

@@ -1,0 +1,263 @@
+<h1>Use the Admin SDK with SQL Connect</h1> <p>The Firebase Admin SDK is a set of server libraries that lets you interact with Firebase from privileged environments to perform actions like performing queries and mutations on a Firebase SQL Connect service for bulk data management and other operations with elevated privileges and impersonated credentials.</p> <p>The Admin SDK provides you with an API to call operations in both read/write and read-only modes. With the read-only operations, you have the peace of mind of implementing administrative functions that cannot modify data in your databases.</p> <h2 id="admin-sdk-setup">Admin SDK Setup</h2> <p>To get started using the with Firebase SQL Connect on your server, you'll first need to <a href="../admin/setup">install and set up the Admin SDK for Node.js</a>.</p> <h2 id="initialize-the-admin-sdk-in-your-scripts">Initialize the Admin SDK in your scripts</h2> <p>To initialize the SDK, import the SQL Connect extensions and declare your project service ID and location.</p> 
+<pre>
+import { initializeApp } from 'firebase-admin/app';
+import { getDataConnect } from 'firebase-admin/data-connect';
+
+// If you'd like to use OAuth2 flows and other credentials to log in,
+// visit https://firebase.google.com/docs/admin/setup#initialize-sdk
+// for alternative ways to initialize the SDK.
+
+const app = initializeApp();
+
+const dataConnect = getDataConnect({
+    serviceId: 'serviceId',
+    location: 'us-west2'
+});
+
+</pre> <h2 id="admin-sdk-design-operations">Design queries and mutations to use with the Admin SDK</h2> <p>The Admin SDK is useful for running SQL Connect operations, given the following considerations.</p> <h3 id="understand_the_sdk_and_authlevel_no_access_operation_directive">Understand the SDK and <code translate="no" dir="ltr">@auth(level: NO_ACCESS)</code> operation directive</h3> <p>Since the Admin SDK operates with privileges, it can execute any of your queries and mutations regardless of access levels set using <a href="authorization-and-security"><code translate="no" dir="ltr">@auth</code> directives</a>, including the <code translate="no" dir="ltr">NO_ACCESS</code> level.</p> <aside class="note"><strong>Note:</strong><span> If you do not set an access level for an operation, it is <code translate="no" dir="ltr">NO_ACCESS</code> by default.</span></aside> <p>If alongside your client operations, you organize your administrative queries and mutations in <code translate="no" dir="ltr">.gql</code> source files for import into administrative scripts, Firebase recommends that you mark the administrative operations without any authorization access level, or perhaps be more explicit and set them as <code translate="no" dir="ltr">NO_ACCESS</code>. Either way, this prevents such operations from being executed from clients or in other non-privileged contexts.</p> <h3 id="use_the_sdk_with_the_emulator">Use the SDK with the SQL Connect emulator</h3> <p>In prototype and test environments, it can be useful to perform data seeding and other operations on local data. The Admin SDK lets you simplify your workflows since it can ignore authentication and authorization for local flows. (You can also explicitly opt in to complying with your operations' authentication and authorization configuration with user impersonation.)</p> <p>The Firebase Admin SDKs automatically connects to the SQL Connect emulator when the <code translate="no" dir="ltr">DATA_CONNECT_EMULATOR_HOST</code> environment variable is set:</p> 
+<pre>export DATA_CONNECT_EMULATOR_HOST="127.0.0.1:9399"
+</pre> <p>For more information, see:</p> <ul> <li>The <a href="data-seeding-bulk-operations">guide for data seeding in local development</a>
+</li> <li>The <a href="data-connect-emulator-suite">SQL Connect emulator documentation</a>.</li> </ul> <h2 id="run_admin_operations">Run admin operations</h2> <p>The Admin SDK is provided for privileged operations on your critical data.</p> <p>The Admin SDK provides three sets of APIs:</p> <ul> <li>Generated admin SDKs, which are type-safe SDKs generated from your <code translate="no" dir="ltr">gql</code> definitions in the same way that you generate client SDKs.</li> <li>A general interface for running arbitrary GraphQL operations, in which your code implements queries and mutations and passes them to the read-write <code translate="no" dir="ltr">executeGraphql</code> method or the read-only <code translate="no" dir="ltr">executeGraphqlRead</code> method.</li> <li>A specialized interface for bulk data operations, which instead of generic <code translate="no" dir="ltr">executeGraphql</code> methods, exposes dedicated methods for mutation operations: <code translate="no" dir="ltr">insert</code>, <code translate="no" dir="ltr">insertMany</code>, <code translate="no" dir="ltr">upsert</code>, and <code translate="no" dir="ltr">upsertMany</code>.</li> </ul> <h3 id="manage_data_with_generated_sdks">Manage data with generated SDKs</h3> <p>You <a href="generate-admin-sdk#generate-admin-sdk">generate admin SDKs</a> from your <code translate="no" dir="ltr">gql</code> definitions in the same way that you generate client SDKs.</p> <p>The generated admin SDK contains interfaces and functions that correspond with your <code translate="no" dir="ltr">gql</code> definitions, which you can use to perform operations on your database. For example, suppose you generated an SDK for a database of songs, along with a query, <code translate="no" dir="ltr">getSongs</code>:</p> 
+<pre>import { initializeApp } from "firebase-admin/app";
+import { getSongs } from "@dataconnect/admin-generated";
+
+const adminApp = initializeApp();
+
+const songs = await getSongs(
+  { limit: 4 },
+  { impersonate: { unauthenticated: true } }
+);
+</pre> <p>Or, to specify a connector configuration:</p> 
+<pre>import { initializeApp } from "firebase-admin/app";
+import { getDataConnect } from "firebase-admin/data-connect";
+import {
+  connectorConfig,
+  getSongs,
+} from "@dataconnect/admin-generated";
+
+const adminApp = initializeApp();
+const adminDc = getDataConnect(connectorConfig);
+
+const songs = await getSongs(
+  adminDc,
+  { limit: 4 },
+  { impersonate: { unauthenticated: true } }
+);
+</pre>
+<aside class="note"><strong>Note:</strong><span> Generated JavaScript client SDKs use the same names for interfaces and operations as generated Node.js admin SDKs. Be sure to import the correct library for your platform. If you need to use both libraries in the same file, use an import alias or namespaced import for one or both of the libraries.<br> <br> <code translate="no" dir="ltr">import { listMovies as adminListMovies } from '@dataconnect/admin-generated';</code> <br> Or: <br> <code translate="no" dir="ltr">import * as Admin from '@dataconnect/admin-generated';</code></span></aside> <h4 id="impersonate-unauthenticated-user">Impersonating an unauthenticated user</h4> <p>Admin SDKs are intended to be run from trusted environments, and therefore have unrestricted access to your databases.</p> <p>When you run public operations with the admin SDK, you should avoid running the operation with full administrator privileges (following the principle of least privilege). Instead, you should run the operation either as an impersonated user (see the next section), or as an impersonated unauthenticated user. Unauthenticated users can only run operations marked as <code translate="no" dir="ltr">PUBLIC</code>.</p> <p>In the example above, the <code translate="no" dir="ltr">getSongs</code> query is executed as an unauthenticated user.</p> <h4 id="impersonating-user">Impersonating a user</h4> <p>You can also perform operations on behalf of specific users by passing part or all of a Firebase Authentication token in the <code translate="no" dir="ltr">impersonate</code> option; at a minimum, you must specify the user's user ID in the sub claim. (This is the same value as the <a href="mutations-guide#use_check_checkmessage_and_redact"><code translate="no" dir="ltr">auth.uid</code> server value</a> you can reference in SQL Connect GraphQL operations.)</p> <p>When you impersonate a user, the operation will succeed only if the user data you provided passes the authentication checks specified in your GraphQL definition.</p> <p>If you're calling the generated SDK from a publicly accessible endpoint, it is crucial that the endpoint require authentication and that you validate the integrity of the authentication token before you use it to impersonate a user.</p> <p>When using callable Cloud Functions, the authentication token is automatically verified and you can use it as in the following example:</p> 
+<pre>import { HttpsError, onCall } from "firebase-functions/https";
+
+export const callableExample = onCall(async (req) =&gt; {
+    const authClaims = req.auth?.token;
+    if (!authClaims) {
+        throw new HttpsError("unauthenticated", "Unauthorized");
+    }
+
+    const favoriteSongs = await getMyFavoriteSongs(
+        undefined,
+        { impersonate: { authClaims } }
+    );
+
+    // ...
+});
+</pre> <p>Otherwise, use the Admin SDK's <code translate="no" dir="ltr">verifyIdToken</code> method to validate and decode the authentication token. For example, suppose your endpoint is implemented as a plain HTTP function and you have passed the Firebase Authentication token to your endpoint using the <code translate="no" dir="ltr">authorization</code> header, as is standard:</p> 
+<pre>import { getAuth } from "firebase-admin/auth";
+import { onRequest } from "firebase-functions/https";
+
+const auth = getAuth();
+
+export const httpExample = onRequest(async (req, res) =&gt; {
+    const token = req.header("authorization")?.replace(/^bearer\s+/i, "");
+    if (!token) {
+        res.sendStatus(401);
+        return;
+    }
+    let authClaims;
+    try {
+        authClaims = await auth.verifyIdToken(token);
+    } catch {
+        res.sendStatus(401);
+        return;
+    }
+
+    const favoriteSongs = await getMyFavoriteSongs(
+        undefined,
+        { impersonate: { authClaims } }
+    );
+
+    // ...
+});
+</pre> <p>Only when performing true administrative tasks, such as data migration, from a secure, non-publicly-accessible environment, should you specify a user ID that did not originate from a verifiable source:</p> 
+<pre>// Never do this if end users can initiate execution of the code!
+const favoriteSongs = await getMyFavoriteSongs(
+  undefined,
+  { impersonate: { authClaims } }
+);
+</pre> <h4 id="running-unrestricted-access">Running with unrestricted access</h4> <p>If you're performing an operation that requires admin level permissions, omit the impersonate parameter from the call:</p> 
+<pre>await upsertSong(adminDc, {
+  title: songTitle_one,
+  instrumentsUsed: [Instrument.VOCAL],
+});
+</pre> <p>An operation called in this manner has complete access to the database. If you have queries or mutations intended only to be used for administration purposes, you should define them with the <code translate="no" dir="ltr">@auth(level: NO_ACCESS)</code> directive. Doing so ensures that only admin-level callers can execute these operations.</p> <h3 id="manage_data_with_executegraphql_methods">Manage data with <code translate="no" dir="ltr">executeGraphql</code> methods</h3> <p>If you need to execute one-off operations for which you have not defined <code translate="no" dir="ltr">gql</code> mutations or queries, you can use the <code translate="no" dir="ltr">executeGraphql</code> method or the read-only <code translate="no" dir="ltr">executeGraphqlRead</code> method.</p> <h4 id="perform_custom_nested_relational_operations_one-to-many_and_one-to-one_using_executegraphql">Perform custom nested relational operations (one-to-many and one-to-one) using <code translate="no" dir="ltr">executeGraphql</code>
+</h4> <p>When calling operations from the Admin SDK in a privileged environment, you don't need to specify the <code translate="no" dir="ltr">@allow</code> directive on your variables for standard flat (non-nested) insertions (such as inserting individual Movie or Actor records).</p> <p>However, for nested relational inserts (such as inserting a movie along with its initial reviews, or a user and their profile), you must still declare the <code translate="no" dir="ltr">@allow</code> directive on your variable definition to statically allow the nested relational fields inside the compiled variable schema.</p> <aside class="note"><strong>Note:</strong><span> In the nested child payload, don't specify the parent foreign key (for example, <code translate="no" dir="ltr">movieId</code> in nested reviews), as the executor resolves and assigns this automatically. For one-to-many relationships, the nested payload takes an array of child objects. For one-to-one relationships, it takes a single object.</span></aside>
+<pre>// Custom GraphQL mutation with nested relational insert (one-to-many)
+const customMutation = `
+  mutation CustomBatchInsert(
+    $data: [Movie_Data!]!
+    @allow(fields: "title genre reviews_on_movie { rating reviewText }")
+  ) {
+    movie_insertMany(data: $data)
+  }
+`;
+const variables = {
+  data: [
+    {
+      title: "Interstellar",
+      genre: "Sci-Fi",
+      reviews_on_movie: [
+        {
+          rating: 5,
+          reviewText: "Visually stunning and emotionally powerful.",
+          user: { id: "user-789" }
+        }
+      ]
+    }
+  ]
+};
+const response = await dataConnect.executeGraphql(customMutation, { variables });
+</pre>
+
+<pre>// Custom GraphQL mutation with a one-to-one nested relational insert
+const customMutationOneToOne = `
+  mutation CustomBatchInsertOneToOne(
+    $data: [User_Data!]!
+    @allow(fields: "name profile_on_user { bio }")
+  ) {
+    user_insertMany(data: $data)
+  }
+`;
+const variablesOneToOne = {
+  data: [
+    {
+      name: "Alice",
+      profile_on_user: {
+        bio: "Avid moviegoer and critic."
+      }
+    }
+  ]
+};
+const responseOneToOne = await dataConnect.executeGraphql(customMutationOneToOne, { variables: variablesOneToOne });
+</pre> <h4 id="impersonating_an_unauthenticated_user_2">Impersonating an unauthenticated user</h4> <p>When you run public operations with the admin SDK, you should avoid running the operation with full administrator privileges (following the principle of least privilege). Instead, you should run the operation either as an impersonated user (see the <a href="#impersonate-user">next section</a>), or as an impersonated unauthenticated user. Unauthenticated users can only run operations marked as <code translate="no" dir="ltr">PUBLIC</code>.</p> 
+<pre>// Query to get posts, with authentication level PUBLIC
+const queryGetPostsImpersonation = `
+    query getPosts @auth(level: PUBLIC) {
+        posts {
+          description
+        }
+    }`;
+
+// Attempt to access data as an unauthenticated user
+const optionsUnauthenticated: GraphqlOptions&lt;undefined&gt; = {
+    impersonate: {
+        unauthenticated: true
+    }
+};
+
+// executeGraphql with impersonated unauthenticated user scope
+const gqlResponse = await dataConnect.executeGraphql&lt;UserData, undefined&gt;(queryGetPostsImpersonation, optionsUnauthenticated);
+</pre> <h4 id="impersonate-user">Impersonating a user</h4> <p>There are also use cases where you want your scripts to modify user data based on limited credentials, on behalf of a specific user. This approach honors the principle of least privilege.</p> <p>To use this interface, gather information from a customized JWT auth token that follows the <a href="cel-reference#auth-token-contents">Authentication token format</a>. Also see the <a href="../auth/admin/create-custom-tokens">custom tokens guide</a>.</p> 
+<pre>// Get the current user's data
+const queryGetUserImpersonation = `
+    query getUser @auth(level: USER) {
+        user(key: {uid_expr: "auth.uid"}) {
+            id,
+            name
+        }
+    }`;
+
+// Impersonate a user with the specified auth claims
+const optionsAuthenticated: GraphqlOptions&lt;undefined&gt; = {
+    impersonate: {
+        authClaims: {
+            sub: 'QVBJcy5ndXJ1'
+        }
+    }
+};
+
+// executeGraphql with impersonated authenticated user scope
+const gqlResponse = await dataConnect.executeGraphql&lt;UserData, undefined&gt;(queryGetUserImpersonation, optionsAuthenticated);
+
+// gqlResponse -&gt; { "data": { "user": { "id": "QVBJcy5ndXJ1", "name": "Fred" } } }
+
+</pre> <h4 id="use_administrative_credentials">Use administrative credentials</h4> <p>If you're performing an operation that requires admin level permissions, omit the impersonate parameter from the call:</p> 
+<pre>// User can be publicly accessible, or restricted to admins
+const query = "query getProfile(id: AuthID) { user(id: $id) { id name } }";
+
+interface UserData {
+  user: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface UserVariables {
+  id: string;
+}
+
+const options:GraphqlOptions&lt;UserVariables&gt; = { variables: { id: "QVBJcy5ndXJ1" } };
+
+// executeGraphql
+const gqlResponse = await dataConnect.executeGraphql&lt;UserData, UserVariables&gt;(query, options);
+
+// executeGraphqlRead (similar to previous sample but only for read operations)
+const gqlResponse = await dataConnect.executeGraphqlRead&lt;UserData, UserVariables&gt;(query, options);
+
+// gqlResponse -&gt; { "data": { "user": { "id": "QVBJcy5ndXJ1", "name": "Fred" } } }
+</pre> <p>An operation called in this manner has complete access to the database. If you have queries or mutations intended only to be used for administration purposes, you should define them with the <code translate="no" dir="ltr">@auth(level: NO_ACCESS)</code> directive. Doing so ensures that only admin-level callers can execute these operations.</p> <h3 id="bulk-data">Perform bulk data insert operations</h3> <p>Firebase recommends you use the Admin SDK for bulk data operations on production databases.</p> <p>The SDK provides the following methods for working with bulk data. From the provided arguments, each method constructs and executes a GraphQL mutation.</p> <aside class="note"><strong>Note:</strong><span> Specific workflows are described in more detail in the <a href="data-seeding-bulk-operations#bulk-data-adminsdk">Data seeding and bulk data management guide</a>.</span></aside>
+<pre>
+// Methods of the bulk operations API
+// dc is a SQL Connect admin instance from getDataConnect
+
+const resp = await dc.insert("movie" /*table name*/, data[0]);
+const resp = await dc.insertMany("movie" /*table name*/, data);
+const resp = await dc.upsert("movie" /*table name*/, data[0]);
+const resp = await dc.upsertMany("movie" /*table name*/, data);
+</pre> <h4 id="nested_relational_operations_one-to-many_and_one-to-one">Nested relational operations (one-to-many and one-to-one)</h4> <p>The Admin SDK supports relational data in bulk operations. Just like with custom mutations, use an array of objects for one-to-many relationships and a single object for one-to-one relationships:</p> 
+<pre>// Example of inserting a movie with nested reviews (one-to-many)
+const moviesData = [
+  {
+    title: "Interstellar",
+    genre: "Sci-Fi",
+    reviews_on_movie: [
+      {
+        rating: 5,
+        reviewText: "Visually stunning and emotionally powerful.",
+        user: { id: "user-789" }
+      }
+    ]
+  }
+];
+
+// Atomically insert movies and their reviews in a single database round-trip.
+const response = await dc.insertMany("movie", moviesData);
+</pre>
+
+<pre>// Example of inserting a user with a nested profile (one-to-one)
+const usersData = [
+  {
+    name: "Alice",
+    profile_on_user: {
+      bio: "Avid moviegoer and critic."
+    }
+  }
+];
+
+// Atomically insert users and their profiles.
+const userResponse = await dc.insertMany("user", usersData);
+</pre> <h4 id="performance_notes_for_bulk_operations">Performance notes for bulk operations</h4> <p>Each request to the backend will incur one round trip to Cloud SQL, so the more you batch, the higher the throughput is.</p> <p>However, the larger the batch size, the longer the generated SQL statement is. When the PostgreSQL SQL statement length limit is reached, you will encounter an error.</p> <p>In practice, experiment to find the appropriate batch size for your workload.</p> <h2 id="whats_next">What's next?</h2> <ul> <li>Learn about <a href="data-seeding-bulk-operations">seeding your databases with data using the Admin SDK</a>
+</li> <li>Review the <a href="https://firebase.google.com/docs/reference/admin/node/firebase-admin.data-connect">API for the Admin SDK</a>.</li> <li>Use the Firebase CLI and Google Cloud console for other project management operations, like <a href="manage-schemas-and-connectors">managing schemas and connectors</a> and <a href="manage-services-and-databases">managing services and databases</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/admin-sdk" class="_attribution-link">https://firebase.google.com/docs/sql-connect/admin-sdk</a>
+  </p>
+</div>

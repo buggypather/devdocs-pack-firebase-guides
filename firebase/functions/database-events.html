@@ -1,0 +1,271 @@
+<h1>Realtime Database triggers</h1> <aside class="note"> <b>Note:</b> This feature is a public preview. This means that the functionality might change in backward-incompatible ways. A preview release is not subject to any SLA or deprecation policy and may receive limited or no support. </aside> <p>With Cloud Functions, you can handle events in the Firebase Realtime Database with no need to update client code. Cloud Functions lets you run Realtime Database operations with full administrative privileges, and ensures that each change to Realtime Database is processed individually. You can make Firebase Realtime Database changes via the data snapshot or via the Admin SDK.</p> <p>In a typical lifecycle, a Firebase Realtime Database function does the following:</p> <ol> <li>Waits for changes to a particular Realtime Database path.</li> <li>Triggers when an event occurs and performs its tasks.</li> <li>Receives a data object that contains a snapshot of the data stored at that path.</li> </ol> <p>You can trigger a function in response to the writing, creating, updating, or deleting of database nodes in Firebase Realtime Database. To control when the function triggers, specify one of the event handlers, and specify the Realtime Database path where it will listen for events.</p> <h2 id="set-function-location">Set the function location</h2> <p>Distance between the location of a Realtime Database instance and the location of the function can create significant network latency. Also, a mismatch between regions can result in deployment failure. To avoid these situations, specify the <a href="manage-functions#modify-region">function location</a> so that it matches the <a href="../projects/locations#rtdb-locations">database instance location</a>.</p> <h2 id="handle-database-events">Handle Realtime Database events</h2> <p>Functions let you handle Realtime Database events at two levels of specificity; you can listen for specifically for only write, creation, update, or deletion events, or you can listen for any change of any kind to a reference.</p> <p>These handlers for responding to Realtime Database events are available:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<ul> <li>
+<code translate="no" dir="ltr">onValueWritten()</code> Triggered when data is created, updated, or deleted in Realtime Database.</li> <li>
+<code translate="no" dir="ltr">onValueCreated()</code> Only triggered when data is created in Realtime Database.</li> <li>
+<code translate="no" dir="ltr">onValueUpdated()</code> Only triggered when data is updated in Realtime Database.</li> <li>
+<code translate="no" dir="ltr">onValueDeleted()</code> Only triggered when data is deleted in Realtime Database.</li> </ul></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+<ul> <li>
+<code translate="no" dir="ltr">on_value_written()</code> Triggered when data is created, updated, or deleted in Realtime Database.</li> <li>
+<code translate="no" dir="ltr">on_value_created()</code> Only triggered when data is created in Realtime Database.</li> <li>
+<code translate="no" dir="ltr">on_value_updated()</code> Only triggered when data is updated in Realtime Database.</li> <li>
+<code translate="no" dir="ltr">on_value_deleted()</code> Only triggered when data is deleted in Realtime Database.</li> </ul></section> </div> <h2 id="import-required-modules">Import required modules</h2> <p>In your function source, you must import SDK modules that you want to use. For this sample, it is necessary to import HTTP and Realtime Database modules along with the Firebase Admin SDK module for writing to Realtime Database.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// The Cloud Functions for Firebase SDK to setup triggers and logging.
+const {onRequest} = require("firebase-functions/https");
+const {onValueCreated} = require("firebase-functions/database");
+const {logger} = require("firebase-functions");
+
+// The Firebase Admin SDK to access the Firebase Realtime Database.
+const admin = require("firebase-admin");
+admin.initializeApp();
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># The Cloud Functions for Firebase SDK to create Cloud Functions and set up triggers.
+from firebase_functions import db_fn, https_fn
+
+# The Firebase Admin SDK to access the Firebase Realtime Database.
+from firebase_admin import initialize_app, db
+
+app = initialize_app()
+</pre></section> </div> <h2 id="specify-instance-path">Specify instance and path</h2> <p>To control when and where your function should trigger, configure your function with a path and optionally a Realtime Database instance. If you do not specify an instance, the function listens to the all Realtime Database instances in the function region. You may also specify a Realtime Database instance pattern to deploy to a selective subset of instances in the same region.</p> <p>For example:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// All Realtime Database instances at path "/user/{uid}"
+// There must be at least one Realtime Database present.
+const onWrittenFunctionDefault = onValueWritten("/user/{uid}", (event) =&gt; {
+  // …
+});
+
+// Instance named "my-app-db-2", at path "/user/{uid}".
+// The "my-app-db-2" instance must exist in this region.
+const OnWrittenFunctionInstance = onValueWritten(
+  {
+    ref: "/user/{uid}",
+    instance: "my-app-db-2"
+  },
+  (event) =&gt; {
+    // …
+  }
+);
+
+// Instance with "my-app-db-" prefix, at path "/user/{uid}", where uid ends with @gmail.com.
+// There must be at least one Realtime Database with "my-app-db-*" prefix in this region.
+const onWrittenFunctionInstance = onValueWritten(
+  {
+    ref: "/user/{uid=*@gmail.com}",
+    instance: "my-app-db-*"
+  },
+  (event) =&gt; {
+    // …
+  }
+);</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># All Realtime Database instances at path "/user/{uid}"
+# There must be at least one Realtime Database present.
+@db_fn.on_value_written(r"/user/{uid}")
+def onwrittenfunctiondefault(event: db_fn.Event[db_fn.Change]):
+    # ...
+    pass
+
+# Instance named "my-app-db-2", at path "/user/{uid}".
+# The "my-app-db-2" instance must exist in this region.
+@db_fn.on_value_written(
+    reference=r"/user/{uid}",
+    instance="my-app-db-2",
+)
+def on_written_function_instance(event: db_fn.Event[db_fn.Change]):
+    # ...
+    pass
+
+# Instance with "my-app-db-" prefix, at path "/user/{uid}", where uid ends with @gmail.com.
+# There must be at least one Realtime Database with "my-app-db-*" prefix in this region.
+@db_fn.on_value_written(
+    reference=r"/user/{uid=*@gmail.com}",
+    instance="my-app-db-*",
+)
+def on_written_function_instance(event: db_fn.Event[db_fn.Change]):
+    # ...
+    pass
+</pre></section> </div> <p>These parameters direct your function to handle writes at a certain path within the Realtime Database instance.</p> <p>Path specifications match <em>all</em> writes that touch a path, including writes that happen anywhere below it. If you set the path for your function as <code translate="no" dir="ltr">/foo/bar</code>, it matches events at both of these locations:</p> 
+<pre> /foo/bar
+ /foo/bar/baz/really/deep/path
+</pre> <p>In either case, Firebase interprets that the event occurs at <code translate="no" dir="ltr">/foo/bar</code>, and the event data includes the old and new data at <code translate="no" dir="ltr">/foo/bar</code>. If the event data might be large, consider using multiple functions at deeper paths instead of a single function near the root of your database. For the best performance, only request data at the deepest level possible.</p> <h3 id="wildcard-and-capture">Wildcard and capture</h3> <p>You can use <code translate="no" dir="ltr">{key}</code>, <code translate="no" dir="ltr">{key=*}</code>, <code translate="no" dir="ltr">{key=prefix*}</code>, <code translate="no" dir="ltr">{key=*suffix}</code> for capturing. <code translate="no" dir="ltr">*</code>, <code translate="no" dir="ltr">prefix*</code>, <code translate="no" dir="ltr">*suffix</code> for single-segment wildcarding. Note: <code translate="no" dir="ltr">**</code> represents multi-segment wildcarding, which Realtime Database does not support. See <a href="https://cloud.google.com/eventarc/docs/path-patterns#apply_a_path_pattern">Understand path patterns</a>.</p> <p><strong>Path wildcarding.</strong> You can specify a path component as a wildcard:</p> <ul> <li>Using asterisk, <code translate="no" dir="ltr">*</code>. For example, <code translate="no" dir="ltr">foo/*</code> matches any children one level of the node hierarchy below <code translate="no" dir="ltr">foo/</code>.</li> <li>Using a segment containing exactly asterisk, <code translate="no" dir="ltr">*</code>. For example, <code translate="no" dir="ltr">foo/app*-us</code> matches any child segments below <code translate="no" dir="ltr">foo/</code> with <code translate="no" dir="ltr">app</code> prefix and <code translate="no" dir="ltr">-us</code> suffix.</li> </ul> <p>Paths with wildcards can match multiple events from, for example, a single write. An insert of</p> 
+<pre>{
+  "foo": {
+    "hello": "world",
+    "firebase": "functions"
+  }
+}
+</pre> <p>matches the path <code translate="no" dir="ltr">"/foo/*"</code> twice: once with <code translate="no" dir="ltr">"hello": "world"</code> and again with <code translate="no" dir="ltr">"firebase": "functions"</code>.</p> <p><strong>Path capturing.</strong> You can capture path matches into named variables to be used in your function code (e.g. <code translate="no" dir="ltr">/user/{uid}</code>, <code translate="no" dir="ltr">/user/{uid=*-us}</code>).</p> <p>The values of the capture variables are available within the <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.database.databaseevent#databasedatabaseeventparams">database.DatabaseEvent.params</a> object of your function.</p> <p><strong>Instance wildcarding.</strong> You can also specify an instance component using wildcarding. A instance wildcard can have prefix, suffix or both (e.g. <code translate="no" dir="ltr">my-app-*-prod</code>).</p> <h3 id="wildcard-and-capture-reference">Wildcard and capture reference</h3> <p>With Cloud Functions (2nd gen) and Realtime Database, a pattern can be used when specifying <code translate="no" dir="ltr">ref</code> and <code translate="no" dir="ltr">instance</code>. Each trigger interface will have the following options for scoping a function:</p> <table> <thead> <tr> <th><strong>Specifying <code translate="no" dir="ltr">ref</code></strong></th> <th><strong>Specifying <code translate="no" dir="ltr">instance</code></strong></th> <th><strong>Behavior</strong></th> </tr> </thead> <tbody> <tr> <td>Single (<code translate="no" dir="ltr">/foo/bar</code>)</td> <td>Not specifying</td> <td>Scopes handler to all instances in the function region.</td> </tr> <tr> <td>Single (<code translate="no" dir="ltr">/foo/bar</code>)</td> <td>Single (<code translate="no" dir="ltr">‘my-new-db'</code>)</td> <td>Scopes handler to the specific instance in the function region.</td> </tr> <tr> <td>Single (<code translate="no" dir="ltr">/foo/bar</code>)</td> <td>Pattern (<code translate="no" dir="ltr">‘inst-prefix*'</code>)</td> <td>Scopes handler to all instances that match the pattern in the function region.</td> </tr> <tr> <td>Pattern (<code translate="no" dir="ltr">/foo/{bar}</code>)</td> <td>Not specifying</td> <td>Scopes handler to all instances in the function region.</td> </tr> <tr> <td>Pattern (<code translate="no" dir="ltr">/foo/{bar}</code>)</td> <td>Single (<code translate="no" dir="ltr">‘my-new-db'</code>)</td> <td>Scopes handler to the specific instance in the function region.</td> </tr> <tr> <td>Pattern (<code translate="no" dir="ltr">/foo/{bar}</code>)</td> <td>Pattern (<code translate="no" dir="ltr">‘inst-prefix*'</code>)</td> <td>Scopes handler to all instances that match the pattern in the function region.</td> </tr> </tbody> </table> <h2 id="handle-event-data">Handle event data</h2> <p>When a Realtime Database event triggers, it passes an <code translate="no" dir="ltr">Event</code> object to your handler function. This object has a <code translate="no" dir="ltr">data</code> property, which, for creation and deletion events, contains a snapshot of the data created or deleted.</p> <p>In this example, the function retrieves the data for the referenced path, converts the string at that location to uppercase, and writes that modified string to the database:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Listens for new messages added to /messages/:pushId/original and creates an
+// uppercase version of the message to /messages/:pushId/uppercase
+// for all databases in 'us-central1'
+exports.makeuppercase = onValueCreated(
+    "/messages/{pushId}/original",
+    (event) =&gt; {
+    // Grab the current value of what was written to the Realtime Database.
+      const original = event.data.val();
+      logger.log("Uppercasing", event.params.pushId, original);
+      const uppercase = original.toUpperCase();
+      // You must return a Promise when performing
+      // asynchronous tasks inside a function, such as
+      // writing to the Firebase Realtime Database.
+      // Setting an "uppercase" sibling in the
+      // Realtime Database returns a Promise.
+      return event.data.ref.parent.child("uppercase").set(uppercase);
+    },
+);
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@db_fn.on_value_created(reference="/messages/{pushId}/original")
+def makeuppercase(event: db_fn.Event[Any]) -&gt; None:
+    """Listens for new messages added to /messages/{pushId}/original and
+    creates an uppercase version of the message to /messages/{pushId}/uppercase
+    """
+
+    # Grab the value that was written to the Realtime Database.
+    original = event.data
+    if not isinstance(original, str):
+        print(f"Not a string: {event.reference}")
+        return
+
+    # Use the Admin SDK to set an "uppercase" sibling.
+    print(f"Uppercasing {event.params['pushId']}: {original}")
+    upper = original.upper()
+    parent = db.reference(event.reference).parent
+    if parent is None:
+        print("Message can't be root node.")
+        return
+    parent.child("uppercase").set(upper)
+</pre></section> </div> <h3 id="read-previous-value">Read the previous value</h3> <p>For <code translate="no" dir="ltr">write</code> or <code translate="no" dir="ltr">update</code> events, the <code translate="no" dir="ltr">data</code> property is a <code translate="no" dir="ltr">Change</code> object that contains two snapshots that represent the data state before and after the triggering event. The <code translate="no" dir="ltr">Change</code> object has a <code translate="no" dir="ltr">before</code> property that lets you inspect what was saved to Realtime Database <em>before</em> the event and an <code translate="no" dir="ltr">after</code> property that represents the state of the data <em>after</em> the event happened.</p> <p>For example, the <code translate="no" dir="ltr">before</code> property can be used to make sure the function only uppercases text when it is first created:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">  exports makeUppercase = onValueWritten("/messages/{pushId}/original", (event) =&gt; {
+        // Only edit data when it is first created.
+        if (event.data.before.exists()) {
+          return null;
+        }
+        // Exit when the data is deleted.
+        if (!event.data.after.exists()) {
+          return null;
+        }
+        // Grab the current value of what was written to the Realtime Database.
+        const original = event.data.after.val();
+        console.log('Uppercasing', event.params.pushId, original);
+        const uppercase = original.toUpperCase();
+        // You must return a Promise when performing asynchronous tasks inside a Functions such as
+        // writing to the Firebase Realtime Database.
+        // Setting an "uppercase" sibling in the Realtime Database returns a Promise.
+        return event.data.after.ref.parent.child('uppercase').set(uppercase);
+      });</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@db_fn.on_value_written(reference="/messages/{pushId}/original")
+def makeuppercase2(event: db_fn.Event[db_fn.Change]) -&gt; None:
+    """Listens for new messages added to /messages/{pushId}/original and
+    creates an uppercase version of the message to /messages/{pushId}/uppercase
+    """
+
+    # Only edit data when it is first created.
+    if event.data.before is not None:
+        return
+
+    # Exit when the data is deleted.
+    if event.data.after is None:
+        return
+
+    # Grab the value that was written to the Realtime Database.
+    original = event.data.after
+    if not hasattr(original, "upper"):
+        print(f"Not a string: {event.reference}")
+        return
+
+    # Use the Admin SDK to set an "uppercase" sibling.
+    print(f"Uppercasing {event.params['pushId']}: {original}")
+    upper = original.upper()
+    parent = db.reference(event.reference).parent
+    if parent is None:
+        print("Message can't be root node.")
+        return
+    parent.child("uppercase").set(upper)
+</pre></section> </div> <h3 id="access-auth-context">Access authentication context</h3> <p>For functions triggered by RTDB eventarc events, authentication context is included in the event payload:</p> <ul> <li>
+<strong>authtype</strong>: The type of principal that triggered the event. The possible values are: <ul> <li>
+<code translate="no" dir="ltr">app_user</code>: An end user of the developer's application.</li> <li>
+<code translate="no" dir="ltr">admin</code>: A service account.</li> <li>
+<code translate="no" dir="ltr">unauthenticated</code>: An unauthenticated user.</li> <li>
+<code translate="no" dir="ltr">unknown</code>: Default when authentication information is unavailable.</li> </ul>
+</li> <li>
+<strong>authid</strong>: The unique identifier of the principal. <ul> <li>If <code translate="no" dir="ltr">authtype</code> is <code translate="no" dir="ltr">app_user</code>, this is the user's UID.</li> <li>If <code translate="no" dir="ltr">authtype</code> is <code translate="no" dir="ltr">admin</code>, this is the service account or IAM user email.</li> </ul>
+</li> </ul> <p>This code only transforms the text of the message to uppercase if the user who triggered the function is not an administrator. Additionally, the code also checks if the user who triggered the message is the actual sender of the message.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// The Cloud Functions for Firebase SDK to setup triggers and logging.
+const {onValueWritten} = require("firebase-functions/v2/database");
+const {logger} = require("firebase-functions");
+const admin = require("firebase-admin");
+
+admin.initializeApp();
+
+exports.dbtrigger = onValueWritten("/messages/{pushId}/original", async (event) =&gt; {
+  // 1. Check whether authtype is admin. If it is, skip this operation.
+  if (event.authType === "admin") {
+    logger.log("Modification by admin detected. Skipping uppercase conversion.");
+    return null;
+  }
+
+  // 2. Retrieve the userID of the sender (assumed sibling node 'senderId')
+  const snapshot = await event.data.after.ref.parent.child("senderId").get();
+  const senderId = snapshot.val();
+
+  // 3. Check if userID of sender of message = event.authid
+  if (senderId !== event.authId) {
+    logger.error(`Unauthorized write: senderId (${senderId}) does not match authId (${event.authId})`);
+    return null;
+  }
+
+  // Grab the value that was written to the Realtime Database.
+  const original = event.data.after.val();
+  logger.log("Uppercasing", event.params.pushId, original);
+  const uppercase = original.toUpperCase();
+
+  // Return the promise to set the "uppercase" sibling node.
+  return event.data.after.ref.parent.child("uppercase").set(uppercase);
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions import db_fn
+from firebase_admin import initialize_app, db
+
+initialize_app()
+
+@db_fn.on_value_written(reference="/messages/{pushId}/original")
+def makeuppercase(event: db_fn.Event[db_fn.Change]) -&gt; None:
+    # 1. Check whether authtype is admin. If it is, skip this operation.
+    if event.auth_type == "admin":
+        print("Admin user detected. Skipping.")
+        return
+
+    # 2. Retrieve the userID of the sender (assumed sibling node: 'senderId')
+    parent_ref = db.reference(event.reference).parent
+    sender_id = parent_ref.child("senderId").get()
+
+    # 3. Check if userID of sender = event.auth_id
+    if sender_id != event.auth_id:
+        print(f"Unauthorized: sender_id {sender_id} != auth_id {event.auth_id}")
+        return
+
+    # Exit when the data is deleted.
+    if event.data.after is None:
+        return
+
+    # Grab the value and uppercase it
+    original = event.data.after
+    if not isinstance(original, str):
+        return
+
+    print(f"Uppercasing {event.params['pushId']}: {original}")
+    upper = original.upper()
+    parent_ref.child("uppercase").set(upper)
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/database-events" class="_attribution-link">https://firebase.google.com/docs/functions/database-events</a>
+  </p>
+</div>

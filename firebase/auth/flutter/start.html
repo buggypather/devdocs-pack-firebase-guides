@@ -1,0 +1,65 @@
+<h1>Get started with Firebase Authentication on Flutter</h1> <h2 id="connect_your_app_to_firebase">Connect your app to Firebase</h2> <p><a href="../../flutter/setup">Install and initialize the Firebase SDKs for Flutter</a> if you haven't already done so.</p> <h2 id="add_firebase_authentication_to_your_app">Add Firebase Authentication to your app</h2> <ol> <li>
+<p>From the root of your Flutter project, run the following command to install the plugin:</p> 
+<pre>flutter pub add firebase_auth
+</pre>
+</li> <li>
+<p>Once complete, rebuild your Flutter application:</p> 
+<pre>flutter run
+</pre>
+</li> <li>
+<p>Import the plugin in your Dart code:</p> 
+<pre>import 'package:firebase_auth/firebase_auth.dart';
+</pre>
+</li> </ol> <p>To use an authentication provider, you need to enable it in the Firebase console (go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><strong>Sign-in method</strong> tab</a>). You can enable Email/Password sign-in and many other identity providers that you want for your app.</p> <h2 id="optional_prototype_and_test_with_firebase_local_emulator_suite">(Optional) Prototype and test with Firebase Local Emulator Suite</h2> <p>Before talking about how your app authenticates users, let's introduce a set of tools you can use to prototype and test Authentication functionality: Firebase Local Emulator Suite. If you're deciding among authentication techniques and providers, trying out different data models with public and private data using Authentication and Firebase Security Rules, or prototyping sign-in UI designs, being able to work locally without deploying live services can be a great idea.</p> <p>An Authentication emulator is part of the Local Emulator Suite, which enables your app to interact with emulated database content and config, as well as optionally your emulated project resources (functions, other databases, and security rules).</p> <p>Using the Authentication emulator involves just a few steps:</p> <ol> <li><p>Adding a line of code to your app's test config to connect to the emulator.</p></li> <li><p>From the root of your local project directory, running <code translate="no" dir="ltr">firebase emulators:start</code>.</p></li> <li><p>Using the Local Emulator Suite UI for interactive prototyping, or the Authentication emulator REST API for non-interactive testing.</p></li> <li>
+<p>Call <code translate="no" dir="ltr">useAuthEmulator()</code> to specify the emulator address and port:</p> 
+<pre>Future&lt;void&gt; main() async {
+WidgetsFlutterBinding.ensureInitialized();
+await Firebase.initializeApp();
+
+// Ideal time to initialize
+await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+//...
+}
+</pre>
+</li> </ol> <p>A detailed guide is available at <a href="../../emulator-suite/connect_auth">Connect your app to the Authentication emulator</a>. For more information, see the <a href="../../emulator-suite">Local Emulator Suite introduction</a>.</p> <p>Now let's continue with how to authenticate users.</p> <h2 id="auth-state">Check current auth state</h2> <p>Firebase Auth provides many methods and utilities for enabling you to integrate secure authentication into your new or existing Flutter application. In many cases, you will need to know about the authentication <em>state</em> of your user, such as whether they're logged in or logged out.</p> <p>Firebase Auth enables you to subscribe in realtime to this state via a <a href="https://api.flutter.dev/flutter/dart-async/Stream-class.html"><code translate="no" dir="ltr">Stream</code></a>. Once called, the stream provides an immediate event of the user's current authentication state, and then provides subsequent events whenever the authentication state changes.</p> <p>There are three methods for listening to authentication state changes:</p> <h3 id="authstatechanges"><code translate="no" dir="ltr">authStateChanges()</code></h3> <p>To subscribe to these changes, call the <code translate="no" dir="ltr">authStateChanges()</code> method on your <code translate="no" dir="ltr">FirebaseAuth</code> instance:</p> 
+<pre>FirebaseAuth.instance
+  .authStateChanges()
+  .listen((User? user) {
+    if (user == null) {
+      print('User is currently signed out!');
+    } else {
+      print('User is signed in!');
+    }
+  });
+</pre> <p>Events are fired when the following occurs:</p> <ul> <li>Right after the listener has been registered.</li> <li>When a user is signed in.</li> <li>When the current user is signed out.</li> </ul> <h3 id="idtokenchanges"><code translate="no" dir="ltr">idTokenChanges()</code></h3> <p>To subscribe to these changes, call the <code translate="no" dir="ltr">idTokenChanges()</code> method on your <code translate="no" dir="ltr">FirebaseAuth</code> instance:</p> 
+<pre>FirebaseAuth.instance
+  .idTokenChanges()
+  .listen((User? user) {
+    if (user == null) {
+      print('User is currently signed out!');
+    } else {
+      print('User is signed in!');
+    }
+  });
+</pre> <p>Events are fired when the following occurs:</p> <ul> <li>Right after the listener has been registered.</li> <li>When a user is signed in.</li> <li>When the current user is signed out.</li> <li>When there is a change in the current user's token.</li> </ul> <p><aside> If you set custom claims using the Firebase Admin SDK, you will only see this event fire when the following occurs:</aside></p> <ul> <li>A user signs in or re-authenticates after the custom claims are modified. The ID token issued as a result will contain the latest claims.</li> <li>An existing user session gets its ID token refreshed after an older token expires.</li> <li>An ID token is force refreshed by calling <code translate="no" dir="ltr">FirebaseAuth.instance.currentUser.getIdTokenResult(true)</code>.</li> </ul> <p>For further details, see <a href="../admin/custom-claims#propagate_custom_claims_to_the_client">Propagating custom claims to the client</a> </p> <h3 id="userchanges"><code translate="no" dir="ltr">userChanges()</code></h3> <p>To subscribe to these changes, call the <code translate="no" dir="ltr">userChanges()</code> method on your <code translate="no" dir="ltr">FirebaseAuth</code> instance:</p> 
+<pre>FirebaseAuth.instance
+  .userChanges()
+  .listen((User? user) {
+    if (user == null) {
+      print('User is currently signed out!');
+    } else {
+      print('User is signed in!');
+    }
+  });
+</pre> <p>Events are fired when the following occurs:</p> <ul> <li>Right after the listener has been registered.</li> <li>When a user is signed in.</li> <li>When the current user is signed out.</li> <li>When there is a change in the current user's token.</li> <li>When the following methods provided by <code translate="no" dir="ltr">FirebaseAuth.instance.currentUser</code> are called: <ul> <li><code translate="no" dir="ltr">reload()</code></li> <li><code translate="no" dir="ltr">unlink()</code></li> <li><code translate="no" dir="ltr">updateEmail()</code></li> <li><code translate="no" dir="ltr">updatePassword()</code></li> <li><code translate="no" dir="ltr">updatePhoneNumber()</code></li> <li><code translate="no" dir="ltr">updateProfile()</code></li> </ul>
+</li> </ul> <p><aside> <code translate="no" dir="ltr">idTokenChanges()</code>, <code translate="no" dir="ltr">userChanges()</code> &amp; <code translate="no" dir="ltr">authStateChanges()</code> will not fire if you update the <code translate="no" dir="ltr">User</code> profile with the Firebase Admin SDK. You will have to force a reload using <code translate="no" dir="ltr">FirebaseAuth.instance.currentUser.reload()</code> to retrieve the latest <code translate="no" dir="ltr">User</code> profile.</aside></p> <p><code translate="no" dir="ltr">idTokenChanges()</code>, <code translate="no" dir="ltr">userChanges()</code> &amp; <code translate="no" dir="ltr">authStateChanges()</code> will also not fire if you disable or delete the <code translate="no" dir="ltr">User</code> with the Firebase Admin SDK or the Firebase console. You will have to force a reload using <code translate="no" dir="ltr">FirebaseAuth.instance.currentUser.reload()</code>, which will cause a <code translate="no" dir="ltr">user-disabled</code> or <code translate="no" dir="ltr">user-not-found</code> exception that you can catch and handle in your app code. </p> <h2 id="persisting_authentication_state">Persisting authentication state</h2> <p>The Firebase SDKs for all platforms provide out of the box support for ensuring that your user's authentication state is persisted across app restarts or page reloads.</p> <p>On native platforms such as Android &amp; iOS, this behavior is not configurable and the user's authentication state will be persisted on device between app restarts. The user can clear the apps cached data using the device settings, which will wipe any existing state being stored.</p> <p>On web platforms, the user's authentication state is stored in <a href="https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API">IndexedDB</a>. You can change the persistence to store data in the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">local storage</a> using <code translate="no" dir="ltr">Persistence.LOCAL</code>. If required, you can change this default behavior to only persist authentication state for the current session, or not at all. To configure these settings, call the following method <code translate="no" dir="ltr">FirebaseAuth.instanceFor(app: Firebase.app(), persistence: Persistence.LOCAL);</code>. You can still update the persistence for each Auth instance using <code translate="no" dir="ltr">setPersistence(Persistence.NONE)</code>.</p> 
+<pre>// Disable persistence on web platforms. Must be called on initialization:
+final auth = FirebaseAuth.instanceFor(app: Firebase.app(), persistence: Persistence.NONE);
+// To change it after initialization, use `setPersistence()`:
+await auth.setPersistence(Persistence.LOCAL);
+</pre> <h2 id="next_steps">Next Steps</h2> <p>Explore the guides on signing in and signing up users with the supported identity and authentication services.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/flutter/start" class="_attribution-link">https://firebase.google.com/docs/auth/flutter/start</a>
+  </p>
+</div>

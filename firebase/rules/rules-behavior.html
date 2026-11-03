@@ -1,0 +1,316 @@
+<h1>How Security Rules work</h1> <p>Security can be one of the most complex pieces of the app development puzzle. In most applications, developers must build and run a server that handles authentication (who a user is) and authorization (what a user can do).</p> <p>Firebase Security Rules remove the middle (server) layer and allow you to specify path-based permissions for clients that connect to your data directly. Use this guide to learn more about how rules are applied to incoming requests.</p> <p>Select a product to learn more about its rules.</p> 
+<div class="ds-selector-tabs"> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p> <h2 id="basic_structure" class="hide-from-toc">Basic structure</h2> <p>Firebase Security Rules in Cloud Firestore and Cloud Storage use the following structure and syntax:</p> 
+<pre data-language="">service &lt;&lt;name&gt;&gt; {
+  // Match the resource path.
+  match &lt;&lt;path&gt;&gt; {
+    // Allow the request if the following conditions are true.
+    allow &lt;&lt;methods&gt;&gt; : if &lt;&lt;condition&gt;&gt;
+  }
+}
+</pre> <p>The following key concepts are important to understand as you build the rules:</p> <ul> <li>
+<strong>Request:</strong> The method or methods invoked in the <code translate="no" dir="ltr">allow</code> statement. These are methods you're allowing to run. The standard methods are: <code translate="no" dir="ltr">get</code>, <code translate="no" dir="ltr">list</code>, <code translate="no" dir="ltr">create</code>, <code translate="no" dir="ltr">update</code>, and <code translate="no" dir="ltr">delete</code>. The <code translate="no" dir="ltr">read</code> and <code translate="no" dir="ltr">write</code> convenience methods enable broad read and write access on the specified database or storage path.</li> <li>
+<strong>Path:</strong> The database or storage location, represented as a URI path.</li> <li>
+<strong>Rule:</strong> The <code translate="no" dir="ltr">allow</code> statement, which includes a condition that permits a request if it evaluates to true.</li> </ul> <h3 id="security_rules_version_2" class="hide-from-toc">Security rules version 2</h3> <p>As of May 2019, version 2 of the Security Rules security rules is now available. Version 2 of the rules changes the behavior of <a href="#recursive_wildcards">recursive wildcards</a> <code translate="no" dir="ltr">{name=**}</code>. You must use version 2 if you plan to use <a href="../firestore/query-data/queries#collection-group-query">collection group queries</a>. You must opt-in to version 2 by making <code translate="no" dir="ltr">rules_version = '2';</code> the first line in your security rules:</p> 
+<pre data-language="">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+</pre> <aside class="warning">Avoid using recursive wildcards unless you intend for permissive security rules to propagate to all nested subcollections.</aside> <h2 id="matching_paths" class="hide-from-toc">Matching paths</h2> <p>All match statements should point to documents, not collections. A match statement can point to a specific document, as in <code translate="no" dir="ltr">match /cities/SF</code> or use wildcards to point to any document in the specified path, as in <code translate="no" dir="ltr">match /cities/{city}</code>.</p> <p>In the example, the match statement uses the <code translate="no" dir="ltr">{city}</code> wildcard syntax. This means the rule applies to any document in the <code translate="no" dir="ltr">cities</code> collection, such as <code translate="no" dir="ltr">/cities/SF</code> or <code translate="no" dir="ltr">/cities/NYC</code>. When the <code translate="no" dir="ltr">allow</code> expressions in the match statement are evaluated, the <code translate="no" dir="ltr">city</code> variable will resolve to the city document name, such as <code translate="no" dir="ltr">SF</code> or <code translate="no" dir="ltr">NYC</code>.</p> <aside class="note"><strong>Note:</strong><span> You can only access documents that your security rules specifically allow you to access. For example, the rules shown allow access only to documents in the <code translate="no" dir="ltr">cities</code> collection; as a result, they also deny access to documents in all other collections.</span></aside> <h3 id="matching_subcollections" class="hide-from-toc">Matching subcollections</h3> <p>Data in Cloud Firestore is organized into collections of documents, and each document may extend the hierarchy through subcollections. It is important to understand how security rules interact with hierarchical data.</p> <p>Consider the situation where each document in the <code translate="no" dir="ltr">cities</code> collection contains a <code translate="no" dir="ltr">landmarks</code> subcollection. Security rules apply only at the matched path, so the access controls defined on the <code translate="no" dir="ltr">cities</code> collection don't apply to the <code translate="no" dir="ltr">landmarks</code> subcollection. Instead, write explicit rules to control access to subcollections:</p> 
+<pre data-language="">service cloud.firestore {
+  match /databases/{database}/documents {
+    match /cities/{city} {
+      allow read, write: if &lt;condition&gt;;
+
+      // Explicitly define rules for the 'landmarks' subcollection
+      match /landmarks/{landmark} {
+        allow read, write: if &lt;condition&gt;;
+      }
+    }
+  }
+}
+</pre> <p>When nesting <code translate="no" dir="ltr">match</code> statements, the path of the inner <code translate="no" dir="ltr">match</code> statement is always relative to the path of the outer <code translate="no" dir="ltr">match</code> statement. The following rulesets are therefore equivalent:</p> 
+<pre data-language="">service cloud.firestore {
+  match /databases/{database}/documents {
+    match /cities/{city} {
+      match /landmarks/{landmark} {
+        allow read, write: if &lt;condition&gt;;
+      }
+    }
+  }
+}
+</pre>
+
+<pre data-language="">service cloud.firestore {
+  match /databases/{database}/documents {
+    match /cities/{city}/landmarks/{landmark} {
+      allow read, write: if &lt;condition&gt;;
+    }
+  }
+}
+</pre> <h4 id="overlapping_match_statements" class="hide-from-toc">Overlapping match statements</h4> <p>It's possible for a document to match more than one <code translate="no" dir="ltr">match</code> statement. In the case where multiple <code translate="no" dir="ltr">allow</code> expressions match a request, the access is allowed if <strong>any</strong> of the conditions is <code translate="no" dir="ltr">true</code>:</p> 
+<pre data-language="">service cloud.firestore {
+  match /databases/{database}/documents {
+    // Matches any document in the 'cities' collection.
+    match /cities/{city} {
+      allow read, write: if false;
+    }
+
+    // Matches any document in the 'cities' collection.
+    match /cities/{document} {
+      allow read, write: if true;
+    }
+  }
+}
+</pre> <p>In the example, all reads and writes to the <code translate="no" dir="ltr">cities</code> collection will be allowed because the second rule is always <code translate="no" dir="ltr">true</code>, even though the first rule is always <code translate="no" dir="ltr">false</code>.</p> <h4 id="recursive_wildcards" class="hide-from-toc">Recursive wildcards</h4> <p>If you want rules to apply to an arbitrarily deep hierarchy, use the recursive wildcard syntax, <code translate="no" dir="ltr">{name=**}</code>:</p> 
+<pre data-language="">service cloud.firestore {
+  match /databases/{database}/documents {
+    // Matches any document in the cities collection as well as any document
+    // in a subcollection.
+    match /cities/{document=**} {
+      allow read, write: if &lt;condition&gt;;
+    }
+  }
+}
+</pre> <p>When using the recursive wildcard syntax, the wildcard variable will contain the entire matching path segment, even if the document is located in a deeply nested subcollection. For example, the rules listed would match a document located at <code translate="no" dir="ltr">/cities/SF/landmarks/coit_tower</code>, and the value of the <code translate="no" dir="ltr">document</code> variable would be <code translate="no" dir="ltr">SF/landmarks/coit_tower</code>.</p> <p>Note, however, that the behavior of recursive wildcards depends on the rules version.</p> <div> <section><p class="_firebase-tab"><strong>Version 1</strong></p>
+<p>Security rules use version 1 by default. In version 1, recursive wildcards match one or more path items. They don't match an empty path, so <code translate="no" dir="ltr">match /cities/{city}/{document=**}</code> matches documents in subcollections but not in the <code translate="no" dir="ltr">cities</code> collection, whereas <code translate="no" dir="ltr">match /cities/{document=**}</code> matches both documents in the <code translate="no" dir="ltr">cities</code> collection and subcollections.</p> <p>Recursive wildcards must come at the end of a match statement.</p></section> <section><p class="_firebase-tab"><strong>Version 2</strong></p>
+<p>In version 2 of the security rules, recursive wildcards match zero or more path items. <code translate="no" dir="ltr">match/cities/{city}/{document=**}</code> matches documents in any subcollections as well as documents in the <code translate="no" dir="ltr">cities</code> collection.</p> <p>You must opt-in to version 2 by adding <code translate="no" dir="ltr">rules_version = '2';</code> at the top of your security rules:</p> 
+<pre data-language="">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Matches any document in the cities collection as well as any document
+    // in a subcollection.
+    match /cities/{city}/{document=**} {
+      allow read, write: if &lt;condition&gt;;
+    }
+  }
+}
+</pre> <p>You can have at most one recursive wildcard per match statement, but in version 2, you can place this wildcard anywhere in the match statement. For example:</p> 
+<pre data-language="">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Matches any document in the songs collection group
+    match /{path=**}/songs/{song} {
+      allow read, write: if &lt;condition&gt;;
+    }
+  }
+}
+</pre></section> </div> <p>If you use <a href="../firestore/query-data/queries#collection-group-query">collection group queries</a>, you must use version 2, see <a href="../firestore/security/rules-query">securing collection group queries</a>.</p> <h2 id="security_rule_limits" class="hide-from-toc">Security rule limits</h2> <p>As you work with security rules, note the following limits:</p> <table> <thead> <tr> <th width="40%">Limit</th> <th>Details</th> </tr> </thead> <tbody> <tr> <td>Maximum number of <code translate="no" dir="ltr">exists()</code>, <code translate="no" dir="ltr">get()</code>, and <code translate="no" dir="ltr">getAfter()</code> calls per request</td> <td> <ul> <li>10 for single-document requests and query requests.</li> <li> <p>20 for multi-document reads, transactions, and batched writes. The previous limit of 10 also applies to each operation. </p> <p>For example, imagine you create a batched write request with 3 write operations and that your security rules use 2 document access calls to validate each write. In this case, each write uses 2 of its 10 access calls and the batched write request uses 6 of its 20 access calls. </p> </li> </ul> <p>Exceeding either limit results in a permission denied error.</p> <p>Some document access calls may be cached, and cached calls do not count towards the limits.</p> </td> </tr> <tr> <td>Maximum nested <code translate="no" dir="ltr">match</code> statement depth</td> <td>10</td> </tr> <tr> <td>Maximum path length, in path segments, allowed within a set of nested <code translate="no" dir="ltr">match</code> statements</td> <td>100</td> </tr> <tr> <td>Maximum number of path capture variables allowed within a set of nested <code translate="no" dir="ltr">match</code> statements</td> <td>20</td> </tr> <tr> <td>Maximum function call depth</td> <td>20</td> </tr> <tr> <td>Maximum number of function arguments</td> <td>7</td> </tr> <tr> <td>Maximum number of <code translate="no" dir="ltr">let</code> variable bindings per function</td> <td>10</td> </tr> <tr> <td>Maximum number of recursive or cyclical function calls</td> <td>0 &amp;lpar;not permitted&amp;rpar;</td> </tr> <tr> <td>Maximum number of expressions evaluated per request</td> <td>1,000</td> </tr> <tr> <td>Maximum size of a ruleset</td> <td>Rulesets must obey two size limits: <ul> <li>a 256 KB limit on the size of the ruleset text source published from the Firebase console or from the CLI using <code translate="no" dir="ltr">firebase deploy</code>. </li> <li>a 250 KB limit on the size of the compiled ruleset that results when Firebase processes the source and makes it active on the back-end. </li> </ul> </td> </tr> </tbody> </table> </section><section><p class="_firebase-tab"><strong>Cloud Storage</strong></p> <h2 id="basic_structure_2" class="hide-from-toc">Basic structure</h2> <p>Firebase Security Rules in Cloud Firestore and Cloud Storage use the following structure and syntax:</p> 
+<pre data-language="">service &lt;&lt;name&gt;&gt; {
+  // Match the resource path.
+  match &lt;&lt;path&gt;&gt; {
+    // Allow the request if the following conditions are true.
+    allow &lt;&lt;methods&gt;&gt; : if &lt;&lt;condition&gt;&gt;
+  }
+}
+</pre> <p>The following key concepts are important to understand as you build the rules:</p> <ul> <li>
+<strong>Request:</strong> The method or methods invoked in the <code translate="no" dir="ltr">allow</code> statement. These are methods you're allowing to run. The standard methods are: <code translate="no" dir="ltr">get</code>, <code translate="no" dir="ltr">list</code>, <code translate="no" dir="ltr">create</code>, <code translate="no" dir="ltr">update</code>, and <code translate="no" dir="ltr">delete</code>. The <code translate="no" dir="ltr">read</code> and <code translate="no" dir="ltr">write</code> convenience methods enable broad read and write access on the specified database or storage path.</li> <li>
+<strong>Path:</strong> The database or storage location, represented as a URI path.</li> <li>
+<strong>Rule:</strong> The <code translate="no" dir="ltr">allow</code> statement, which includes a condition that permits a request if it evaluates to true.</li> </ul> <h2 id="matching_paths_2" class="hide-from-toc">Matching paths</h2> <p>Cloud Storage Security Rules <code translate="no" dir="ltr">match</code> the file paths used to access files in Cloud Storage. Rules can <code translate="no" dir="ltr">match</code> exact paths or wildcard paths, and rules can also be nested. If no match rule allows an request method, or the condition evaluates to <code translate="no" dir="ltr">false</code>, the request is denied.</p> <h3 id="exact_matches" class="hide-from-toc">Exact matches</h3> 
+<pre data-language="">// Exact match for "images/profilePhoto.png"
+match /images/profilePhoto.png {
+  allow write: if &lt;condition&gt;;
+}
+
+// Exact match for "images/croppedProfilePhoto.png"
+match /images/croppedProfilePhoto.png {
+  allow write: if &lt;other_condition&gt;;
+}</pre> <h3 id="nested_matches" class="hide-from-toc">Nested matches</h3> 
+<pre data-language="">// Partial match for files that start with "images"
+match /images {
+  // Exact match for "images/profilePhoto.png"
+  match /profilePhoto.png {
+    allow write: if &lt;condition&gt;;
+  }
+
+  // Exact match for "images/croppedProfilePhoto.png"
+  match /croppedProfilePhoto.png {
+    allow write: if &lt;other_condition&gt;;
+  }
+}</pre> <h3 id="wildcard_matches" class="hide-from-toc">Wildcard matches</h3> <p>Rules can also be used to <code translate="no" dir="ltr">match</code> a pattern using wildcards. A wildcard is a named variable that represents either a single string such as <code translate="no" dir="ltr">profilePhoto.png</code>, or multiple path segments, such as <code translate="no" dir="ltr">images/profilePhoto.png</code>.</p> <p>A wildcard is created by adding curly braces around the wildcard name, like <code translate="no" dir="ltr">{string}</code>. A multiple segment wildcard can be declared by adding <code translate="no" dir="ltr">=**</code> to the wildcard name, like <code translate="no" dir="ltr">{path=**}</code>:</p> <aside class="warning">Avoid using recursive wildcards unless you intend for permissive security rules to propagate to all nested folders.</aside> 
+<pre data-language="">// Partial match for files that start with "images"
+match /images {
+  // Exact match for "images/*"
+  // e.g. images/profilePhoto.png is matched
+  match /{imageId} {
+    // This rule only matches a single path segment (*)
+    // imageId is a string that contains the specific segment matched
+    allow read: if &lt;condition&gt;;
+  }
+
+  // Exact match for "images/**"
+  // e.g. images/users/user:12345/profilePhoto.png is matched
+  // images/profilePhoto.png is also matched!
+  match /{allImages=**} {
+    // This rule matches one or more path segments (**)
+    // allImages is a path that contains all segments matched
+    allow read: if &lt;other_condition&gt;;
+  }
+}</pre> <p>If multiple rules match a file, the result is the <code translate="no" dir="ltr">OR</code> of the result of all rules evaluations. That is, if any rule the file matches evaluates to <code translate="no" dir="ltr">true</code>, the result is <code translate="no" dir="ltr">true</code>.</p> <p>In the rules, the file "images/profilePhoto.png" can be read if either <code translate="no" dir="ltr">condition</code> or <code translate="no" dir="ltr">other_condition</code> evaluate to true, while the file "images/users/user:12345/profilePhoto.png" is only subject to the result of <code translate="no" dir="ltr">other_condition</code>.</p> <p>A wildcard variable can be referenced from within the <code translate="no" dir="ltr">match</code> provide filename or path authorization:</p> 
+<pre data-language="">// Another way to restrict the name of a file
+match /images/{imageId} {
+  allow read: if imageId == "profilePhoto.png";
+}</pre> <p>Cloud Storage Security Rules don't cascade, and rules are only evaluated when the request path matches a path with rules specified.</p> <h2 id="request_evaluation" class="hide-from-toc">Request evaluation</h2> <p>Uploads, downloads, metadata changes, and deletes are evaluated using the <code translate="no" dir="ltr">request</code> sent to Cloud Storage. The <code translate="no" dir="ltr">request</code> variable contains the path where the request is being performed, the time when the request is received, and the new <code translate="no" dir="ltr">resource</code> value if the request is a write. HTTP headers and authentication state are also included.</p> <p>The <code translate="no" dir="ltr">request</code> object also contains the user's unique ID and the Firebase Authentication payload in the <code translate="no" dir="ltr">request.auth</code> object, which will be explained further in the <a href="../storage/security/rules-conditions#authentication">Authentication</a> section of the docs.</p> <p>A full list of properties in the <code translate="no" dir="ltr">request</code> object is available below:</p> <table> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">auth</code></td> <td>map&lt;string, string&gt;</td> <td>When a user is logged in, provides <code translate="no" dir="ltr">uid</code>, the user's unique ID, and <code translate="no" dir="ltr">token</code>, a map of Firebase Authentication JWT claims. Otherwise, it will be <code translate="no" dir="ltr">null</code>.</td> </tr> <tr> <td><code translate="no" dir="ltr">params</code></td> <td>map&lt;string, string&gt;</td> <td>Map containing the query parameters of the request.</td> </tr> <tr> <td><code translate="no" dir="ltr">path</code></td> <td>path</td> <td>A <code translate="no" dir="ltr">path</code> representing the path the request is being performed at.</td> </tr> <tr> <td><code translate="no" dir="ltr">resource</code></td> <td>map&lt;string, string&gt;</td> <td>The new resource value, present only on <code translate="no" dir="ltr">write</code> requests. </td> </tr> <tr> <td><code translate="no" dir="ltr">time</code></td> <td>timestamp</td> <td>A timestamp representing the server time the request is evaluated at. </td> </tr> </table> <aside class="note"><strong>Note:</strong><span> Detailed documentation for these properties is available in the <a href="https://firebase.google.com/docs/reference/security/storage#request">Firebase Security Rules for Cloud Storage API reference</a>.</span></aside> <h2 id="resource_evaluation" class="hide-from-toc">Resource evaluation</h2> <p>When evaluating rules, you may also want to evaluate the metadata of the file being uploaded, downloaded, modified, or deleted. This lets you create complex and powerful rules that do things like only allow files with certain content types to be uploaded, or only files greater than a certain size to be deleted.</p> <p>Firebase Security Rules for Cloud Storage provides file metadata in the <code translate="no" dir="ltr">resource</code> object, which contains key/value pairs of the metadata surfaced in a Cloud Storage object. These properties can be inspected on <code translate="no" dir="ltr">read</code> or <code translate="no" dir="ltr">write</code> requests to ensure data integrity.</p> <p>On <code translate="no" dir="ltr">write</code> requests (such as uploads, metadata updates, and deletes), in addition to the <code translate="no" dir="ltr">resource</code> object, which contains file metadata for the file that exists at the request path, you also have the ability to use the <code translate="no" dir="ltr">request.resource</code> object, which contains a subset of the file metadata to be written if the write is allowed. You can use these two values to ensure data integrity or enforce application constraints such as file type or size.</p> <p>A full list of properties in the <code translate="no" dir="ltr">resource</code> object is available:</p> <table> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">name</code></td> <td>string</td> <td>The full name of the object</td> </tr> <tr> <td><code translate="no" dir="ltr">bucket</code></td> <td>string</td> <td>The name of the bucket this object resides in.</td> </tr> <tr> <td><code translate="no" dir="ltr">generation</code></td> <td>int</td> <td>The <a href="https://cloud.google.com/storage/docs/object-versioning" class="external">Google Cloud Storage object generation</a> of this object.</td> </tr> <tr> <td><code translate="no" dir="ltr">metageneration</code></td> <td>int</td> <td>The <a href="https://cloud.google.com/storage/docs/object-versioning" class="external">Google Cloud Storage object meta generation</a> of this object.</td> </tr> <tr> <td><code translate="no" dir="ltr">size</code></td> <td>int</td> <td>The size of the object in bytes.</td> </tr> <tr> <td><code translate="no" dir="ltr">timeCreated</code></td> <td>timestamp</td> <td>A timestamp representing the time an object was created. </td> </tr> <tr> <td><code translate="no" dir="ltr">updated</code></td> <td>timestamp</td> <td>A timestamp representing the time an object was last updated. </td> </tr> <tr> <td><code translate="no" dir="ltr">md5Hash</code></td> <td>string</td> <td>An MD5 hash of the object.</td> </tr> <tr> <td><code translate="no" dir="ltr">crc32c</code></td> <td>string</td> <td>A crc32c hash of the object.</td> </tr> <tr> <td><code translate="no" dir="ltr">etag</code></td> <td>string</td> <td>The etag associated with this object.</td> </tr> <tr> <td><code translate="no" dir="ltr">contentDisposition</code></td> <td>string</td> <td>The content disposition associated with this object.</td> </tr> <tr> <td><code translate="no" dir="ltr">contentEncoding</code></td> <td>string</td> <td>The content encoding associated with this object.</td> </tr> <tr> <td><code translate="no" dir="ltr">contentLanguage</code></td> <td>string</td> <td>The content language associated with this object.</td> </tr> <tr> <td><code translate="no" dir="ltr">contentType</code></td> <td>string</td> <td>The content type associated with this object.</td> </tr> <tr> <td><code translate="no" dir="ltr">metadata</code></td> <td>map&lt;string, string&gt;</td> <td>Key/value pairs of additional, developer specified custom metadata.</td> </tr> </table> <p><code translate="no" dir="ltr">request.resource</code> contains all of these with the exception of <code translate="no" dir="ltr">generation</code>, <code translate="no" dir="ltr">metageneration</code>, <code translate="no" dir="ltr">etag</code>, <code translate="no" dir="ltr">timeCreated</code>, and <code translate="no" dir="ltr">updated</code>.</p> <aside class="note"><strong>Note:</strong><span> Detailed documentation for these properties is available in the <a href="https://firebase.google.com/docs/reference/security/storage#resource">Firebase Security Rules for Cloud Storage API reference</a>.</span></aside> <h2 id="security_rules_limits">Security Rules limits</h2> <p>As you work with security rules, note the following limits:</p> <table> <thead> <tr> <th width="40%">Limit</th> <th>Details</th> </tr> </thead> <tbody> <tr> <td>Maximum number of <code translate="no" dir="ltr">firestore.exists()</code> and <code translate="no" dir="ltr">firestore.get()</code> calls per request</td> <td> <p>2 for single-document requests and query requests.</p> <p>Exceeding this limit results in a permission denied error.</p> <p>Access calls to the same documents may be cached, and cached calls don't count towards the limits.</p> </td> </tr> </tbody> </table> <h2 id="full_example" class="hide-from-toc">Full Example</h2> <p>Putting it all together, you can create a full example of rules for an image storage solution:</p> 
+<pre data-language="">service firebase.storage {
+ match /b/{bucket}/o {
+   match /images {
+     // Allow write files to the path "images/*", subject to the constraints:
+     // 1) File is less than 5MB
+     // 2) Content type is an image
+     // 3) Uploaded content type matches existing content type
+     // 4) Filename (stored in imageId wildcard variable) is less than 32 characters
+     match /{imageId} {
+       allow read;
+       allow write: if request.resource.size &lt; 5 * 1024 * 1024
+                    &amp;&amp; request.resource.contentType.matches('image/.*')
+                    &amp;&amp; request.resource.contentType == resource.contentType
+                    &amp;&amp; imageId.size() &lt; 32
+     }
+   }
+ }
+}</pre> </section><section><p class="_firebase-tab"><strong>Realtime Database</strong></p> <h2 id="basic_structure_3" class="hide-from-toc">Basic structure</h2> <p>In Realtime Database, Firebase Security Rules consist of JavaScript-like expressions contained in a JSON document.</p> <p>They use the following syntax:</p> 
+<pre data-language="">{
+  "rules": {
+    "&lt;&lt;path&gt;&gt;": {
+    // Allow the request if the condition for each method is true.
+      ".read": &lt;&lt;condition&gt;&gt;,
+      ".write": &lt;&lt;condition&gt;&gt;,
+      ".validate": &lt;&lt;condition&gt;&gt;
+    }
+  }
+}
+</pre> <p>There are three basic elements in the rule:</p> <ul> <li>
+<strong>Path:</strong> The database location. This mirrors your database's JSON structure.</li> <li>
+<strong>Request:</strong> These are the methods the rule uses to grant access. The <code translate="no" dir="ltr">read</code> and <code translate="no" dir="ltr">write</code> rules grant broad read and write access, while <code translate="no" dir="ltr">validate</code> rules act as a secondary verification to grant access based on incoming or existing data.</li> <li>
+<strong>Condition:</strong> The condition that permits a request if it evaluates to true.</li> </ul> <h2 id="how_rules_apply_to_paths" class="hide-from-toc">How rules apply to paths</h2> <p>In Realtime Database, Security Rules apply atomically, meaning that rules at higher-level parent nodes override rules at more granular child nodes and rules at a deeper node can't grant access to a parent path. You can't refine or revoke access at a deeper path in your database structure if you've already granted it for one of the parent paths.</p> <p>Consider the following rules:</p> 
+<pre data-language="">{
+  "rules": {
+     "foo": {
+        // allows read to /foo/*
+        ".read": "data.child('baz').val() === true",
+        "bar": {
+          // ignored, since read was allowed already
+          ".read": false
+        }
+     }
+  }
+}</pre> <p>This security structure allows <code translate="no" dir="ltr">/bar/</code> to be read from whenever <code translate="no" dir="ltr">/foo/</code> contains a child <code translate="no" dir="ltr">baz</code> with value <code translate="no" dir="ltr">true</code>. The <code translate="no" dir="ltr">".read": false</code> rule under <code translate="no" dir="ltr">/foo/bar/</code> has no effect here, since access cannot be revoked by a child path.</p> <p>While it may not seem immediately intuitive, this is a powerful part of the rules language and allows for very complex access privileges to be implemented with minimal effort. This is particularly useful for <a href="rules-and-auth">user-based security</a>.</p> <p>However, <a href="data-validation"><code translate="no" dir="ltr">.validate</code> rules</a> do not cascade. All validate rules must be satisfied at all levels of the hierarchy for a write to be allowed.</p> <p>Additionally, because rules do not apply back to a parent path, read or write operation fail if there isn't a rule at the requested location or at a parent location that grants access. Even if every affected child path is accessible, reading at the parent location will fail completely. Consider this structure:</p> 
+<pre data-language="">{
+  "rules": {
+    "records": {
+      "rec1": {
+        ".read": true
+      },
+      "rec2": {
+        ".read": false
+      }
+    }
+  }
+}</pre> <p>Without understanding that rules are evaluated atomically, it might seem like fetching the <code translate="no" dir="ltr">/records/</code> path would return <code translate="no" dir="ltr">rec1</code> but not <code translate="no" dir="ltr">rec2</code>. The actual result, however, is an error:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+<pre data-language="">var db = firebase.database();
+db.ref("records").once("value", function(snap) {
+  // success method is not called
+}, function(err) {
+  // error callback triggered with PERMISSION_DENIED
+});</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">FIRDatabaseReference *ref = [[FIRDatabase database] reference];
+[[_ref child:@"records"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+  // success block is not called
+} withCancelBlock:^(NSError * _Nonnull error) {
+  // cancel block triggered with PERMISSION_DENIED
+}];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">var ref = FIRDatabase.database().reference()
+ref.child("records").observeSingleEventOfType(.Value, withBlock: { snapshot in
+    // success block is not called
+}, withCancelBlock: { error in
+    // cancel block triggered with PERMISSION_DENIED
+})</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
+DatabaseReference ref = database.getReference("records");
+ref.addListenerForSingleValueEvent(new ValueEventListener() {
+  @Override
+  public void onDataChange(DataSnapshot snapshot) {
+    // success method is not called
+  }
+
+  @Override
+  public void onCancelled(FirebaseError firebaseError) {
+    // error callback triggered with PERMISSION_DENIED
+  });
+});</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+<pre data-language="">
+curl https://docs-examples.firebaseio.com/rest/records/
+# response returns a PERMISSION_DENIED error
+</pre> </section> </div> <p>Since the read operation at <code translate="no" dir="ltr">/records/</code> is atomic, and there's no read rule that grants access to all of the data under <code translate="no" dir="ltr">/records/</code>, this will throw a <code translate="no" dir="ltr">PERMISSION_DENIED</code> error. If we evaluate this rule in the security simulator in our <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, we can see that the read operation was denied:</p> 
+<pre data-language="">
+Attempt to read /records with auth=Success(null)
+    /
+    /records
+
+No .read rule allowed the operation.
+Read was denied.
+</pre> <p>The operation was denied because no read rule allowed access to the <code translate="no" dir="ltr">/records/</code> path, but note that the rule for <code translate="no" dir="ltr">rec1</code> was never evaluated because it wasn't in the path we requested. To fetch <code translate="no" dir="ltr">rec1</code>, we would need to access it directly:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+<pre data-language="">var db = firebase.database();
+db.ref("records/rec1").once("value", function(snap) {
+  // SUCCESS!
+}, function(err) {
+  // error callback is not called
+});</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">FIRDatabaseReference *ref = [[FIRDatabase database] reference];
+[[ref child:@"records/rec1"] observeSingleEventOfType:FEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+    // SUCCESS!
+}];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">var ref = FIRDatabase.database().reference()
+ref.child("records/rec1").observeSingleEventOfType(.Value, withBlock: { snapshot in
+    // SUCCESS!
+})</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
+DatabaseReference ref = database.getReference("records/rec1");
+ref.addListenerForSingleValueEvent(new ValueEventListener() {
+  @Override
+  public void onDataChange(DataSnapshot snapshot) {
+    // SUCCESS!
+  }
+
+  @Override
+  public void onCancelled(FirebaseError firebaseError) {
+    // error callback is not called
+  }
+});</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+<pre data-language="">
+curl https://docs-examples.firebaseio.com/rest/records/rec1
+# SUCCESS!
+</pre> </section> </div> <h2 id="location_variable" class="hide-from-toc">Location variable</h2> <p>Realtime Database Security Rules support a <code translate="no" dir="ltr">$location</code> variable to match path segments. Use the <code translate="no" dir="ltr">$</code> prefix in front of your path segment to match your rule to any child nodes along the path.</p> 
+<pre data-language="">  {
+    "rules": {
+      "rooms": {
+        // This rule applies to any child of /rooms/, the key for each room id
+        // is stored inside $room_id variable for reference
+        "$room_id": {
+          "topic": {
+            // The room's topic can be changed if the room id has "public" in it
+            ".write": "$room_id.contains('public')"
+          }
+        }
+      }
+    }
+  }
+</pre> <p>You can also use the <code translate="no" dir="ltr">$variable</code> in parallel with constant path names.</p> 
+<pre data-language="">  {
+    "rules": {
+      "widget": {
+        // a widget can have a title or color attribute
+        "title": { ".validate": true },
+        "color": { ".validate": true },
+
+        // but no other child paths are allowed
+        // in this case, $other means any key excluding "title" and "color"
+        "$other": { ".validate": false }
+      }
+    }
+  }
+</pre> </section>
+</div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/rules/rules-behavior" class="_attribution-link">https://firebase.google.com/docs/rules/rules-behavior</a>
+  </p>
+</div>

@@ -1,0 +1,19 @@
+<h1>Manage delivery status with the Trigger Email extension</h1> <p>When a document is added to the collection, the extension picks it up for email delivery processing. The extension creates and updates a <code translate="no" dir="ltr">delivery</code> field in the document as it processes the email.</p> <h2 id="email_delivery_processing">Email delivery processing</h2> <p>The <code translate="no" dir="ltr">delivery</code> field can be populated with the following fields:</p> <ul> <li>
+<strong>state:</strong> One of <code translate="no" dir="ltr">PENDING</code>, <code translate="no" dir="ltr">PROCESSING</code>, <code translate="no" dir="ltr">SUCCESS</code>, or <code translate="no" dir="ltr">ERROR</code>.</li> <li>
+<strong>startTime:</strong> Timestamp when email processing began.</li> <li>
+<strong>endTime:</strong> Timestamp when email processing completed (that is, ended in either a <code translate="no" dir="ltr">SUCCESS</code> or <code translate="no" dir="ltr">ERROR</code> state).</li> <li>
+<strong>error:</strong> If there was an email delivery error, an error message will be populated here.</li> <li>
+<strong>attempts:</strong> Number of delivery attempts for this email.</li> <li>
+<strong>leaseExpireTime:</strong> In case of a hang or timeout, the time at which a <code translate="no" dir="ltr">PROCESSING</code> state should be considered an error.</li> <li>
+<strong>info:</strong> After successful email delivery (to at least one address), this field will be populated with the following fields: <ul> <li>
+<strong>messageId:</strong> The message ID of the delivered email.</li> <li>
+<strong>accepted:</strong> Array of email addresses to which the email was successfully delivered.</li> <li>
+<strong>rejected:</strong> Array of email addresses to which the email could not be delivered.</li> <li>
+<strong>pending:</strong> Array of email addresses that were temporarily rejected by SMTP.</li> <li>
+<strong>response:</strong> The last response from the SMTP server.</li> </ul>
+</li> </ul> <p>An email will typically go from <code translate="no" dir="ltr">PENDING</code> to <code translate="no" dir="ltr">PROCESSING</code> to either <code translate="no" dir="ltr">SUCCESS</code> or <code translate="no" dir="ltr">ERROR</code>. Once in the <code translate="no" dir="ltr">SUCCESS</code> or <code translate="no" dir="ltr">ERROR</code> state, additional changes to the document will not trigger the extension to send another email. To resend an email with document updates, you can change the <code translate="no" dir="ltr">state</code> to <code translate="no" dir="ltr">PENDING</code> or <code translate="no" dir="ltr">RETRY</code>.</p> <h2 id="manual_retries">Manual retries</h2> <p>There are instances in which email delivery fails in a recoverable fashion or the document can be manually corrected for proper delivery with minor modifications. While retries are not automatic, you can manually change the <code translate="no" dir="ltr">state</code> in the <code translate="no" dir="ltr">delivery</code> field to <code translate="no" dir="ltr">RETRY</code> so that the extension attempts email delivery again (and increments the number of <code translate="no" dir="ltr">attempts</code>).</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/official/firestore-send-email/delivery-status" class="_attribution-link">https://firebase.google.com/docs/extensions/official/firestore-send-email/delivery-status</a>
+  </p>
+</div>

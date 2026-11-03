@@ -1,0 +1,77 @@
+<h1>Load Firebase SDKs from reserved URLs</h1> <aside class="warning"><strong>Warning:</strong><span> Reserved Firebase Hosting URLs are available only with version 8 and earlier of the Firebase JS SDK. You cannot use version 9 or later with reserved Hosting URLs.</span></aside> <p>Firebase Hosting reserves URLs in your site beginning with <code translate="no" dir="ltr">/__</code>. This reserved namespace makes it easier to use other Firebase products together with Firebase Hosting.</p> <p>These reserved URLs are available both when you deploy to Firebase (<code translate="no" dir="ltr">firebase deploy</code>) or when you run your app on a local server (<code translate="no" dir="ltr">firebase serve</code>).</p> <h2 id="add_scripts_for_reserved_urls">Add scripts for reserved URLs</h2> <p>Because Firebase Hosting is served over HTTP/2 when deployed, you can boost performance by loading files from the same origin. Firebase Hosting serves version 8 of the Firebase JavaScript SDK from special URLs formatted like so:</p> 
+<pre>/__/firebase/JS_SDK_VERSION/FIREBASE_SDK_NAME.js</pre> <p>We strongly recommend loading only the <a href="#libraries_hosting-urls">libraries</a> that you use in your app. For example, to include only Authentication and Cloud Firestore, add the following scripts to the bottom of your <code translate="no" dir="ltr">&lt;body&gt;</code> tag, but before you use any Firebase services:</p> 
+<pre>&lt;body&gt;
+  &lt;!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services --&gt;
+  &lt;!-- Firebase App (the core Firebase SDK) is always required and must be listed first --&gt;
+  &lt;script src="/__/firebase/8.10.1/firebase-app.js"&gt;&lt;/script&gt;
+
+  &lt;!-- Add Firebase products that you want to use --&gt;
+  &lt;script src="/__/firebase/8.10.1/firebase-auth.js"&gt;&lt;/script&gt;
+  &lt;script src="/__/firebase/8.10.1/firebase-firestore.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+</pre> <h3 id="sdk_auto-configuration">SDK auto-configuration</h3> <p>Automatic SDK configuration makes it easy to manage multiple environments (such as dev, staging, and production) from a single codebase. By relying on the reserved Hosting URL, you can deploy the same code to multiple Firebase projects.</p> <p>In addition to hosting the SDKs themselves, the reserved namespace also provides all of the configuration necessary to initialize the SDK for the Firebase project associated with the Hosting site. This Firebase configuration and SDK initialization is provided by a script that you can include directly:</p> 
+<pre>&lt;!-- Load the Firebase SDKs before loading this file --&gt;
+&lt;script src="/__/firebase/init.js"&gt;&lt;/script&gt;
+</pre> <p>When you deploy to Firebase or test your app locally, this script automatically configures the Firebase JavaScript SDK for the <a href="../cli#project_aliases">active Firebase project</a> and initializes the SDK.</p> <p>If you prefer to control initialization yourself, the Firebase configuration values are also available in JSON form:</p> 
+<pre>fetch('/__/firebase/init.json').then(async response =&gt; {
+  firebase.initializeApp(await response.json());
+});
+</pre> <h2 id="libraries_hosting-urls">Available Firebase JS SDKs (from reserved Hosting URLs)</h2> <aside class="warning"><b>Warning</b>: Reserved Firebase Hosting URLs are available only with version 8 and earlier. You cannot use version 9 or later of the Firebase JS SDK with reserved Hosting URLs. </aside> <table> <thead> <tr> <th><strong>Firebase product</strong></th> <th><strong>Library reference (reserved URL)</strong></th> </tr> </thead> <tbody> <tr> <td>Firebase core<br>(required)</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-app.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../analytics/web/get-started">Analytics</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-analytics.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../app-check">App Check</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-app-check.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../auth/web/start">Authentication</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-auth.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../firestore/quickstart">Cloud Firestore</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-firestore.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../functions/callable#call_the_function">Cloud Functions for Firebase Client SDK</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-functions.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../projects/manage-installations">Firebase installations</a></td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-installations.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../cloud-messaging/js/client">Cloud Messaging</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-messaging.js"&gt;&lt;/script&gt;</pre> <p>For an optimal experience using Cloud Messaging, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td> <a href="../storage/web/start">Cloud Storage</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-storage.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../perf-mon/get-started-web">Performance Monitoring</a> <br><em>(<strong>beta</strong> release)</em>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-performance.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../database/web/start">Realtime Database</a></td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-database.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td>
+<a href="../remote-config/web/get-started">Remote Config</a> <br><em>(<strong>beta</strong> release)</em>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-remote-config.js"&gt;&lt;/script&gt;</pre> <p>For an optimal experience using Remote Config, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td>Firebase JavaScript SDK<br>(entire SDK)</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> </tbody> </table> <h2 id="auth_helpers">Auth helpers</h2> <p><a href="../auth/index">Firebase Authentication</a> uses the reserved namespace to provide special JavaScript and HTML to complete authentication with providers via OAuth. This allows each Firebase project to have a unique Firebase subdomain, increasing the security of Firebase Authentication.</p> <p>In addition, this allows you to use your own custom domain for the <code translate="no" dir="ltr">authDomain</code> option of <code translate="no" dir="ltr">firebase.initializeApp()</code>. If you <a href="custom-domain">configure a custom domain</a> for Firebase Hosting, then you can also specify that custom domain (instead of your <code translate="no" dir="ltr">web.app</code> or <code translate="no" dir="ltr">firebaseapp.com</code> subdomain) when initializing the Firebase SDKs. See <a href="../auth/web/redirect-best-practices#update-authdomain">Best practices for using signInWithRedirect</a> for more details on using a custom domain.</p> <h2 id="reserved_urls_and_service_workers">Reserved URLs and service workers</h2> <p>If you are building a Progressive Web App (PWA), you might create a service worker that has a "navigation fallback" and renders a specific URL by default if it doesn't match a list of precached items.</p> <aside class="caution">You must disable any fallbacks for the `/__` namespace in order for Firebase Hosting to function properly.</aside> <p>If you're using the <a href="https://github.com/GoogleChrome/sw-precache">sw-precache</a> library, you can add a navigation fallback whitelist setting that excludes the reserved namespace:</p> 
+<pre>{
+  navigateFallbackWhitelist: [/^(?!\/__).*/]
+}
+</pre> <p>In general, just remember that the double-underscore namespace is reserved for Firebase usage and that you should not intercept these requests in your service worker.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/hosting/reserved-urls" class="_attribution-link">https://firebase.google.com/docs/hosting/reserved-urls</a>
+  </p>
+</div>

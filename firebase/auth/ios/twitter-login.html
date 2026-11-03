@@ -1,0 +1,256 @@
+<h1>Authenticate Using Twitter on Apple Platforms</h1> <p>You can let your users authenticate with Firebase using OAuth providers like Twitter by integrating generic OAuth Login into your app using the Firebase SDK to carry out the end to end sign-in flow.</p> <h2 id="before_you_begin">Before you begin</h2> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+<pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Firebase Authentication library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> <p>To sign in users using Twitter accounts, you must first enable Twitter as a sign-in provider for your Firebase project:</p> <ol> <li><p><a href="../../ios/setup">Add Firebase to your Apple project</a>.</p></li> <li>
+<p>Include the following pods in your <code translate="no" dir="ltr">Podfile</code>: </p>
+
+<pre>pod 'FirebaseAuth'</pre> </li>
+<li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Twitter</b> sign-in provider. </li> <li> Add the <b>API key</b> and <b>API secret</b> from that provider's developer console to the provider configuration: <ol> <li> <a href="https://apps.twitter.com/" class="external">Register your app</a> as a developer application on Twitter and get your app's OAuth <b>API key</b> and <b>API secret</b>. </li> <li> Make sure your Firebase <b>OAuth redirect URI</b> (for example, <code translate="no" dir="ltr">my-app-12345.firebaseapp.com/__/auth/handler</code>) is set as your <b>Authorization callback URL</b> in your app's settings page on your <a href="https://apps.twitter.com/" class="external">Twitter app's config</a>. </li> </ol> </li> <li> Click <b>Save</b>. </li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>To handle the sign-in flow with the Firebase Apple platforms SDK, follow these steps:</p> <ol> <li>
+<p>Add custom URL schemes to your Xcode project: </p>
+<ol> <li> Open your project configuration: double-click the project name in the left tree view. Select your app from the <b>TARGETS</b> section, then select the <b>Info</b> tab, and expand the <b>URL Types</b> section. </li> <li> Click the <b>+</b> button, and add your Encoded App ID as a URL scheme. Leave the other fields blank. <p> You can find your Encoded App ID in the Firebase console: go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/"><b>General</b> tab</a>, then scroll down to the <b>Your apps</b> section to view details about your iOS app. </p> <p> When completed, your config should look something similar to the following (but with your application-specific values): </p> <img src="https://firebase.google.com/static/docs/auth/images/app-id-url-scheme.png" alt="Screenshot of Xcode's custom URL scheme setup interface" class="screenshot"> </li> </ol>
+</li> <li>
+<p>Create an instance of an <strong>OAuthProvider</strong> using the provider ID <strong>twitter.com</strong>.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">    var provider = OAuthProvider(providerID: "twitter.com")
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">    FIROAuthProvider *provider = [FIROAuthProvider providerWithProviderID:@"twitter.com"];
+    </pre> </section> </div>
+</li> <li>
+<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">    provider.customParameters = [
+      "lang": "fr"
+      ]
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">    [provider setCustomParameters:@{@"lang": @"fr"}];
+    </pre> </section> </div> <p>For the parameters Twitter supports, see the <a href="https://developer.twitter.com/en/docs/basics/authentication/guides/authorizing-a-request">Twitter OAuth documentation</a>. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters</code>. These parameters are <strong>client_id</strong>, <strong>redirect_uri</strong>, <strong>response_type</strong>, <strong>scope</strong> and <strong>state</strong>.</p>
+</li> <li><p><strong>Optional</strong>: If you want to customize the way your app presents the <code translate="no" dir="ltr">SFSafariViewController</code> or <code translate="no" dir="ltr">UIWebView</code> when displaying the reCAPTCHA to the user, create a custom class that conforms to the <code translate="no" dir="ltr">AuthUIDelegate</code> protocol, and pass it to <code translate="no" dir="ltr">credentialWithUIDelegate</code>.</p></li> <li>
+<p>Authenticate with Firebase using the OAuth provider object.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">    provider.getCredentialWith(nil) { credential, error in
+      if error != nil {
+        // Handle error.
+      }
+      if credential != nil {
+        Auth.auth().signIn(with: credential) { authResult, error in
+          if error != nil {
+            // Handle error.
+          }
+          // User is signed in.
+          // IdP data available in authResult.additionalUserInfo.profile.
+          // Twitter OAuth access token can also be retrieved by:
+          // (authResult.credential as? OAuthCredential)?.accessToken
+          // Twitter OAuth ID token can be retrieved by calling:
+          // (authResult.credential as? OAuthCredential)?.idToken
+          // Twitter OAuth secret can be retrieved by calling:
+          // (authResult.credential as? OAuthCredential)?.secret
+        }
+      }
+    }
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">    [provider getCredentialWithUIDelegate:nil
+                               completion:^(FIRAuthCredential *_Nullable credential, NSError *_Nullable error) {
+      if (error) {
+       // Handle error.
+      }
+      if (credential) {
+        [[FIRAuth auth] signInWithCredential:credential
+                                  completion:^(FIRAuthDataResult *_Nullable authResult, NSError *_Nullable error) {
+          if (error) {
+            // Handle error.
+          }
+          // User is signed in.
+          // IdP data available in authResult.additionalUserInfo.profile.
+          // Twitter OAuth access token can also be retrieved by:
+          // authResult.credential.accessToken
+          // Twitter OAuth ID token can be retrieved by calling:
+          // authResult.credential.idToken
+          // Twitter OAuth secret can be retrieved by calling:
+          // authResult.credential.secret
+        }];
+      }
+    }];
+    </pre> </section> </div> <p>Using the OAuth access token, you can call the <a href="https://developer.twitter.com/en/docs/basics/authentication/guides/access-tokens.html">Twitter API</a>.</p> <p>For example, to get basic profile information, you can call the REST API, passing the access token in the <code translate="no" dir="ltr">Authorization</code> header:</p> 
+<pre>https://api.twitter.com/labs/1/users?usernames=TwitterDev</pre>
+</li> <li>
+<p>While the above examples focus on sign-in flows, you also have the ability to link a Twitter provider to an existing user. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">    Auth().currentUser.link(withCredential: credential) { authResult, error in
+      if error != nil {
+        // Handle error.
+      }
+      // Twitter credential is linked to the current user.
+      // IdP data available in authResult.additionalUserInfo.profile.
+      // Twitter OAuth access token can also be retrieved by:
+      // (authResult.credential as? OAuthCredential)?.accessToken
+      // Twitter OAuth ID token can be retrieved by calling:
+      // (authResult.credential as? OAuthCredential)?.idToken
+      // Twitter OAuth secret can be retrieved by calling:
+      // (authResult.credential as? OAuthCredential)?.secret
+    }
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">    [[FIRAuth auth].currentUser
+        linkWithCredential:credential
+                completion:^(FIRAuthDataResult * _Nullable authResult, NSError * _Nullable error) {
+      if (error) {
+        // Handle error.
+      }
+      // Twitter credential is linked to the current user.
+      // IdP data available in authResult.additionalUserInfo.profile.
+      // Twitter OAuth access token is can also be retrieved by:
+      // ((FIROAuthCredential *)authResult.credential).accessToken
+      // Twitter OAuth ID token can be retrieved by calling:
+      // ((FIROAuthCredential *)authResult.credential).idToken
+      // Twitter OAuth secret can be retrieved by calling:
+      // ((FIROAuthCredential *)authResult.credential).secret
+    }];
+    </pre> </section> </div>
+</li> <li>
+<p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithCredential</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">    Auth().currentUser.reauthenticateWithCredential(withCredential: credential) { authResult, error in
+      if error != nil {
+        // Handle error.
+      }
+      // User is re-authenticated with fresh tokens minted and
+      // should be able to perform sensitive operations like account
+      // deletion and email or password update.
+      // IdP data available in result.additionalUserInfo.profile.
+      // Additional OAuth access token is can also be retrieved by:
+      // (authResult.credential as? OAuthCredential)?.accessToken
+      // Twitter OAuth ID token can be retrieved by calling:
+      // (authResult.credential as? OAuthCredential)?.idToken
+      // Twitter OAuth secret can be retrieved by calling:
+      // (authResult.credential as? OAuthCredential)?.secret
+    }
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">    [[FIRAuth auth].currentUser
+        reauthenticateWithCredential:credential
+                          completion:^(FIRAuthDataResult * _Nullable authResult, NSError * _Nullable error) {
+      if (error) {
+        // Handle error.
+      }
+      // User is re-authenticated with fresh tokens minted and
+      // should be able to perform sensitive operations like account
+      // deletion and email or password update.
+      // IdP data available in result.additionalUserInfo.profile.
+      // Additional OAuth access token is can also be retrieved by:
+      // ((FIROAuthCredential *)authResult.credential).accessToken
+      // Twitter OAuth ID token can be retrieved by calling:
+      // ((FIROAuthCredential *)authResult.credential).idToken
+      // Twitter OAuth secret can be retrieved by calling:
+      // ((FIROAuthCredential *)authResult.credential).secret
+    }];
+    </pre> </section> </div>
+</li> </ol> <section class="expandable"> <h2 class="showalways" id="handling-account-exists-with-different-credential-errors">Handling account-exists-with-different-credential Errors</h2> <p>If you enabled the <b>One account per email address</b> setting in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, when a user tries to sign in a to a provider (such as Twitter) with an email that already exists for another Firebase user's provider (such as Google), the error <code translate="no" dir="ltr">FIRAuthErrorCodeAccountExistsWithDifferentCredential</code> is thrown along with a temporary <code translate="no" dir="ltr">FIRAuthCredential</code> object (Twitter credential). To complete the sign in to the intended provider, the user has to sign first to the existing provider (Google) and then link to the former <code translate="no" dir="ltr">FIRAuthCredential</code> (Twitter credential). This would look as illustrated below:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">  // Sign-in with an OAuth credential.
+  provider.getCredentialWith(nil) { credential, error in
+    // An account with the same email already exists.
+    if (error as NSError?)?.code == AuthErrorCode.accountExistsWithDifferentCredential.rawValue {
+      // Get pending credential and email of existing account.
+      let existingAcctEmail = (error! as NSError).userInfo[AuthErrorUserInfoEmailKey] as! String
+      let pendingCred = (error! as NSError).userInfo[AuthErrorUserInfoUpdatedCredentialKey] as! AuthCredential
+      // Lookup existing account identifier by the email.
+      Auth.auth().fetchProviders(forEmail:existingAcctEmail) { providers, error in
+        // Existing email/password account.
+        if (providers?.contains(EmailAuthProviderID))! {
+          // Existing password account for email. Ask user to provide the password of the
+          // existing account.
+          // Sign in with existing account.
+          Auth.auth().signIn(withEmail:existingAcctEmail, password:password) { user, error in
+            // Successfully signed in.
+            if user != nil {
+              // Link pending credential to account.
+              Auth.auth().currentUser?.linkAndRetrieveData(with: pendingCred) { result, error in
+                // ...
+              }
+            }
+          }
+        }
+      }
+      return
+    }
+
+    // Other errors.
+    if error != nil {
+      // handle the error.
+      return
+    }
+
+    // Sign in with the credential.
+    if credential != nil {
+      Auth.auth().signInAndRetrieveData(with: credential!) { result, error in
+        if error != nil {
+          // handle the error.
+          return
+        }
+      }
+    }
+  }
+
+  </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">  // Sign-in with an OAuth credential.
+  [provider getCredentialWithUIDelegate:nil
+                             completion:^(FIRAuthCredential *_Nullable credential, NSError *_Nullable error) {
+    // An account with the same email already exists.
+    if (error.code == FIRAuthErrorCodeAccountExistsWithDifferentCredential) {
+      // Get pending credential and email of existing account.
+      NSString *existingAcctEmail = error.userInfo[FIRAuthErrorUserInfoEmailKey];
+      FIRAuthCredential *pendingCred = error.userInfo[FIRAuthErrorUserInfoUpdatedCredentialKey];
+      // Lookup existing account identifier by the email.
+      [[FIRAuth auth] fetchProvidersForEmail:existingAcctEmail
+                                 completion:^(NSArray&lt;NSString *&gt; *_Nullable providers,
+                                              NSError *_Nullable error) {
+        // Existing email/password account.
+        if ( [providers containsObject:FIREmailAuthProviderID] ) {
+          // Existing password account for email. Ask user to provide the password of the
+          // existing account.
+
+          // Sign in with existing account.
+          [[FIRAuth auth] signInWithEmail:existingAcctEmail
+                                 password:password
+                               completion:^(FIRUser *user, NSError *error) {
+            // Successfully signed in.
+            if (user) {
+              // Link pending credential to account.
+              [[FIRAuth auth].currentUser linkWithCredential:pendingCred
+                                                  completion:^(FIRUser *_Nullable user,
+                                                               NSError *_Nullable error) {
+                // ...
+              }];
+            }
+          }];
+        }
+      }];
+      return;
+    }
+
+    // Other errors.
+    if (error) {
+      // handle the error.
+      return;
+    }
+
+    // Sign in with the credential.
+    if (credential) {
+      [[FIRAuth auth] signInAndRetrieveDataWithCredential:credential
+          completion:^(FIRAuthDataResult *_Nullable authResult,
+                       NSError *_Nullable error) {
+        if (error) {
+          // handle the error.
+          return;
+        }
+      }];
+    }
+  }];
+  </pre> </section> </div> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_user"><code translate="no" dir="ltr">User</code> </a> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_auth#ab0d5111f05c3f1906243852cc8ef41b1"> <code translate="no" dir="ltr">signOut:</code></a>.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">let firebaseAuth = Auth.auth()
+do {
+  try firebaseAuth.signOut()
+} catch let signOutError as NSError {
+  print("Error signing out: %@", signOutError)
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">NSError *signOutError;
+BOOL status = [[FIRAuth auth] signOut:&amp;signOutError];
+if (!status) {
+  NSLog(@"Error signing out: %@", signOutError);
+  return;
+}</pre> </section> </div> <p>You may also want to add error handling code for the full range of authentication errors. See <a href="errors">Handle Errors</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/ios/twitter-login" class="_attribution-link">https://firebase.google.com/docs/auth/ios/twitter-login</a>
+  </p>
+</div>

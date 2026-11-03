@@ -1,0 +1,80 @@
+<h1>Use App Check with the debug provider with Flutter</h1> <p>After App Check is enforced for a backend service, your app's features that depend on that backend service won't run in an emulator or from a continuous integration (CI) environment because these environments don't qualify as valid devices. To run your app in these environments during development and testing, you need to create a debug build of your app that uses the App Check <em>debug provider</em> instead of a production attestation provider.</p> <aside class="warning"><strong>Warning:</strong><span> <strong>Keep your debug token and debug build private.</strong> A valid debug token and the debug provider in your debug build allow access to your backend services from unverified devices. Do <strong><em>not</em></strong> commit your debug token to a public repository, and do <strong><em>not</em></strong> ship your debug token or debug build in production builds of your app. If a registered token is ever compromised, delete it immediately in the Firebase console.</span></aside> <h2 id="apple">Apple platforms</h2> <p>Here's how to use the debug provider while running your app in a simulator interactively (for example, during local development):</p> <ol> <li>
+<p>Activate App Check with the debug provider right after you've initialized your Firebase app:</p> 
+<pre>import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+// Import the firebase_app_check plugin
+import 'package:firebase_app_check/firebase_app_check.dart';
+
+Future&lt;void&gt; main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await FirebaseAppCheck.instance.activate(
+    // Set appleProvider to `AppleProvider.debug`
+    appleProvider: AppleProvider.debug,
+  );
+  runApp(App());
+}
+</pre>
+</li> <li>
+<p>Enable debug logging in your Xcode project (v11.0 or newer):</p> <ol> <li>Open <strong>Product &gt; Scheme &gt; Edit scheme</strong>.</li> <li>Select <strong>Run</strong> from the left menu, then select the <strong>Arguments</strong> tab.</li> <li>In the <strong>Arguments Passed on Launch</strong> section, add <code translate="no" dir="ltr">-FIRDebugEnabled</code>.</li> </ol>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Open <code translate="no" dir="ltr">ios/Runner.xcworkspace</code> with Xcode and run your app in the simulator or on your test device.</p></li> <li>
+<p>Open the Xcode console and look for the App Check debug token. For example:</p> 
+<pre>&lt;Warning&gt; [AppCheckCore][I-GAC004001] App Check debug token: '123a4567-b89c-12d3-e456-789012345678'.
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the three-dot overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol> <p><img src="https://firebase.google.com/static/docs/app-check/manage-debug-tokens.png" alt="Screenshot of the Manage Debug Tokens menu item in the Firebase console" class="screenshot"></p>
+</li> </ol> <p>After you register the token with App Check, your backend services will accept it as valid.</p> <p>This token allows access to your backend services without a valid device, so it's crucial that you keep it private. Do <em><strong>not</strong></em> commit it to a public repository or ship it in production builds of your app. If a registered token is ever compromised, delete it immediately using <strong>Manage debug tokens</strong> in the Firebase console.</p> <h2 id="android">Android</h2> <p>Here's how to use the debug provider while running your app in an emulator interactively (for example, during local development):</p> <ol> <li>
+<p>Activate App Check with the debug provider right after you've initialized your Firebase app:</p> 
+<pre>import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+// Import the firebase_app_check plugin
+import 'package:firebase_app_check/firebase_app_check.dart';
+
+Future&lt;void&gt; main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await FirebaseAppCheck.instance.activate(
+    // Set androidProvider to `AndroidProvider.debug`
+    androidProvider: AndroidProvider.debug,
+  );
+  runApp(App());
+}
+
+</pre>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Run your app in the emulator or on your test device.</p></li> <li>
+<p>Look for the App Check debug token in your logs. For example:</p> 
+<pre>D DebugAppCheckProvider: Enter this debug secret into the allow list
+in the Firebase Console for your project: 123a4567-b89c-12d3-e456-789012345678
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the three-dot overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol> <p><img src="https://firebase.google.com/static/docs/app-check/manage-debug-tokens.png" alt="Screenshot of the Manage Debug Tokens menu item in the Firebase console" class="screenshot"></p>
+</li> </ol> <p>After you register the token with App Check, your backend services will accept it as valid.</p> <p>This token allows access to your backend services without a valid device, so it's crucial that you keep it private. Do <em><strong>not</strong></em> commit it to a public repository or ship it in production builds of your app. If a registered token is ever compromised, delete it immediately using <strong>Manage debug tokens</strong> in the Firebase console.</p> <h2 id="web">Web</h2> <p>Here's how to use the debug provider while running your app from <code translate="no" dir="ltr">localhost</code> (for example, during local development):</p> <aside class="warning"><strong>Warning:</strong><span> Do <em><strong>not</strong></em> try to enable <code translate="no" dir="ltr">localhost</code> debugging by adding <code translate="no" dir="ltr">localhost</code> to the allowed domains for reCAPTCHA. Doing so would allow anyone to run your app from their local machines!</span></aside> <ol> <li>
+<p>In the file <code translate="no" dir="ltr">web/index.html</code>, enable debug mode by setting <code translate="no" dir="ltr">self.FIREBASE_APPCHECK_DEBUG_TOKEN</code> to <code translate="no" dir="ltr">true</code>:</p> 
+<pre>&lt;body&gt;
+  &lt;script&gt;
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  &lt;/script&gt;
+
+  ...
+
+&lt;/body&gt;
+</pre>
+</li> <li>
+<p>Run your web app locally and open the browser's developer tools. In the debug console, you'll see a debug token. For example:</p> 
+<pre>AppCheck debug token: "123a4567-b89c-12d3-e456-789012345678".
+You will need to safelist it in the Firebase console for it to work.
+</pre> <p>This token is stored locally in your browser and will be used whenever you use your app in the same browser on the same machine. If you want to use the token in another browser or on another machine, set <code translate="no" dir="ltr">self.FIREBASE_APPCHECK_DEBUG_TOKEN</code> to the token string instead of <code translate="no" dir="ltr">true</code>.</p>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the three-dot overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol> <p><img src="https://firebase.google.com/static/docs/app-check/manage-debug-tokens.png" alt="Screenshot of the Manage Debug Tokens menu item in the Firebase console" class="screenshot"></p>
+</li> </ol> <p>After you register the token with App Check, your backend services will accept it as valid.</p> <p>This token allows access to your backend services without a valid device, so it's crucial that you keep it private. Do <em><strong>not</strong></em> commit it to a public repository or ship it in production builds of your app. If a registered token is ever compromised, delete it immediately using <strong>Manage debug tokens</strong> in the Firebase console.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/flutter/debug-provider" class="_attribution-link">https://firebase.google.com/docs/app-check/flutter/debug-provider</a>
+  </p>
+</div>

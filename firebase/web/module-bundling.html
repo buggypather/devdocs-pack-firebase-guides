@@ -1,0 +1,193 @@
+<h1>Using module bundlers with Firebase</h1> <p>JavaScript module bundlers can do many things, but one of their most useful features is the ability to add and use external libraries in your code base. Module bundlers read import paths in your code and combine (bundle) your application-specific code with your imported library code.</p> <p>From version 9 and higher, the Firebase JavaScript modular API is optimized to work with the optimization features of module bundlers to reduce the amount of Firebase code included in your final build.</p> 
+<pre>import { initializeApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+
+const firebaseApp = initializeApp({ /* config */ });
+const auth = getAuth(firebaseApp);
+onAuthStateChanged(auth, user =&gt; { /* check status */ });
+
+/**
+ * getRedirectResult is unused and should not be included in the code base.
+ * In addition, there are many other functions within firebase/auth that are
+ * not imported and therefore should not be included as well.
+ */
+</pre> <p>This process of eliminating unused code from a library is known as tree shaking. It would be extremely time consuming and error prone to manually remove this code by hand, but module bundlers can automate this removal.</p> <p>There are many high quality module bundlers in the JavaScript ecosystem. This guide is focused on covering using Firebase with <a href="https://webpack.js.org/" class="external">webpack</a>, <a href="https://rollupjs.org/" class="external">Rollup</a>, and <a href="https://esbuild.github.io/" class="external">esbuild</a>.</p> <h2 id="get_started">Get started</h2> <p>This guide requires you to have npm installed in your development environment. npm is used to install and manage dependencies (libraries). To install npm, <a href="https://nodejs.org/en/download/" class="external">install Node.js</a>, which includes npm automatically.</p> <p>Most developers are properly set up once they have installed Node.js. However, there are common problems many developers run into when setting up their environment. If you run into any errors, <a href="https://docs.npmjs.com/downloading-and-installing-node-js-and-npm" class="external">make sure your environment has the npm CLI</a> and that you have the proper permissions set up so you <a href="https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally" class="external">don't have to install packages as an administrator with the sudo command</a>.</p> <h3 id="packagejson_and_installing_firebase">package.json and installing Firebase</h3> <p>Once you have npm installed you will need to create a <code translate="no" dir="ltr">package.json</code> file at the root of your local project. Generate this file with the following npm command:</p> 
+<pre>npm init
+</pre> <p>This will take you through a wizard to supply the needed information. Once the file is created it will look similar to the following:</p> 
+<pre>{
+  "name": "your-package-name",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" &amp;&amp; exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+
+  }
+}
+</pre> <p>This file is responsible for many different things. This is an important file to familiarize yourself with if you want to learn more about module bundling and building JavaScript code in general. The important piece for this guide is the <code translate="no" dir="ltr">"dependencies"</code> object. This object will hold a key value pair of the library you have installed and the version it is using.</p> <p>Adding dependencies is done through the <code translate="no" dir="ltr">npm install</code> or <code translate="no" dir="ltr">npm i</code> command.</p> 
+<pre>npm i firebase
+</pre> <p>When you run <code translate="no" dir="ltr">npm i firebase</code>, the installation process will update <code translate="no" dir="ltr">package.json</code> to list Firebase as a dependency:</p> 
+<pre>  "dependencies": {
+    "firebase": "^9.0.0"
+  },
+</pre> <p>The key is the name of the library and the value is the version to use. The version value is flexible and can accept a range of values. This is known as semantic versioning or semver. To learn more about semver, <a href="https://docs.npmjs.com/about-semantic-versioning" class="external">see npm's guide about semantic versioning</a>.</p> <h3 id="source_vs_build_folders">Source vs build folders</h3> <p>The code you write is read and processed by a module bundler and then output as a new file or set of files. It's important to separate these two types of files. The code the module bundlers read and process is known as "source" code. The files they output are known as the built or "dist" (distribution) code.</p> <p>A common setup in code bases is to store source code in a folder called <code translate="no" dir="ltr">src</code> and the built code in a folder named <code translate="no" dir="ltr">dist</code>.</p> 
+<pre>- src
+ |_ index.js
+ |_ animations.js
+ |_ datalist.js
+
+
+- dist
+ |_ bundle.js
+</pre> <p>In the example file structure above, consider that <code translate="no" dir="ltr">index.js</code> imports both <code translate="no" dir="ltr">animations.js</code> and <code translate="no" dir="ltr">datalist.js</code>. When a module bundler processes the source code it will produce the <code translate="no" dir="ltr">bundle.js</code> file in the <code translate="no" dir="ltr">dist</code> folder. The <code translate="no" dir="ltr">bundle.js</code> is a combination of the files in the <code translate="no" dir="ltr">src</code> folder and any libraries the import as well.</p> <p>If you are using source control systems such as Git, it is common to ignore the <code translate="no" dir="ltr">dist</code> folder when storing this code in the main repository.</p> <h3 id="entry_points">Entry points</h3> <p>Module bundlers all have a concept of an entry point. You can think of your application as a tree of files. One file imports code from another and so on and so forth. This means that one file will be the root of the tree. This file is known as the entry point.</p> <p>Let's revisit the previous file structure example.</p> 
+<pre>- src
+ |_ index.js
+ |_ animations.js
+ |_ datalist.js
+
+
+- dist
+ |_ bundle.js
+</pre>
+
+<pre>// src/index.js
+import { animate } from './animations';
+import { createList } from './datalist';
+
+// This is not real code, but for example purposes only
+const theList = createList('users/123/tasks');
+theList.addEventListener('loaded', event =&gt; {
+  animate(theList);
+});
+</pre> <p>The <code translate="no" dir="ltr">src/index.js</code> file is considered the entry point because it begins the imports of all the needed code for the application. This entry point file is used by module bundlers to begin the bundling process.</p> <h2 id="using_firebase_with_webpack">Using Firebase with webpack</h2> <p>There is no specific configuration needed for Firebase apps and webpack. This section <a href="https://webpack.js.org/guides/getting-started/" class="external">covers a general webpack configuration</a>.</p> <p>The first step is to install webpack from npm as a development dependency.</p> 
+<pre>npm i webpack webpack-cli -D
+</pre> <p>Create a file at the root of your local project named <code translate="no" dir="ltr">webpack.config.js</code> and add the following code.</p> 
+<pre>const path = require('path');
+
+module.exports = {
+  // The entry point file described above
+  entry: './src/index.js',
+  // The location of the build folder described above
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'bundle.js'
+  },
+  // Optional and for development only. This provides the ability to
+  // map the built code back to the original source format when debugging.
+  devtool: 'eval-source-map',
+};
+</pre> <p>Then make sure you have Firebase installed as a dependency.</p> 
+<pre>npm i firebase
+</pre> <p>Then initialize Firebase in your code base. The following code imports and initializes Firebase in an entry point file and uses Firestore Lite to load a "city" document.</p> 
+<pre>// src/index.js
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, getDoc } from 'firebase/firestore/lite';
+
+const firebaseApp = initializeApp({ /* config */ });
+const db = getFirestore(firebaseApp);
+
+async function loadCity(name) {
+  const cityDoc = doc(db, `cities/${name}`);
+  const snapshot = await getDoc(cityDoc);
+  return {
+    id: snapshot.id,
+    ...snapshot.data(),
+  };
+}
+</pre> <p>The next step is to <a href="https://docs.npmjs.com/cli/v7/using-npm/scripts" class="external">add an npm script</a> to run the webpack build. Open the <code translate="no" dir="ltr">package.json</code> file and add the following key value pair to the <code translate="no" dir="ltr">"scripts"</code> object.</p> 
+<pre>  "scripts": {
+    "build": "webpack --mode=development"
+  },
+</pre> <p>To run webpack and generate the build folder run the following command.</p> 
+<pre>npm run build
+</pre> <p>Finally, check the <code translate="no" dir="ltr">dist</code> build folder. It should contain a file named <code translate="no" dir="ltr">bundle.js</code> that contains your bundled application and dependency code.</p> <p>For more information on optimizing your webpack build for production, see their official documentation on <a href="https://webpack.js.org/configuration/mode/" class="external">the "mode" configuration setting</a>.</p> <h2 id="using_firebase_with_rollup">Using Firebase with Rollup</h2> <p>There is no specific configuration needed for Firebase apps and Rollup. This section covers a general Rollup configuration.</p> <p>The first step is to install Rollup and a plugin used to map imports to dependencies installed with npm.</p> 
+<pre>npm i rollup @rollup/plugin-node-resolve -D
+</pre> <p>Create a file at the root of your local project named <code translate="no" dir="ltr">rollup.config.js</code> and add the following code.</p> 
+<pre>import { nodeResolve } from '@rollup/plugin-node-resolve';
+
+export default {
+  // the entry point file described above
+  input: 'src/index.js',
+  // the output for the build folder described above
+  output: {
+    file: 'dist/bundle.js',
+    // Optional and for development only. This provides the ability to
+    // map the built code back to the original source format when debugging.
+    sourcemap: 'inline',
+    // Configure Rollup to convert your module code to a scoped function
+    // that "immediate invokes". See the Rollup documentation for more
+    // information: https://rollupjs.org/guide/en/#outputformat
+    format: 'iife'
+  },
+  // Add the plugin to map import paths to dependencies
+  // installed with npm
+  plugins: [nodeResolve()]
+};
+</pre> <p>Then initialize Firebase in your code base. The following code imports and initializes Firebase in an entry point file and uses Firestore Lite to load a "city" document.</p> 
+<pre>// src/index.js
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, getDoc } from 'firebase/firestore/lite';
+
+const firebaseApp = initializeApp({ /* config */ });
+const db = getFirestore(firebaseApp);
+
+async function loadCity(name) {
+  const cityDoc = doc(db, `cities/${name}`);
+  const snapshot = await getDoc(cityDoc);
+  return {
+    id: snapshot.id,
+    ...snapshot.data(),
+  };
+}
+</pre> <p>The next step is to <a href="https://docs.npmjs.com/cli/v7/using-npm/scripts" class="external">add an npm script</a> to run the rollup build. Open the <code translate="no" dir="ltr">package.json</code> file and add the following key value pair to the <code translate="no" dir="ltr">"scripts"</code> object.</p> 
+<pre>  "scripts": {
+    "build": "rollup -c rollup.config.js"
+  },
+</pre> <p>To run rollup and generate the build folder, run the following command.</p> 
+<pre>npm run build
+</pre> <p>Finally, check the <code translate="no" dir="ltr">dist</code> build folder. It should contain a file named <code translate="no" dir="ltr">bundle.js</code> that contains your bundled application and dependency code.</p> <p>For more information on optimizing your Rollup build for production, see their official documentation <a href="https://rollupjs.org/guide/en/#outputplugins" class="external">on plugins for production builds</a>.</p> <h2 id="using_firebase_with_esbuild">Using Firebase with esbuild</h2> <p>There is no specific configuration needed for Firebase apps and esbuild. This section covers a general esbuild configuration.</p> <p>The first step is to install esbuild as a development dependency.</p> 
+<pre>npm i esbuild -D
+</pre> <p>Create a file at the root of your local project named <code translate="no" dir="ltr">esbuild.config.js</code> and add the following code.</p> 
+<pre>require('esbuild').build({
+  // the entry point file described above
+  entryPoints: ['src/index.js'],
+  // the build folder location described above
+  outfile: 'dist/bundle.js',
+  bundle: true,
+  // Replace with the browser versions you need to target
+  target: ['chrome60', 'firefox60', 'safari11', 'edge20'],
+  // Optional and for development only. This provides the ability to
+  // map the built code back to the original source format when debugging.
+  sourcemap: 'inline',
+}).catch(() =&gt; process.exit(1))
+</pre> <p>Then initialize Firebase in your code base. The following code imports and initializes Firebase in an entry point file and uses Firestore Lite to load a "city" document.</p> 
+<pre>// src/index.js
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, getDoc } from 'firebase/firestore/lite';
+
+const firebaseApp = initializeApp({ /* config */ });
+const db = getFirestore(firebaseApp);
+
+async function loadCity(name) {
+  const cityDoc = doc(db, `cities/${name}`);
+  const snapshot = await getDoc(cityDoc);
+  return {
+    id: snapshot.id,
+    ...snapshot.data(),
+  };
+}
+</pre> <p>The next step is to <a href="https://docs.npmjs.com/cli/v7/using-npm/scripts" class="external">add an npm script</a> to run esbuild. Open the <code translate="no" dir="ltr">package.json</code> file and add the following key value pair to the <code translate="no" dir="ltr">"scripts"</code> object.</p> 
+<pre>  "scripts": {
+    "build": "node ./esbuild.config.js"
+  },
+</pre> <p>Finally, check the <code translate="no" dir="ltr">dist</code> build folder. It should contain a file named <code translate="no" dir="ltr">bundle.js</code> that contains your bundled application and dependency code.</p> <p>For more information on optimizing esbuild for production, see their official documentation <a href="https://esbuild.github.io/api/#minify" class="external">on minification and other optimizations</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/web/module-bundling" class="_attribution-link">https://firebase.google.com/docs/web/module-bundling</a>
+  </p>
+</div>

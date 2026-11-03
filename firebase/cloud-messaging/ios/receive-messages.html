@@ -1,0 +1,214 @@
+<h1>Receive messages in Apple platform apps</h1>     <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button button-primary" href="receive-messages">iOS+</a> <a class="button" href="../android/receive-messages">Android</a> <a class="button" href="../web/receive-messages">Web</a> <a class="button" href="../flutter/receive-messages">Flutter</a> <a class="button" href="../unity/receive-messages">Unity</a> <a class="button" href="../cpp/receive-messages">C++</a> </td> </tr> </table> <p><br></p> <p>Once your client app is installed on a device, it can receive messages through the FCM APNs interface. You can immediately start sending notifications to user segments with <a href="https://console.firebase.google.com/project/_/notification" class="external">the Notifications composer</a> in the Firebase console, or messages built on your application server.</p> <h2 id="handle-alert-notifications">Handle alert notifications</h2> <p>FCM delivers all messages targeting Apple apps through APNs. To learn more about receiving APNs notifications using <code translate="no" dir="ltr">UNUserNotificationCenter</code>, see Apple's documentation on <a href="https://developer.apple.com/documentation/usernotifications/handling_notifications_and_notification-related_actions" class="external">Handling Notifications and Notification-Related Actions</a>.</p> <p>You must set the <a href="https://developer.apple.com/documentation/usernotifications/unusernotificationcenter/1649522-delegate" class="external">UNUserNotificationCenter delegate</a> and implement the appropriate delegate methods to receive display notifications from FCM.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Receive displayed notifications for iOS 10+ devices.
+func userNotificationCenter(_ center: UNUserNotificationCenter,
+                            willPresent notification: UNNotification) async
+  -&gt; UNNotificationPresentationOptions {
+  let userInfo = notification.request.content.userInfo
+
+  // With swizzling disabled you must let Messaging know about the message, for Analytics
+  // Messaging.messaging().appDidReceiveMessage(userInfo)
+
+  // ...
+
+  // Print full message.
+  print(userInfo)
+
+  // Change this to your preferred presentation option
+  // Note: UNNotificationPresentationOptions.alert has been deprecated.
+  return [.list, .banner, .sound]
+}
+
+func userNotificationCenter(_ center: UNUserNotificationCenter,
+                            didReceive response: UNNotificationResponse) async {
+  let userInfo = response.notification.request.content.userInfo
+
+  // ...
+
+  // Print full message.
+  print(userInfo)
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">// Receive displayed notifications for iOS 10+ devices.
+// Handle incoming notification messages while app is in the foreground.
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+       willPresentNotification:(UNNotification *)notification
+         withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler {
+  NSDictionary *userInfo = notification.request.content.userInfo;
+
+  // With swizzling disabled you must let Messaging know about the message, for Analytics
+  // [[FIRMessaging messaging] appDidReceiveMessage:userInfo];
+
+  // Print full message.
+  NSLog(@"%@", userInfo);
+
+  // Change this to your preferred presentation option
+  completionHandler(UNNotificationPresentationOptionList |
+                    UNNotificationPresentationOptionBanner |
+                    UNNotificationPresentationOptionSound);
+}
+
+- (void)messaging:(FIRMessaging *)messaging didReceiveRegistrationToken:(NSString *)fcmToken {
+    NSLog(@"FCM registration token: %@", fcmToken);
+    // Notify about received token.
+    NSDictionary *dataDict = [NSDictionary dictionaryWithObject:fcmToken forKey:@"token"];
+    [[NSNotificationCenter defaultCenter] postNotificationName:
+     @"FCMToken" object:nil userInfo:dataDict];
+    // TODO: If necessary send token to application server.
+    // Note: This callback is fired at each app startup and whenever a new token is generated.
+}
+
+- (void)logFCMToken {
+  NSString *fcmToken = [FIRMessaging messaging].FCMToken;
+  NSLog(@"Local FCM registration token: %@", fcmToken);
+
+  NSString* displayToken = [NSString stringWithFormat:@"Logged FCM token: %@", fcmToken];
+
+  [[FIRMessaging messaging] tokenWithCompletion:^(NSString * _Nullable token, NSError * _Nullable error) {
+    if (error != nil) {
+      NSLog(@"Error fetching the remote FCM registration token: %@", error);
+    } else {
+      NSLog(@"Remote FCM registration token: %@", token);
+      NSString* message =
+        [NSString stringWithFormat:@"FCM registration token: %@", token];
+      // display message
+      NSLog(@"%@", message);
+    }
+  }];
+  NSLog(@"%@", displayToken);
+}
+
+- (void)subsribeToTopic {
+  [[FIRMessaging messaging] subscribeToTopic:@"weather"
+                                  completion:^(NSError * _Nullable error) {
+    NSLog(@"Subscribed to weather topic");
+  }];
+}
+
+@end
+
+</pre></section> </div> <p>If you want to add custom actions to your notifications, set the <code translate="no" dir="ltr">click_action</code> parameter in the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#notification">notification payload</a>. Use the value that you would use for the <code translate="no" dir="ltr">category</code> key in the APNs payload. Custom actions must be registered before they can be used. For more information, see Apple's <a href="https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/SupportingNotificationsinYourApp.html#//apple_ref/doc/uid/TP40008194-CH4-SW26" class="external">Local and Remote Notification Programming Guide</a>.</p> <p>For insight into message delivery to your app, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Messaging</strong> &gt; <a href="https://console.firebase.google.com/project/_/notification/reporting" class="external"><strong>Reports</strong> dashboard</a> in the Firebase console. This dashboard records the number of messages sent and opened on Apple and Android devices, along with data for "impressions" (notifications seen by users) for Android apps.</p> <h2 id="handle-silent-push-notifications">Handle silent push notifications</h2> <p>When sending messages with the <code translate="no" dir="ltr">content-available</code> key (equivalent to APNs's <code translate="no" dir="ltr">content-available</code>), the messages will be delivered as silent notifications, waking your app in the background for tasks like background data refresh. Unlike foreground notifications, these notifications must be handled using the <a href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1623013-application" class="external"><code translate="no" dir="ltr">application(_:didReceiveRemoteNotification:fetchCompletionHandler:)</code></a> method.</p> <p>Implement <code translate="no" dir="ltr">application(_:didReceiveRemoteNotification:fetchCompletionHandler:)</code> as shown:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">@MainActor
+func application(_ application: UIApplication,
+                 didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async
+  -&gt; UIBackgroundFetchResult {
+  // If you are receiving a notification message while your app is in the background,
+  // this callback will not be fired till the user taps on the notification launching the application.
+  // TODO: Handle data of notification
+
+  // With swizzling disabled you must let Messaging know about the message, for Analytics
+  // Messaging.messaging().appDidReceiveMessage(userInfo)
+
+  // ...
+
+  // Print full message.
+  print(userInfo)
+  print("Call exportDeliveryMetricsToBigQuery() from AppDelegate")
+  Messaging.serviceExtension().exportDeliveryMetricsToBigQuery(withMessageInfo: userInfo)
+  return UIBackgroundFetchResult.newData
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo
+    fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
+  // If you are receiving a notification message while your app is in the background,
+  // this callback will not be fired until the user taps on the notification launching the application.
+  // TODO: Handle data of notification
+
+  // With swizzling disabled you must let Messaging know about the message, for Analytics
+  // [[FIRMessaging messaging] appDidReceiveMessage:userInfo];
+
+  // Print full message.
+  NSLog(@"%@", userInfo);
+
+  completionHandler(UIBackgroundFetchResultNewData);
+}
+</pre></section> </div> <p>Apple platforms don't guarantee the delivery of background notifications. To learn about conditions that can cause background notifications to fail, see Apple's docs on <a href="https://developer.apple.com/documentation/usernotifications/setting_up_a_remote_notification_server/pushing_background_updates_to_your_app" class="external">Pushing Background Updates to Your App</a>.</p> <h2 id="interpret-notification-message-payload">Interpret notification message payload</h2> <p>The payload of notification messages is a dictionary of keys and values. Notification messages sent through APNs has the following the APNs payload format:</p> 
+<pre>  {
+    "aps" : {
+      "alert" : {
+        "body" : "great match!",
+        "title" : "Portugal vs. Denmark",
+      },
+      "badge" : 1,
+    },
+    "customKey" : "customValue"
+  }
+</pre> <h2 id="handle-messages-swizzling-disabled">Handle messages with method swizzling disabled</h2> <p>By default, if you assign your app's app delegate class to the <code translate="no" dir="ltr">UNUserNotificationCenter</code> and <code translate="no" dir="ltr">Messaging</code> delegate properties, FCM will swizzle your app delegate class to automatically associate your FCM token with the device's APNs token and pass notification-received events to Analytics. If you explicitly disable method swizzling, if you are building a SwiftUI app, or if you use a separate class for either delegate, you will need to perform both of these tasks manually.</p> <p>To associate the FCM token with the device APNs token, pass the APNs token to the <code translate="no" dir="ltr">Messaging</code> class in your app delegate's <a href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1622958-application" class="external">token refresh handler</a> using the <a href="https://firebase.google.com/docs/reference/swift/firebasemessaging/api/reference/Classes/Messaging#/c:objc(cs)FIRMessaging(py)APNSToken"><code translate="no" dir="ltr">apnsToken</code> property</a>.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">func application(_ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+  Messaging.messaging().apnsToken = deviceToken;
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">- (void)application:(UIApplication *)application
+    didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+  [FIRMessaging messaging].APNSToken = deviceToken;
+}
+</pre></section> </div> <p>To pass notification receipt information to Analytics, use the <a href="https://firebase.google.com/docs/reference/swift/firebasemessaging/api/reference/Classes/Messaging#/c:objc(cs)FIRMessaging(im)appDidReceiveMessage:"><code translate="no" dir="ltr">appDidReceiveMessage(_:)</code> method</a>.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">func userNotificationCenter(_ center: UNUserNotificationCenter,
+                            willPresent notification: UNNotification,
+  withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -&gt; Void) {
+  let userInfo = notification.request.content.userInfo
+
+  Messaging.messaging().appDidReceiveMessage(userInfo)
+
+  // Change this to your preferred presentation option
+  completionHandler([[.alert, .sound]])
+}
+
+func userNotificationCenter(_ center: UNUserNotificationCenter,
+                            didReceive response: UNNotificationResponse,
+                            withCompletionHandler completionHandler: @escaping () -&gt; Void) {
+  let userInfo = response.notification.request.content.userInfo
+
+  Messaging.messaging().appDidReceiveMessage(userInfo)
+
+  completionHandler()
+}
+
+func application(_ application: UIApplication,
+didReceiveRemoteNotification userInfo: [AnyHashable : Any],
+  fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -&gt; Void) {
+  Messaging.messaging().appDidReceiveMessage(userInfo)
+  completionHandler(.noData)
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+      willPresentNotification:(UNNotification *)notification
+        withCompletionHandler:(void (^)(UNNotificationPresentationOptions))completionHandler {
+  NSDictionary *userInfo = notification.request.content.userInfo;
+
+  [[FIRMessaging messaging] appDidReceiveMessage:userInfo];
+
+  // Change this to your preferred presentation option
+  completionHandler(UNNotificationPresentationOptionBadge | UNNotificationPresentationOptionAlert);
+}
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+didReceiveNotificationResponse:(UNNotificationResponse *)response
+        withCompletionHandler:(void(^)(void))completionHandler {
+  NSDictionary *userInfo = response.notification.request.content.userInfo;
+
+  [[FIRMessaging messaging] appDidReceiveMessage:userInfo];
+
+  completionHandler();
+}
+
+- (void)application:(UIApplication *)application
+didReceiveRemoteNotification:(NSDictionary *)userInfo
+fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+  [[FIRMessaging messaging] appDidReceiveMessage:userInfo];
+  completionHandler(UIBackgroundFetchResultNoData);
+}
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/ios/receive-messages" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/ios/receive-messages</a>
+  </p>
+</div>

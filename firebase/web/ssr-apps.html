@@ -1,0 +1,114 @@
+<h1>Use Firebase in dynamic web apps with SSR (Server-side Rendering)</h1> <p>If you have worked with the Firebase JS SDK or other Firebase client SDKs, you are probably familiar with the <code translate="no" dir="ltr">FirebaseApp</code> interface and how to use it to configure app instances. To facilitate similar operations on the server side, Firebase provides <code translate="no" dir="ltr">FirebaseServerApp</code>.</p> <p><code translate="no" dir="ltr">FirebaseServerApp</code> is a variant of <code translate="no" dir="ltr">FirebaseApp</code> for use in server-side rendering (SSR) environments. It includes tools to continue Firebase sessions that span the client side rendering (CSR) / server-side rendering divide. These tools and strategies can help enhance dynamic web apps built with Firebase and deployed in Google environments like <a href="../app-hosting">Firebase App Hosting</a>.</p> <p>Use <code translate="no" dir="ltr">FirebaseServerApp</code> to:</p> <ul> <li>Execute server-side code within the <em>user</em> context, in contrast to the Firebase Admin SDK which has full administration rights.</li> <li>Enable the use of App Check in SSR environments.</li> <li>Continue a Firebase Auth session that was created in the client.</li> </ul> <h2 id="firebaseserverapp-lifecycle">The FirebaseServerApp lifecycle</h2> <p>Server-side rendering (SSR) frameworks and other non-browser runtimes such as cloud workers optimize for initialization time by reusing resources across multiple executions. <code translate="no" dir="ltr">FirebaseServerApp</code> is designed to accommodate these environments by using a reference count mechanism. If an app invokes <code translate="no" dir="ltr">initializeServerApp</code> with the same parameters as a previous <code translate="no" dir="ltr">initializeServerApp</code>, it receives the same <code translate="no" dir="ltr">FirebaseServerApp</code> instance that was already initialized. This cuts down on unnecessary initialization overhead and memory allocations. When <code translate="no" dir="ltr">deleteApp</code> is invoked on a <code translate="no" dir="ltr">FirebaseServerApp</code> instance, it reduces the reference count, and the instance is freed after the reference count reaches zero.</p> <h3 id="cleanup-firebaseserverapp">Cleaning up <code translate="no" dir="ltr">FirebaseServerApp</code> instances</h3> <p>It can be tricky to know when to call <code translate="no" dir="ltr">deleteApp</code> on a <code translate="no" dir="ltr">FirebaseServerApp</code> instance, especially if you are running many asynchronous operations in parallel. The <code translate="no" dir="ltr">releaseOnDeref</code> field of the <code translate="no" dir="ltr">FirebaseServerAppSettings</code> helps simplify this. If you assign <code translate="no" dir="ltr">releaseOnDeref</code> a reference to an object with the lifespan of the request's scope (for example, the headers object of the SSR request), the <code translate="no" dir="ltr">FirebaseServerApp</code> will reduce its reference count when the framework reclaims the header object. This automatically cleans up your <code translate="no" dir="ltr">FirebaseServerApp</code> instance.</p> <aside class="note"><strong>Note:</strong><span> The value <code translate="no" dir="ltr">FirebaseServerApp.releaseOnDeref</code> is not used when <code translate="no" dir="ltr">initializeServerApp</code> checks for an existing <code translate="no" dir="ltr">FirebaseServerApp</code> instance with an identical configuration.</span></aside> <p>Here's an example usage of <code translate="no" dir="ltr">releaseOnDeref</code>:</p> 
+<pre>/// Next.js
+import { headers } from 'next/headers'
+import { FirebaseServerAppSettings, initializeServerApp} from "firebase/app";
+
+export default async function Page() {
+  const headersObj = await headers();
+  let appSettings: FirebaseServerAppSettings = {};
+  appSettings.releaseOnDeref = headersObj;
+  const serverApp = initializeServerApp(firebaseConfig, appSettings);
+  ...
+}
+</pre>
+<aside class="note"><strong>Note:</strong><span> Avoid mixing <code translate="no" dir="ltr">deleteApp()</code> calls with instances that were created with <code translate="no" dir="ltr">releaseOnDeref</code>; otherwise apps might be destroyed earlier than intended.</span></aside> <h2 id="resume-authenticated">Resume authenticated sessions created on the client</h2> <p>When an instance of <code translate="no" dir="ltr">FirebaseServerApp</code> is initialized with an Auth ID token, it enables bridging of authenticated user sessions between the client-side rendering (CSR) and server-side rendering (SSR) environments. Instances of the Firebase Auth SDK initialized with a <code translate="no" dir="ltr">FirebaseServerApp</code> object containing an Auth ID token will attempt to sign in the user on initialization without the need for the application to invoke any sign-in methods.</p> <p>Providing an Auth ID token allows apps to use any of Auth's sign-in methods on the client, ensuring that the session continues on the server-side, even for those sign-in methods that require user interaction. Additionally, it enables the offloading of intensive operations to the server such as authenticated Firestore queries, which should improve your app's rendering performance.</p> 
+<pre>/// Next.js
+import { initializeServerApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+
+// Replace the following with your app's
+// Firebase project configuration
+const firebaseConfig = {
+  // ...
+};
+
+const firebaseServerAppSettings = {
+  authIdToken: token  // See "Pass client tokens to the server side
+                      // rendering phase" for an example on how transmit
+                      // the token from the client and the server.
+}
+
+const serverApp =
+  initializeServerApp(firebaseConfig,
+                      firebaseServerAppSettings);
+const serverAuth = getAuth(serverApp);
+
+// FirebaseServerApp and Auth will now attempt
+// to sign in the current user based on provided
+// authIdToken.
+</pre>
+<aside class="note"><strong>Note:</strong><span> Auth instances created with <code translate="no" dir="ltr">FirebaseServerApp</code> don't support operations that log out the current user, sign in a new user, or otherwise replace the current user. Mutations to the Auth user state should be driven by the browser session.</span></aside> <h2 id="use-app-check">Use App Check in SSR environments</h2> <p>App Check enforcement relies on an App Check SDK instance that Firebase SDKs use to internally call <code translate="no" dir="ltr">getToken</code>. The resulting token is then included in requests to all Firebase services, allowing the backend to validate the app.</p> <p>However, because the App Check SDK needs a browser to access specific heuristics for app validation, it can't be initialized in server environments.</p> <p><code translate="no" dir="ltr">FirebaseServerApp</code> provides an alternative. If a client-generated App Check token is provided during <code translate="no" dir="ltr">FirebaseServerApp</code> initialization, it will be used by the Firebase product SDKs when invoking Firebase services, eliminating the need for an App Check SDK instance.</p> 
+<pre>/// Next.js
+import { initializeServerApp } from "firebase/app";
+
+// Replace the following with your app's
+// Firebase project configuration
+const firebaseConfig = {
+  // ...
+};
+
+const firebaseServerAppSettings = {
+  appCheckToken: token // See "Pass client tokens to the server side
+                       // rendering phase" for an example on how transmit
+                       // the token from the client and the server.
+}
+
+const serverApp =
+  initializeServerApp(firebaseConfig,
+                      firebaseServerAppSettings);
+
+// The App Check token will now be appended to all Firebase service requests.
+</pre>
+<aside class="note"><strong>Note:</strong><span> If the token fails local verification due to expiration or parsing errors, then a console error is logged at the time of initialization of the <code translate="no" dir="ltr">FirebaseServerApp</code> instance.</span></aside> <h2 id="pass-tokens">Pass client tokens to the server-side rendering phase</h2> <p>To transmit authenticated Auth ID tokens (and App Check tokens) from the client to the server-side rendering (SSR) phase, use a service worker. This approach involves intercepting fetch requests that trigger SSR and appending the tokens to the request headers.</p> <p>Refer to <a href="../auth/web/service-worker-sessions">Session management with service workers</a> for a reference implementation of a Firebase Auth service worker. Also see <a href="../auth/web/service-worker-sessions#server_side_changes">Server side changes</a> for code that demonstrates how to parse these tokens from the headers for use in <code translate="no" dir="ltr">FirebaseServerApp</code> initialization.</p> <aside class="tip"><strong>Tip:</strong><span> Refreshing the tokens within the service worker before appending them to the request headers is a best practice that ensures the SSR phase receives up-to-date credentials.</span></aside> <h2 id="use-firestore">Use Firestore in SSR environments</h2> <p>When building web applications with Server-side Rendering (SSR), you often need to share data between the server and the client to optimize performance and user experience. The Firestore SDK provides serialization tools that allow you to capture snapshots and specific data types on the server and pass them directly to your client-side components. This process eliminates redundant fetches by enabling the client to hydrate state using the data pre-fetched during the SSR phase. Additionally, you can transition from these serialized states to real-time listeners, ensuring your application remains synchronized with the database.</p> <p>This section describes how to reuse data retrieved during the server-side rendering (SSR) phase within client-side components.</p> <h3 id="serialize-data">Serialize Data Types</h3> <p>Certain Firestore data types provide a <code translate="no" dir="ltr">toJSON</code> method to convert their data into a serializable format. These include instances of objects such as <code translate="no" dir="ltr">Bytes</code>, <code translate="no" dir="ltr">GeoPoint</code>, <code translate="no" dir="ltr">Timestamp</code> and <code translate="no" dir="ltr">VectorValue</code>.</p> <p>Once you have the data in JSON format, you can pass it from the server to the client through standard framework mechanisms, or as parameters to components that span the divide. For example:</p> 
+<pre>import {
+  Bytes
+} from 'firebase/firestore';
+
+const BYTES_DATA = new Uint8Array([0, 1, 2, 3, 4, 5]);
+const bytes = Bytes.fromUint8Array(BYTES_DATA);
+const bytesJSON = bytes.toJSON();
+</pre> <h3 id="deserialize-data">Deserialize Data Types</h3> <p>Firestore data types include the static method <code translate="no" dir="ltr">fromJSON</code> to convert the serialized data to an operable Firestore data type.</p> <p>For example, the following deserializes a <code translate="no" dir="ltr">Bytes</code> data type:</p> 
+<pre>import {
+  Bytes
+} from 'firebase/firestore';
+
+// Assuming the same `bytesJSON` variable from the previous example.
+const deserializedBytes = Bytes.fromJSON(bytesJSON);
+</pre> <h3 id="serialize-and">Serialize and deserialize Firestore Snapshots</h3> <p>Similar to Firestore data types, you can serialize instances of <code translate="no" dir="ltr">DocumentSnapshot</code> and <code translate="no" dir="ltr">QuerySnapshot</code> using <code translate="no" dir="ltr">toJSON</code>. However, to deserialize them, you must use the standalone functions <code translate="no" dir="ltr">documentSnapshotFromJSON</code> and <code translate="no" dir="ltr">querySnapshotFromJSON</code> instead of a static <code translate="no" dir="ltr">fromJSON</code> method.</p> <p>For example, the <code translate="no" dir="ltr">querySnapshot</code> results of a <code translate="no" dir="ltr">query</code> operation can be serialized using the <code translate="no" dir="ltr">toJSON</code> method:</p> 
+<pre>import {
+  collection,
+  getDocs,
+  query,
+  querySnapshotFromJSON
+} from 'firebase/firestore';
+// Assuming a configured instance of Firestore in the variable `firestore`.
+const queryRef = query(collection(firestore, QUERY_PATH));
+const querySnapshot = await getDocs(queryRef);
+const querySnapshotJson = querySnapshot.toJSON();
+
+</pre> <p>Then, this data can be deserialized:</p> 
+<pre>import {
+  querySnapshotFromJSON
+} from 'firebase/firestore';
+
+// deserializedSnapshot is an object of type QuerySnapshot:
+
+const deserializedSnapshot =
+  querySnapshotFromJSON(firestore, querySnapshotJson);
+</pre> <h3 id="listeners-serialized">Listeners with Serialized Snapshots</h3> <p>Although data queried during the SSR phase is valuable for your initial CSR render, you might still need to monitor the Firestore service for real-time updates to that information.</p> <p>If your app requires these real-time updates, you can use the <code translate="no" dir="ltr">onSnapshotResume</code> function to initialize Firestore <code translate="no" dir="ltr">SnapshotListener</code>s with serialized <code translate="no" dir="ltr">Snapshot</code> data. For example:</p> 
+<pre>const observer = {
+  next: (qs) =&gt; {
+    console.log("onSnapshot invoked: ", qs.data());
+  },
+  error: (e) =&gt; {
+    console.log("error callback invoked: ", e.toString());
+  }
+};
+const unsubscribe = onSnapshotResume(firestore, querySnapshotJson, observer);
+</pre>
+<aside class="note"><strong>Note:</strong><span> When a snapshot is loaded via <code translate="no" dir="ltr">onSnapshotResume</code>, this deserialized data is <strong>not</strong> immediately updated to the query's local cache. Instead, the cache is maintained by any subsequent updates that occur through the active listener.</span></aside><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/web/ssr-apps" class="_attribution-link">https://firebase.google.com/docs/web/ssr-apps</a>
+  </p>
+</div>

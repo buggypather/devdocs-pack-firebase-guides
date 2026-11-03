@@ -1,0 +1,169 @@
+<h1>Organize multiple functions</h1> <p>As you integrate Cloud Functions into your project, your code could expand to contain many independent functions. You may have too many functions to reasonably fit in a single file, or different teams may deploy different groups of functions, creating a risk of one team overwriting or accidentally deleting another team's functions. Cloud Functions offers different ways to organize your code to make it easier to navigate and maintain your functions.</p> <h2 id="organize_functions_in_codebases_2">Organize functions in codebases</h2> <p>You can use the <code translate="no" dir="ltr">codebase</code> property of the functions configuration object in <code translate="no" dir="ltr">firebase.json</code> to manage a large collection of functions across multiple repositories or sub-packages within a single repository monorepo setup:</p> 
+<pre># firebase.json
+"functions": {
+  "codebase": "my-codebase"
+  # NOTE: Codebase must be less than 63 characters and can contain only
+  # lowercase letters, numeric characters, underscores, and dashes.
+}
+</pre> <p>The <code translate="no" dir="ltr">codebase</code> property is supported in Firebase CLI v10.7.1 and above.</p> <h3 id="managing_multiple_repositories_2">Managing multiple repositories</h3> <p>The <code translate="no" dir="ltr">codebase</code> property can help simplify the management of multiple repositories. Let's examine a case where you have two different repositories that deploy functions to the same Firebase project:</p> 
+<pre>$  tree .
+├── repoA
+│   ├── firebase.json
+│   └── functions
+│       ├── index.js
+│       └── package.json
+└── repoB
+    ├── firebase.json
+    └── functions
+        ├── index.js
+        └── package.json
+</pre> <p>Without codebase annotations, the Firebase CLI would have prompted you to delete functions defined in the other repository at the time of deploy:</p> 
+<pre>$ (cd repoA &amp;&amp; firebase deploy --only functions)
+...
+i  functions: preparing functions directory for uploading...
+✔  functions: functions folder uploaded successfully
+The following functions are found in your project but do not exist in your local source code:
+        fn1FromRepoB
+        fn2FromRepoB
+        ...
+? Would you like to proceed with deletion? Selecting no will continue the rest of the deployments. (y/N)
+</pre> <p>You can avoid this problem by adding a unique codebase annotation in the functions configuration section of the <code translate="no" dir="ltr">firebase.json</code> in each project repository:</p> 
+<pre># repoA/firebase.json
+"functions": {
+  "codebase": "repo-a"
+}
+
+# repoB/firebase.json
+"functions": {
+  "codebase": "repo-b"
+}
+</pre> <p>With codebase annotation, the Firebase CLI no longer prompts you to delete functions defined outside of your immediate repository:</p> 
+<pre>$ (cd repoA &amp;&amp; firebase deploy --only functions)
+...
+i  functions: preparing functions directory for uploading...
+✔  functions: functions folder uploaded successfully
+#  Gleefully ignores functions from repoB
+i  functions: creating Node.js 16 function fnFromRepoA (us-central1)...
+✔  Deploy Complete!
+</pre> <h3 id="managing_multiple_source_packages_monorepo_2">Managing multiple source packages (monorepo)</h3> <p>The <code translate="no" dir="ltr">codebase</code> property can help simplify the management of multiple source packages in a single repository. Let's examine a case where you have a firebase project directory with function definitions spread across several sub-packages:</p> 
+<pre>$  tree .
+├── firebase.json
+├── teamA
+│   ├── index.js
+│   └── package.json
+└── teamB
+    ├── index.js
+    └── package.json
+
+</pre> <p>This setup fits the following use cases:</p> <ul> <li>You have a <em>monorepo</em> setup and have different teams manage their own function definitions in an isolated package.</li> <li>You have a function with a heavy external dependency and a long-running initialization, and want to isolate that function from other, latency-sensitive functions.</li> </ul> <p>To support monrepo setup like this, define multiple functions configurations in <code translate="no" dir="ltr">firebase.json</code>:</p> 
+<pre>"functions": [
+  {
+    "source": "teamA",
+    "codebase": "team-a"
+  },
+  {
+    "source": "teamB",
+    "codebase": "team-b"
+  },
+]
+</pre> <p>With this configuration, the Firebase CLI deploys functions from all packages in a single deploy command:</p> 
+<pre>$ firebase deploy --only functions
+i  deploying functions
+i  functions: preparing codebase team-a for deployment
+i  functions: preparing codebase team-b for deployment
+i  functions: creating Node.js 16 function team-a:helloATeam(us-central1)...
+i  functions: creating Node.js 16 function team-b:helloBTeam(us-central1)...
+...
+</pre> <p>You can also deploy a specific codebase:</p> 
+<pre>$ firebase deploy --only functions:team-b
+i  deploying functions
+i  functions: preparing codebase team-b for deployment
+i  functions: updating Node.js 16 function team-b:helloBTeam(us-central1)...
+...
+</pre> <h2 id="write_functions_in_multiple_files">Write functions in multiple files</h2> <p>When getting started with Cloud Functions you might put your first few functions in a single file:</p> <div> <section><p class="_firebase-tab"><strong>index.js</strong></p>
+
+<pre data-language="">const functions = require('firebase-functions/v1');
+exports.foo = functions.https.onRequest((request, response) =&gt; {
+  // ...
+});
+exports.bar = functions.https.onRequest((request, response) =&gt; {
+  // ...
+});
+</pre></section> <section><p class="_firebase-tab"><strong>main.py</strong></p>
+
+<pre data-language="">from firebase_functions import https_fn
+
+@https_fn.on_request()
+def foo(req: https_fn.Request) -&gt; https_fn.Response:
+    return https_fn.Response("Hello foo!")
+
+@https_fn.on_request()
+def bar(req: https_fn.Request) -&gt; https_fn.Response:
+    return https_fn.Response("Hello bar!")
+</pre></section> </div> <p>This can become hard to manage with more than a few functions. Instead, you can put all of your logic for each function in its own file and use your source file as a list of exports:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<p><strong>foo.js</strong> </p>
+
+<pre data-language="javascript">const functions = require('firebase-functions/v1');
+exports.foo = functions.https.onRequest((request, response) =&gt; {
+  // ...
+});</pre> <p><strong>bar.js</strong> </p>
+
+<pre data-language="javascript">const functions = require('firebase-functions/v1');
+exports.bar = functions.https.onRequest((request, response) =&gt; {
+  // ...
+});</pre> <p><strong>index.js</strong> </p>
+
+<pre data-language="javascript">const foo = require('./foo');
+const bar = require('./bar');
+exports.foo = foo.foo;
+exports.bar = bar.bar;</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+<p><strong>foo.py</strong></p> 
+<pre data-language="python">from firebase_functions import https_fn
+
+@https_fn.on_request()
+def foo(req: https_fn.Request) -&gt; https_fn.Response:
+    return https_fn.Response("Hello foo!")
+</pre> <p><strong>bar.py</strong></p> 
+<pre data-language="python">from firebase_functions import https_fn
+
+@https_fn.on_request()
+def bar(req: https_fn.Request) -&gt; https_fn.Response:
+    return https_fn.Response("Hello foo!")
+</pre> <p><strong>main.py</strong></p> 
+<pre data-language="python">from fn_impl.foo import *
+from fn_impl.bar import *
+</pre> <p>This setup assumes a project directory structure like the following:</p> 
+<pre data-language="python">my-project
+├── firebase.json
+└── functions
+    ├── fn_impl
+    │   ├── __init__.py
+    │   ├── foo.py
+    │   └── bar.py
+    ├── main.py
+    └── requirements.txt
+</pre> <p><code translate="no" dir="ltr">fn_impl</code>: Can have any name</p> <p><code translate="no" dir="ltr">__init__.py</code>: Required, but can be empty</p></section> </div> <h2 id="group_functions">Group functions</h2> <p>In many projects, functions can be separated into logical groups that should be deployed and maintained together. For example, you might have a group of functions used for reporting metrics:</p> <p><strong>metrics.js</strong> </p>
+
+<pre>
+const functions = require('firebase-functions/v1');
+exports.usageStats = functions.https.onRequest((request, response) =&gt; {
+  // ...
+});
+exports.nightlyReport = functions.https.onRequest((request, response) =&gt; {
+  // ...
+});</pre> <p>You can put these functions into a group when exporting them in your <code translate="no" dir="ltr">index.js</code> file:</p> <p><strong>index.js</strong> </p>
+
+<pre>
+// Export both functions from metrics.js in the "metrics" group:
+//  - metrics-usageStats
+//  - metrics-nightlyReport
+exports.metrics = require('./metrics');</pre> <p>When deployed, functions will be prefixed with the name of their group, so in this example the functions would be named <code translate="no" dir="ltr">metrics-usageStats</code> and <code translate="no" dir="ltr">metrics-nightlyReport</code>.</p> <p>When deploying functions you can limit the action to a single group:</p> 
+<pre>
+firebase deploy --only functions:metrics</pre> <aside class="note"><strong>Note:</strong><span> While <a href="organizing%20functions%20in%20a%20codebase">#organize_functions_in_codebases</a> lets you benefit by skipping unmodified functions during deploy, writing functions in multiple files will still affect the node module for your functions and you won't benefit from skipped deploys.</span></aside> <h2 id="next_steps">Next steps</h2> <p>To learn more about Cloud Functions, see:</p> <ul> <li>
+<a href="handle-dependencies">Handling dependencies</a>.</li> <li>
+<a href="manage-functions">Manage functions deployment and runtime options</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/organize-functions" class="_attribution-link">https://firebase.google.com/docs/functions/organize-functions</a>
+  </p>
+</div>

@@ -1,0 +1,189 @@
+<h1>Create Dynamic Links on iOS</h1> <aside class="note"> <b>Note:</b> Firebase Dynamic Links is <i>deprecated</i> and should not be used in new projects. The service will be shutting down soon. Follow the <a href="https://firebase.google.com/support/dynamic-links-faq#how_should_i_migrate_from_the_service"> migration guide</a> and see the <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ</a> for more information. </aside> <p>You can create short or long Dynamic Links with the Firebase Dynamic Links Builder API. This API accepts either a long Dynamic Link or an object containing Dynamic Link parameters, and returns URLs like the following examples:</p> 
+<pre>
+https://example.com/link/WXYZ
+https://example.page.link/WXYZ
+</pre> <h2 id="prerequisites">Prerequisites</h2> <p>Before you begin, make sure to <a href="../../ios/setup">add Firebase to your iOS project</a>.</p> <h2 id="set-up-firebase-and-the-dynamic-links-sdk">Set up Firebase and the Dynamic Links SDK</h2> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+<pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Dynamic Links library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> For an optimal experience with Dynamic Links, we recommend <a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">enabling Google Analytics</a> in your Firebase project and adding the Firebase SDK for Google Analytics to your app. You can select either the library without IDFA collection or with IDFA collection. See our FAQ on the <a href="../../analytics/faq-and-troubleshooting#analytics-odm2-sdk-refactor-ios">latest organization of modules in the Google Analytics for Firebase SDK</a>. </li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> <p>Now, perform some configuration steps:</p> <ol> <li>In the Firebase console, open the <b>Dynamic Links</b> section.</li> <li> <p>If you have not already accepted the terms of service and set a URI prefix for your Dynamic Links, do so when prompted.</p> <p>If you already have a Dynamic Links URI prefix, take a note of it. You need to provide it when you programmatically create Dynamic Links.</p> <p><img src="https://firebase.google.com/static/docs/dynamic-links/images/dynamic-links-domain.png"></p> </li> <li>
+<b>Recommended</b>: Specify the URL patterns allowed in your deep links and fallback links. By doing so, you prevent unauthorized parties from creating Dynamic Links that redirect from your domain to sites you don't control. See <a href="../allow-specific-url-patterns">Allow specific URL patterns</a>. </li> <li> <p>Ensure that your app's App Store ID and your App ID prefix is specified in your app's settings. To view and edit your app's settings, go to your Firebase project's <a href="https://console.firebase.google.com/project/_/settings/general/"> Settings page</a> and select your iOS app.</p> <p>Confirm that your Firebase project is properly configured to use Dynamic Links in your iOS app by opening the <code translate="no" dir="ltr">apple-app-site-association</code> file that is hosted on your Dynamic Links domain. Firebase will serve the <code translate="no" dir="ltr">apple-app-site-association</code> file from the root of the domain as well as the <code translate="no" dir="ltr">.well-known</code> subdirectory. For example:</p> 
+<pre>
+    https://example.com/apple-app-site-association
+    https://example.com/.well-known/apple-app-site-association
+    </pre> <p>If your app is connected, the <code translate="no" dir="ltr">apple-app-site-association</code> file contains a reference to your app's App ID prefix and bundle ID. For example:</p> 
+<pre>{"applinks":{"apps":[],"details":[{"appID":"1234567890.com.example.ios","paths":["/*"]}]}}</pre> <p>If the <code translate="no" dir="ltr">details</code> property is empty, double-check that you specified your App ID prefix. Note that your App ID prefix may not be the same as your Team ID.</p> </li> </ol> <h2 id="add-firebase-to-your-app">Add Firebase to your app</h2> <ol> <li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">import SwiftUI
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">@import FirebaseCore;
+@import FirebaseFirestore;
+@import FirebaseAuth;
+// ...
+      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Use Firebase library to configure APIs
+[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">@main
+struct YourApp: App {
+  // register app delegate for Firebase setup
+  @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
+  var body: some Scene {
+    WindowGroup {
+      NavigationView {
+        ContentView()
+      }
+    }
+  }
+}
+      </pre> </section> </div> </li> </ol> <h2 id="use-the-firebase-console"> Use the Firebase console </h2> <p>If you want to generate a single Dynamic Link, either for testing purposes, or for your marketing team to easily create a link that can be used in something like a social media post, the simplest way would be to visit the <a href="https://console.firebase.google.com/project/_/durablelinks/links/">Firebase console</a> and create one manually following the step-by-step form.</p> <h2 id="use-the-ios-builder-api">Use the iOS Builder API</h2>  <p>You can use the iOS Builder API to build Dynamic Links from parameters, or to shorten a long Dynamic Link.</p> <h3 id="create-a-dynamic-link-from-parameters">Create a Dynamic Link from parameters</h3> <p>To create a Dynamic Link, create a new <code translate="no" dir="ltr">DynamicLinkComponents</code> object and specify the Dynamic Link parameters by setting the object's corresponding properties. Then, get the long link from the object's <code translate="no" dir="ltr">url</code> property or get the short link by calling <code translate="no" dir="ltr">shorten()</code>.</p> <p>The following minimal example creates a long Dynamic Link to <code translate="no" dir="ltr">https://www.example.com/my-page</code> that opens with your iOS app on iOS and the app <code translate="no" dir="ltr">com.example.android</code> on Android:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="swift">guard let link = URL(string: "https://www.example.com/my-page") else { return }
+let dynamicLinksDomainURIPrefix = "https://example.com/link"
+let linkBuilder = DynamicLinkComponents(link: link, domainURIPrefix: dynamicLinksDomainURIPRefix)
+linkBuilder.iOSParameters = DynamicLinkIOSParameters(bundleID: "com.example.ios")
+linkBuilder.androidParameters = DynamicLinkAndroidParameters(packageName: "com.example.android")
+
+guard let longDynamicLink = linkBuilder.url else { return }
+print("The long URL is: \(longDynamicLink)")</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="objectivec">NSURL *link = [[NSURL alloc] initWithString:@"https://www.example.com/my-page"];
+NSString *dynamicLinksDomainURIPrefix = @"https://example.com/link";
+FIRDynamicLinkComponents *linkBuilder = [[FIRDynamicLinkComponents alloc]
+                                         initWithLink:link
+                                               domainURIPrefix:dynamicLinksDomainURIPrefix];
+linkBuilder.iOSParameters = [[FIRDynamicLinkIOSParameters alloc]
+                             initWithBundleID:@"com.example.ios"];
+linkBuilder.androidParameters = [[FIRDynamicLinkAndroidParameters alloc]
+                                 initWithPackageName:@"com.example.android"];
+
+NSLog(@"The long URL is: %@", linkBuilder.url);</pre> </section> </div> <p>To create a short Dynamic Link, build a <code translate="no" dir="ltr">DynamicLinkComponents</code> the same way, and then call <code translate="no" dir="ltr">shorten()</code>.</p> <p>Building a short link requires a network call, so instead of directly returning the link, <code translate="no" dir="ltr">shorten()</code> accepts a completion handler, which is called when the request completes. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="swift">linkBuilder.shorten() { url, warnings, error in
+  guard let url = url, error != nil else { return }
+  print("The short URL is: \(url)")
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="objectivec">[linkBuilder shortenWithCompletion:^(NSURL * _Nullable shortURL,
+                                     NSArray&lt;NSString *&gt; * _Nullable warnings,
+                                     NSError * _Nullable error) {
+  if (error || shortURL == nil) { return; }
+  NSLog(@"The short URL is: %@", shortURL);
+}];
+      </pre> </section> </div> <p>By default, short Dynamic Links are generated with 17-character link suffixes that make it extremely unlikely that someone can guess a valid Dynamic Link. If, for your use case, there's no harm in someone successfully guessing a short link, you might prefer to generate suffixes that are only as long as necessary to be unique, which you can do by setting the <code translate="no" dir="ltr">dynamicLinkComponentsOptions</code> property:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="swift">linkBuilder.options = DynamicLinkComponentsOptions()
+linkBuilder.options.pathLength = .short
+linkBuilder.shorten() { url, warnings, error in
+  guard let url = url, error != nil else { return }
+  print("The short URL is: \(url)")
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="objectivec">linkBuilder.dynamicLinkComponentsOptions = [[FIRDynamicLinkComponentsOptions alloc] init];
+linkBuilder.dynamicLinkComponentsOptions.pathLength = FIRShortDynamicLinkPathLengthShort;
+[linkBuilder shortenWithCompletion:^(NSURL * _Nullable shortURL,
+                                     NSArray&lt;NSString *&gt; * _Nullable warnings,
+                                     NSError * _Nullable error) {
+  if (error || shortURL == nil) { return; }
+  NSLog(@"The short URL is: %@", shortURL);
+}];
+      </pre> </section> </div> <h4 id="dynamic-link-parameters">Dynamic Link parameters</h4> <p>You can use the Dynamic Link Builder API to create Dynamic Links with any of the supported parameters. See the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/dynamiclinks/DynamicLink"> API reference</a> for details.</p> <p>The following example creates a Dynamic Link with several common parameters set:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="swift">guard let link = URL(string: "https://www.example.com/my-page") else { return }
+let dynamicLinksDomainURIPrefix = "https://example.com/link"
+let linkBuilder = DynamicLinkComponents(link: link, domainURIPRefix: dynamicLinksDomainURIPrefix)
+
+linkBuilder.iOSParameters = DynamicLinkIOSParameters(bundleID: "com.example.ios")
+linkBuilder.iOSParameters.appStoreID = "123456789"
+linkBuilder.iOSParameters.minimumAppVersion = "1.2.3"
+
+linkBuilder.androidParameters = DynamicLinkAndroidParameters(packageName: "com.example.android")
+linkBuilder.androidParameters.minimumVersion = 123
+
+linkBuilder.analyticsParameters = DynamicLinkGoogleAnalyticsParameters(source: "orkut",
+                                                                       medium: "social",
+                                                                       campaign: "example-promo")
+
+linkBuilder.iTunesConnectParameters = DynamicLinkItunesConnectAnalyticsParameters()
+linkBuilder.iTunesConnectParameters.providerToken = "123456"
+linkBuilder.iTunesConnectParameters.campaignToken = "example-promo"
+
+linkBuilder.socialMetaTagParameters = DynamicLinkSocialMetaTagParameters()
+linkBuilder.socialMetaTagParameters.title = "Example of a Dynamic Link"
+linkBuilder.socialMetaTagParameters.descriptionText = "This link works whether the app is installed or not!"
+linkBuilder.socialMetaTagParameters.imageURL = "https://www.example.com/my-image.jpg"
+
+guard let longDynamicLink = linkBuilder.url else { return }
+print("The long URL is: \(longDynamicLink)")</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="objectivec">NSURL *link = [[NSURL alloc] initWithString:@"https://www.example.com/my-page"];
+NSString *dynamicLinksDomainURIPrefix = @"https://example.com/link";
+FIRDynamicLinkComponents *linkBuilder = [[FIRDynamicLinkComponents alloc]
+                                         initWithLink:link
+                                         domainURIPrefix:dynamicLinksDomainURIPrefix];
+
+linkBuilder.iOSParameters = [[FIRDynamicLinkIOSParameters alloc]
+                             initWithBundleID:@"com.example.ios"];
+linkBuilder.iOSParameters.appStoreID = @"123456789";
+linkBuilder.iOSParameters.minimumAppVersion = @"1.2.3";
+
+linkBuilder.androidParameters = [[FIRDynamicLinkAndroidParameters alloc]
+                                 initWithPackageName:@"com.example.android"];
+linkBuilder.androidParameters.minimumVersion = 123;
+
+linkBuilder.analyticsParameters = [[FIRDynamicLinkGoogleAnalyticsParameters alloc]
+                                   initWithSource:@"orkut"
+                                           medium:@"social"
+                                         campaign:@"example-promo"];
+
+linkBuilder.iTunesConnectParameters = [[FIRDynamicLinkItunesConnectAnalyticsParameters alloc] init];
+linkBuilder.iTunesConnectParameters.providerToken = @"123456";
+linkBuilder.iTunesConnectParameters.campaignToken = @"example-promo";
+
+linkBuilder.socialMetaTagParameters = [[FIRDynamicLinkSocialMetaTagParameters alloc] init];
+linkBuilder.socialMetaTagParameters.title = @"Example of a Dynamic Link";
+linkBuilder.socialMetaTagParameters.descriptionText = @"This link works whether the app is installed or not!";
+linkBuilder.socialMetaTagParameters.imageURL = @"https://www.example.com/my-image.jpg";
+
+NSLog(@"The long URL is: %@", linkBuilder.url);</pre> </section> </div> <p>You can set Dynamic Link parameters with the following objects and properties:</p> <table> <tr><th colspan="2" id="general-params">DynamicLinkComponents</th></tr> <tr> <td>link</td> <td> <p>The link your app will open. Specify a URL that your app can handle, typically the app's content or payload, which initiates app-specific logic (such as crediting the user with a coupon or displaying a welcome screen). This link must be a well-formatted URL, be properly URL-encoded, use either HTTP or HTTPS, and cannot be another Dynamic Link.</p> <aside class="note">When users open a Dynamic Link on a desktop web browser, they will load this URL (unless the <code translate="no" dir="ltr">ofl</code> parameter is specified). If you don't have a web equivalent to the linked content, the URL doesn't need to point to a valid web resource. In this situation, you should set up a redirect from this URL to, for example, your home page.</aside> </td> </tr> <tr> <td>domainURIPrefix</td> <td>Your Dynamic Link URL prefix, which you can find in the Firebase console. A Dynamic Link domain looks like the following examples: 
+<pre>
+https://example.com/link
+https://example.page.link
+</pre> </td> </tr> </table> <table id="android-params"> <tr><th colspan="2">DynamicLinkAndroidParameters</th></tr> <tr> <td>fallbackURL</td> <td>The link to open when the app isn't installed. Specify this to do something other than install your app from the Play Store when the app isn't installed, such as open the mobile web version of the content, or display a promotional page for your app.</td> </tr> <tr> <td>minimumVersion</td> <td>The <a href="http://developer.android.com/tools/publishing/versioning.html#appversioning"><code translate="no" dir="ltr">versionCode</code></a> of the minimum version of your app that can open the link. If the installed app is an older version, the user is taken to the Play Store to upgrade the app.</td> </tr> </table> <table id="ios-params"> <tr><th colspan="2">DynamicLinkIOSParameters</th></tr> <tr> <td>appStoreID</td> <td>Your app's App Store ID, used to send users to the App Store when the app isn't installed</td> </tr> <tr> <td>fallbackURL</td> <td>The link to open when the app isn't installed. Specify this to do something other than install your app from the App Store when the app isn't installed, such as open the mobile web version of the content, or display a promotional page for your app.</td> </tr> <tr> <td>customScheme</td> <td>Your app's custom URL scheme, if defined to be something other than your app's bundle ID</td> </tr> <tr> <td>iPadFallbackURL</td> <td>The link to open on iPads when the app isn't installed. Specify this to do something other than install your app from the App Store when the app isn't installed, such as open the web version of the content, or display a promotional page for your app.</td> </tr> <tr> <td>iPadBundleID</td> <td>The bundle ID of the iOS app to use on iPads to open the link. The app must be connected to your project from the Overview page of the Firebase console.</td> </tr> <tr> <td>minimumAppVersion</td> <td>The <a href="https://developer.apple.com/library/content/technotes/tn2420/_index.html">version number</a> of the minimum version of your app that can open the link. This flag is passed to your app when it is opened, and your app must decide what to do with it.</td> </tr> </table> <table> <tr><th colspan="2">DynamicLinkNavigationInfoParameters</th></tr> <tr> <td>forcedRedirectEnabled</td> <td>If set to '1', skip the app preview page when the Dynamic Link is opened, and instead redirect to the app or store. The app preview page (enabled by default) can more reliably send users to the most appropriate destination when they open Dynamic Links in apps; however, if you expect a Dynamic Link to be opened only in apps that can open Dynamic Links reliably without this page, you can disable it with this parameter. This parameter will affect the behavior of the Dynamic Link only on iOS.</td> </tr> </table> <table id="social-params"> <tr><th colspan="2">DynamicLinkSocialMetaTagParameters</th></tr> <tr> <td>title</td> <td>The title to use when the Dynamic Link is shared in a social post.</td> </tr> <tr> <td>descriptionText</td> <td>The description to use when the Dynamic Link is shared in a social post.</td> </tr> <tr> <td>imageURL</td> <td>The URL to an image related to this link. The image should be at least 300x200 px, and less than 300 KB.</td> </tr> </table> <table id="google-analytics-params"> <tr><th colspan="2">DynamicLinkGoogleAnalyticsParameters</th></tr> <tr> <td>source<br>medium<br>campaign<br>term<br>content</td> <td>Google Play analytics parameters. These parameters (<code translate="no" dir="ltr">utm_source</code>, <code translate="no" dir="ltr">utm_medium</code>, <code translate="no" dir="ltr">utm_campaign</code>, <code translate="no" dir="ltr">utm_term</code>, <code translate="no" dir="ltr">utm_content</code>) are passed on to the Play Store as well as appended to the link payload. </td> </tr> </table> <table id="itunes-analytics-params"> <tr><th colspan="2">DynamicLinkItunesConnectAnalyticsParameters</th></tr> <tr> <td>providerToken<br>affiliateToken<br>campaignToken</td> <td>iTunes Connect analytics parameters. These parameters (<code translate="no" dir="ltr">pt</code>, <code translate="no" dir="ltr">at</code>, <code translate="no" dir="ltr">ct</code>) are passed to the App Store.</td> </tr> </table> <h3 id="shorten-a-long-dynamic-link">Shorten a long Dynamic Link</h3> <p>To shorten a long Dynamic Link, pass the long Dynamic Link to <code translate="no" dir="ltr">shortenURL(url:options:)</code> along with a <code translate="no" dir="ltr">DynamicLinkComponentsOptions</code> object if you want to generate a link with a short suffix:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="swift">DynamicLinkComponents.shortenURL(url: longLinkUrl, options: nil) { url, warnings, error in
+  guard let url = url, error != nil else { return }
+  print("The short URL is: \(url)")
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="objectivec">[FIRDynamicLinkComponents shortenURL:longLinkUrl
+                             options:nil
+                          completion:^(NSURL * _Nullable shortURL,
+                                       NSArray&lt;NSString *&gt; * _Nullable warnings,
+                                       NSError * _Nullable error) {
+  if (error || shortURL == nil) { return; }
+  NSLog(@"The short URL is: %@", shortURL);
+}];</pre> </section> </div> <h2 id="specifying-a-custom-url-scheme-for-dynamic-links">Specifying a custom URL scheme for Dynamic Links</h2> <p>By default, Dynamic Links uses your app's bundle identifier as the URL scheme needed to open up your application. We recommend staying with this default value to keep your implementation simple.</p> <p>However, developers who are already using a custom URL scheme for other purposes may wish to use this same custom URL scheme for their Dynamic Links as well. If you are in this situation, you can specify a different URL scheme for your Firebase Dynamic Links by following these steps: </p> <ol> <li> When setting up your app, make sure you specify the default URL scheme to be used by your application before configuring your <code translate="no" dir="ltr">FirebaseApp</code> shared instance: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="swift">func application(_ application: UIApplication,
+                 didFinishLaunchingWithOptions launchOptions: [UIApplication
+                   .LaunchOptionsKey: Any]?) -&gt; Bool {
+  // Set deepLinkURLScheme to the custom URL scheme you defined in your
+  // Xcode project.
+  FirebaseOptions.defaultOptions()?.deepLinkURLScheme = customURLScheme
+  FirebaseApp.configure()
+
+  return true
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="objectivec">- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+  // Set deepLinkURLScheme to the custom URL scheme you defined in your
+  // Xcode project.
+  [FIROptions defaultOptions].deepLinkURLScheme = CUSTOM_URL_SCHEME;
+  [FIRApp configure];
+
+  return YES;
+}</pre> </section> </div> </li> <li> Whenever you create any Dynamic Link, you will need to specify the custom URL scheme that your app uses. You can do this through the Firebase console, setting the <code translate="no" dir="ltr">customScheme</code> in the Builder API, specifying the <code translate="no" dir="ltr">ius</code> parameter in your URL, or sending the <code translate="no" dir="ltr">iosCustomScheme</code> parameter to the REST API</li> </ol> <h2 id="next-steps">Next steps</h2> <p>Now that you've created Dynamic Links, you need to set up your app to receive Dynamic Links and send users to the right place in your app after a user opens them.</p> <p>To receive Dynamic Links in your app, see the documentation for <a href="receive">iOS</a>, <a href="../android/receive">Android</a>, <a href="../cpp/receive">C++</a>, and <a href="../unity/receive">Unity</a>. </p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/dynamic-links/ios/create" class="_attribution-link">https://firebase.google.com/docs/dynamic-links/ios/create</a>
+  </p>
+</div>

@@ -1,0 +1,218 @@
+<h1>Use text search</h1> <p>Use text search features in Cloud Firestore to search for specific strings within documents.</p> <h2 id="edition_requirements">Edition requirements</h2> <p>Text search requires a Firestore Enterprise edition database.</p> <h2 id="before-you-begin">Before you begin</h2> <p>To perform a text search, you must first <a href="../enterprise/indexing-native#create-text-index">create text indexes</a> for the fields you need to search through.</p> <h2 id="run_a_text_search">Run a text search</h2> <p>To perform a text search, use the <code translate="no" dir="ltr">documentMatches</code> expression within the <code translate="no" dir="ltr">query</code> parameter of the <code translate="no" dir="ltr">search(...)</code> stage.</p> <p>The operation searches only in the fields indexed with a text index. If multiple indexes are available, Cloud Firestore selects one index to use for the operation.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const result = await execute(db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('waffles')
+  }));</pre> </section> <section> <p class="_firebase-tab"><strong>iOS</strong></p> 
+<pre data-language="">let snapshot = try await db.pipeline().collection("restaurants")
+  .search(query: DocumentMatches("waffles"))
+  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">val pipeline = db.pipeline().collection("restaurants")
+    .search(SearchStage.withQuery(documentMatches("waffles")))</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">Pipeline pipeline = db.pipeline().collection("restaurants")
+        .search(SearchStage.withQuery(documentMatches("waffles")));</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">await db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('waffles')
+  })
+  .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+<pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import DocumentMatches
+
+results = (
+    client.pipeline()
+    .collection("restaurants")
+    .search(DocumentMatches("waffles"))
+    .execute()
+)</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">Pipeline.Snapshot results1 =
+    firestore.pipeline().collection("restaurants")
+        .search(Search.withQuery(documentMatches("waffles")))
+        .execute().get();</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+<pre data-language="go">snapshot := client.Pipeline().
+	Collection("restaurants").
+	Search(firestore.WithSearchQuery(firestore.DocumentMatches("waffles"))).
+	Execute(ctx)</pre> </section> </div> <h3 id="search_for_an_exact_term">Search for an exact term</h3> <p>To search for an exact term, enclose the term in quotes (<code translate="no" dir="ltr">"</code>):</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const result = await execute(db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('"belgian waffles"')
+  }));</pre> </section> <section> <p class="_firebase-tab"><strong>iOS</strong></p> 
+<pre data-language="">let snapshot = try await db.pipeline().collection("restaurants")
+  .search(query: DocumentMatches("\"belgian waffles\""))
+  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">val pipeline = db.pipeline().collection("restaurants")
+    .search(SearchStage.withQuery(documentMatches("\"belgian waffles\"")))</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">Pipeline pipeline = db.pipeline().collection("restaurants")
+        .search(SearchStage.withQuery(documentMatches("\"belgian waffles\"")));</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">await db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('"belgian waffles"')
+  })
+  .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+<pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import DocumentMatches
+
+results = (
+    client.pipeline()
+    .collection("restaurants")
+    .search(DocumentMatches('"belgian waffles"'))
+    .execute()
+)</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">Pipeline.Snapshot results2 =
+    firestore.pipeline().collection("restaurants")
+        .search(Search.withQuery(documentMatches("\"belgian waffles\"")))
+        .execute().get();</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+<pre data-language="go">snapshot := client.Pipeline().
+	Collection("restaurants").
+	Search(firestore.WithSearchQuery(firestore.DocumentMatches("\"belgian waffles\""))).
+	Execute(ctx)</pre> </section> </div> <h3 id="search_for_a_term_combination">Search for a term combination</h3> <p>To search for combination for terms (logical <code translate="no" dir="ltr">AND</code>), separate the terms with spaces:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const result = await execute(db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('waffles eggs')
+  }));</pre> </section> <section> <p class="_firebase-tab"><strong>iOS</strong></p> 
+<pre data-language="">let snapshot = try await db.pipeline().collection("restaurants")
+  .search(query: DocumentMatches("waffles eggs"))
+  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">val pipeline = db.pipeline().collection("restaurants")
+    .search(SearchStage.withQuery(documentMatches("waffles eggs")))</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">Pipeline pipeline = db.pipeline().collection("restaurants")
+        .search(SearchStage.withQuery(documentMatches("waffles eggs")));</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">await db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('waffles eggs')
+  })
+  .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+<pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import DocumentMatches
+
+results = (
+    client.pipeline()
+    .collection("restaurants")
+    .search(DocumentMatches("waffles eggs"))
+    .execute()
+)</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">firestore.collection("restaurants").add(new HashMap&lt;String, Object&gt;() {{
+  put("name", "Morning Diner");
+  put("description", "Start your day with waffles and eggs.");
+}});
+Pipeline.Snapshot results3 =
+    firestore.pipeline().collection("restaurants")
+        .search(Search.withQuery(documentMatches("waffles eggs")))
+        .execute().get();</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+<pre data-language="go">snapshot := client.Pipeline().
+	Collection("restaurants").
+	Search(firestore.WithSearchQuery(firestore.DocumentMatches("waffles eggs"))).
+	Execute(ctx)</pre> </section> </div> <h3 id="exclude_a_term">Exclude a term</h3> <p>To exclude a term, prefix the term with a hyphen (<code translate="no" dir="ltr">-</code>):</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const result = await execute(db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('coffee -waffles')
+  }));</pre> </section> <section> <p class="_firebase-tab"><strong>iOS</strong></p> 
+<pre data-language="">let snapshot = try await db.pipeline().collection("restaurants")
+  .search(query: DocumentMatches("coffee -waffles"))
+  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">val pipeline = db.pipeline().collection("restaurants")
+    .search(SearchStage.withQuery(documentMatches("waffles eggs")))</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">Pipeline pipeline = db.pipeline().collection("restaurants")
+        .search(SearchStage.withQuery(documentMatches("coffee -waffles")));</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">await db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('-waffles')
+  })
+  .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+<pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import DocumentMatches
+
+results = (
+    client.pipeline()
+    .collection("restaurants")
+    .search(DocumentMatches("-waffles"))
+    .execute()
+)</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">firestore.collection("restaurants").add(new HashMap&lt;String, Object&gt;() {{
+  put("name", "City Coffee");
+  put("description", "Premium coffee and pastries.");
+}});
+Pipeline.Snapshot results4 =
+    firestore.pipeline().collection("restaurants")
+        .search(Search.withQuery(documentMatches("-waffles")))
+        .execute().get();</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+<pre data-language="go">snapshot := client.Pipeline().
+	Collection("restaurants").
+	Search(firestore.WithSearchQuery(firestore.DocumentMatches("-waffles"))).
+	Execute(ctx)</pre> </section> </div> <p>You can also exclude a phrase, for example, <code translate="no" dir="ltr">pizza -"New York"</code>.</p> <h3 id="sort_results">Sort results</h3> <p>By default, Cloud Firestore <strong>sorts results by document creation time</strong>, newest to oldest. You can sort by search score instead, but this requires more computation to calculate and compare the exact score of each document:</p> <p>To sort results by search score:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const result = await execute(db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('waffles'),
+    sort: score().descending()
+  }));</pre> </section> <section> <p class="_firebase-tab"><strong>iOS</strong></p> 
+<pre data-language="">let snapshot = try await db.pipeline().collection("restaurants")
+  .search(
+      query: DocumentMatches("waffles"),
+      sort: [Score().descending()]
+      )
+  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">val pipeline = db.pipeline().collection("restaurants")
+    .search(SearchStage
+              .withQuery(documentMatches("waffles"))
+              .withSort(score().descending())
+              )</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">await db.pipeline().collection('restaurants')
+  .search({
+    query: documentMatches('waffles'),
+    sort: score().descending()
+  })
+  .execute();</pre> </section> </div> <h3 id="add-fields">Add fields to documents returned by the search stage</h3> <p>You can use <code translate="no" dir="ltr">addFields</code> to add fields to the documents returned by the search stage. Expressions returning values computed by the search stage, like <code translate="no" dir="ltr">score()</code>, can be used within <code translate="no" dir="ltr">addFields</code> in the search stage to write those `values to the output documents.</p> <p>The following example adds the score field to the documents returned by the search stage:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const result = await execute(db.pipeline().collection('restaurants')
+  .search({
+    query: 'menu:waffles',
+    addFields: [
+        score().as('score'),
+    ]
+  }));</pre> </section> <section> <p class="_firebase-tab"><strong>iOS</strong></p> 
+<pre data-language="">let snapshot = try await db.pipeline().collection("restaurants")
+  .search(
+    query: DocumentMatches("waffles"),
+    addFields: [
+      Score().as("score")
+    ]
+  )
+  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">val pipeline = db.pipeline().collection("restaurants")
+    .search(SearchStage.withQuery(documentMatches("waffles eggs")))</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">Pipeline pipeline = db.pipeline().collection("restaurants")
+        .search(
+                SearchStage.withQuery(documentMatches("menu:waffles"))
+                        .withAddFields(score().alias("score")));</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">await db.pipeline().collection('restaurants')
+  .search({
+    query: field('menu').matches('waffles'),
+    addFields: [
+        score().as('score'),
+    ]
+  }).execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+<pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import DocumentMatches, Score
+from google.cloud.firestore_v1.pipeline_stages import SearchOptions
+
+results = (
+    client.pipeline()
+    .collection("restaurants")
+    .search(
+        SearchOptions(
+            query=DocumentMatches("menu:waffles"),
+            add_fields=[Score().as_("score")],
+        )
+    )
+    .execute()
+)</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">Pipeline.Snapshot results5 =
+    firestore.pipeline().collection("restaurants")
+        .search(Search.withQuery(field("menu").regexMatch("waffles"))
+            .withAddFields(score().as("score")))
+        .execute().get();</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+<pre data-language="go">snapshot := client.Pipeline().
+	Collection("restaurants").
+	Search(
+		firestore.WithSearchQuery(firestore.FieldOf("menu").RegexMatch("waffles")),
+		firestore.WithSearchAddFields(firestore.Score().As("score")),
+	).
+	Execute(ctx)</pre> </section> </div> <h2 id="limitations">Limitations</h2> <ul> <li>Text search isn't supported for <a href="https://docs.cloud.google.com/assured-workloads/docs/overview">Assured Workloads</a> control packages that enforce <a href="https://docs.cloud.google.com/assured-workloads/docs/data-residency">in-use data residency</a>, where the <code translate="no" dir="ltr">constraints/firestore.managed.disableEnhancedTextSearch</code> organization policy constraint is enforced by default.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/solutions/search" class="_attribution-link">https://firebase.google.com/docs/firestore/solutions/search</a>
+  </p>
+</div>

@@ -1,0 +1,102 @@
+<h1>Get started with Crashlytics for Apple platforms</h1>   <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button button-primary" href="get-started">iOS+</a> <a class="button" href="../android/get-started">Android</a> <a class="button" href="../android/get-started-ndk">Android NDK</a> <a class="button" href="../flutter/get-started">Flutter</a> <a class="button" href="../unity/get-started">Unity</a> </td> </tr> </table> <p><br></p> <p>This guide describes how to get started with Firebase Crashlytics in your Apple platforms app (for example, an iOS app).</p> <p>After you've set up the Firebase Crashlytics SDK in your app, you can get comprehensive crash reports in the Firebase console. With Crashlytics for Apple platforms, you get reports for crashes and non-fatal errors.</p>  <h2 id="before-you-begin">Before you begin</h2> <p>Setting up Crashlytics requires tasks both in the Firebase console and your IDE (like adding a Firebase configuration file and the Crashlytics SDK). To finish setup, you'll need to force a test crash to send your first crash report to Firebase.</p> <ol> <li><p>If you haven't already, <a href="../../ios/setup">add Firebase</a> to your Apple project. If you don't have an Apple app, you can download a <a href="../../samples">sample app</a>.</p></li> <li>
+<p><strong>Recommended</strong>: To automatically get <a href="customize-crash-reports#get-breadcrumb-logs">breadcrumb logs</a> to understand user actions leading up to a crash or non-fatal event you need to enable Google Analytics in your Firebase project.</p> <ul> <li><p>If you're creating a new Firebase project, enable Google Analytics during the project creation workflow.</p></li> <li><p>If you're using an existing Firebase project that doesn't have Google Analytics enabled, you can enable it in the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/integrations" class="external"><strong>Integrations</strong> page</a> of the Firebase console.</p></li> </ul> <p>Note that breadcrumb logs are available for all Apple platforms supported by Crashlytics except watchOS.</p>
+</li> </ol> <h2 id="add-sdk">
+<strong>Step 1</strong>: Add the Crashlytics SDK to your app</h2> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+<pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Crashlytics library.</li> <li>To take advantage of <a href="customize-crash-reports#get-breadcrumb-logs">breadcrumb logs</a>, also add the Firebase SDK for Google Analytics to your app. Make sure that <a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">Google Analytics is enabled</a> in your Firebase project. </li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li>
+<i>(macOS only)</i> In your <code translate="no" dir="ltr">Info.plist</code>, add the key <code translate="no" dir="ltr">NSApplicationCrashOnExceptions</code> and set it to <code translate="no" dir="ltr">YES</code>. </li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> <p>Next, configure the Firebase module:</p> <ol> <li>
+<p>Import the Firebase module in your <code translate="no" dir="ltr">App</code> struct or <code translate="no" dir="ltr">UIApplicationDelegate</code>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">import Firebase</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">@import Firebase;</pre></section> </div>
+</li> <li>
+<p>Configure a <code translate="no" dir="ltr">FirebaseApp</code> shared instance, typically in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Use the Firebase library to configure APIs.
+FirebaseApp.configure()</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">// Use the Firebase library to configure APIs.
+[FIRApp configure];</pre></section> </div>
+</li> </ol> <h2 id="set-up-dsym-uploading">
+<strong>Step 2</strong>: Set up Xcode to automatically upload dSYM files</h2> <p>To generate human readable crash reports, Crashlytics needs your project's debug symbol (dSYM) files. The following steps describe how to configure Xcode to automatically produce your dSYMs, process them, and upload the files whenever you build your app.</p> <ol> <li><p>Open your project's Xcode workspace, then select its project file in the left navigator.</p></li> <li><p>From the <strong>TARGETS</strong> list, select your main build target.</p></li> <li>
+<p>Click the <strong>Build Settings</strong> tab, then complete the following steps so that Xcode produces dSYMs for your builds.</p> <ol> <li><p>Click <strong>All</strong>, then search for <code translate="no" dir="ltr">debug information format</code>.</p></li> <li><p>Set <strong>Debug Information Format</strong> to <code translate="no" dir="ltr">DWARF with dSYM File</code> for all your build types.</p></li> </ol>
+</li> <li>
+<p>Click the <strong>Build Phases</strong> tab, then complete the following steps so that Xcode can process your dSYMs and upload the files.</p> <ol> <li>
+<p>Click <span class="material-icons" aria-hidden="true" translate="no">add</span> &gt; <strong>New Run Script Phase</strong>.</p> <p>Make sure this new <em>Run Script</em> phase is your project's last build phase; otherwise, Crashlytics can't properly process dSYMs.</p>
+</li> <li>
+<p>Expand the new <em>Run Script</em> section.</p> <aside class="note"><strong>Note:</strong><span> For the remaining substeps, copy-and-paste the paths exactly as specified, and Xcode will resolve them. However, if you have issues with Xcode resolving these paths or a unique project structure, you can manually specify the paths instead.</span></aside>
+</li> <li>
+<p>In the script field (located under the <em>Shell</em> label), add the following run script.</p> <p>This script processes your project's dSYM files and uploads the files to Crashlytics.</p> 
+<pre>"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"</pre>
+</li> <li>
+<p>In the <em>Input Files</em> section, add the paths for the locations of the following files:</p> 
+<pre>${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}</pre> 
+<pre>${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}</pre> 
+<pre>${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist</pre> 
+<pre>$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist</pre> 
+<pre>$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)</pre> If you have <code translate="no" dir="ltr">ENABLE_USER_SCRIPT_SANDBOXING=YES</code> and <code translate="no" dir="ltr">ENABLE_DEBUG_DYLIB=YES</code> in your project build settings, then include the following: 
+<pre>${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}.debug.dylib</pre> <section class="expandable"> <p class="showalways"><b>Understand why the locations of these files are needed</b> </p> <p>Xcode looks in the specified locations for these input files to ensure that the build files are available for the run script. Also, if <i>User Script Sandboxing</i> is enabled, Xcode only allows the run script to access files specified in the <i>Input Files</i>. </p> <ul> <li>Providing the location of your project's dSYM files enables Crashlytics to process dSYMs. </li> <li>Providing the location of your app's built <code translate="no" dir="ltr">GoogleService-Info.plist</code> file enables Crashlytics to associate the dSYMs with your Firebase app. </li> <li>Providing the location of your app's executable allows the run script to prevent duplicate uploads of the same dSYM. Note that app binaries are <em>not uploaded</em>. </li> </ul> </section>
+</li> </ol>
+</li> </ol> <p>For more detailed information about dSYM files and Crashlytics (including how to manually upload dSYM files), visit <a href="get-deobfuscated-reports">Get deobfuscated crash reports</a>.</p> <h2 id="force-test-crash">
+<strong>Step 3</strong>: Force a test crash to finish setup</h2> <p>To finish setting up Crashlytics and see initial data in the Crashlytics dashboard of the Firebase console, you need to force a test crash.</p> <ol> <li>
+<p>Add code to your app that you can use to force a test crash.</p> <p>You can use the following code to add a button to your app that, when pressed, causes a crash. The button is labeled "Test Crash".</p>  <div> <section><p class="_firebase-tab"><strong>SwiftUI</strong></p>
+
+<pre data-language="">Button("Crash") {
+  fatalError("Crash was triggered")
+}</pre></section> <section><p class="_firebase-tab"><strong>UIKit</strong></p>
+<div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">import UIKit
+
+class ViewController: UIViewController {
+  override func viewDidLoad() {
+      super.viewDidLoad()
+
+      // Do any additional setup after loading the view, typically from a nib.
+
+      let button = UIButton(type: .roundedRect)
+      button.frame = CGRect(x: 20, y: 50, width: 100, height: 30)
+      button.setTitle("Test Crash", for: [])
+      button.addTarget(self, action: #selector(self.crashButtonTapped(_:)), for: .touchUpInside)
+      view.addSubview(button)
+  }
+
+  @IBAction func crashButtonTapped(_ sender: AnyObject) {
+      let numbers = [0]
+      let _ = numbers[1]
+  }
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">&amp;num;import "ViewController.h"
+
+@implementation ViewController
+&amp;hyphen; (void)viewDidLoad {
+    [super viewDidLoad];
+
+    // Do any additional setup after loading the view, typically from a nib.
+
+    UIButton* button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    button.frame = CGRectMake(20, 50, 100, 30);
+    [button setTitle:@"Test Crash" forState:UIControlStateNormal];
+    [button addTarget:self action:@selector(crashButtonTapped:)
+        forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:button];
+}
+
+&amp;hyphen; (IBAction)crashButtonTapped:(id)sender {
+    @[][1];
+}
+
+@end</pre></section> </div></section> </div>
+</li> <li>
+<p>Build and run your app in Xcode with the Xcode debugger disconnected.</p> <aside class="caution"><strong>The Xcode debugger prevents crash reports from being sent to Crashlytics.</strong> Complete the following steps to disconnect your test device or simulator from the Xcode debugger <strong><i>before</i></strong> forcing a crash. </aside> <ol> <li><p>Click <span class="material-icons" aria-hidden="true" translate="no">play_arrow</span><strong>Build and then run the current scheme</strong> to build your app on a test device or simulator.</p></li> <li><p>Wait until your app is running, then click <span class="material-icons" aria-hidden="true" translate="no">stop</span><strong>Stop running the scheme or action</strong> to close the initial instance of your app. This initial instance included the debugger that interferes with Crashlytics.</p></li> </ol>
+</li> <li>
+<p>Force the test crash in order to send your app's first crash report:</p> <ol> <li><p>Open your app from the home screen of your test device or simulator.</p></li> <li><p>In your app, press the "Test Crash" button that you added using the code above.</p></li> <li><p>After your app crashes, run it again from Xcode so that your app can send the crash report to Firebase.</p></li> </ol>
+</li> <li>
+<p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> to check for your test crash report.</p> <p>If you've refreshed the console and you're still not seeing the test crash after five minutes, <a href="test-implementation#enable-debug-logging">enable debug logging</a> to see if your app is sending crash reports.</p>
+</li> </ol> <p><br></p> <p>And that's it! Crashlytics is now monitoring your app for crashes. Visit the <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> to view and investigate all your reports and statistics.</p> <h2 id="next-steps">Next steps</h2> <ul> <li><p> <a href="customize-crash-reports">Customize your crash report setup</a> by adding opt-in reporting, logs, keys, and tracking of non-fatal errors. </p></li> <li><p> <a href="../export-data-to-cloud">Export your data to BigQuery or Cloud Logging</a> for advanced analysis and features, like querying your data, building custom dashboards, and setting up custom alerts. </p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/crashlytics/ios/get-started" class="_attribution-link">https://firebase.google.com/docs/crashlytics/ios/get-started</a>
+  </p>
+</div>

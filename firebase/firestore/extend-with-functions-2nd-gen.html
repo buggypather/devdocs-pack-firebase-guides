@@ -1,0 +1,432 @@
+<h1>Extend Cloud Firestore with Cloud Functions (2nd gen)</h1> <p>With Cloud Functions, you can deploy code to handle events triggered by changes in your Cloud Firestore database. This allows you to easily add server-side functionality into your app without running your own servers.</p> <h2 id="2nd_gen">Cloud Functions (2nd gen)</h2> <p>Powered by <a href="https://cloud.google.com/run">Cloud Run</a> and <a href="https://cloud.google.com/eventarc/docs">Eventarc</a>, Cloud Functions for Firebase (2nd gen) gives you more powerful infrastructure, advanced control over performance and scalability, and more control of the functions runtime. For more information about 2nd gen, see <a href="../functions">Cloud Functions for Firebase (2nd gen)</a>. To see more about the 1st gen instead, see <a href="extend-with-functions">Extend Cloud Firestore with Cloud Functions</a>.</p> <h2 id="function_triggers">Cloud Firestore function triggers</h2> <p>The Cloud Functions for Firebase SDK exports the following Cloud Firestore event triggers to let you create handlers tied to specific Cloud Firestore events:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<table> <thead> <tr> <th>Event Type</th> <th style="text-align: center">Trigger</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">onDocumentCreated</code></td> <td style="text-align: center">Triggered when a document is written to for the first time.</td> </tr> <tr> <td><code translate="no" dir="ltr">onDocumentUpdated</code></td> <td style="text-align: center">Triggered when a document already exists and has any value changed.</td> </tr> <tr> <td><code translate="no" dir="ltr">onDocumentDeleted</code></td> <td style="text-align: center">Triggered when a document is deleted.</td> </tr> <tr> <td><code translate="no" dir="ltr">onDocumentWritten</code></td> <td style="text-align: center">Triggered when <code translate="no" dir="ltr">onDocumentCreated</code>, <code translate="no" dir="ltr">onDocumentUpdated</code> or <code translate="no" dir="ltr">onDocumentDeleted</code> is triggered.</td> </tr> <tr> <td><code translate="no" dir="ltr">onDocumentCreatedWithAuthContext</code></td> <td style="text-align: center">
+<code translate="no" dir="ltr">onDocumentCreated</code> with additional authentication information</td> </tr> <tr> <td><code translate="no" dir="ltr">onDocumentWrittenWithAuthContext</code></td> <td style="text-align: center">
+<code translate="no" dir="ltr">onDocumentWritten</code> with additional authentication information</td> </tr> <tr> <td><code translate="no" dir="ltr">onDocumentDeletedWithAuthContext</code></td> <td style="text-align: center">
+<code translate="no" dir="ltr">onDocumentDeleted</code> with additional authentication information</td> </tr> <tr> <td><code translate="no" dir="ltr">onDocumentUpdatedWithAuthContext</code></td> <td style="text-align: center">
+<code translate="no" dir="ltr">onDocumentUpdated</code> with additional authentication information</td> </tr> </tbody> </table></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+<table> <thead> <tr> <th>Event Type</th> <th style="text-align: center">Trigger</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">on_document_created</code></td> <td style="text-align: center">Triggered when a document is written to for the first time.</td> </tr> <tr> <td><code translate="no" dir="ltr">on_document_updated</code></td> <td style="text-align: center">Triggered when a document already exists and has any value changed.</td> </tr> <tr> <td><code translate="no" dir="ltr">on_document_deleted</code></td> <td style="text-align: center">Triggered when a document is deleted.</td> </tr> <tr> <td><code translate="no" dir="ltr">on_document_written</code></td> <td style="text-align: center">Triggered when <code translate="no" dir="ltr">on_document_created</code>, <code translate="no" dir="ltr">on_document_updated</code> or <code translate="no" dir="ltr">on_document_deleted</code> is triggered.</td> </tr> <tr> <td><code translate="no" dir="ltr">on_document_created_with_auth_context</code></td> <td style="text-align: center">
+<code translate="no" dir="ltr">on_document_created</code> with additional authentication information</td> </tr> <tr> <td><code translate="no" dir="ltr">on_document_updated_with_auth_context</code></td> <td style="text-align: center">
+<code translate="no" dir="ltr">on_document_updated</code> with additional authentication information</td> </tr> <tr> <td><code translate="no" dir="ltr">on_document_deleted_with_auth_context</code></td> <td style="text-align: center">
+<code translate="no" dir="ltr">on_document_deleted</code> with additional authentication information</td> </tr> <tr> <td><code translate="no" dir="ltr">on_document_written_with_auth_context</code></td> <td style="text-align: center">
+<code translate="no" dir="ltr">on_document_written</code> with additional authentication information</td> </tr> </tbody> </table></section> </div> <p>Cloud Firestore events trigger only on document changes. An update to a Cloud Firestore document where data is unchanged (a no-op write) does not generate an update or write event. It is not possible to add events to specific fields.</p> <p>If you don't have a project enabled for Cloud Functions for Firebase yet, then read <a href="../functions/get-started">Get started with Cloud Functions for Firebase(2nd gen)</a> to configure and set up your Cloud Functions for Firebase project.</p> <h2 id="writing-triggered_functions">Writing Cloud Firestore-triggered functions</h2> <h3 id="define_a_function_trigger">Define a function trigger</h3> <p>To define a Cloud Firestore trigger, specify a document path and an event type:</p>  <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {
+  onDocumentWritten,
+  onDocumentCreated,
+  onDocumentUpdated,
+  onDocumentDeleted,
+  Change,
+  FirestoreEvent
+} = require('firebase-functions/v2/firestore');
+
+exports.myfunction = onDocumentWritten("my-collection/{docId}", (event) =&gt; {
+   /* ... */ 
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions.firestore_fn import (
+  on_document_created,
+  on_document_deleted,
+  on_document_updated,
+  on_document_written,
+  Event,
+  Change,
+  DocumentSnapshot,
+)
+
+@on_document_created(document="users/{userId}")
+def myfunction(event: Event[DocumentSnapshot]) -&gt; None:
+</pre></section> </div> <p>Document paths can reference either a <a href="#specific-documents">specific document</a> or a <a href="#wildcards-parameters">wildcard pattern</a>.</p> <h3 id="specific-documents">Specify a single document</h3> <p>If you want to trigger an event for <em>any</em> change to a specific document then you can use the following function.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {
+  onDocumentWritten,
+  Change,
+  FirestoreEvent
+} = require('firebase-functions/v2/firestore');
+
+exports.myfunction = onDocumentWritten("users/marie", (event) =&gt; {
+  // Your code here
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions.firestore_fn import (
+  on_document_written,
+  Event,
+  Change,
+  DocumentSnapshot,
+)
+
+@on_document_written(document="users/marie")
+def myfunction(event: Event[Change[DocumentSnapshot]]) -&gt; None:
+</pre></section> </div> <h3 id="wildcards-parameters">Specify a group of documents using wildcards</h3> <p>If you want to attach a trigger to a group of documents, such as any document in a certain collection, then use a <code translate="no" dir="ltr">{wildcard}</code> in place of the document ID:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {
+  onDocumentWritten,
+  Change,
+  FirestoreEvent
+} = require('firebase-functions/v2/firestore');
+
+exports.myfunction = onDocumentWritten("users/{userId}", (event) =&gt; {
+  // If we set `/users/marie` to {name: "Marie"} then
+  // event.params.userId == "marie"
+  // ... and ...
+  // event.data.after.data() == {name: "Marie"}
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions.firestore_fn import (
+  on_document_written,
+  Event,
+  Change,
+  DocumentSnapshot,
+)
+
+@on_document_written(document="users/{userId}")
+def myfunction(event: Event[Change[DocumentSnapshot]]) -&gt; None:
+  # If we set `/users/marie` to {name: "Marie"} then
+  event.params["userId"] == "marie"  # True
+  # ... and ...
+  event.data.after.to_dict() == {"name": "Marie"}  # True
+</pre></section> </div> <p>In this example, when any field on any document in <code translate="no" dir="ltr">users</code> is changed, it matches a wildcard called <code translate="no" dir="ltr">userId</code>.</p> <p>If a document in <code translate="no" dir="ltr">users</code> has subcollections and a field in one of those subcollections' documents is changed, the <code translate="no" dir="ltr">userId</code> wildcard is <em>not</em> triggered.</p> <p>Wildcard matches are extracted from the document path and stored into <code translate="no" dir="ltr">event.params</code>. You may define as many wildcards as you like to substitute explicit collection or document IDs, for example:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {
+  onDocumentWritten,
+  Change,
+  FirestoreEvent
+} = require('firebase-functions/v2/firestore');
+
+exports.myfunction = onDocumentWritten("users/{userId}/{messageCollectionId}/{messageId}", (event) =&gt; {
+    // If we set `/users/marie/incoming_messages/134` to {body: "Hello"} then
+    // event.params.userId == "marie";
+    // event.params.messageCollectionId == "incoming_messages";
+    // event.params.messageId == "134";
+    // ... and ...
+    // event.data.after.data() == {body: "Hello"}
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions.firestore_fn import (
+  on_document_written,
+  Event,
+  Change,
+  DocumentSnapshot,
+)
+
+@on_document_written(document="users/{userId}/{messageCollectionId}/{messageId}")
+def myfunction(event: Event[Change[DocumentSnapshot]]) -&gt; None:
+  # If we set `/users/marie/incoming_messages/134` to {body: "Hello"} then
+  event.params["userId"] == "marie"  # True
+  event.params["messageCollectionId"] == "incoming_messages"  # True
+  event.params["messageId"] == "134"  # True
+  # ... and ...
+  event.data.after.to_dict() == {"body": "Hello"}
+</pre></section> </div> <p>Your trigger must <em>always</em> point to a document, even if you're using a wildcard. For example, <code translate="no" dir="ltr">users/{userId}/{messageCollectionId}</code> is not valid because <code translate="no" dir="ltr">{messageCollectionId}</code> is a collection. However, <code translate="no" dir="ltr">users/{userId}/{messageCollectionId}/{messageId}</code> <em>is</em> valid because <code translate="no" dir="ltr">{messageId}</code> will always point to a document.</p> <h2 id="event_triggers">Event Triggers</h2> <h3 id="trigger_a_function_when_a_new_document_is_created">Trigger a function when a new document is created</h3> <p>You can trigger a function to fire any time a new document is created in a collection. This example function triggers every time a new user profile is added:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {
+  onDocumentCreated,
+  Change,
+  FirestoreEvent
+} = require('firebase-functions/v2/firestore');
+
+exports.createuser = onDocumentCreated("users/{userId}", (event) =&gt; {
+    // Get an object representing the document
+    // e.g. {'name': 'Marie', 'age': 66}
+    const snapshot = event.data;
+    if (!snapshot) {
+        console.log("No data associated with the event");
+        return;
+    }
+    const data = snapshot.data();
+
+    // access a particular field as you would any JS property
+    const name = data.name;
+
+    // perform more operations ...
+});
+</pre> <p>For additional authentication information, use <code translate="no" dir="ltr">onDocumentCreatedWithAuthContext</code>.</p></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions.firestore_fn import (
+  on_document_created,
+  Event,
+  DocumentSnapshot,
+)
+
+@on_document_created(document="users/{userId}")
+def myfunction(event: Event[DocumentSnapshot]) -&gt; None:
+  # Get a dictionary representing the document
+  # e.g. {'name': 'Marie', 'age': 66}
+  new_value = event.data.to_dict()
+
+  # Access a particular field as you would any dictionary
+  name = new_value["name"]
+
+  # Perform more operations ...
+</pre></section> </div> <h3 id="trigger_a_function_when_a_document_is_updated">Trigger a function when a document is updated</h3> <p>You can also trigger a function to fire when a document is updated. This example function fires if a user changes their profile:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {
+  onDocumentUpdated,
+  Change,
+  FirestoreEvent
+} = require('firebase-functions/v2/firestore');
+
+exports.updateuser = onDocumentUpdated("users/{userId}", (event) =&gt; {
+    // Get an object representing the document
+    // e.g. {'name': 'Marie', 'age': 66}
+    const newValue = event.data.after.data();
+
+    // access a particular field as you would any JS property
+    const name = newValue.name;
+
+    // perform more operations ...
+});
+</pre> <p>For additional authentication information, use <code translate="no" dir="ltr">onDocumentUpdatedWithAuthContext</code>.</p></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions.firestore_fn import (
+  on_document_updated,
+  Event,
+  Change,
+  DocumentSnapshot,
+)
+
+@on_document_updated(document="users/{userId}")
+def myfunction(event: Event[Change[DocumentSnapshot]]) -&gt; None:
+  # Get a dictionary representing the document
+  # e.g. {'name': 'Marie', 'age': 66}
+  new_value = event.data.after.to_dict()
+
+  # Access a particular field as you would any dictionary
+  name = new_value["name"]
+
+  # Perform more operations ...
+</pre></section> </div> <h3 id="trigger_a_function_when_a_document_is_deleted">Trigger a function when a document is deleted</h3> <p>You can also trigger a function when a document is deleted. This example function fires when a user deletes their user profile:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {
+  onDocumentDeleted,
+  Change,
+  FirestoreEvent
+} = require('firebase-functions/v2/firestore');
+
+exports.deleteuser = onDocumentDeleted("users/{userId}", (event) =&gt; {
+    // Get an object representing the document
+    // e.g. {'name': 'Marie', 'age': 66}
+    const snap =  event.data;
+    const data =  snap.data();
+
+    // perform more operations ...
+});
+</pre> <p>For additional authentication information, use <code translate="no" dir="ltr">onDocumentDeletedWithAuthContext</code>.</p></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions.firestore_fn import (
+  on_document_deleted,
+  Event,
+  DocumentSnapshot,
+)
+
+@on_document_deleted(document="users/{userId}")
+def myfunction(event: Event[DocumentSnapshot|None]) -&gt; None:
+  # Perform more operations ...
+</pre></section> </div> <h3 id="trigger_a_function_for_all_changes_to_a_document">Trigger a function for all changes to a document</h3> <p>If you don't care about the type of event being fired, you can listen for all changes in a Cloud Firestore document using the "document written" event trigger. This example function fires if a user is created, updated, or deleted:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {
+  onDocumentWritten,
+  Change,
+  FirestoreEvent
+} = require('firebase-functions/v2/firestore');
+
+exports.modifyuser = onDocumentWritten("users/{userId}", (event) =&gt; {
+    // Get an object with the current document values.
+    // If the document does not exist, it was deleted
+    const document =  event.data.after.data();
+
+    // Get an object with the previous document values
+    const previousValues =  event.data.before.data();
+
+    // perform more operations ...
+});
+</pre> <p>For additional authentication information, use <code translate="no" dir="ltr">onDocumentWrittenWithAuthContext</code>.</p></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions.firestore_fn import (
+  on_document_written,
+  Event,
+  Change,
+  DocumentSnapshot,
+)
+
+@on_document_written(document="users/{userId}")
+def myfunction(event: Event[Change[DocumentSnapshot | None]]) -&gt; None:
+  # Get an object with the current document values.
+  # If the document does not exist, it was deleted.
+  document = (event.data.after.to_dict()
+              if event.data.after is not None else None)
+
+  # Get an object with the previous document values.
+  # If the document does not exist, it was newly created.
+  previous_values = (event.data.before.to_dict()
+                     if event.data.before is not None else None)
+
+  # Perform more operations ...
+</pre></section> </div> <h2 id="reading_and_writing_data">Reading and Writing Data</h2> <p>When a function is triggered, it provides a snapshot of the data related to the event. You can use this snapshot to read from or write to the document that triggered the event, or use the Firebase Admin SDK to access other parts of your database.</p> <h3 id="event_data">Event Data</h3> <h4 id="reading_data">Reading Data</h4> <p>When a function is triggered, you might want to get data from a document that was updated, or get the data prior to update. You can get the prior data by using <code translate="no" dir="ltr">event.data.before</code>, which contains the document snapshot before the update. Similarly, <code translate="no" dir="ltr">event.data.after</code> contains the document snapshot state after the update.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.updateuser2 = onDocumentUpdated("users/{userId}", (event) =&gt; {
+    // Get an object with the current document values.
+    // If the document does not exist, it was deleted
+    const newValues =  event.data.after.data();
+
+    // Get an object with the previous document values
+    const previousValues =  event.data.before.data();
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@on_document_updated(document="users/{userId}")
+def myfunction(event: Event[Change[DocumentSnapshot]]) -&gt; None:
+  # Get an object with the current document values.
+  new_value = event.data.after.to_dict()
+
+  # Get an object with the previous document values.
+  prev_value = event.data.before.to_dict()
+</pre></section> </div> <p>You can access properties as you would in any other object. Alternatively, you can use the <code translate="no" dir="ltr">get</code> function to access specific fields:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Fetch data using standard accessors
+const age = event.data.after.data().age;
+const name = event.data.after.data()['name'];
+
+// Fetch data using built in accessor
+const experience = event.data.after.data.get('experience');
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Get the value of a single document field.
+age = event.data.after.get("age")
+
+# Convert the document to a dictionary.
+age = event.data.after.to_dict()["age"]
+</pre></section> </div> <h4 id="writing_data">Writing Data</h4> <p>Each function invocation is associated with a specific document in your Cloud Firestore database. You can access that document in the snapshot returned to your function.</p> <p>The document reference includes methods like <code translate="no" dir="ltr">update()</code>, <code translate="no" dir="ltr">set()</code>, and <code translate="no" dir="ltr">remove()</code> so you can modify the document that triggered the function.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {onDocumentUpdated} = require('firebase-functions/v2/firestore');
+
+exports.countnamechanges = onDocumentUpdated('users/{userId}', (event) =&gt; {
+  // Retrieve the current and previous value
+  const data = event.data.after.data();
+  const previousData = event.data.before.data();
+
+  // We'll only update if the name has changed.
+  // This is crucial to prevent infinite loops.
+  if (data.name == previousData.name) {
+    return null;
+  }
+
+  // Retrieve the current count of name changes
+  let count = data.name_change_count;
+  if (!count) {
+    count = 0;
+  }
+
+  // Then return a promise of a set operation to update the count
+  return event.data.after.ref.set({
+    name_change_count: count + 1
+  }, {merge: true});
+
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@on_document_updated(document="users/{userId}")
+def myfunction(event: Event[Change[DocumentSnapshot]]) -&gt; None:
+  # Get the current and previous document values.
+  new_value = event.data.after
+  prev_value = event.data.before
+
+  # We'll only update if the name has changed.
+  # This is crucial to prevent infinite loops.
+  if new_value.get("name") == prev_value.get("name"):
+      return
+
+  # Retrieve the current count of name changes
+  count = new_value.to_dict().get("name_change_count", 0)
+
+  # Update the count
+  new_value.reference.update({"name_change_count": count + 1})
+</pre></section> </div>
+<aside class="warning"><strong>Warning:</strong><span> Any time you write to the same document that triggered a function, you are at risk of creating an infinite loop. Use caution and ensure that you safely exit the function when no change is needed.</span></aside> <h3 id="auth-context">Access user authentication information</h3> <p>If you use one of the of the following event types, you can access user authentication information about the principal that triggered the event. This information is in addition to the information returned in the base event.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<ul> <li><code translate="no" dir="ltr">onDocumentCreatedWithAuthContext</code></li> <li><code translate="no" dir="ltr">onDocumentWrittenWithAuthContext</code></li> <li><code translate="no" dir="ltr">onDocumentDeletedWithAuthContext</code></li> <li><code translate="no" dir="ltr">onDocumentUpdatedWithAuthContext</code></li> </ul></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+<ul> <li><code translate="no" dir="ltr">on_document_created_with_auth_context</code></li> <li><code translate="no" dir="ltr">on_document_updated_with_auth_context</code></li> <li><code translate="no" dir="ltr">on_document_deleted_with_auth_context</code></li> <li><code translate="no" dir="ltr">on_document_written_with_auth_context</code></li> </ul></section> </div> <p>For information about the data available in the authentication context, see <a href="https://github.com/cloudevents/spec/blob/main/cloudevents/extensions/authcontext.md">Auth Context</a>. The following example demonstrates how to retrieve authentication information:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {onDocumentWrittenWithAuthContext} = require('firebase-functions/v2/firestore');
+
+exports.syncUser = onDocumentWrittenWithAuthContext("users/{userId}", (event) =&gt; {
+    const snapshot = event.data.after;
+    if (!snapshot) {
+        console.log("No data associated with the event");
+        return;
+    }
+    const data = snapshot.data();
+
+    // retrieve auth context from event
+    const { authType, authId } = event;
+
+    let verified = false;
+    if (authType === "system") {
+      // system-generated users are automatically verified
+      verified = true;
+    } else if (authType === "unknown" || authType === "unauthenticated") {
+      // admin users from a specific domain are verified
+      if (authId.endsWith("@example.com")) {
+        verified = true;
+      }
+    }
+
+    return data.after.ref.set({
+        created_by: authId,
+        verified,
+    }, {merge: true}); 
+}); 
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@on_document_updated_with_auth_context(document="users/{userId}")
+def myfunction(event: Event[Change[DocumentSnapshot]]) -&gt; None:
+
+  # Get the current and previous document values.
+  new_value = event.data.after
+  prev_value = event.data.before
+
+  # Get the auth context from the event
+  user_auth_type = event.auth_type
+  user_auth_id = event.auth_id
+</pre></section> </div> <h3 id="data_outside_the_trigger_event">Data outside the trigger event</h3> <p>Cloud Functions execute in a trusted environment. They are authorized as a service account on your project, and you can perform reads and writes using the <a href="https://firebase.google.com/docs/reference/admin">Firebase Admin SDK</a>:</p>  <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const { initializeApp } = require('firebase-admin/app');
+const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
+
+initializeApp();
+const db = getFirestore();
+
+exports.writetofirestore = onDocumentWritten("some/doc", (event) =&gt; {
+    db.doc('some/otherdoc').set({ ... });
+  });
+
+  exports.writetofirestore = onDocumentWritten('users/{userId}', (event) =&gt; {
+    db.doc('some/otherdoc').set({
+      // Update otherdoc
+    });
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_admin import firestore, initialize_app
+import google.cloud.firestore
+
+initialize_app()
+
+@on_document_written(document="some/doc")
+def myfunction(event: Event[Change[DocumentSnapshot | None]]) -&gt; None:
+  firestore_client: google.cloud.firestore.Client = firestore.client()
+  firestore_client.document("another/doc").set({
+      # ...
+  })
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> Reads and writes performed in Cloud Functions are not controlled by your security rules, they can access any part of your database.</span></aside> <h2 id="limitations">Limitations</h2> <p>Note the following limitations for Cloud Firestore triggers for Cloud Functions:</p> <ul> <li>Cloud Functions (1st gen) prerequisites an existing "(default)" database in Firestore native mode. It does not support Cloud Firestore named databases or Datastore mode. Please use Cloud Functions (2nd gen) to configure events in such cases.</li> <li>Cross project setup with Cloud Functions and Cloud Firestore trigger is a limitation. To setup Cloud Firestore trigger Cloud Functions must be in the same project. </li> <li>Ordering is not guaranteed. Rapid changes can trigger function invocations in an unexpected order.</li> <li>Events are delivered at least once, but a single event may result in multiple function invocations. Avoid depending on exactly-once mechanics, and write <a href="https://cloud.google.com/blog/products/serverless/cloud-functions-pro-tips-building-idempotent-functions">idempotent functions</a>.</li> <li>
+<a href="https://cloud.google.com/firestore/docs/firestore-or-datastore">Cloud Firestore in Datastore mode</a> requires Cloud Functions (2nd gen). Cloud Functions (1st gen) does not support Datastore mode.</li> <li>A trigger is associated with a single database. You cannot create a trigger that matches multiple databases.</li> <li>Deleting a database does not automatically delete any triggers for that database. The trigger stops delivering events but continues to exist until you <a href="https://cloud.google.com/eventarc/docs/managing-triggers#trigger-delete">delete the trigger</a>.</li> <li>If a matched event exceeds the <a href="https://cloud.google.com/functions/quotas#resource_limits">maximum request size</a>, the event might not be delivered to Cloud Functions (1st gen). <ul> <li>Events not delivered because of request size are logged in <a href="https://cloud.google.com/logging/docs/api/platform-logs">platform logs</a> and count towards the log usage for the project. </li> <li>You can find these logs in the Logs Explorer with the message "Event cannot deliver to Cloud function due to size exceeding the limit for 1st gen..." of <code translate="no" dir="ltr">error</code> severity. You can find the function name under the <code translate="no" dir="ltr">functionName</code> field. If the <code translate="no" dir="ltr">receiveTimestamp</code> field is still within an hour from now, you can infer the actual event content by reading the document in question with a snapshot before and after the timestamp.</li> <li>To avoid such cadence, you can: <ul> <li>Migrate and upgrade to Cloud Functions (2nd gen)</li> <li>Downsize the document</li> <li>Delete the Cloud Functions in question</li> </ul>
+</li> <li>You can turn off the logging itself using <a href="https://cloud.google.com/logging/docs/routing/overview#exclusions">exclusions</a> but note that the offending events will still not be delivered.</li> </ul>
+</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/extend-with-functions-2nd-gen" class="_attribution-link">https://firebase.google.com/docs/firestore/extend-with-functions-2nd-gen</a>
+  </p>
+</div>

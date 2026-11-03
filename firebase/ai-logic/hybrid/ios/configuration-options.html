@@ -1,0 +1,119 @@
+<h1>Configuration options for hybrid experiences in Apple apps</h1> <aside class="experimental"><strong>Experimental:</strong><span> Using the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK to build hybrid experiences is an Experimental feature, which means that this feature isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways.</span></aside> <p><br></p> <p>This page describes the following configuration options for hybrid and on-device experiences:</p> <ul> <li><p><a href="#inference-modes">Set an "inference mode".</a></p></li> <li><p><a href="#check-model-availability">Check if the on-device model is available.</a></p></li> <li><p><a href="#determine-inference-source">Determine whether on-device or in-cloud inference was used.</a></p></li> <li><p><a href="#model-config">Use model configuration to control responses (like temperature).</a></p></li> </ul> <aside class="note"><strong>Note:</strong><span> Function calling and generating structured output are supported for on-device inference. Documentation for implementing those experiences is coming soon!</span></aside> <p><strong>Make sure that you've completed the <a href="get-started#get-started">getting started guide for building hybrid experiences</a>.</strong></p> <h2 id="inference-modes">Set an "inference mode"</h2> <p>The examples in the getting started guide show how to implement attempting on-device inference first, and then falling back to the cloud-hosted model. This is only one of the available "inference modes" that you can implement.</p> <aside class="note"><b>Note</b>: Keep the following in mind: <ul> <li> To use an on-device model, make sure to review the list of <a href="get-started#features-not-yet-supported">not-yet-supported features</a> at the bottom of the get started page. </li> <li> To use a cloud-hosted model, the device must be online and you must set either the `primary` or `secondary` model to a cloud model. </li> <li> As part of the response, the SDK tells you <a href="#determine-inference-source">whether on-device or in-cloud inference was used</a>. </li> </ul> </aside> <h4 id="hybrid-inference">Hybrid inference</h4> <ul> <li>
+<p><strong>Prefer on-device inference</strong>: set <code translate="no" dir="ltr">primary</code> to a "system" model and <code translate="no" dir="ltr">secondary</code> to a cloud model.</p> <p>Attempt to use the on-device model if it's available and supports the type of request. Otherwise, log an error on the device and then automatically <em>fall back to the cloud-hosted model</em>.</p> 
+<pre>// Imports + initialization of Gemini API backend service
+// ...
+
+// Initialize a cloud model that supports your use case
+let cloudModel = ai.geminiModel(name: "GEMINI_MODEL_NAME")
+// Initialize an on-device model that supports your use case
+let systemModel = FirebaseAI.SystemLanguageModel.default
+
+// Create a GenerativeModelSession with a hybrid model.
+// Provide your preferred model as `primary` and your fallback model as `secondary`
+// Attempt to use the on-device model; otherwise, fall back to the cloud-hosted model.
+let session = ai.generativeModelSession(
+  model: .hybridModel(primary: systemModel, secondary: cloudModel)
+)
+</pre>
+</li> <li>
+<p><strong>Prefer in-cloud inference</strong>: set <code translate="no" dir="ltr">primary</code> to a cloud model and <code translate="no" dir="ltr">secondary</code> to a "system" model.</p> <p>Attempt to use the cloud-hosted model if the device is online and if the model is available. If the device is offline, <em>fall back to the on-device model</em>. In all other failure cases, <em>throw an exception</em>.</p> 
+<pre>// Imports + initialization of Gemini API backend service
+// ...
+
+// Initialize a cloud model that supports your use case
+let cloudModel = ai.geminiModel(name: "GEMINI_MODEL_NAME")
+// Initialize an on-device model that supports your use case
+let systemModel = FirebaseAI.SystemLanguageModel.default
+
+// Create a GenerativeModelSession with a hybrid model.
+// Provide your preferred model as `primary` and your fallback model as `secondary`
+// Attempt to use the cloud-hosted model; otherwise, fall back to the on-device model.
+let session = ai.generativeModelSession(
+  model: .hybridModel(primary: cloudModel, secondary: systemModel)
+)
+</pre>
+</li> </ul> <h4 id="only-on-device-or-in-cloud">Only on-device or only in-cloud inference</h4> <p>The SDK supports setting <em>only</em> a single <code translate="no" dir="ltr">model</code> which means the SDK will <em>only</em> attempt either on-device or in-cloud inference. Also, you don't create a <code translate="no" dir="ltr">HybridModel</code> for this use case. However, for a <em>hybrid</em> experience, you do need to create a <code translate="no" dir="ltr">HybridModel</code> and set both <code translate="no" dir="ltr">primary</code> and <code translate="no" dir="ltr">secondary</code> models (as described above).</p> <ul> <li>
+<p><strong>Only on-device inference</strong>: set <code translate="no" dir="ltr">model</code> to a "system" model. You don't create a <code translate="no" dir="ltr">HybridModel</code> for this use case.</p> <p>Attempt to use the on-device model if it's available and supports the type of request. Otherwise, <em>throw an exception</em>.</p> 
+<pre>// Imports + initialization of Gemini API backend service
+// ...
+
+// Initialize an on-device model that supports your use case
+let systemModel = FirebaseAI.SystemLanguageModel.default
+
+// Create a GenerativeModelSession with the on-device model.
+let session = ai.generativeModelSession(
+  model: systemModel
+)
+</pre>
+</li> <li>
+<p><strong>Only in-cloud inference</strong>: set <code translate="no" dir="ltr">model</code> to a cloud model. You don't create a <code translate="no" dir="ltr">HybridModel</code> for this use case.</p> <p>Attempt to use the cloud-hosted model if the device is online and if the model is available. Otherwise, <em>throw an exception</em>.</p> 
+<pre>// Imports + initialization of Gemini API backend service
+// ...
+
+// Initialize a cloud model that supports your use case
+let cloudModel = ai.geminiModel(name: "GEMINI_MODEL_NAME")
+
+// Create a GenerativeModelSession with a cloud model.
+let session = ai.generativeModelSession(
+  model: cloudModel
+)
+</pre>
+</li> </ul> <h2 id="check-model-availability">Check if the on-device model is available</h2> <p>Manual checks for on-device availability are only necessary if you want to surface that information to the user or request that end-users take action to download the on-device model. If the on-device model is unavailable – and you've set <code translate="no" dir="ltr">primary</code> to an on-device model and <code translate="no" dir="ltr">secondary</code> to a cloud model – then the SDK will automatically fallback to using the cloud-hosted model.</p> <aside class="note"><strong>Note:</strong><span> An app can't trigger an on-device model download or enable Apple Intelligence on the device. However, if desired, you can check for on-device model availability (as described in this section) and request that the end-user <a href="https://support.apple.com/121115" class="external">enable Apple Intelligence</a> (and thus trigger the on-device model download).</span></aside> <p>To manually check whether the on-device model is actually usable, inspect the <code translate="no" dir="ltr">isAvailable</code> property:</p> 
+<pre>if FirebaseAI.SystemLanguageModel.default.isAvailable {
+  // The on-device model is ready to use.
+} else {
+  // The on-device model is unavailable.
+}
+</pre> <p>To check for specific on-device model availability reasons, inspect the <code translate="no" dir="ltr">availability</code> property:</p> 
+<pre>switch FirebaseAI.SystemLanguageModel.default.availability {
+case .available:
+  // The on-device model is ready to use.
+  break
+case .unavailable(.deviceNotEligible):
+  // This device does not support Apple Intelligence.
+  break
+case .unavailable(.appleIntelligenceNotEnabled):
+  // The user has not enabled Apple Intelligence in Settings.
+  break
+case .unavailable(.modelNotReady):
+  // The model is still being downloaded.
+  break
+case let .unavailable(reason):
+  // The model is unavailable due to the specified `reason`.
+  break
+}
+</pre> <h2 id="determine-inference-source">Determine whether on-device or in-cloud inference was used</h2> <p>If you use a <code translate="no" dir="ltr">HybridModel</code> (and set both <code translate="no" dir="ltr">primary</code> and <code translate="no" dir="ltr">secondary</code> models), then it might be helpful to know which model was used for a given request. This information is provided by the <code translate="no" dir="ltr">modelVersion</code> property of <code translate="no" dir="ltr">rawResponse</code> in each response.</p> <p>When you access this property, the returned value will be one of the following:</p> <ul> <li>Cloud-hosted model used: the model name, for example <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>
+</li> <li>On-device model used: <code translate="no" dir="ltr">apple-foundation-models-system-language-model</code>
+</li> </ul> 
+<pre>// let response = try await session.respond(to: ...
+
+print("You used: \(response.rawResponse.modelVersion)")
+
+print(response.content)
+</pre> <h2 id="model-config">Use model configuration to control responses</h2> <p>In each request to a model, you can send along a model configuration to control how the model generates a response. Cloud-hosted models and on-device models offer different configuration options (<a href="../../model-parameters#parameters-descriptions-gemini">cloud</a> vs <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/FirebaseAI/GenerationOptions">on-device</a> parameters).</p> <ul> <li>Cloud-hosted models: set their configuration in a <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a>.</li> <li>On-device models: set their configuration within <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/FirebaseAI/GenerationOptions"><code translate="no" dir="ltr">FirebaseAI.GenerationOptions</code></a>.</li> </ul> <p>These options are configured for each request to the model.</p> <p>Here's an example that sets the configurations for the cloud-hosted and on-device models for hybrid inference:</p> 
+<pre>// ...
+
+let response = try await session.respond(
+  to: "Why is the sky blue?",
+  options: .hybrid(
+    // Config for cloud-hosted model
+    gemini: GenerationConfig(
+      temperature: 0.8,
+      topP: 0.9,
+      thinkingConfig: ThinkingConfig(thinkingLevel: .high)
+    ),
+    // Config for on-device model
+    foundationModels: FirebaseAI.GenerationOptions(
+      sampling: .random(probabilityThreshold: 0.9),
+      temperature: 0.8
+    )
+  )
+)
+
+// ...
+</pre> <p><br></p> <p><a class="button button-primary" href="../../feedback">Give feedback about your experience with <span class='\"notranslate\"'>Firebase AI Logic</span></a></p> <p><br></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/hybrid/ios/configuration-options" class="_attribution-link">https://firebase.google.com/docs/ai-logic/hybrid/ios/configuration-options</a>
+  </p>
+</div>

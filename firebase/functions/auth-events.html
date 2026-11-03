@@ -1,0 +1,93 @@
+<h1>Firebase Authentication triggers</h1> <p>You can trigger functions in response to the creation and deletion of Firebase Authentication user accounts. For example, you could send a welcome email to a user who has just created an account in your app. Examples on this page are based on a sample that does exactly this—sends welcome and farewell emails upon account creation and deletion.</p> <aside class="preview"><strong>Preview:</strong><span> The triggers described in this guide are in a <strong>Preview</strong> release. This means that the functionality might change in backward-incompatible ways or have limited support. A preview release is not subject to any SLA or deprecation policy.</span></aside> <p>For more examples of use cases, see <a href="use-cases">What can I do with Cloud Functions?</a>.</p> <h2 id="trigger-function-on-user-creation">Trigger a function on user creation</h2> <p>You can create a function that triggers when an Authentication user is created using the <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.identity#identityonusercreated"><code translate="no" dir="ltr">onUserCreated</code></a> event handler from the <code translate="no" dir="ltr">firebase-functions/v2/identity</code> subpackage:</p> 
+
+<pre>const { onUserCreated } = require("firebase-functions/identity");
+const { defineSecret } = require("firebase-functions/params");
+const { logger } = require("firebase-functions");
+const { sendWelcomeEmail } = require("./utils/myEmailService");
+
+const emailApiKey = defineSecret("EMAIL_API_KEY");
+
+exports.newUserWelcome = onUserCreated(
+  { secrets: [emailApiKey] },
+  async (event) =&gt; {
+    const { uid, email, displayName } = event.data;
+
+    if (!email) {
+      logger.log(`User ${uid} does not have an email address.`);
+      return;
+    }
+
+    await sendWelcomeEmail(email, displayName);
+  },
+);</pre> <p>Authentication accounts will trigger user creation events for Cloud Functions when:</p> <ul> <li>A user creates an email account and password.</li> <li>A user signs in for the first time using a federated identity provider.</li> <li>The developer creates an account using the Admin SDK.</li> <li>A user signs in to a new anonymous auth session for the first time.</li> </ul> <p>A Cloud Functions event is <em>not</em> triggered when a user signs in for the first time using a custom token.</p> <h3 id="configure-options">Configure trigger options and multi-tenancy</h3> <p>You can configure your function by passing an options object (<code translate="no" dir="ltr">AuthOptions</code>) as the first parameter to <code translate="no" dir="ltr">onUserCreated</code>:</p> 
+
+<pre>/**
+ * Sends a welcome email scoped to a specific tenant in Identity Platform.
+ */
+exports.sendWelcomeEmailToTenant = onUserCreated(
+  {
+    secrets: [emailApiKey],
+    // Only trigger when a user is a member of this tenant
+    tenantId: "my-tenant-id",
+  },
+  async (event) =&gt; {
+    const { uid, email, displayName } = event.data;
+    // Customize the email for this tenant
+    await sendWelcomeEmail(email, displayName, event.tenantId);
+  },
+);
+  /**
+ * Sends a welcome email only to users not associated with any tenant.
+ */
+exports.sendWelcomeEmailNoTenant = onUserCreated(
+  {
+    secrets: [emailApiKey],
+    // Only trigger when a user is NOT a member of a tenant
+    tenantId: IS_NOT_TENANT,
+  },
+  async (event) =&gt; {
+    const { email, displayName } = event.data;
+
+    // Send a generic welcome email
+    await sendWelcomeEmail(email, displayName);
+  },
+);</pre> <p>If your project uses <a href="https://cloud.google.com/identity-platform/docs/multi-tenancy">Identity Platform multi-tenancy</a>, you can scope the trigger:</p> <ul> <li>
+<strong>Default project (no tenant)</strong>: Set <code translate="no" dir="ltr">tenantId</code> to <code translate="no" dir="ltr">IS_NOT_TENANT</code> to listen only for users created in the default project.</li> <li>
+<strong>Specific tenant</strong>: Provide the string ID of the tenant (for example, <code translate="no" dir="ltr">{ tenantId: "tenant-id-1" }</code>) to listen only for users created in that tenant.</li> <li>
+<strong>All tenants and users</strong>: If <code translate="no" dir="ltr">tenantId</code> is omitted, the function triggers on user creation events across all tenants and default project users in the project.</li> </ul> <p>In addition to <code translate="no" dir="ltr">tenantId</code>, you can specify standard 2nd gen configuration options including <code translate="no" dir="ltr">region</code>, <code translate="no" dir="ltr">concurrency</code>, <code translate="no" dir="ltr">cpu</code>, <code translate="no" dir="ltr">memory</code>, <code translate="no" dir="ltr">timeoutSeconds</code>, <code translate="no" dir="ltr">minInstances</code>, <code translate="no" dir="ltr">maxInstances</code>, and <code translate="no" dir="ltr">secrets</code>.</p> <h3 id="access-user-attributes">Access user attributes</h3> <p>From the user data returned to your function, you can access the list of user attributes available in the newly created user's <a href="https://firebase.google.com/docs/reference/admin/node/firebase-admin.auth.userrecord"><code translate="no" dir="ltr">UserRecord</code></a> object via <code translate="no" dir="ltr">event.data</code>. For example, you can get the user's email and display name as shown:</p> 
+
+<pre>const { uid, email, displayName } = event.data;</pre> <p>Authentication triggers in 2nd gen receive an <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.identity.authevent"><code translate="no" dir="ltr">AuthEvent</code></a> object. In addition to <code translate="no" dir="ltr">event.data</code>, you can access event metadata such as:</p> <ul> <li>
+<code translate="no" dir="ltr">event.id</code>: A unique identifier for the event.</li> <li>
+<code translate="no" dir="ltr">event.type</code>: The event type (<code translate="no" dir="ltr">google.firebase.auth.user.v2.created</code>).</li> <li>
+<code translate="no" dir="ltr">event.time</code>: An ISO 8601 timestamp representing when the event occurred.</li> <li>
+<code translate="no" dir="ltr">event.project</code>: The Google Cloud project ID.</li> <li>
+<code translate="no" dir="ltr">event.tenantId</code>: The Identity Platform tenant ID associated with the user, if applicable.</li> </ul> <aside class="note"><strong>Note:</strong><span> To support <a href="2nd-gen-upgrade">migration from 1st gen</a>, 2nd gen also supports 1st gen compatibility destructuring (<code translate="no" dir="ltr">const { user, context } = event;</code>).</span></aside> <h2 id="trigger-function-on-user-deletion">Trigger a function on user deletion</h2> <p>Just as you can trigger a function on user creation, you can respond to user deletion events. Use the <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.identity#identityonuserdeleted"><code translate="no" dir="ltr">onUserDeleted</code></a> event handler from <code translate="no" dir="ltr">firebase-functions/v2/identity</code> as shown:</p> 
+
+<pre>const { onUserDeleted } = require("firebase-functions/identity");
+const { defineSecret } = require("firebase-functions/params");
+const { logger } = require("firebase-functions");
+const { sendGoodbyeEmail } = require("./utils/myEmailService");
+
+const emailApiKey = defineSecret("EMAIL_API_KEY");
+
+exports.deletedUserFarewell = onUserDeleted(
+  { secrets: [emailApiKey] },
+  async (event) =&gt; {
+    const { uid, email, displayName } = event.data;
+    if (!email) {
+      logger.log(`User ${uid} does not have an email address.`);
+      return;
+    }
+
+    await sendGoodbyeEmail(email, displayName);
+  },
+);</pre> <p>As with <code translate="no" dir="ltr">onUserCreated</code>, you can configure <code translate="no" dir="ltr">onUserDeleted</code> with options like <code translate="no" dir="ltr">{ tenantId: IS_NOT_TENANT }</code> to restrict triggers to users in the default project.</p> <aside class="caution"><strong>Caution:</strong><span> Deleting multiple users at once using the Firebase Admin SDK (for example, <code translate="no" dir="ltr">admin.auth().deleteUsers([uid1, uid2])</code> in Node.js) does not fire user deletion events, so event handlers set up using <code translate="no" dir="ltr">onUserDeleted</code> <em>will not be triggered</em>. Delete users one at a time if you want user deletion events to fire for each deleted user.</span></aside> <h2 id="trigger-blocking-functions">Trigger blocking functions</h2> <p>If you've upgraded to Firebase Authentication with Identity Platform, you can extend Firebase Authentication using <a href="auth-blocking-events">blocking functions</a>.</p> <p>Blocking functions let you execute custom code synchronously that modifies the result of a user registering or signing in to your app. Unlike background triggers, which run asynchronously after an event has finished, blocking functions allow you to prevent a user from authenticating if they don't meet certain criteria, or update a user's information and claims before returning it to your client app.</p> <h2 id="best-practices">Best practices for 2nd gen triggers</h2> <p>When implementing 2nd gen authentication triggers, keep the following best practices in mind:</p> <ul> <li>
+<strong>Account for concurrency</strong>: Cloud Functions (2nd gen) instances process concurrent requests (defaulting to 80 concurrent requests when CPU ≥ 1). Ensure that your function does not rely on global mutable state between concurrent executions.</li> <li>
+<strong>Design for idempotency</strong>: Event delivery in 2nd gen is at-least-once via Eventarc. Ensure that your functions are idempotent; for example, verify that a welcome email has not already been sent or a database entry initialized before performing side effects.</li> <li>
+<strong>Scope multi-tenant functions</strong>: If your application uses Identity Platform multi-tenancy, verify whether your functions should handle events across all tenants or only specific ones. Use <code translate="no" dir="ltr">tenantId: IS_NOT_TENANT</code> to prevent tenant users from triggering functions intended only for the primary project.</li> <li>
+<strong>Manage regions and resource allocation</strong>: Specify the function location (<code translate="no" dir="ltr">region</code>) to minimize network latency between your authentication provider and your function execution environment.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/auth-events" class="_attribution-link">https://firebase.google.com/docs/functions/auth-events</a>
+  </p>
+</div>

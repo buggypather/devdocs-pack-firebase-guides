@@ -1,0 +1,80 @@
+<h1>Scale with Multiple Databases</h1> <p>The best way to optimize performance and scale your data in Firebase Realtime Database is to split your data across multiple Realtime Database instances, also known as database sharding. Sharding gives you the flexibility to scale beyond the <a href="limits">limits</a> that apply to individual database instances, in addition to load balancing and performance optimization.</p> <h2 id="when_to_shard_your_data">When to shard your data</h2> <p>You might want to shard your data across multiple databases if you're using Realtime Database and fit into any of the following scenarios:</p> <ul> <li>You want to scale beyond the limit of 200,000 simultaneous connections, 1,000 write operations/second, or any of the other <a href="limits">limits</a> for a single database instance.</li> <li>You have multiple, discrete data sets and want to optimize performance (for example, a chat app that serves separate, independent groups of users).</li> <li>You want to balance load across multiple databases to improve uptime and reduce the risk of overloading a single database instance.</li> </ul> <h2 id="how_to_shard_your_data">How to shard your data</h2> <p>To shard your data, follow these steps (described in greater detail below):</p> <ol> <li>Map your data to multiple databases according to your app's specific needs.</li> <li>Create multiple database instances.</li> <li>Configure your app so it connects to the Realtime Database instance necessary for each data set.</li> </ol> <h3 id="map_your_data">Map your data</h3> <p>When you're mapping your data to multiple databases, try to satisfy the following conditions:</p> <ul> <li>Each query only runs against a single database instance. Realtime Database doesn't support queries across database instances.</li> <li>No sharing or duplication of data across database instances (or minimal sharing or duplication).</li> <li>Each app instance only connects to one database at any given moment.</li> </ul> <p>As you're mapping your data, consider applying the following strategies:</p> <h4 id="create_a_master_shard">Create a "master shard"</h4> <p>Store a map of how your data is stored across database instances. This way, you can programmatically look up which database instance corresponds to the connecting client. Keep in mind that this might have more overhead than directly connecting to the particular database instance you need, when you need it.</p> <h4 id="bucket_data_by_categories_or_by_customer">Bucket data by categories or by customer</h4> <p>Store data in siloed database instances, grouped by user or data type. For example, if you build a chat application that serves multiple organizations, you can create a database instance for each organization and store all the chat data in unique database instances.</p> <p>In this case, organization A and organization B don't share data, there isn't any duplicate data in your databases, and you only perform queries against a single database instance. Additionally, users in each organization only connect to their organization's database when they use the chat app.</p> <p>You can then create several database instances in advance and use the organization's ID to map a team to its database instance. For example, organization A maps to Realtime Database A.</p> <p>The way you map data for your app depends on your particular use case, but the conditions and strategies outlined above can help you define what works for your data.</p> <h3 id="create_multiple_instances">Create multiple Realtime Database instances</h3> <p>If you're on the <a href="https://firebase.google.com/pricing">Blaze pricing plan</a>, you can create up to 1,000 database instances in the same Firebase project.</p> <p><img src="https://firebase.google.com/static/docs/database/usage/create_database.png" class="attempt-right" alt="create a database in the Firebase console with the context menu in the databases section"></p> <ol> <li><p>In the Firebase console, navigate to the <strong>Databases &amp; Storage</strong> &gt; <strong>Realtime Database</strong> &gt; <a href="https://console.firebase.google.com/project/_/database/data" class="external"><strong>Data</strong> tab</a>.</p></li> <li><p>Select <strong>Create new database</strong> from the drop-down menu.</p></li> <li><p>Customize your <strong>Database reference</strong> and <a href="../security"><strong>Security Rules</strong></a>, then click <strong>Got it</strong>.</p></li> </ol> <p>Repeat the process to create as many database instances as you need. Each database instance has its own set of Firebase Realtime Database Security Rules, so you can fine-tune access to your data.</p> <p>You can create and manage database instances in the Firebase console or using the <a href="https://firebase.google.com/docs/reference/rest/database/database-management/rest">Realtime Database Management REST API</a>.</p> <aside class="note"><strong>Note:</strong><span> If you downgrade from the Blaze plan to the Spark plan, your secondary database instances will be disabled, but not deleted. You can enable them again by upgrading to the Blaze plan.</span></aside> <h3 id="manage-interact-with-instances-cli">Manage and interact with specific instances using the CLI</h3> <p>You can manage and interact with specific Realtime Database instances using the Firebase CLI.</p> <p>By default, CLI commands interact with your <em>default</em> database instance. However, you can interact with a <em>non-default</em> database instance by using the <nobr><code translate="no" dir="ltr">--instance <var translate="no">DATABASE_NAME</var></code></nobr> flag.</p> <p>For example, use the following command to run the profiler for a database instance named <code translate="no" dir="ltr">my-example-shard.firebaseio.com</code>:</p> 
+<pre>firebase database:profile --instance "my-example-shard"</pre> <p>The following commands support the <code translate="no" dir="ltr">--instance</code> flag:</p> <ul> <li><code translate="no" dir="ltr">firebase database:get</code></li> <li><code translate="no" dir="ltr">firebase database:profile</code></li> <li><code translate="no" dir="ltr">firebase database:push</code></li> <li><code translate="no" dir="ltr">firebase database:remove</code></li> <li><code translate="no" dir="ltr">firebase database:set</code></li> <li><code translate="no" dir="ltr">firebase database:update</code></li> </ul> <h3 id="edit_and_deploy_for_each_instance">Edit and deploy Realtime Database Security Rules for each instance</h3> <p>Make sure that your Realtime Database Security Rules allow appropriate access to each database instance in your project. Each database has its own set of rules, which you can edit and deploy from the Firebase console, or using the <a href="../../cli/targets">Firebase CLI to deploy targets</a>.</p> <ul> <li>
+<p>To edit and deploy rules from the Firebase console, follow these steps:</p> <ol> <li><p>In the Firebase console, navigate to the <strong>Databases &amp; Storage</strong> &gt; <strong>Realtime Database</strong> &gt; <a href="https://console.firebase.google.com/project/_/database/rules" class="external"><strong>Rules</strong> tab</a>.</p></li> <li><p>Select the database you want to edit, then modify the rules.</p></li> </ol>
+</li> <li>
+<p>To edit and deploy rules from the Firebase CLI, follow these steps:</p> <ol> <li><p>Modify the rules in the rules files for your database instances (for example, <code translate="no" dir="ltr">foo.rules.json</code>).</p></li> <li>
+<p>Create and apply deploy targets to associate databases that use the same rules file. For example: </p>
+
+<pre>firebase target:apply database main my-db-1 my-db-2</pre> 
+<pre>firebase target:apply database other my-other-db-3</pre>
+</li> <li>
+<p>Update your <a href="../../cli#the_firebasejson_file"><code translate="no" dir="ltr">firebase.json</code></a> configuration file with the deploy targets:</p> 
+<pre>{
+  "database": [
+    {"target": "main", "rules": "foo.rules.json"},
+    {"target": "other", "rules": "bar.rules.json"}
+  ]
+}
+</pre>
+</li> <li>
+<p>Run the deploy command: </p>
+
+<pre>firebase deploy</pre>
+</li> </ol>
+</li> </ul> <p>Make sure you consistently edit and deploy rules from the same place. Deploying rules from the Firebase CLI overrides any edits you've made in the Firebase console, and editing rules directly in the Firebase console overrides any recent changes you've deployed through the Firebase CLI.</p> <h3 id="connect_your_app_to_multiple_database_instances">Connect your app to multiple database instances</h3> <p>Use the database reference to access data stored in secondary database instances. You can get the reference for a specific database instance by URL or app. If you don't specify a URL, you'll get the reference for the app's default database instance.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { initializeApp } from "firebase/app";
+import { getDatabase } from "firebase/database";
+
+const app1 = initializeApp({
+  databaseURL: "https://testapp-1234-1.firebaseio.com"
+});
+
+const app2 = initializeApp({
+  databaseURL: "https://testapp-1234-2.firebaseio.com"
+}, 'app2');
+
+// Get the default database instance for an app1
+const database1 = getDatabase(app1);
+
+// Get a database instance for app2
+const database2 = getDatabase(app2);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
+<pre data-language="javascript">const app1 = firebase.initializeApp({
+  databaseURL: "https://testapp-1234-1.firebaseio.com"
+});
+
+const app2 = firebase.initializeApp({
+  databaseURL: "https://testapp-1234-2.firebaseio.com"
+}, 'app2');
+
+// Get the default database instance for an app1
+var database1 = firebase.database();
+
+// Get a database instance for app2
+var database2 = firebase.database(app2);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">// Get the default database instance for an app
+
+var ref: DatabaseReference!
+
+ref = Database.database().reference()</pre> // Get a secondary database instance by URL var ref: DatabaseReference! ref = Database.database("https://testapp-1234.firebaseio.com").reference() </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">// Get the default database instance for an app
+
+@property (strong, nonatomic) FIRDatabaseReference *ref;
+
+self.ref = [[FIRDatabase database] reference];</pre> // Get a secondary database instance by URL @property (strong, nonatomic) FIRDatabaseReference *ref; self.ref = [[FIRDatabase databaseWithURL:@"https://testapp-1234.firebaseio.com"] reference]; </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">// Get the default database instance for an app
+val primary = Firebase.database.reference
+
+// Get a secondary database instance by URL
+val secondary = Firebase.database("https://testapp-1234.firebaseio.com").reference</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">// Get the default database instance for an app
+DatabaseReference primary = FirebaseDatabase.getInstance()
+        .getReference();
+
+// Get a secondary database instance by URL
+DatabaseReference secondary = FirebaseDatabase.getInstance("https://testapp-1234.firebaseio.com")
+        .getReference();</pre> </section> </div> <h4 id="optimize_the_connections_on_each_database">Optimize the connections on each database</h4> <p>If each client needs to connect to multiple databases during a session, you can reduce the number of simultaneous connections to each database instance by connecting to each database instance for only as long as is necessary.</p> <h2 id="get_more_advice">Get more advice</h2> <p>If you need more help sharding your data across multiple database instances, reach out to the Firebase experts on our <a href="https://firebase.community/">Slack channel</a> or on <a href="https://stackoverflow.com/questions/tagged/firebase">Stack Overflow</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/usage/sharding" class="_attribution-link">https://firebase.google.com/docs/database/usage/sharding</a>
+  </p>
+</div>

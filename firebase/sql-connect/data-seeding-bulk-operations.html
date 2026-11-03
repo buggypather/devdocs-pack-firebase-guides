@@ -1,0 +1,201 @@
+<h1>Seed data and perform bulk data operations</h1> <p>In Firebase SQL Connect, you can perform bulk data loads and updates in different ways depending on your workflows and environments:</p> <ul> <li><p>In <strong>local prototyping</strong>, when you are trying alternative schemas, data seeding mutations can be created and called in a local development environment using the SQL Connect VS Code extension, the SQL Connect emulator, and a local database instance.</p></li> <li>
+<p>In <strong>production development</strong>, with a stable schema, when you're performing larger CI/CD flows and managing production data, you have two options:</p> <ul> <li><p>The preferred approach is to use the Firebase Admin SDK, a set of libraries that run in privileged environments.</p></li> <li><p>You can also use SQL tools with your Cloud SQL instance to perform bulk loads and updates, as long as you are modifying <em>data</em> and not your <em>database schema</em>. Modifying your database schema directly with SQL tools can break your SQL Connect schema and connectors.</p></li> </ul>
+</li> </ul> <h2 id="seed-data">Local prototyping: seed data in local instances</h2> <p>In the <a href="quickstart">Get started guide</a>, you set up an app to add a single record to a single table using an ad hoc insert mutation.</p> <p>To be usable, the movie review app needs data for movies, reviews, and users for prototyping queries and mutations that use joins and other operations on multiple tables with realistic data. You can expand your schema and seed your database.</p> <aside class="tip"><strong>Tip:</strong><span> You can access the sample data and code used in this guide by checking out one of our SQL Connect quickstarts.</span></aside> <p>Your prototyping environment needs code to perform data seeding. This guide provides some samples, illustrating:</p> <ul> <li>Use of <code translate="no" dir="ltr">_insertMany</code> and <code translate="no" dir="ltr">_upsertMany</code> on individual tables</li> <li>Use of <code translate="no" dir="ltr">_insertMany</code> on related tables</li> </ul> <h3 id="update_the_movie_review_app_schema">Update the movie review app schema</h3> <p>You can use <code translate="no" dir="ltr">_insertMany</code> and <code translate="no" dir="ltr">_upsertMany</code> mutations to update individual database tables one at a time, or update multiple tables related by join relationships. An expanded movie review app schema that helps illustrate these use cases and examples is shown below. It expands <code translate="no" dir="ltr">schema.gql</code> beyond the starting <code translate="no" dir="ltr">Movie</code> type to include <code translate="no" dir="ltr">Actor</code> and <code translate="no" dir="ltr">MovieActor</code> types, so we can prototype more complex queries.</p> <aside class="note"><strong>Note:</strong><span> The schema for the movie review app is covered in detail in the <a href="schemas-queries-mutations">guide for schemas, queries and mutations</a>.</span></aside><aside class="note"><strong>Note:</strong><span> If you're prototyping with your production service, remember to deploy your schema updates before inserting data and testing new operations. </span></aside>
+<pre># Actors
+# Suppose an actor can participate in multiple movies and movies can have multiple actors
+# Movie - Actors (or vice versa) is a many to many relationship
+type Actor @table {
+  id: UUID!
+  imageUrl: String! 
+  name: String! @col(name: "name", dataType: "varchar(30)")
+}
+
+# Join table for many-to-many relationship for movies and actors
+# The 'key' param signifies the primary key(s) of this table
+# In this case, the keys are [movieId, actorId], the generated fields of the reference types [movie, actor]
+type MovieActor @table(key: ["movie", "actor"]) {
+  # @ref creates a field in the current table (MovieActor) that holds the primary key of the referenced type
+  # In this case, @ref(fields: "movieId", references: "id") is implied
+  movie: Movie!
+  # movieId: UUID! &lt;- this is created by the implied @ref
+  actor: Actor!
+  # actorId: UUID! &lt;- this is created by the implied @ref
+  role: String! # "main" or "supporting"
+}
+</pre> <h3 id="write_mutations_to_seed_zero_state_data">Write mutations to seed zero state data</h3> <p>During prototyping, when your queries and mutations need to be tested against a range of discrete values, you can populate data with multiple records. For example, you might want to add multiple movie records with different types of genres and ratings for testing comparisons and filtering.</p> <h4 id="seed_data_into_the_movie_and_actor_tables">Seed data into the <code translate="no" dir="ltr">Movie</code> and <code translate="no" dir="ltr">Actor</code> tables</h4> <p>Depending on your stage of prototyping, you can use the same technique introduced in the Get started guide to insert one or two records: that is, you can use CodeLenses in the SQL Connect VS Code extension to create <code translate="no" dir="ltr">_insert</code> mutations, hard-code data, and <a href="quickstart"><strong>Run</strong> those mutations in VS Code</a>.</p> <p>Eventually, it makes more sense to add many records into a table using an <code translate="no" dir="ltr">_insertMany</code> operation. In the movie review app example, this inserts an initial set of data in <code translate="no" dir="ltr">Movie</code> and <code translate="no" dir="ltr">Actor</code>.</p> <p>To execute the following mutations, using the SQL Connect VS Code extension, in the appropriate file editor view, click the <strong>Run (Production)</strong> or <strong>Run (Local)</strong> CodeLens buttons, depending on whether you are prototyping with your production service or a local database.</p> 
+<pre># insertMany for Movie
+# 2 records shown
+mutation {
+  movie_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      title: "Inception",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/movies%2Finception.jpg?alt=media&amp;token=07b09781-b302-4623-a5c3-1956d0143168",
+      genre: "sci-fi",
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      title: "The Matrix",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/movies%2Fthe_matrix.jpg?alt=media&amp;token=4975645d-fef8-409e-84a5-bcc1046e2059",
+      genre: "action",
+    }
+  ])
+}
+</pre>
+
+<pre># insertMany for Actor
+# 2 records shown
+mutation {
+  actor_insertMany(data: [
+    {
+      id: "123e4567-e89b-12d3-a456-426614174000",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/actors%2Fdicaprio.jpeg?alt=media&amp;token=452e030a-efa5-4ef4-bb81-502b23241316",
+      name: "Leonardo DiCaprio"
+    },
+    {
+      id: "123e4567-e89b-12d3-a456-426614174001",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/actors%2Fkeanu.jpg?alt=media&amp;token=6056520c-ef3e-4823-aad0-108aab163115",
+      name: "Keanu Reeves"
+    }
+   ])
+}
+</pre> <h4 id="seed_data_into_movieactor_join_table">Seed data into <code translate="no" dir="ltr">MovieActor</code> join table</h4> <p>To test queries and mutations using joins and other complex operations, you can add multiple records to the <code translate="no" dir="ltr">MovieActor</code> table.</p> <p>Here, when you are updating multiple tables in this kind of relation, you can add the <code translate="no" dir="ltr">@transaction</code> directive to ensure the update completes properly.</p> <aside class="note"><strong>Note:</strong><span> Correct records in <code translate="no" dir="ltr">Movie</code> and <code translate="no" dir="ltr">Actor</code> must exist for the <code translate="no" dir="ltr">_insertMany</code> operations to succeed.</span></aside>
+<pre>mutation @transaction {
+  movie_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      title: "Inception",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/movies%2Finception.jpg?alt=media&amp;token=07b09781-b302-4623-a5c3-1956d0143168",
+      genre: "sci-fi",
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      title: "The Matrix",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/movies%2Fthe_matrix.jpg?alt=media&amp;token=4975645d-fef8-409e-84a5-bcc1046e2059",
+      genre: "action",
+    }
+  ])
+
+  actor_insertMany(data: [
+    {
+      id: "123e4567-e89b-12d3-a456-426614174000",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/actors%2Fdicaprio.jpeg?alt=media&amp;token=452e030a-efa5-4ef4-bb81-502b23241316",
+      name: "Leonardo DiCaprio"
+    },
+    {
+      id: "123e4567-e89b-12d3-a456-426614174001",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/actors%2Fkeanu.jpg?alt=media&amp;token=6056520c-ef3e-4823-aad0-108aab163115",
+      name: "Keanu Reeves"
+    }
+  ])
+}
+</pre> <h4 id="seed_data_into_related_tables_using_nested_operations_one-to-many_and_one-to-one">Seed data into related tables using nested operations (one-to-many and one-to-one)</h4> <p>To seed related tables atomically, you can perform a nested relational insert using literal payloads. This creates the parent record and its associated child records in a single operation without requiring manual foreign key correlation.</p> <p>For one-to-many relationships, you provide an array of nested child records. For one-to-one relationships, you provide a single nested child object.</p> 
+<pre># Nested insert for Movie and Review (one-to-many)
+# 1 movie and 2 reviews shown
+mutation {
+  movie_insert(data: {
+    id: "550e8400-e29b-41d4-a716-446655440000",
+    title: "Inception",
+    imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/movies%2Finception.jpg?alt=media&amp;token=07b09781-b302-4623-a5c3-1956d0143168",
+    genre: "sci-fi",
+    reviews_on_movie: [
+      {
+        id: "123e4567-e89b-12d3-a456-426614174002",
+        rating: 5,
+        reviewText: "Amazing concept!",
+        user: { id: "user-uuid-123" }
+      },
+      {
+        id: "123e4567-e89b-12d3-a456-426614174003",
+        rating: 4,
+        reviewText: "A bit confusing, but great.",
+        user: { id: "user-uuid-456" }
+      }
+    ]
+  })
+}
+</pre>
+
+<pre># Nested insert for User and Profile (one-to-one)
+mutation {
+  user_insert(data: {
+    id: "user-uuid-123",
+    name: "Alice",
+    profile_on_user: {
+      bio: "Avid moviegoer and critic."
+    }
+  })
+}
+</pre>
+<aside class="note"><strong>Note:</strong><span> In the nested review payload, don't specify the parent <code translate="no" dir="ltr">movieId</code> foreign key, as it is automatically resolved and assigned.</span></aside> <h3 id="write_a_mutation_to_reset_seed_data">Write a mutation to reset seed data</h3> <p>While prototyping and performing CI/CD, resetting the data to a zero state for executing a new series of tests on a new set of data can be useful.</p> <p>To do so, if your prototype code does't add records to your tables, use the <code translate="no" dir="ltr">_upsertMany</code> mutation provided by SQL Connect.</p> <aside class="note"><strong>Note:</strong><span> Alternatively, you can call <code translate="no" dir="ltr">_deleteMany(all:true)</code> followed by <code translate="no" dir="ltr">_insertMany</code> to reset your data.</span></aside> <p>In the following example, <code translate="no" dir="ltr">movie_upsertMany</code> is called with the initial values to update movie records to their original state.</p> 
+<pre>mutation {
+  # Execute an upsertMany operation to update the Movie table
+  movie_upsertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      title: "Inception",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/movies%2Finception.jpg?alt=media&amp;token=07b09781-b302-4623-a5c3-1956d0143168",
+      genre: "sci-fi",
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      title: "The Matrix",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/movies%2Fthe_matrix.jpg?alt=media&amp;token=4975645d-fef8-409e-84a5-bcc1046e2059",
+      genre: "action",
+    }
+   …
+}
+</pre> <h2 id="bulk-data-adminsdk">Production development: use the Admin SDK to populate and update</h2> <p>The Firebase Admin SDK is available for when you want to work from privileged environments. This is an important use case when you want to load thousands of records, given the critical nature of bulk data operations on your production data.</p> <h3 id="data-seeding-install-adminsdk">Install the Firebase Admin SDK</h3> <p>Even if you mainly work locally, Firebase recommends setting up the Admin SDK so you can use Firebase SQL Connect from a privileged environment, including your local environment. You'll need to <a href="../admin/setup">set up the Admin SDK</a> for Node.js.</p> <p>You can learn more about <a href="admin-sdk">using the Admin SDK in other SQL Connect use cases</a>.</p> <h3 id="adminsdk-bulk-data">Perform bulk loads and updates of production data</h3> <p>The API for bulk data management builds GraphQL mutations on your behalf, rather than asking you to build <code translate="no" dir="ltr">mutation {...}</code> strings with the <code translate="no" dir="ltr">executeGraphQL</code> API described earlier for adding a few rows here and there locally.</p> <p>A major benefit of the administrative API is the ability to separately manage and re-use arrays of data for CI/CD flows, or set up large bulk data files for production data.</p> <p>The following snippets demonstrate how to set up a bulk-data script.</p> 
+<pre>import { initializeApp } from 'firebase-admin/app';
+import { getDataConnect } from 'firebase-admin/data-connect';
+
+const app = initializeApp();
+
+const dc = getDataConnect({ location: "us-west2", serviceId: "my-service" });
+
+const data = [
+  {
+    id: "550e8400-e29b-41d4-a716-446655440000",
+    title: "Inception",
+    imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/movies%2Finception.jpg?alt=media&amp;token=07b09781-b302-4623-a5c3-1956d0143168",
+    genre: "sci-fi",
+    // Nested reviews can be inserted atomically along with the movie
+    reviews_on_movie: [
+      {
+        rating: 5,
+        reviewText: "Amazing concept!",
+        user: { id: "user-123" } // Link to existing user
+      }
+    ]
+  },
+  {
+    id: "550e8400-e29b-41d4-a716-446655440001",
+    title: "The Matrix",
+    imageUrl: "https://firebasestorage.googleapis.com/v0/b/fdc-quickstart-web.appspot.com/o/movies%2Fthe_matrix.jpg?alt=media&amp;token=4975645d-fef8-409e-84a5-bcc1046e2059",
+    genre: "action",
+    reviews_on_movie: [
+      {
+        rating: 5,
+        reviewText: "A masterpiece of sci-fi action.",
+        user: { id: "user-456" }
+      }
+    ]
+  }
+];
+
+// Methods of the bulk operations API
+const resp = await dc.insert("movie" /*table name*/, data[0]);
+// Or
+const resp = await dc.insertMany("movie" /*table name*/, data);
+
+// Or
+const resp = await dc.upsert("movie" /*table name*/, data[0]);
+// Or
+const resp = await dc.upsertMany("movie" /*table name*/, data);
+
+</pre> <h2 id="use-sql">Production development: use SQL for bulk data updates</h2> <p>When you're working with a stable schema in production, and are not modifying your schema, you can work in your Cloud SQL instance to manage data loads and updates.</p> <aside class="note"><strong>Note:</strong><span> Modifying your database <em>schema</em> directly with SQL tools can break your SQL Connect schema and connectors.</span></aside> <p>Refer to the <a href="https://cloud.google.com/sql/docs/postgres/import-export/import-export-dmp">Cloud SQL for PostgreSQL guide for importing data</a>.</p> <h2 id="whats_next">What's next?</h2> <ul> <li>Learn about <a href="admin-sdk">integrating the Admin SDK into your SQL Connect projects</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/data-seeding-bulk-operations" class="_attribution-link">https://firebase.google.com/docs/sql-connect/data-seeding-bulk-operations</a>
+  </p>
+</div>

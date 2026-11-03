@@ -1,0 +1,339 @@
+<h1>Prevent Gemini API abuse with Firebase App Check</h1> <p>When you call an API directly from a mobile or web app, the API is vulnerable to abuse by unauthorized clients. <strong>If you want to call the <span class='\"notranslate\"'>Gemini API</span> directly from your mobile or web app, you need to help protect it from abuse by using <span class='\"notranslate\"'>Firebase AI Logic</span> and <em>enforcing <a href="../app-check">Firebase App Check</a></em></strong>. When you enforce App Check, it will only allow incoming requests that are verified to be from your actual app and/or an untampered device.</p>  <p><a href="#set-up-app-check" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to set up instructions</a> </p> <p><span class='\"notranslate\"'>Firebase AI Logic</span> provides a proxy gateway that lets you integrate with Firebase App Check and protect the <span class='\"notranslate\"'>Gemini API</span> when it's called directly by your mobile and web apps. When App Check is enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>, it helps protect both the <span class='\"notranslate\"'>Gemini Developer API</span> and the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>.</p> <p>App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> also supports <a href="#replay-protection"><em>replay protection</em></a>, which means an App Check token can only be used once.</p> <p><br></p> <aside class="caution"> <p> <strong>It's <em>critical</em> that App Check is enforced as early as possible</strong> — especially before you commit your app to a publicly available source code control system, share your app, or make your app publicly available. </p> <p> Starting in early July 2026, during the setup workflow in the Firebase console, Firebase automatically enforces App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>. If you had already set up <span class='\"notranslate\"'>Firebase AI Logic</span> in your Firebase project <em>before</em> early July 2026 (or App Check isn't enforced for some other reason), then you can <a href="app-check#set-up-app-check">enforce App Check</a> yourself. For an easier getting started experience or for local development, you can enforce App Check and then set up the App Check <em>debug provider</em>. </p> <p> <strong>Starting November 2, 2026, Firebase App Check enforcement will be <em>required</em> to use <span class='\"notranslate\"'>Firebase AI Logic</span>.</strong> <a href="faq-and-troubleshooting#security-app-check">Learn more.</a> </p> </aside> <h2 id="summary">High-level summary of how App Check works</h2> <p>With App Check, devices running your app use an app or device attestation provider that verifies one or both of the following:</p> <ul> <li>Requests originate from your authentic app</li> <li>Requests originate from an authentic, untampered device</li> </ul> <p>This attestation is attached to every request your app makes using a <span class='\"notranslate\"'>Firebase AI Logic</span> SDK. When App Check is enforced, requests from clients without a valid attestation will be rejected, as will any request originating from an app or platform you haven't authorized.</p> <p>When setting up App Check, consider adding <a href="#replay-protection"><em>replay protection</em></a>, which makes App Check tokens <em>one-time-use only</em>. This option offers enhanced protection beyond the baseline protection and lets you set an appropriate level of protection for your app and use cases.</p> <p>You can find <a href="../app-check">detailed information about App Check</a> in its documentation, including descriptions of attestation providers as well as any applicable <a href="../app-check#quotas_limits">quotas and limits</a>.</p> <h2 id="set-up-app-check">Set up App Check</h2> <p>The following instructions are optimized for setting up Firebase App Check enforcement for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <h3 id="enforce-app-check">
+<strong>Step 1</strong>: Enforce App Check</h3> <p>Starting in early July 2026, during the guided setup workflow in the Firebase console, Firebase automatically enforces Firebase App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> to help protect the <span class='\"notranslate\"'>Gemini API</span>.</p> <p>However, if you had already set up <span class='\"notranslate\"'>Firebase AI Logic</span> in your Firebase project <em>before</em> early July 2026 (or App Check isn't enforced for some other reason), then you can enforce App Check yourself using the following instructions.</p> <ol> <li>
+<p>Check if App Check is already enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/products/" class="external"><strong>APIs</strong> tab</a>.</p></li> <li><p>Find the row for <strong><span class='\"notranslate\"'>Firebase AI Logic</span></strong>. If it says <code translate="no" dir="ltr">Unenforced</code>, then continue with the remainder of these instructions.</p></li> </ol>
+</li> <li><p>Click the row for <span class='\"notranslate\"'>Firebase AI Logic</span>, and you'll see metrics graphs. Below those graphs, click <strong>Set up</strong>.</p></li> <li><p>In the first screen of the dialog (<strong>Baseline protection</strong>), select <strong>Enforced</strong>, and then click <strong>Continue</strong>.</p></li> <li>
+<p>In the next screen (<strong>Replay protection</strong>), select <strong>Disabled</strong>, and then click <strong>Continue</strong>.</p> <aside class="note"><strong>Note:</strong><span> <a href="app-check#replay-protection">Setting up <em>replay protection</em></a> requires that you've enabled limited-use tokens in your app. Once you've done that, you can come back later to the Firebase console and set up replay protection options.</span></aside>
+</li> <li>
+<p>In the final screen, review the considerations for enforcing App Check to make sure that you're ready to enforce App Check. If you're ready, click <strong>Continue</strong>.</p> <p>You do <em><strong>not</strong></em> need to register your apps if you only want to enforce App Check and <em>only</em> use the debug provider with <span class='\"notranslate\"'>Firebase AI Logic</span> in a pre-production app. However, when you're ready to release your app to end users, then you need to register your apps as part of setting up a production attestation provider (like App Attest, Play Integrity, or reCAPTCHA Enterprise).</p>
+</li> </ol> <h3 id="configure-debug-provider">
+<strong>Step 2</strong>: Set up the debug provider for local development</h3> <p>For <strong>local development</strong>, you can set up the App Check <em>debug provider</em> and still keep App Check enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <aside class="caution"><strong>Keep your debug token and debug build private.</strong> Don't commit your debug token to a public repository, and don't ship your debug token or debug build in production builds of your app. </aside> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Here's how to use the debug provider while running your app in a simulator interactively (for example, during local development):</p> <ol> <li>
+<p>In your Xcode project, import <code translate="no" dir="ltr">FirebaseAppCheck</code> and initialize App Check with the debug provider factory <em>before</em> you configure <code translate="no" dir="ltr">Firebase</code>.</p> 
+<pre data-language="swift">import SwiftUI
+import FirebaseCore
+import FirebaseAppCheck
+
+@main
+struct YourApp: App {
+  init() {
+    let providerFactory = AppCheckDebugProviderFactory()
+    AppCheck.setAppCheckProviderFactory(providerFactory)
+    FirebaseApp.configure()
+  }
+
+  var body: some Scene {
+    WindowGroup {
+      NavigationView {
+        ContentView()
+      }
+    }
+  }
+}
+</pre>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Launch your app in the simulator or on your test device.</p></li> <li>
+<p>Open the Xcode console and look for the App Check debug token. For example:</p> 
+<pre data-language="swift">&lt;Warning&gt; [AppCheckCore][I-GAC004001] App Check debug token: '123a4567-b89c-12d3-e456-789012345678'.
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol>
+</li> </ol> <p>For details about the debug provider (including how to get a new debug token), see the <a href="../app-check/ios/debug-provider">official App Check docs</a>.</p></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Here's how to use the debug provider while running your app in an emulator interactively (for example, during local development):</p> <ol> <li>
+<p>In your debug build, configure App Check to use the debug provider factory:</p> 
+<pre data-language="kotlin">Firebase.initialize(context = this)
+Firebase.appCheck.installAppCheckProviderFactory(
+    DebugAppCheckProviderFactory.getInstance(),
+)</pre>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Run your app in the emulator or on your test device.</p></li> <li>
+<p>Look for the App Check debug token in your logs. For example:</p> 
+<pre data-language="kotlin">D DebugAppCheckProvider: Enter this debug secret into the allow list
+in the Firebase Console for your project: 123a4567-b89c-12d3-e456-789012345678
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol>
+</li> </ol> <p>For details about the debug provider (including how to get a new debug token), see the <a href="../app-check/android/debug-provider">official App Check docs</a>.</p></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>Here's how to use the debug provider while running your app in an emulator interactively (for example, during local development):</p> <ol> <li>
+<p>In your debug build, configure App Check to use the debug provider factory:</p> 
+<pre data-language="java">FirebaseApp.initializeApp(/*context=*/ this);
+FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
+firebaseAppCheck.installAppCheckProviderFactory(
+        DebugAppCheckProviderFactory.getInstance());</pre>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Run your app in the emulator or on your test device.</p></li> <li>
+<p>Look for the App Check debug token in your logs. For example:</p> 
+<pre data-language="java">D DebugAppCheckProvider: Enter this debug secret into the allow list
+in the Firebase Console for your project: 123a4567-b89c-12d3-e456-789012345678
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol>
+</li> </ol> <p>For details about the debug provider (including how to get a new debug token), see the <a href="../app-check/android/debug-provider">official App Check docs</a>.</p></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Here's how to use the debug provider while running your app from <code translate="no" dir="ltr">localhost</code> interactively (for example, during local development):</p> <aside class="warning"><strong>Warning:</strong><span> Do <em><strong>not</strong></em> try to enable <code translate="no" dir="ltr">localhost</code> debugging by adding <code translate="no" dir="ltr">localhost</code> to the allowed domains for reCAPTCHA. Doing so would allow anyone to run your app from their local machines!</span></aside> <ol> <li>
+<p>In your debug build, enable debug mode by setting <code translate="no" dir="ltr">self.FIREBASE_APPCHECK_DEBUG_TOKEN</code> to <code translate="no" dir="ltr">true</code> before you initialize App Check. For example:</p> 
+<pre data-language="javascript">self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+initializeAppCheck(app, { /* App Check options */ });
+</pre>
+</li> <li>
+<p>Visit your web app locally and open the browser's developer tools. In the debug console, you'll see a debug token:</p> 
+<pre data-language="javascript">AppCheck debug token: "123a4567-b89c-12d3-e456-789012345678".
+You will need to safelist it in the Firebase console for it to work.
+</pre>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol>
+</li> </ol> <p>For details about the debug provider (including how to get a new debug token), see the <a href="../app-check/web/debug-provider">official App Check docs</a>.</p></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<p>Here's how to use the debug provider while running your app in a simulator interactively (for example, during local development):</p> <ol> <li>
+<p>Activate App Check with the debug provider right after you've initialized your Firebase app:</p> 
+<pre data-language="">import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+// Import the firebase_app_check plugin
+import 'package:firebase_app_check/firebase_app_check.dart';
+
+Future&lt;void&gt; main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await FirebaseAppCheck.instance.activate(
+    // Set appleProvider to `AppleProvider.debug`
+    appleProvider: AppleProvider.debug,
+  );
+  runApp(App());
+}
+</pre>
+</li> <li>
+<p>Enable debug logging in your Xcode project:</p> <ol> <li>Open <strong>Product &gt; Scheme &gt; Edit scheme</strong>.</li> <li>Select <strong>Run</strong> from the left menu, and then select the <strong>Arguments</strong> tab.</li> <li>In the <strong>Arguments Passed on Launch</strong> section, add <code translate="no" dir="ltr">-FIRDebugEnabled</code>.</li> </ol>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Open <code translate="no" dir="ltr">ios/Runner.xcworkspace</code> with Xcode and run your app in the simulator or on your test device.</p></li> <li>
+<p>Open the Xcode console and look for the App Check debug token. For example:</p> 
+<pre data-language="">&lt;Warning&gt; [AppCheckCore][I-GAC004001] App Check debug token: '123a4567-b89c-12d3-e456-789012345678'.
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<p>Here's how to use the debug provider while running your app in an emulator interactively (for example, during local development):</p> <ol> <li>
+<p>Activate App Check with the debug provider right after you've initialized your Firebase app:</p> 
+<pre data-language="java">import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+// Import the firebase_app_check plugin
+import 'package:firebase_app_check/firebase_app_check.dart';
+
+Future&lt;void&gt; main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await FirebaseAppCheck.instance.activate(
+    // Set androidProvider to `AndroidProvider.debug`
+    androidProvider: AndroidProvider.debug,
+  );
+  runApp(App());
+}
+</pre>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Run your app in the emulator or on your test device.</p></li> <li>
+<p>Look for the App Check debug token in your logs. For example:</p> 
+<pre data-language="java">D DebugAppCheckProvider: Enter this debug secret into the allow list
+in the Firebase Console for your project: 123a4567-b89c-12d3-e456-789012345678
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>Here's how to use the debug provider while running your app from <code translate="no" dir="ltr">localhost</code> interactively (for example, during local development):</p> <aside class="warning"><strong>Warning:</strong><span> Do <em><strong>not</strong></em> try to enable <code translate="no" dir="ltr">localhost</code> debugging by adding <code translate="no" dir="ltr">localhost</code> to the allowed domains for reCAPTCHA. Doing so would allow anyone to run your app from their local machines!</span></aside> <ol> <li>
+<p>In the file <code translate="no" dir="ltr">web/index.html</code>, enable debug mode by setting <code translate="no" dir="ltr">self.FIREBASE_APPCHECK_DEBUG_TOKEN</code> to <code translate="no" dir="ltr">true</code>:</p> 
+<pre data-language="javascript">&lt;body&gt;
+  &lt;script&gt;
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  &lt;/script&gt;
+
+  ...
+
+&lt;/body&gt;
+</pre>
+</li> <li>
+<p>Run your web app locally and open the browser's developer tools. In the debug console, you'll see a debug token:</p> 
+<pre data-language="javascript">AppCheck debug token: "123a4567-b89c-12d3-e456-789012345678".
+You will need to safelist it in the Firebase console for it to work.
+</pre> <p>This token is stored locally in your browser and will be used whenever you use your app in the same browser on the same machine. If you want to use the token in another browser or on another machine, set <code translate="no" dir="ltr">self.FIREBASE_APPCHECK_DEBUG_TOKEN</code> to the token string instead of <code translate="no" dir="ltr">true</code>.</p>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol>
+</li> </ol></section> </div> <p>For details about the debug provider (including how to get a new debug token), see the <a href="../app-check/flutter/debug-provider">official App Check docs</a>.</p></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Here's how to use the debug provider while running your app in an emulator interactively (for example, during local development):</p> <ol> <li>
+<p>In the Firebase console, create a debug token:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to create a new debug token.</p></li> </ol>
+</li> <li>
+<p>In your app's initialization code, add the following:</p> 
+<pre data-language="csharp">using Firebase.AppCheck;
+
+void InitializeFirebase() {
+  // Configure the Debug Provider factory with your debug token.
+  DebugAppCheckProviderFactory.Instance.SetDebugToken("YOUR_DEBUG_TOKEN");
+
+  // Set App Check to use the debug provider factory
+  FirebaseAppCheck.SetAppCheckProviderFactory(
+    DebugAppCheckProviderFactory.Instance);
+
+  // Proceed to initialize Firebase as normal
+}
+</pre>
+</li> </ol> <p>For details about the debug provider (including how to get a new debug token), see the <a href="../app-check/unity/debug-provider">official App Check docs</a>.</p></section> </div> <h3 id="configure-for-production">
+<strong>Step 3</strong>: Set up App Check for end-users and production</h3> <p>When you're ready to release your app to end-users, then you need to register your apps and set up a <em>production attestation provider</em> (like App Attest, Play Integrity, or reCAPTCHA Enterprise).</p> <ol> <li>
+<p>Choose a production attestation provider, and follow the implementation instructions at the following links:</p> <ul> <li>
+<strong>Apple platforms</strong>: <a href="../app-check/ios/devicecheck-provider">DeviceCheck</a> or <a href="../app-check/ios/app-attest-provider">App Attest</a> or <a href="../app-check/ios/recaptcha-enterprise-provider">reCAPTCHA Enterprise</a>
+</li> <li>
+<strong>Android</strong>: <a href="../app-check/android/play-integrity-provider">Play Integrity</a> or <a href="../app-check/android/recaptcha-enterprise-provider">reCAPTCHA Enterprise</a>
+</li> <li>
+<strong>Web</strong>: <a href="../app-check/web/recaptcha-enterprise-provider">reCAPTCHA Enterprise</a>
+</li> <li>
+<strong>Flutter</strong>: Supports <a href="../app-check/flutter/default-providers">all the providers above</a>, including <a href="../app-check/flutter/recaptcha-enterprise-provider">reCAPTCHA Enterprise</a><br> If you're using older plugin versions, see the <a href="#instantiation-flutter">note about special instantiation</a> below for Flutter and App Check.</li> <li>
+<strong>Unity</strong>: Supports <a href="../app-check/unity/default-providers">all the providers above</a> (support for reCAPTCHA Enterprise is coming soon)</li> </ul> <p>Note that if none of these attestation providers are sufficient for your needs, then you can <a href="../app-check/custom-provider">implement a custom provider</a> that uses either a third-party attestation provider or your own attestation techniques.</p>
+</li> <li><p><em>(Recommended)</em> <a href="#replay-protection">Enhance protection by adding <em><strong>replay protection</strong></em></a>, which means an App Check token can only be used once.</p></li> </ol> <p><section class="expandable" id="instantiation-flutter"> <p class="showalways" id="instantiation-flutter"><strong>Special instantiation required for Flutter if using older plugin versions</strong></p></section></p> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>This special instantiation is only required if your app uses the Flutter plugin <code translate="no" dir="ltr">firebase_ai</code> v3.11.0 or lower (BoM v4.12.0 or lower). If your app uses a newer version of the plugin, this special instantiation isn't needed.</p> <aside class="note"><strong>Note:</strong><span> Firebase recommends using the <a href="https://firebase.google.com/support/releases#latest-versions">latest versions of SDKs, plugins, and tools</a> so that you have access to the latest features, bug fixes, etc.</span></aside> <p>If you enforce App Check, then in Flutter apps that use older plugin versions, you need to explicitly pass in App Check during instantiation, like so:</p> 
+<pre>
+// ...
+
+// During instantiation, enable usage of limited-use tokens
+final ai = await FirebaseAI.googleAI(
+  // For Flutter plugin v3.11.0 or lower (BoM v4.12.0 or lower), pass in App Check explicitly.
+  appCheck: FirebaseAppCheck.instance,
+  useLimitedUseAppCheckTokens: true,
+);
+
+// ...
+
+</pre>   <h2 id="replay-protection">Enhance protection by adding replay protection</h2> <table class="orange"> <tr class="alt"> <td> <strong>We recommend using the latest SDK versions, but <em>make sure you're using at minimum one of these versions to use replay protection:</em></strong><br> Apple platforms v12.2.0+ | Android BoM v34.14.0+ (App Check v19.1.0+) | Web v12.14.0+ | Flutter v4.15.0+ (App Check v4.10.0+) | Unity v13.12.0+ </td> </tr> </table> <p>By default, App Check uses <em>session tokens</em> which have a configurable time to live (TTL) between <nobr>30 minutes</nobr> and <nobr>7 days</nobr>. These session tokens are cached by the App Check SDK, are sent along with requests from your app, and can be re-used until their TTL expires. Using session tokens is considered <em>baseline protection</em>.</p> <p>However, you can enhance protection beyond this baseline protection by enforcing <em>replay protection</em>, which uses <em>limited-use tokens</em> instead. When replay protection is enforced, the following happens:</p> <ul> <li><p>App Check will block requests to <span class='\"notranslate\"'>Firebase AI Logic</span> that use <em>session tokens</em>. Instead, App Check will only <strong>allow</strong> a request to <span class='\"notranslate\"'>Firebase AI Logic</span> if it uses a <em><strong>newly-minted limited-use token</strong></em>.</p></li> <li><p>After the limited-use token is verified, the token is consumed so that it can be used only once, which prevents replay attacks.</p></li> <li><p>The App Check SDK generates a new limited-use token for <em>each</em> request. Note that this process can impact your requests by adding some latency and sometimes cost (depending on your attestation provider).</p></li> </ul>  <h3 id="set-up-replay-protection">Set up and enforce replay protection</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Here's how to set up and enforce replay protection:</p> <ol> <li><p>If you haven't already, <a href="app-check#set-up-app-check">set up App Check</a> by following the instructions earlier on this page.</p></li> <li>
+<p><strong>Enable usage of limited-use tokens.</strong></p> <p>In your app during instantiation, set the <code translate="no" dir="ltr">useLimitedUseAppCheckTokens</code> parameter to <code translate="no" dir="ltr">true</code>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+// ...
+
+// During instantiation, enable usage of limited-use tokens.
+let ai = FirebaseAI.firebaseAI(
+  backend: .googleAI(),
+  useLimitedUseAppCheckTokens: true
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// ...
+
+// During instantiation, enable usage of limited-use tokens.
+val ai = Firebase.ai(
+  backend = GenerativeBackend.googleAI(),
+  useLimitedUseAppCheckTokens = true
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// ...
+
+// During instantiation, enable usage of limited-use tokens.
+FirebaseAI ai = FirebaseAI.getInstance(
+  /* backend: */ GenerativeBackend.googleAI(),
+  /* useLimitedUseAppCheckTokens: */ true
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+// ...
+
+// During instantiation, enable usage of limited-use tokens.
+const ai = getAI(firebaseApp, {
+  backend: new GoogleAIBackend(),
+  useLimitedUseAppCheckTokens: true
+});
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+// ...
+
+// During instantiation, enable usage of limited-use tokens
+final ai = await FirebaseAI.googleAI(
+  useLimitedUseAppCheckTokens: true,
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">// ...
+
+// During instantiation, enable usage of limited-use tokens
+var ai = FirebaseAI.GetInstance(
+  useLimitedUseAppCheckTokens: true
+);
+
+// ...
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> Consider setting up limited-use tokens to be a Firebase Remote Config parameter so that you can control its setting remotely rather than having it hard-coded in your app. Learn more about <a href="solutions/remote-config">using Remote Config</a>.</span></aside>
+</li> <li>
+<p><strong>Enforce replay protection.</strong></p> <ol> <li><p>In your app's codebase, make sure that you've enabled usage of limited-use tokens (see previous step).</p></li> <li><p>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/" class="external"><strong>App Check</strong></a>.</p></li> <li><p>Expand the metrics view for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p></li> <li><p>Make sure <em>Baseline protection</em> is <strong>Enforced</strong>, and then click <strong>Continue</strong>.</p></li> <li>
+<p>For replay protection, choose either <strong>Unenforced (monitoring only)</strong> or <strong>Enforced</strong>.</p> <p>Consider the following to decide when to enforce replay protection:</p> <ul> <li><p>Monitoring your requests is recommended if a substantial number of your users are likely using earlier versions of your app without usage of limited-use tokens enabled. If you enforce replay protection immediately, requests from those users will be blocked.</p></li> <li>
+<p>You can specifically monitor the <strong>Unverified: Reused token</strong> metric, which is the number of requests that have a token which has already been used in a previous request. Monitor this metric in the Firebase console (go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/products/" class="external"><strong>APIs</strong> tab</a>).</p> <p>If a significant portion of recent requests are in this category, you can avoid disrupting users and consider waiting to enforce replay protection until more users have updated to a version of your app that uses limited-use tokens.</p>
+</li> </ul>
+</li> </ol>
+</li> </ol> <aside class="note"><b>Note</b>: Be aware of the following if you <em><strong>only</strong> enable usage of limited-use tokens</em>, and you do <em>not</em> enforce replay protection: <ul> <li> Limited-use tokens have a TTL of only <nobr>5 minutes</nobr>, and the TTL isn't adjustable (unlike session tokens). <em>When replay protection isn't enforced</em>, limited-use tokens are similar to session tokens in that they can be re-used until their TTL expires. </li> <li> Even though limited-use tokens are valid for <nobr>5 minutes</nobr>, the SDK will still generate a new token for <em>each</em> request. Also, the SDKs do <em>not</em> cache limited-use tokens. </li> <li> <em>When replay protection isn't enforced</em>, App Check will <em>not</em> block requests to <span class='\"notranslate\"'>Firebase AI Logic</span> that use <em>valid session tokens</em>. </li> </ul> </aside>  <h2 id="how-integration-works">Understand how <span class='\"notranslate\"'>Firebase AI Logic</span> integrates with App Check</h2> <p>To use the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs, the <a href="https://console.cloud.google.com/apis/library/firebasevertexai.googleapis.com" class="external"><span class='\"notranslate\"'>Firebase AI Logic</span> API (<code translate="no" dir="ltr">firebasevertexai.googleapis.com</code>)</a> must be enabled in your Firebase project. This is because requests made by the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs are first sent to the <span class='\"notranslate\"'>Firebase AI Logic</span> server, which acts as a proxy gateway where Firebase App Check verification takes place <em>before</em> the request is allowed to proceed to the <span class='\"notranslate\"'>Gemini API</span> and access the <span class='\"notranslate\"'>Gemini</span> models.</p> <h2 id="troubleshooting">FAQ and troubleshooting</h2> <p>Find additional <a href="faq-and-troubleshooting">FAQ and troubleshooting</a> or <a href="error-codes">error codes</a> related to <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p><section class="expandable" id="app-check-in-all-versions"> <h4 class="showalways" id="app-check-in-all-versions">Do I need App Check enforced for all versions of my app?</h4></section></p> <p>App Check needs to be enforced for all versions of your app that use <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p>It's critical that App Check is enforced as early as possible — especially before you commit your app to a publicly available source code control system, share your app, or make your app publicly available.</p> <p>If you implement App Check in your app's codebase right away, then all your app versions can send valid App Check tokens. A request that doesn't send a valid token is considered unverified and will be blocked when App Check is enforced.</p> <p>If you've already released a version of your app to end-users that does <em>not</em> have App Check implemented, see the FAQ about how to <a href="#app-check-for-already-released-app">implement and enforce App Check for an already released app</a>.</p>  <p><section class="expandable" id="app-check-for-already-released-app"> <h4 class="showalways" id="app-check-for-already-released-app">How do I implement and enforce App Check for an app that's already released?</h4></section></p> <p>For app versions that don't have App Check implemented, requests to <span class='\"notranslate\"'>Firebase AI Logic</span> from those versions don't have valid App Check tokens and are considered unverified. These requests will be blocked when App Check is enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <aside class="warning"><strong>Warning:</strong><span> <strong>Starting November 2, 2026, App Check enforcement for <span class='\"notranslate\"'>Firebase AI Logic</span> will be required.</strong> <br> On this date, we'll automatically enforce App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>. Note that you can temporarily delay auto-enforcement until January 21, 2027 (learn how to delay auto-enforcement in the instructions below). <br><br>If you have end-users on app versions that don't have App Check implemented, then requests from those users will be blocked starting November 2, 2026. Thus, it's critical that you migrate these end-users to app versions with App Check implemented as soon as possible. <br><br> <a href="faq-and-troubleshooting#security-app-check">Learn more about this requirement.</a></span></aside> <p>The following instructions help you migrate your app so that you can enforce App Check in a way that avoids service disruptions for an already released app that doesn't have App Check.</p> <ol> <li>
+<p>Delay automatic enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/products/" class="external"><strong>APIs</strong> tab</a>.</p></li> <li><p>Find the row for <strong><span class='\"notranslate\"'>Firebase AI Logic</span></strong>.</p></li> <li><p>At the end of the row, find the <strong>Enforces:</strong> date picker with its <nobr><span class="material-icons" aria-hidden="true" translate="no">edit</span>Edit</nobr> icon.</p></li> <li>
+<p>Select the date that you want App Check to be automatically enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p>The last possible date is January 21, 2027. After that date, you can't delay auto-enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p>
+</li> <li><p>Click <strong>Save</strong>.</p></li> </ol> <aside class="warning"><strong>Warning:</strong><span> Be aware that if you delay auto-enforcement and choose not to enforce App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>, then access to the <span class='\"notranslate\"'>Gemini API</span> is vulnerable to abuse. Also, this delay is only temporary — after January 21, 2027, delaying auto-enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> won't be possible.</span></aside>
+</li> <li>
+<p>Implement a <em>production attestation provider</em> in your app as soon as possible.</p> <ul> <li>
+<strong>Apple platforms</strong>: <a href="../app-check/ios/devicecheck-provider">DeviceCheck</a> or <a href="../app-check/ios/app-attest-provider">App Attest</a> or <a href="../app-check/ios/recaptcha-enterprise-provider">reCAPTCHA Enterprise</a>
+</li> <li>
+<strong>Android</strong>: <a href="../app-check/android/play-integrity-provider">Play Integrity</a> or <a href="../app-check/android/recaptcha-enterprise-provider">reCAPTCHA Enterprise</a>
+</li> <li>
+<strong>Web</strong>: <a href="../app-check/web/recaptcha-enterprise-provider">reCAPTCHA Enterprise</a>
+</li> <li>
+<strong>Flutter</strong>: Supports <a href="../app-check/flutter/default-providers">all the providers above</a>, including <a href="../app-check/flutter/recaptcha-enterprise-provider">reCAPTCHA Enterprise</a>
+</li> <li>
+<strong>Unity</strong>: Supports <a href="../app-check/unity/default-providers">all the providers above</a> (support for reCAPTCHA Enterprise is coming soon)</li> </ul> <aside class="note"><strong>Note:</strong><span> When you implement App Check, consider enabling usage of limited-use tokens so that you have the option later of <a href="app-check#replay-protection">enhanced protection using <em>replay protection</em></a>, which means an App Check token can only be used once.</span></aside>
+</li> <li>
+<p><a href="../app-check/monitor-metrics">Monitor the requests from your app</a> to help you decide when it's safe to enforce App Check.</p> <p>For example, if almost all of the recent requests are from verified clients, then you should consider enforcing App Check.</p>
+</li> <li>
+<p><a href="app-check#enforce-app-check">Enforce App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>.</a></p> <aside class="warning"><strong>Warning:</strong><span> If you haven't enforced App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> by November 2, 2026, it will be <em>automatically</em> enforced. <a href="faq-and-troubleshooting#security-app-check">Learn more.</a></span></aside>
+</li> <li><p>For <strong>local development</strong> when App Check is enforced, you can <a href="app-check#configure-debug-provider">set up the App Check <em>debug provider</em></a> and still keep App Check enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p></li> </ol>  <p><section class="expandable" id="error-blocked-model"> <h4 class="showalways" id="error-inactive-project">
+<b>403 error</b>: <code translate="no" dir="ltr">PERMISSION_DENIED: To access this model, you must enforce Firebase App Check. Learn more: https://firebase.google.com/docs/ai-logic/app-check</code>
+</h4></section></p> <p>If you receive a <code translate="no" dir="ltr">403 - PERMISSION_DENIED</code> error that says <code translate="no" dir="ltr">To access this model, you must enforce Firebase App Check. Learn more: https://firebase.google.com/docs/ai-logic/app-check</code>, it means that your request doesn't have a valid App Check token and you're attempting to access a model that's commonly abused.</p> <p>Some generative models have been identified as common for malicious actors to abuse.</p> <p>Because you don't have App Check enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>, your project is vulnerable to abuse of these models. To help protect our developers, Firebase blocks access to these models unless the request includes a valid App Check token (meaning App Check is enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>).</p> <aside class="warning"><strong>Warning:</strong><span> <strong>Starting November 2, 2026, Firebase App Check enforcement will be <em>required</em> to use <span class='\"notranslate\"'>Firebase AI Logic</span></strong>. <a href="faq-and-troubleshooting#security-app-check">Learn more.</a></span></aside> <p>If you want to access the model that returned the error, do the following:</p> <ol> <li>
+<p><a href="app-check#set-up-app-check"><strong>Set up App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>.</strong></a> For local development, make sure that you set up the App Check <em>debug provider</em>.</p> <p>Enforcing App Check is critical to help protect the <span class='\"notranslate\"'>Gemini API</span> and <span class='\"notranslate\"'>Gemini</span> models from abuse, and its enforcement is required to clear this error.</p>
+</li> <li>
+<p><strong>Resend the request from your app to <span class='\"notranslate\"'>Firebase AI Logic</span>.</strong></p> <p>This request will send along a valid App Check token, and you'll no longer get this <code translate="no" dir="ltr">403 - PERMISSION_DENIED</code> error.</p>
+</li> <li><p>Before you release your app to end-users, you need to <a href="app-check#configure-for-production"><strong>set up a production attestation provider</strong></a> (like App Attest, Play Integrity, or reCAPTCHA Enterprise) so that your end-users can access your AI feature when App Check is enforced.</p></li> </ol>  <p><section class="expandable" id="error-inactive-project"> <h4 class="showalways" id="error-inactive-project">
+<b>403 error</b>: <code translate="no" dir="ltr">PERMISSION_DENIED: Firebase AI Logic has been deactivated in this project. To resume using Firebase AI Logic, you must enforce Firebase App Check. Learn more: https://firebase.google.com/docs/ai-logic/app-check</code>
+</h4></section></p> <p>If you receive a <code translate="no" dir="ltr">403 - PERMISSION_DENIED</code> error that says <code translate="no" dir="ltr">Firebase AI Logic has been deactivated in this project. To resume using
+Firebase AI Logic, you must enforce Firebase App Check. Learn more:
+https://firebase.google.com/docs/ai-logic/app-check</code>, it means that your Firebase project has been identified as inactive and you don't have App Check enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p>"Inactive projects" are those that have <span class='\"notranslate\"'>Firebase AI Logic</span> enabled, but don't have any recent usage of <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p>Because you don't have App Check enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>, your project is vulnerable to abuse of the <span class='\"notranslate\"'>Gemini API</span>. To help protect your project, Firebase deactivated usage of <span class='\"notranslate\"'>Firebase AI Logic</span> until you enforce App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <aside class="warning"><strong>Warning:</strong><span> <strong>Starting November 2, 2026, Firebase App Check enforcement will be <em>required</em> to use <span class='\"notranslate\"'>Firebase AI Logic</span></strong>. <a href="faq-and-troubleshooting#security-app-check">Learn more.</a></span></aside> <p>When you're ready to start using <span class='\"notranslate\"'>Firebase AI Logic</span> again, do the following:</p> <ol> <li>
+<p><a href="app-check#set-up-app-check"><strong>Set up App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>.</strong></a> For local development, make sure that you set up the App Check <em>debug provider</em>.</p> <p>Enforcing App Check is critical to help protect the <span class='\"notranslate\"'>Gemini API</span> and <span class='\"notranslate\"'>Gemini</span> models from abuse, and its enforcement is required to clear this error.</p>
+</li> <li>
+<p><strong>Resend the request from your app to <span class='\"notranslate\"'>Firebase AI Logic</span>.</strong></p> <p>This request will send along a valid App Check token, and you'll no longer get this <code translate="no" dir="ltr">403 - PERMISSION_DENIED</code> error.</p>
+</li> <li>
+<p><strong>If you already enforce App Check and still get this error, check whether <a href="app-check#replay-protection">replay protection</a> is turned on for <span class='\"notranslate\"'>Firebase AI Logic</span></strong> (including in "Monitor only" mode).</p> <p>When replay protection is on, only <em>limited-use tokens</em> count as verified for <span class='\"notranslate\"'>Firebase AI Logic</span>; regular session tokens don't clear this error. Either <a href="app-check#set-up-replay-protection">enable limited-use tokens in your app</a>, or turn replay protection off for <span class='\"notranslate\"'>Firebase AI Logic</span>, resend a request, and wait about a day before turning replay protection back on (project activity is re-evaluated daily).</p>
+</li> <li><p>Before you release your app to end-users, you need to <a href="app-check#configure-for-production"><strong>set up a production attestation provider</strong></a> (like App Attest, Play Integrity, or reCAPTCHA Enterprise) so that your end-users can access your AI feature when App Check is enforced.</p></li> </ol>  <p><section class="expandable" id="enforce-app-check-for-debug-provider-only"> <h4 class="showalways" id="enforce-app-check-for-debug-provider-only">Enforce App Check without a production attestation provider (debug provider only)</h4></section></p> <p>You can enforce App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> without registering your app with a production attestation provider. Instead, you can set up the App Check <em>debug provider</em>. This setup is helpful for local development or if you're just getting started with or trying out <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p>Earlier on this page, you can find optimized instructions for <a href="app-check#set-up-app-check">setting up App Check for <span class='\"notranslate\"'>Firebase AI Logic</span></a>, including enforcing App Check and setting up the App Check <em>debug provider</em>.</p> <aside class="special"><strong>Important:</strong><span> Before you release your app to end-users, you need to <a href="app-check#configure-for-production">set up a production attestation provider</a> (like App Attest, Play Integrity, or reCAPTCHA Enterprise) so that your end-users can access your AI feature when App Check is enforced.</span></aside>  <p><section class="expandable" id="app-check-delay-auto-enforcement"> <h4 class="showalways" id="app-check-delay-auto-enforcement">Delay auto-enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>
+</h4></section></p> <p>Starting November 2, 2026, Firebase will automatically enforce Firebase App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> in your Firebase project (if it's not already enforced).</p> <p>When App Check is enforced, any requests to <span class='\"notranslate\"'>Firebase AI Logic</span> without a valid App Check token will be blocked. This includes released app versions that don't have a production attestation provider implemented.</p> <p>If you have released app versions that don't have App Check implemented, then you can temporarily delay automatic enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>. <strong>However, <em>before January 21, 2027,</em> it's critical that you work towards <a href="#app-check-for-already-released-app">implementing and enforcing App Check for your already released apps</a>.</strong></p> <p>Here's how to delay the auto-enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/products/" class="external"><strong>APIs</strong> tab</a>.</p></li> <li><p>Find the row for <strong><span class='\"notranslate\"'>Firebase AI Logic</span></strong>.</p></li> <li><p>At the end of the row, find the <strong>Enforces:</strong> date picker with its <nobr><span class="material-icons" aria-hidden="true" translate="no">edit</span>Edit</nobr> icon.</p></li> <li>
+<p>Select the date that you want App Check to be automatically enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p>The last possible date is January 21, 2027. After that date, you can't delay auto-enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p>
+</li> <li><p>Click <strong>Save</strong>.</p></li> </ol> <aside class="warning"><strong>Warning:</strong><span> Be aware that if you delay auto-enforcement and choose not to enforce App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>, then access to the <span class='\"notranslate\"'>Gemini API</span> is vulnerable to abuse. Also, this delay is only temporary — after January 21, 2027, delaying auto-enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> won't be possible.</span></aside>  <p><section class="expandable" id="unenforce-app-check"> <h4 class="showalways" id="unenforce-app-check">Unenforce App Check (strongly <strong>NOT</strong> recommended)</h4></section></p> <aside class="warning"><strong>Warning:</strong><span> <strong>Unenforcing App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> is <em>strongly NOT recommended</em></strong>. When App Check isn't enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>, the <span class='\"notranslate\"'>Gemini API</span> is vulnerable to abuse.<br><br> However, if you choose to unenforce App Check, <em><strong>it's critical that you <a href="app-check#enforce-app-check">enforce it again</a></strong></em> — especially before you commit your app to a publicly available source code control system, share your app, or make your app publicly available.<br><br> If you're unenforcing App Check because you're just getting started with or trying out <span class='\"notranslate\"'>Firebase AI Logic</span>, then you should strongly consider <a href="app-check#configure-debug-provider">setting up the <em>debug provider</em> for local development</a> instead of unenforcing App Check.<br><br> <strong>Starting November 2, 2026, Firebase App Check enforcement will be required to use <span class='\"notranslate\"'>Firebase AI Logic</span>. <a href="faq-and-troubleshooting#security-app-check">Learn more.</a></strong></span></aside> <ol> <li>
+<p>Check if App Check is enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/products/" class="external"><strong>APIs</strong> tab</a>.</p></li> <li><p>Find the row for <strong><span class='\"notranslate\"'>Firebase AI Logic</span></strong>. If it says <strong>Enforced</strong>, then continue with the remainder of these instructions.</p></li> </ol>
+</li> <li>
+<p>Delay automatic enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>:</p> <ol> <li><p>At the end of the row for <strong><span class='\"notranslate\"'>Firebase AI Logic</span></strong>, find the <strong>Enforces:</strong> date picker with its <nobr><span class="material-icons" aria-hidden="true" translate="no">edit</span>Edit</nobr> icon.</p></li> <li>
+<p>Select the date that you want App Check to be automatically enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p>The last possible date is January 21, 2027. After that date, you can't delay auto-enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p>
+</li> <li><p>Click <strong>Save</strong>.</p></li> </ol> <aside class="warning"><strong>Warning:</strong><span> Be aware that if you delay auto-enforcement and choose to not enforce App Check for <span class='\"notranslate\"'>Firebase AI Logic</span>, then access to the <span class='\"notranslate\"'>Gemini API</span> is vulnerable to abuse. Also, this delay is only temporary — after January 21, 2027, delaying auto-enforcement of App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> won't be possible.</span></aside>
+</li> <li><p>Back in the list of APIs, click the row for <span class='\"notranslate\"'>Firebase AI Logic</span>, and you'll see metrics graphs. Below those graphs, click <strong>Set up</strong>.</p></li> <li><p>In the first screen of the dialog (<strong>Baseline protection</strong>), select <strong>Unenforced (monitoring only)</strong>, and then click <strong>Continue</strong>.</p></li> <li><p>In the next screen (<strong>Replay protection</strong>), select <strong>Disabled</strong>, and then click <strong>Continue</strong>.</p></li> <li>
+<p>In the final screen, click <strong>Continue</strong> to unenforce App Check.</p> <p>When App Check isn't enforced for <span class='\"notranslate\"'>Firebase AI Logic</span>, the <span class='\"notranslate\"'>Gemini API</span> is vulnerable to abuse.</p>
+</li> <li><p><strong>Make sure that you <a href="app-check#enforce-app-check">enforce App Check again</a></strong> — especially before you commit your app to a publicly available source code control system, share your app, or make your app publicly available.</p></li> </ol> <div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/app-check" class="_attribution-link">https://firebase.google.com/docs/ai-logic/app-check</a>
+  </p>
+</div>

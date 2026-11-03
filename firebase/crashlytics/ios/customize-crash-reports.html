@@ -1,0 +1,140 @@
+<h1>Customize crash reports for Apple platforms</h1>   <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button button-primary" href="customize-crash-reports">iOS+</a> <a class="button" href="../android/customize-crash-reports">Android</a> <a class="button" href="../flutter/customize-crash-reports">Flutter</a> <a class="button" href="../unity/customize-crash-reports">Unity</a> </td> </tr> </table> <p><br></p> <p>You can click into an issue and get a detailed event report in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console. You can customize those reports to help you better understand what's happening in your app and the circumstances around events reported to Crashlytics.</p> <ul> <li><p>Instrument your app to log <a href="#add-keys">custom keys</a>, <a href="#add-logs">custom log messages</a>, and <a href="#set-user-ids">user identifiers</a>.</p></li> <li><p>Report <a href="#log-excepts">exceptions</a> to Crashlytics.</p></li> <li><p>Automatically get <a href="#get-breadcrumb-logs">breadcrumb logs</a> if your app uses the Firebase SDK for Google Analytics. These logs give you visibility into user actions leading up to a Crashlytics-collected event in your app.</p></li> <li><p>Turn off automatic crash reporting and <a href="#enable-reporting">enable opt-in reporting</a> for your users. Note that, by default, Crashlytics automatically collects crash reports for all your app's users.</p></li> </ul> <h2 id="add-keys">Add custom keys</h2> <p>Custom keys help you get the specific state of your app leading up to a crash. You can associate arbitrary key-value pairs with your crash reports, then use the custom keys to search and filter crash reports in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console.</p> <ul> <li><p>You can search for issues that match a custom key.</p></li> <li><p>When you're reviewing a specific issue in the console, you can view the associated custom keys for each event (<strong>Keys</strong> subtab) and even filter the events by custom keys (<strong>Filter</strong> menu at the top of the page).</p></li> </ul> <aside class="note"><strong>Note:</strong><span> Crashlytics supports a maximum of 64 key-value pairs. After you reach this threshold, additional values are not saved. Each key-value pair can be up to 1 kB in size.</span></aside> <p>Use the <code translate="no" dir="ltr">setCustomValue</code> method to set key-value pairs. For example:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Set int_key to 100.
+Crashlytics.crashlytics().setCustomValue(100, forKey: "int_key")
+
+// Set str_key to "hello".
+Crashlytics.crashlytics().setCustomValue("hello", forKey: "str_key")</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+<p>When setting integers, booleans, or floats, box the value as <code translate="no" dir="ltr">@(<var translate="no">value</var>)</code>.</p> 
+<pre data-language="objectivec">// Set int_key to 100.
+[[FIRCrashlytics crashlytics] setCustomValue:@(100) forKey:@"int_key"];
+
+// Set str_key to "hello".
+[[FIRCrashlytics crashlytics] setCustomValue:@"hello" forKey:@"str_key"];</pre></section> </div> <p>You can also modify the value of an existing key by calling the key and setting it to a different value. For example:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">Crashlytics.crashlytics().setCustomValue(100, forKey: "int_key")
+
+// Set int_key to 50 from 100.
+Crashlytics.crashlytics().setCustomValue(50, forKey: "int_key")</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRCrashlytics crashlytics] setCustomValue:@(100) forKey:@"int_key"];
+
+// Set int_key to 50 from 100.
+[[FIRCrashlytics crashlytics] setCustomValue:@(50) forKey:@"int_key"];</pre></section> </div> <p>Add key-value pairs in bulk by using the <code translate="no" dir="ltr">setCustomKeysAndValues</code> method with an NSDictionary as the only parameter:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">let keysAndValues = [
+                 "string key" : "string value",
+                 "string key 2" : "string value 2",
+                 "boolean key" : true,
+                 "boolean key 2" : false,
+                 "float key" : 1.01,
+                 "float key 2" : 2.02
+                ] as [String : Any]
+
+Crashlytics.crashlytics().setCustomKeysAndValues(keysAndValues)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">NSDictionary *keysAndValues =
+    @{@"string key" : @"string value",
+      @"string key 2" : @"string value 2",
+      @"boolean key" : @(YES),
+      @"boolean key 2" : @(NO),
+      @"float key" : @(1.01),
+      @"float key 2" : @(2.02)};
+
+[[FIRCrashlytics crashlytics] setCustomKeysAndValues: keysAndValues];</pre></section> </div> <h2 id="add-logs">Add custom log messages</h2> <p>To give yourself more context for the events leading up to a crash, you can add custom Crashlytics logs to your app. Crashlytics associates the logs with your crash data and displays them in the <strong>Logs</strong> tab when you view the details of an issue (see all your issues in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console).</p> <aside class="note"><strong>Note:</strong><span> To avoid slowing down your app, Crashlytics limits logs to 64kB and deletes older log entries when logs for a session go over that limit.</span></aside><div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Use <code translate="no" dir="ltr">log()</code> or <code translate="no" dir="ltr">log(format:, arguments:)</code> to help pinpoint issues. If you want to get a useful log output with messages, the object that you pass to <code translate="no" dir="ltr">log()</code> must conform to the <a href="https://developer.apple.com/documentation/swift/customstringconvertible" class="external"><code translate="no" dir="ltr">CustomStringConvertible</code></a> property. <code translate="no" dir="ltr">log()</code> returns the description property you define for the object. For example:</p> 
+<pre data-language="swift">Crashlytics.crashlytics().log("Higgs-Boson detected! Bailing out…, \(attributesDict)")</pre> <p><code translate="no" dir="ltr">.log(format:, arguments:)</code> formats values returned from calling <code translate="no" dir="ltr">getVaList()</code>. For example:</p> 
+<pre data-language="swift">Crashlytics.crashlytics().log(format: "%@, %@", arguments: getVaList(["Higgs-Boson detected! Bailing out…", attributesDict]))</pre> <p>For more details on how to use <code translate="no" dir="ltr">log()</code> or <code translate="no" dir="ltr">log(format:, arguments:)</code>, refer to the Crashlytics <a href="https://firebase.google.com/docs/reference/swift/firebasecrashlytics/api/reference/Classes/Crashlytics">reference documentation</a>.</p></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+<p>Use <code translate="no" dir="ltr">log</code> or <code translate="no" dir="ltr">logWithFormat</code> to help pinpoint issues. Note that if you want to get a useful log output with messages, the object that you pass to either method must override the <code translate="no" dir="ltr">description</code> instance property. For example:</p> 
+<pre data-language="objectivec">[[FIRCrashlytics crashlytics] log:@"Simple string message"];
+
+[[FIRCrashlytics crashlytics] logWithFormat:@"Higgs-Boson detected! Bailing out... %@", attributesDict];
+
+[[FIRCrashlytics crashlytics] logWithFormat:@"Logging a variable argument list %@" arguments:va_list_arg];</pre> <p>For more details on how to use <code translate="no" dir="ltr">log</code> and <code translate="no" dir="ltr">logWithFormat</code>, refer to the Crashlytics <a href="https://firebase.google.com/docs/reference/ios/firebasecrashlytics/api/reference/Classes/FIRCrashlytics">reference documentation</a>.</p></section> </div> <h2 id="set-user-ids">Set user identifiers</h2> <p>To diagnose an issue, it’s often helpful to know which of your users experienced a given crash. Crashlytics includes a way to anonymously identify users in your crash reports.</p> <p>To add user IDs to your reports, assign each user a unique identifier in the form of an ID number, token, or hashed value:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">Crashlytics.crashlytics().setUserID("123456789")</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRCrashlytics crashlytics] setUserID:@"123456789"];</pre></section> </div> <p>If you ever need to clear a user identifier after you set it, reset the value to a blank string. Clearing a user identifier does not remove existing Crashlytics records. If you need to delete records associated with a user ID, <a href="https://firebase.google.com/support/troubleshooter/contact">contact Firebase support</a>.</p> <h2 id="log-excepts">Report non-fatal exceptions</h2> <p>In addition to automatically reporting your app's crashes, Crashlytics lets you record non-fatal exceptions and sends them to you the next time your app launches.</p> <aside class="note"><strong>Note:</strong><span> Crashlytics only stores the most recent eight exceptions in a given app session. If your app throws more than eight exceptions in a session, older exceptions are lost.</span></aside> <p>You can record non-fatal exceptions by recording <code translate="no" dir="ltr">NSError</code> objects with the <code translate="no" dir="ltr">recordError</code> method. <code translate="no" dir="ltr">recordError</code> captures the thread's call stack by calling <code translate="no" dir="ltr">[NSThread callStackReturnAddresses]</code>.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">Crashlytics.crashlytics().record(error: error)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRCrashlytics crashlytics] recordError:error];</pre></section> </div> <p>When using the <code translate="no" dir="ltr">recordError</code> method, it's important to understand the <code translate="no" dir="ltr">NSError</code> structure and how Crashlytics uses the data to group crashes. Incorrect usage of the <code translate="no" dir="ltr">recordError</code> method can cause unpredictable behavior and may cause Crashlytics to limit reporting of logged errors for your app.</p> <p>An <code translate="no" dir="ltr">NSError</code> object has three arguments:</p> <ul> <li><code translate="no" dir="ltr">domain: String</code></li> <li><code translate="no" dir="ltr">code: Int</code></li> <li><code translate="no" dir="ltr">userInfo: [AnyHashable : Any]? = nil</code></li> </ul> <p>Unlike fatal crashes, which are grouped via stack trace analysis, logged errors are grouped by <code translate="no" dir="ltr">domain</code> and <code translate="no" dir="ltr">code</code>. This is an important distinction between fatal crashes and logged errors. For example:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">let userInfo = [
+  NSLocalizedDescriptionKey: NSLocalizedString("The request failed.", comment: ""),
+  NSLocalizedFailureReasonErrorKey: NSLocalizedString("The response returned a 404.", comment: ""),
+  NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString("Does this page exist?", comment: ""),
+  "ProductID": "123456",
+  "View": "MainView"
+]
+
+let error = NSError.init(domain: NSCocoaErrorDomain,
+                         code: -1001,
+                         userInfo: userInfo)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">NSDictionary *userInfo = @{
+  NSLocalizedDescriptionKey: NSLocalizedString(@"The request failed.", nil),
+  NSLocalizedFailureReasonErrorKey: NSLocalizedString(@"The response returned a 404.", nil),
+  NSLocalizedRecoverySuggestionErrorKey: NSLocalizedString(@"Does this page exist?", nil),
+  @"ProductID": @"123456",
+  @"View": @"MainView",
+};
+
+NSError *error = [NSError errorWithDomain:NSCocoaErrorDomain
+                                     code:-1001
+                                 userInfo:userInfo];</pre></section> </div> <p>When you log the error above, it creates a new issue that is grouped by <code translate="no" dir="ltr">NSSomeErrorDomain</code> and <code translate="no" dir="ltr">-1001</code>. Additional logged errors that use the same domain and code values are grouped under the same issue. Data contained within the <code translate="no" dir="ltr">userInfo</code> object are converted to key-value pairs and displayed in the keys/logs section within an individual issue.</p> <aside class="caution"><strong>Caution:</strong><span> Avoid using unique values, such as user ID, product ID, and timestamps in the domain and code fields. Using unique values in these fields causes a high cardinality of issues and may result in Crashlytics needing to limit the reporting of logged errors in your app. Unique values should instead be added to the <code translate="no" dir="ltr">userInfo</code> dictionary object.</span></aside> <h3 id="logs-custom-keys">Logs and custom keys</h3> <p>Just like crash reports, you can embed logs and custom keys to add context to the <code translate="no" dir="ltr">NSError</code>. However, there is a difference in what logs are attached to crashes versus logged errors. When a crash occurs and the app is relaunched, the logs Crashlytics retrieves from disk are those that were written right up to the time of the crash. When you log an <code translate="no" dir="ltr">NSError</code>, the app does not immediately terminate. Because Crashlytics only sends the logged error report on the next app launch and must limit the amount of space allocated for logs on disk, it is possible to log enough after an <code translate="no" dir="ltr">NSError</code> is recorded so that all relevant logs are rotated out by the time Crashlytics sends the report from the device. Keep this balance in mind when logging <code translate="no" dir="ltr">NSErrors</code> and using logs and custom keys in your app.</p> <h3 id="perf-considerations">Performance considerations</h3> <p>Keep in mind that logging an <code translate="no" dir="ltr">NSError</code> can be fairly expensive. At the time you make the call, Crashlytics captures the current thread’s call stack using a process called stack unwinding. This process can be CPU and I/O intensive, particularly on architectures that support DWARF unwinding (arm64 and x86). After the unwind is complete, the information is written to disk synchronously. This prevents data loss if the next line were to crash.</p> <p>While it is safe to call this API on a background thread, remember that dispatching this call to another queue loses the context of the current stack trace.</p> <h3 id="nsexceptions">What about NSExceptions?</h3> <p>Crashlytics doesn't offer a facility for logging and recording <code translate="no" dir="ltr">NSException</code> instances directly. Generally speaking, the Cocoa and Cocoa Touch APIs are not exception-safe. That means the use of <code translate="no" dir="ltr">@catch</code> can have very serious unintended side-effects in your process, even when used with extreme care. You should never use <code translate="no" dir="ltr">@catch</code> statements in your code. Refer to <a href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Exceptions/Articles/ExceptionsAndCocoaFrameworks.html" class="external">Apple's documentation</a> on the topic.</p> <h2 id="customize-stack-traces">Customize stack traces</h2> <p>If your app runs in a non-native environment (such as C++ or Unity), you can use the Exception Model API to report crash metadata in your app's native exception format. Reported exceptions are marked as non-fatals.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">var  ex = ExceptionModel(name:"FooException", reason:"There was a foo.")
+ex.stackTrace = [
+  StackFrame(symbol:"makeError", file:"handler.js", line:495),
+  StackFrame(symbol:"then", file:"routes.js", line:102),
+  StackFrame(symbol:"main", file:"app.js", line:12),
+]
+
+crashlytics.record(exceptionModel:ex)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">FIRExceptionModel *model =
+    [FIRExceptionModel exceptionModelWithName:@"FooException" reason:@"There was a foo."];
+model.stackTrace = @[
+  [FIRStackFrame stackFrameWithSymbol:@"makeError" file:@"handler.js" line:495],
+  [FIRStackFrame stackFrameWithSymbol:@"then" file:@"routes.js" line:102],
+  [FIRStackFrame stackFrameWithSymbol:@"main" file:@"app.js" line:12],
+];
+
+[[FIRCrashlytics crashlytics] recordExceptionModel:model];</pre></section> </div> <p>Custom stack frames can also be initialized with just addresses:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">var  ex = ExceptionModel.init(name:"FooException", reason:"There was a foo.")
+ex.stackTrace = [
+  StackFrame(address:0xfa12123),
+  StackFrame(address:12412412),
+  StackFrame(address:194129124),
+]
+
+crashlytics.record(exceptionModel:ex)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">FIRExceptionModel *model =
+    [FIRExceptionModel exceptionModelWithName:@"FooException" reason:@"There was a foo."];
+model.stackTrace = @[
+  [FIRStackFrame stackFrameWithAddress:0xfa12123],
+  [FIRStackFrame stackFrameWithAddress:12412412],
+  [FIRStackFrame stackFrameWithAddress:194129124],
+];
+
+
+[[FIRCrashlytics crashlytics] recordExceptionModel:model];</pre></section> </div> <h2 id="get-breadcrumb-logs">Get breadcrumb logs</h2> <p>Breadcrumb logs give you a better understanding of the interactions that a user had with your app leading up to a crash, non-fatal, or ANR event. These logs can be helpful when trying to reproduce and debug an issue.</p> <p>Breadcrumb logs are powered by Google Analytics, so to get breadcrumb logs, you need to <a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">enable Google Analytics</a> for your Firebase project and <a href="../../analytics/get-started#add-sdk">add the Firebase SDK for Google Analytics</a> to your app. Once these requirements are met, breadcrumb logs are automatically included with an event's data within the <strong>Logs</strong> tab when you view the details of an issue (see all your issues in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console).</p> <p>The Analytics SDK <a href="../../analytics/screenviews">automatically logs the <code translate="no" dir="ltr">screen_view</code> event</a> which enables the breadcrumb logs to show a list of screens viewed before the crash, non-fatal, or ANR event. A <code translate="no" dir="ltr">screen_view</code> breadcrumb log contains a <code translate="no" dir="ltr">firebase_screen_class</code> parameter.</p> <p>Breadcrumb logs are also populated with any <a href="../../analytics/events">custom events</a> that you manually log within the user’s session, including the event's parameter data. This data can help show a series of user actions leading up to a crash, non-fatal, or ANR event.</p> <p>Note that you can <a href="../../analytics/configure-data-collection">control the collection and use of Google Analytics data</a>, which includes the data that populates breadcrumb logs.</p> <h2 id="enable-reporting">Enable opt-in reporting</h2> <aside class="caution">If you enable opt-in reporting by disabling automatic reporting, you will reduce the accuracy of your app's event count and crash-free metrics, which makes them less reflective of the overall stability of your app. <a href="../crash-free-metrics#impact-of-data-collection-settings">Learn more.</a> </aside> <p>By default, Crashlytics automatically collects crash reports for all your app's users. To give users more control over the data they send, you can enable opt-in reporting by disabling automatic reporting and only sending data to Crashlytics when you choose to in your code.</p> <ol> <li>
+<p>Turn off automatic collection by adding a new key to your <code translate="no" dir="ltr">Info.plist</code> file:</p> <ul> <li>Key: <code translate="no" dir="ltr">FirebaseCrashlyticsCollectionEnabled</code>
+</li> <li>Value: <code translate="no" dir="ltr">false</code>
+</li> </ul>
+</li> <li>
+<p>Enable collection for select users by calling the Crashlytics data collection override at runtime. The override value persists across all subsequent launches of your app so Crashlytics can automatically collect reports for that user.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRCrashlytics crashlytics] setCrashlyticsCollectionEnabled:YES];</pre></section> </div> <p>If the user later opts-out of data collection, you can pass <code translate="no" dir="ltr">false</code> as the override value, which will apply the next time the user launches the app and will persist across all subsequent launches for that user.</p>
+</li> </ol>
+<aside class="note"><strong>Note:</strong><span> When data collection is disabled for a user, Crashlytics will store crash information locally on the device. If data collection is subsequently enabled, any crash information stored on the device will be sent to Crashlytics for processing.</span></aside> <h2 id="manage-crash-insights">Manage Crash Insights data</h2> <p>Crash Insights helps you resolve issues by comparing your anonymized stack traces to traces from other Firebase apps and letting you know if your issue is part of a larger trend. For many issues, Crash Insights even provides resources to help you debug the crash.</p> <p>Crash Insights uses aggregated crash data to identify common stability trends. If you'd prefer not to share your app's data, you can opt-out of Crash Insights from the <strong>Crash Insights</strong> menu at the top of the issue list in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console.</p> <aside class="note"><strong>Note:</strong><span> Disabling data sharing also removes insights on your issues. Changes may take up to 24 hours to take effect.</span></aside> <h2 id="next-steps">Next steps</h2> <ul> <li> <a href="../export-data-to-cloud">Export your data to BigQuery or Cloud Logging</a> for advanced analysis and features, like querying your data, building custom dashboards, and setting up custom alerts. </li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/crashlytics/ios/customize-crash-reports" class="_attribution-link">https://firebase.google.com/docs/crashlytics/ios/customize-crash-reports</a>
+  </p>
+</div>

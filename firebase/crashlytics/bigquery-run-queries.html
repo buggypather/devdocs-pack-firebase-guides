@@ -1,0 +1,184 @@
+<h1>Run SQL queries on exported data in BigQuery</h1>   <p>After you export your Crashlytics and (optionally) Firebase sessions data into BigQuery, you can start working with the data:</p> <ul> <li><p><strong>Analyze data using SQL queries</strong><br> You can run queries on your Crashlytics data to generate custom reports and summaries. Since these types of custom reports aren't available in the Crashlytics dashboard of the Firebase console, they can supplement your analysis and understanding of crash data. See the collection of <a href="#example-queries">example queries</a> later on this page.</p></li> <li><p><strong>Join data from different datasets</strong><br> For example, if you choose to export Firebase sessions data when you set up Crashlytics data export, then you can improve understanding of crash-free users and crash-free sessions (see <a href="#example-crash-free-metrics-sessions-data">example query</a>). Also, you can export data from various Firebase products (like Performance Monitoring) or from Google Analytics and then join and analyze that data in BigQuery with your Crashlytics data.</p></li> <li><p><strong>Create views</strong><br> Using the BigQuery UI, you can create a <em>view</em>, which is a virtual table defined by a SQL query. For detailed instructions about the different types of views and how to create them, see the <a href="https://cloud.google.com/bigquery/docs/views-intro" class="external">BigQuery documentation</a>.</p></li> </ul> <p>For details about the dataset schema, see <a href="bigquery-dataset-schema">Dataset schema for exported data in BigQuery</a>.</p> <h2 id="learn-about-bigquery-sql">Learn about BigQuery SQL</h2> <ul> <li><p>Learn about the <a href="https://docs.cloud.google.com/bigquery/docs/running-queries" class="external">types of queries you can run</a>, including interactive query jobs, batch query jobs, and continuous query jobs.</p></li> <li><p>Learn about the <a href="https://docs.cloud.google.com/bigquery/docs/introduction-sql" class="external">supported statements and SQL dialects in BigQuery</a>.</p></li> <li><p>Learn how to <a href="https://docs.cloud.google.com/bigquery/docs/write-sql-gemini" class="external">write queries using AI-powered assistance (<span class='\"notranslate\"'>Gemini</span>)</a>.</p></li> </ul> <h2 id="example-queries">Example queries for Crashlytics data</h2> <p>This section provides some example situations and example queries that demonstrate how you can use BigQuery SQL with your exported Crashlytics data and Firebase sessions data.</p> <ul> <li><a href="#example-crash-free-metrics-sessions-data">Calculate crash-free metrics using Firebase sessions data</a></li> <li><a href="#example-crashes-by-day">Crashes by day</a></li> <li><a href="#example-find-most-pervasive-crashes">Find the most pervasive crashes</a></li> <li><a href="#example-top-10-crashing-devices">Top 10 crashing devices</a></li> <li><a href="#example-filter-by-custom-key">Filter by custom key</a></li> <li><a href="#example-extract-user-ids">Extract user IDs</a></li> <li><a href="#example-find-all-users-facing-a-particular-crash-issue">Find all users facing a particular crash issue</a></li> <li><a href="#example-number-users-impacted-by-country">Number of users impacted by a crash issue, broken down by country</a></li> <li><a href="#example-top-5-issues-today">Top 5 issues so far today</a></li> <li><a href="#example-top-5-issues-since-date">Top 5 issues since DATE, including today</a></li> </ul> <h4 id="example-crash-free-metrics-sessions-data">Example 1: Calculate crash-free metrics using Firebase sessions data</h4> <p>In your latest version, you launched a major revamp of your app to address crashes in a critical user journey. You've received stellar reviews from users, but you'd like quantitative evidence that your app is more stable than before.</p> <p><a href="crash-free-metrics">Crash-free metrics</a> can help provide this information. These metrics are important measurements that help you understand the overall health of your app. With Firebase sessions data and Crashlytics events, you can calculate these metrics with a basic query.</p> <p>Here are example queries for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> <p><strong>Crash-free <em>users</em> for a specific version:</strong></p> 
+<pre>SELECT
+  TIMESTAMP_TRUNC(crashlytics.event_timestamp,DAY) AS event_date,
+  (1 - (COUNT (DISTINCT installation_uuid) / COUNT (DISTINCT instance_id))) AS CFU
+FROM
+  `PROJECT_ID.firebase_sessions.PACKAGE_NAME_ANDROID` AS sessions
+LEFT JOIN
+  `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID` AS crashlytics
+ON
+  TIMESTAMP_TRUNC(sessions.event_timestamp,DAY) = TIMESTAMP_TRUNC(crashlytics.event_timestamp,DAY)
+WHERE
+  crashlytics.error_type="FATAL"
+  AND crashlytics.application.display_version="APP_VERSION"
+  AND sessions.application.display_version = "APP_VERSION"
+GROUP BY
+  event_date
+ORDER BY
+  event_date</pre> <p><strong>Crash-free <em>sessions</em> over the past week (past 168 hours):</strong></p> 
+<pre>SELECT
+  TIMESTAMP_TRUNC(crashlytics.event_timestamp,DAY) AS event_date,
+  (1 - (COUNT (DISTINCT crashlytics.firebase_session_id) / COUNT (DISTINCT sessions.session_id))) AS CFS
+FROM
+  `PROJECT_ID.firebase_sessions.PACKAGE_NAME_ANDROID` AS sessions
+LEFT JOIN
+  `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID` AS crashlytics
+ON
+  TIMESTAMP_TRUNC(sessions.event_timestamp,DAY) = TIMESTAMP_TRUNC(crashlytics.event_timestamp,DAY)
+WHERE
+  crashlytics.error_type="FATAL" AND _PARTITIONTIME &gt;= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 168 HOUR)
+  AND _PARTITIONTIME &lt; CURRENT_TIMESTAMP()
+GROUP BY
+  event_date
+ORDER BY
+  event_date</pre> <h4 id="example-crashes-by-day">Example 2: Crashes by day</h4> <p>After working to fix as many bugs as possible, you think your team is finally ready to launch your new photo-sharing app. Before you do, you want to check the number of crashes per day for the past month, to be sure your bug-bash made the app more stable over time.</p> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
+<pre>SELECT
+  COUNT(DISTINCT event_id) AS number_of_crashes,
+  FORMAT_TIMESTAMP("%F", event_timestamp) AS date_of_crashes
+FROM
+ `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID`
+GROUP BY
+  date_of_crashes
+ORDER BY
+  date_of_crashes DESC
+LIMIT 30;</pre> <h4 id="example-find-most-pervasive-crashes">Example 3: Find the most pervasive crashes</h4> <p>To properly prioritize production plans, you want to find the top 10 most pervasive crashes in your app. You produce a query that provides the pertinent points of data.</p> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
+<pre>SELECT
+  DISTINCT issue_id,
+  COUNT(DISTINCT event_id) AS number_of_crashes,
+  COUNT(DISTINCT installation_uuid) AS number_of_impacted_user,
+  blame_frame.file,
+  blame_frame.line
+FROM
+  `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID`
+WHERE
+  event_timestamp &gt;= TIMESTAMP_SUB(CURRENT_TIMESTAMP(),INTERVAL 168 HOUR)
+  AND event_timestamp &lt; CURRENT_TIMESTAMP()
+GROUP BY
+  issue_id,
+  blame_frame.file,
+  blame_frame.line
+ORDER BY
+  number_of_crashes DESC
+LIMIT 10;</pre> <h4 id="example-top-10-crashing-devices">Example 4: Top 10 crashing devices</h4> <p>Fall is new phone season! Your company knows that this also means it's new device-specific issues season — especially for Android. To get ahead of the looming compatibility concerns, you put together a query that identifies the 10 devices that experienced the most crashes in the past week (168 hours).</p> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
+<pre>SELECT
+  device.model,
+COUNT(DISTINCT event_id) AS number_of_crashes
+FROM
+  `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID`
+WHERE
+  event_timestamp &gt;= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 168 HOUR)
+  AND event_timestamp &lt; CURRENT_TIMESTAMP()
+GROUP BY
+  device.model
+ORDER BY
+  number_of_crashes DESC
+LIMIT 10;</pre> <h4 id="example-filter-by-custom-key">Example 5: Filter by custom key</h4> <p>You're a game developer who wants to know which level of your game experiences the most crashes.</p> <p>To help track that stat, you set a custom Crashlytics key (<a href="ios/customize-crash-reports#add-keys">iOS+</a> | <a href="android/customize-crash-reports#add-keys">Android</a> | <a href="flutter/customize-crash-reports#add-keys">Flutter</a> | <a href="unity/customize-crash-reports#add-keys">Unity</a> ) called <code translate="no" dir="ltr">current_level</code>, and update it every time the user reaches a new level.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">Crashlytics.sharedInstance().setIntValue(3, forKey: "current_level");
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">CrashlyticsKit setIntValue:3 forKey:@"current_level";
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">Crashlytics.setInt("current_level", 3);
+</pre></section> </div> <p>With that key in your export to BigQuery, you can then write a query to report the distribution of <code translate="no" dir="ltr">current_level</code> values associated with each crash event.</p> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
+<pre>SELECT
+COUNT(DISTINCT event_id) AS num_of_crashes,
+  value
+FROM
+  `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID`
+UNNEST(custom_keys)
+WHERE
+  key = "current_level"
+GROUP BY
+  key,
+  value
+ORDER BY
+  num_of_crashes DESC</pre> <h4 id="example-extract-user-ids">Example 6: Extract user IDs</h4> <p>You have an Android app in early access. Most of your users love it, but three have experienced an unusual number of crashes. To get to the bottom of the problem, you write a query that pulls all the crash events for those users, using their user IDs.</p> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
+<pre>SELECT *
+FROM
+  `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID`
+WHERE
+  user.id IN ("USER_ID_1", "USER_ID_2", "USER_ID_3")
+ORDER BY
+  user.id
+ </pre> <h4 id="example-find-all-users-facing-a-particular-crash-issue">Example 7: Find all users facing a particular crash issue</h4> <p>Your team has accidentally released a critical bug to a group of beta testers. Your team was able to use the query from the <a href="#example-find-most-pervasive-crashes">"Find most pervasive crashes" example</a> above to identify the specific crash issue ID. Now your team would like to run a query to extract the list of app users who were impacted by this crash.</p> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
+<pre>SELECT user.id as user_id
+FROM
+  `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID`
+WHERE
+  issue_id = "ISSUE_ID"
+  AND application.display_version = "APP_VERSION"
+  AND user.id != ""
+ORDER BY
+  user.id;</pre> <h4 id="example-number-users-impacted-by-country">Example 8: Number of users impacted by a crash issue, broken down by country</h4> <p>Your team has detected a critical bug during the rollout of a new release. You were able to use the query from the <a href="#example-find-most-pervasive-crashes">"Find most pervasive crashes" example</a> above to identify the specific crash issue ID. Your team would now like to see if this crash has spread to users in different countries around the world.</p> <p>To write this query, your team will need to do the following:</p> <ol> <li><p>Enable export of Google Analytics data to BigQuery. See <a href="../projects/bigquery-export">Export project data to BigQuery</a>.</p></li> <li>
+<p>Update your app to pass a user ID into both the Google Analytics SDK and the Crashlytics SDK.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">Crashlytics.sharedInstance().setUserIdentifier("123456789");
+Analytics.setUserID("123456789");
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">CrashlyticsKit setUserIdentifier:@"123456789";
+FIRAnalytics setUserID:@"12345678 9";
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">Crashlytics.setUserIdentifier("123456789");
+mFirebaseAnalytics.setUserId("123456789");
+</pre></section> </div>
+</li> <li>
+<p>Write a query that uses the user ID field to join events in the Google Analytics dataset with crashes in the Crashlytics dataset.</p> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
+<pre>SELECT DISTINCT c.issue_id, a.geo.country, COUNT(DISTINCT c.user.id) as num_users_impacted
+FROM `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID` c
+INNER JOIN  `PROJECT_ID.analytics_TABLE_NAME.events_*` a on c.user.id = a.user_id
+WHERE
+  c.issue_id = "ISSUE_ID"
+  AND a._TABLE_SUFFIX BETWEEN '20190101'
+  AND '20200101'
+GROUP BY
+  c.issue_id,
+  a.geo.country,
+  c.user.id</pre>
+</li> </ol> <h4 id="example-top-5-issues-today">Example 9: Top 5 issues so far today</h4> <aside class="note"><strong>Note:</strong><span> This example requires <a href="bigquery-export#enable-streaming">enabling Crashlytics streaming export to BigQuery</a>.</span></aside> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
+<pre>SELECT
+  issue_id,
+  COUNT(DISTINCT event_id) AS events
+FROM
+  `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID_REALTIME`
+WHERE
+  DATE(event_timestamp) = CURRENT_DATE()
+GROUP BY
+  issue_id
+ORDER BY
+  events DESC
+LIMIT
+  5;</pre> <h4 id="example-top-5-issues-since-date">Example 10: Top 5 issues since DATE, including today</h4> <aside class="note"><strong>Note:</strong><span> This example requires <a href="bigquery-export#enable-streaming">enabling Crashlytics streaming export to BigQuery</a>.</span></aside> <p>You can also combine the batch and realtime tables with a stitching query to add realtime information to the reliable batch data. Since <code translate="no" dir="ltr">event_id</code> is a primary key, you can use <code translate="no" dir="ltr">DISTINCT event_id</code> to dedupe any common events from the two tables.</p> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
+<pre>SELECT
+  issue_id,
+  COUNT(DISTINCT event_id) AS events
+FROM (
+  SELECT
+    issue_id,
+    event_id,
+    event_timestamp
+  FROM
+    `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID_REALTIME`
+  UNION ALL
+  SELECT
+    issue_id,
+    event_id,
+    event_timestamp
+  FROM
+    `PROJECT_ID.firebase_crashlytics.PACKAGE_NAME_ANDROID`)
+WHERE
+  event_timestamp &gt;= PARSE_TIMESTAMP("%Y_%m_%d", "YYYY_MM_DD")
+GROUP BY
+  issue_id
+ORDER BY
+  events DESC
+LIMIT
+  5;</pre> <h2 id="what-next">What's next?</h2> <ul> <li><p><a href="bigquery-custom-dashboards">Build custom dashboards</a> using exported data and various Google Cloud services, like Data Studio.</p></li> <li><p>Learn about the <a href="bigquery-dataset-schema">dataset schema for exported data</a>.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/crashlytics/bigquery-run-queries" class="_attribution-link">https://firebase.google.com/docs/crashlytics/bigquery-run-queries</a>
+  </p>
+</div>

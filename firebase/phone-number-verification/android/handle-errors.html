@@ -1,0 +1,68 @@
+<h1>Handle Firebase Phone Number Verification errors on Android</h1> <p>When a call to the Firebase PNV library fails, the library reports a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/pnv/FirebasePhoneNumberVerificationException"><code translate="no" dir="ltr">FirebasePhoneNumberVerificationException</code></a>. This page lists every error code that the exception can carry, when each one occurs, and what your app should do about it.</p> <p>This page assumes you've integrated Firebase PNV as described in <a href="get-started">Get started with Firebase Phone Number Verification on Android</a>.</p> <h2 id="how-errors-are-reported">How errors are reported</h2> <ul> <li><p><strong>Asynchronous methods</strong> (<code translate="no" dir="ltr">getVerificationSupportInfo()</code>, <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code>, and the <a href="custom-flow">custom flow</a> methods) return a <code translate="no" dir="ltr">Task</code>. When they fail, the <code translate="no" dir="ltr">Task</code> fails with a <code translate="no" dir="ltr">FirebasePhoneNumberVerificationException</code>, which you receive in <code translate="no" dir="ltr">addOnFailureListener</code>.</p></li> <li><p><strong><code translate="no" dir="ltr">enableTestSession()</code></strong> is synchronous. It throws a <code translate="no" dir="ltr">FirebasePhoneNumberVerificationException</code> directly.</p></li> </ul> <p>Read the exception's <code translate="no" dir="ltr">errorCode</code> to find out what went wrong. The Firebase PNV codes are constants in the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/pnv/FirebasePnvStatusCodes"><code translate="no" dir="ltr">FirebasePnvStatusCodes</code></a> class. If the failure comes from Google Play services, <code translate="no" dir="ltr">errorCode</code> can also be a <a href="https://developers.google.com/android/reference/com/google/android/gms/common/api/CommonStatusCodes" class="external"><code translate="no" dir="ltr">CommonStatusCodes</code></a> value, such as <code translate="no" dir="ltr">NETWORK_ERROR</code>.</p> <p>An unsupported device or SIM isn't an error. <code translate="no" dir="ltr">getVerificationSupportInfo()</code> succeeds and reports <code translate="no" dir="ltr">isSupported()</code> as <code translate="no" dir="ltr">false</code> for that SIM, and <code translate="no" dir="ltr">getReason()</code> tells you why. See <a href="#unsupported">Unsupported devices and SIMs</a>.</p> <h2 id="error-codes">Error codes</h2> <h3 id="test-session-errors">Test session setup</h3> <p>These errors are thrown synchronously by <code translate="no" dir="ltr">enableTestSession()</code>.</p> <table> <tr> <th>Error code</th> <th>Cause</th> <th>Recommended action</th> </tr> <tr> <td>
+<code translate="no" dir="ltr">TEST_SESSION_ALREADY_ENABLED</code><br>(55508)</td> <td>
+<code translate="no" dir="ltr">enableTestSession()</code> was called more than once in the same app process. <code translate="no" dir="ltr">FirebasePhoneNumberVerification.getInstance()</code> returns the same instance every time, so this also happens when an <code translate="no" dir="ltr">Activity</code> that calls it is recreated.</td> <td>Call <code translate="no" dir="ltr">enableTestSession()</code> once per process, for example in <code translate="no" dir="ltr">Application.onCreate()</code>. See <a href="get-started#test-token">Initialize the library in test mode</a>.</td> </tr> <tr> <td>
+<code translate="no" dir="ltr">INVALID_TEST_NUMBER_ID</code><br>(55507)</td> <td>The test token passed to <code translate="no" dir="ltr">enableTestSession()</code> is empty.</td> <td>Make sure your build passes the token you generated in the Firebase console, and only call <code translate="no" dir="ltr">enableTestSession()</code> when the token isn't empty.</td> </tr> </table> <h3 id="verification-errors">Verification</h3> <p>These errors fail the <code translate="no" dir="ltr">Task</code> returned by <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code>.</p> <table> <tr> <th>Error code</th> <th>Cause</th> <th>Recommended action</th> </tr> <tr> <td>
+<code translate="no" dir="ltr">CREDENTIAL_MANAGER_ERROR</code><br>(55506)</td> <td>Android Credential Manager didn't return the phone number. If the exception's <code translate="no" dir="ltr">cause</code> is a <code translate="no" dir="ltr">GetCredentialCancellationException</code>, the user most likely dismissed the consent screen.</td> <td>Offer another way to verify the phone number, such as SMS. Don't retry automatically, because the user would see the consent screen again.</td> </tr> <tr> <td>
+<code translate="no" dir="ltr">CARRIER_NOT_SUPPORTED</code><br>(55501)</td> <td>The carrier of the selected SIM isn't supported, or the device doesn't have the subscription information needed to verify it.</td> <td>Fall back to another verification method, such as SMS.</td> </tr> <tr> <td>
+<code translate="no" dir="ltr">UNSUPPORTED_OPERATION</code><br>(55505)</td> <td>Firebase PNV isn't available for this request on the device.</td> <td>Fall back to another verification method, such as SMS.</td> </tr> <tr> <td>
+<code translate="no" dir="ltr">PREFLIGHT_CHECK_FAILED</code><br>(55504)</td> <td>The Firebase PNV backend couldn't create the verification request, before the consent screen was shown.</td> <td>Fall back to another verification method, such as SMS. If it happens for every request, check that your app is set up correctly (see <a href="production-mode">Upgrade to production mode</a>).</td> </tr> <tr> <td>
+<code translate="no" dir="ltr">INTEGRITY_CHECK_FAILED</code><br>(55503)</td> <td>The device or app failed an integrity check.</td> <td>Fall back to another verification method, such as SMS.</td> </tr> <tr> <td>
+<code translate="no" dir="ltr">INVALID_DIGITAL_CREDENTIAL_RESPONSE</code><br>(55502)</td> <td>The response from Credential Manager couldn't be read, or couldn't be exchanged for a verified phone number.</td> <td>Fall back to another verification method, such as SMS.</td> </tr> <tr> <td>
+<code translate="no" dir="ltr">INVALID_TEST_NUMBER_ID</code><br>(55507)</td> <td>In test mode, the Firebase PNV backend rejected the test token, for example because it expired. Test tokens have a 7 day TTL. A rejected test token usually reports this code; if you see other errors in test mode, also check that your token is current.</td> <td>Generate a new test token in the Firebase console and rebuild your app.</td> </tr> <tr> <td>
+<code translate="no" dir="ltr">ACTIVITY_CONTEXT_REQUIRED</code><br>(55509)</td> <td>The <code translate="no" dir="ltr">Context</code> passed to <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code> isn't an <code translate="no" dir="ltr">Activity</code>. The method needs an <code translate="no" dir="ltr">Activity</code> to show the consent screen.</td> <td>Pass the current <code translate="no" dir="ltr">Activity</code>. This is a bug in your app, not a condition to handle at runtime.</td> </tr> </table> <h3 id="support-check-errors">Support check</h3> <p>The <code translate="no" dir="ltr">Task</code> returned by <code translate="no" dir="ltr">getVerificationSupportInfo()</code> fails only if the check itself can't run. In that case, <code translate="no" dir="ltr">errorCode</code> is either a Google Play services <code translate="no" dir="ltr">CommonStatusCodes</code> value or <code translate="no" dir="ltr">CARRIER_NOT_SUPPORTED</code>. Treat the device as unsupported and fall back to another verification method, such as SMS.</p> <p>While a test session is enabled, <code translate="no" dir="ltr">getVerificationSupportInfo()</code> doesn't contact the Firebase PNV backend and always reports the test SIM as supported, even if the test token has expired.</p> <h3 id="custom-flow-errors">Custom flow</h3> <p>If you use the <a href="custom-flow">custom flow</a> instead of <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code>:</p> <ul> <li>
+<code translate="no" dir="ltr">getDigitalCredentialPayload()</code> fails with <code translate="no" dir="ltr">PREFLIGHT_CHECK_FAILED</code>, or with <code translate="no" dir="ltr">INVALID_TEST_NUMBER_ID</code> if the backend rejects your test token.</li> <li>
+<code translate="no" dir="ltr">exchangeCredentialResponseForPhoneNumber()</code> fails with <code translate="no" dir="ltr">INVALID_DIGITAL_CREDENTIAL_RESPONSE</code>, or with <code translate="no" dir="ltr">INVALID_TEST_NUMBER_ID</code> if the backend rejects your test token.</li> <li>Your own call to Credential Manager throws a <code translate="no" dir="ltr">GetCredentialException</code>, which you handle directly.</li> </ul> <h2 id="unsupported">Unsupported devices and SIMs</h2> <p>When <code translate="no" dir="ltr">isSupported()</code> is <code translate="no" dir="ltr">false</code> for a SIM, <code translate="no" dir="ltr">getReason()</code> returns one of the following <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/pnv/VerificationSupportStatus"><code translate="no" dir="ltr">VerificationSupportStatus</code></a> values:</p> <table> <thead> <tr> <th>Value</th> <th>Meaning</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">INCAPABLE_DUE_TO_CARRIER_UNSUPPORTED</code></td> <td>The SIM's carrier isn't supported. See <a href="../pricing#supported-carriers">Supported carriers</a>.</td> </tr> <tr> <td><code translate="no" dir="ltr">INCAPABLE_DUE_TO_ANDROID_VERSION</code></td> <td>The device runs a version of Android older than Android 10 (API level 29).</td> </tr> <tr> <td><code translate="no" dir="ltr">INCAPABLE_DUE_TO_SIM_STATE</code></td> <td>The SIM isn't ready. A SIM that is locked or still loading can also report <code translate="no" dir="ltr">INCAPABLE_DUE_TO_CARRIER_UNSUPPORTED</code>, because the carrier is checked first.</td> </tr> </tbody> </table> <p>In each case, use another verification method, such as SMS, for that SIM.</p> <h2 id="example">Example</h2> <p>The following example handles the errors that a typical app needs to distinguish when calling <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">import android.util.Log
+// Credential Manager is included with the Firebase PNV library.
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import com.google.firebase.pnv.FirebasePhoneNumberVerification
+import com.google.firebase.pnv.FirebasePhoneNumberVerificationException
+import com.google.firebase.pnv.FirebasePnvStatusCodes
+
+private const val TAG = "PhoneVerification"
+
+// In your Activity:
+private fun verifyPhoneNumber() {
+    FirebasePhoneNumberVerification.getInstance()
+        .getVerifiedPhoneNumber(this)
+        .addOnSuccessListener { result -&gt;
+            // Send result.getToken() to your backend.
+        }
+        .addOnFailureListener { e -&gt; handleFpnvError(e) }
+}
+
+private fun handleFpnvError(e: Exception) {
+    if (e !is FirebasePhoneNumberVerificationException) {
+        Log.w(TAG, "Firebase PNV failed", e)
+        showSmsVerification()
+        return
+    }
+    when (e.errorCode) {
+        FirebasePnvStatusCodes.CREDENTIAL_MANAGER_ERROR -&gt; {
+            if (e.cause is GetCredentialCancellationException) {
+                // The user dismissed the consent screen.
+            }
+            showSmsVerification()
+        }
+        FirebasePnvStatusCodes.INVALID_TEST_NUMBER_ID -&gt; {
+            // Test mode only: generate a new test token.
+            Log.e(TAG, "Firebase PNV test token rejected", e)
+        }
+        FirebasePnvStatusCodes.ACTIVITY_CONTEXT_REQUIRED -&gt; {
+            // App bug: pass an Activity to getVerifiedPhoneNumber().
+            Log.e(TAG, "Firebase PNV needs an Activity context", e)
+        }
+        else -&gt; {
+            // Carrier not supported, network errors, and other failures.
+            Log.w(TAG, "Firebase PNV failed with error code ${e.errorCode}", e)
+            showSmsVerification()
+        }
+    }
+}
+</pre></section> </div> <p>In this example, <code translate="no" dir="ltr">showSmsVerification()</code> is your app's existing phone number verification flow.</p> <h2 id="next-steps">Next steps</h2> <ul> <li>For details about each class and constant, see the <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/pnv/package-summary">Firebase PNV API reference</a>.</li> <li>To verify the token on your server, see <a href="../verify-tokens">Verify Firebase PNV tokens</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/phone-number-verification/android/handle-errors" class="_attribution-link">https://firebase.google.com/docs/phone-number-verification/android/handle-errors</a>
+  </p>
+</div>

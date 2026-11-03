@@ -1,0 +1,351 @@
+<h1>Create Custom Tokens</h1> <p>Firebase gives you complete control over authentication by allowing you to authenticate users or devices using secure JSON Web Tokens (JWTs). You generate these tokens on your server, pass them back to a client device, and then use them to authenticate via the <code translate="no" dir="ltr">signInWithCustomToken()</code> method.</p> <p>To achieve this, you must create a server endpoint that accepts sign-in credentials—such as a username and password—and, if the credentials are valid, returns a custom JWT. The custom JWT returned from your server can then be used by a client device to authenticate with Firebase (<a href="../ios/custom-auth">iOS+</a>, <a href="../android/custom-auth">Android</a>, <a href="../web/custom-auth">web</a>). Once authenticated, this identity will be used when accessing other Firebase services, such as the Firebase Realtime Database and Cloud Storage. Furthermore, the contents of the JWT will be available in the <code translate="no" dir="ltr">auth</code> object in your <a href="../../database/security">Realtime Database Security Rules</a> and the <code translate="no" dir="ltr">request.auth</code> object in your <a href="../../storage/security">Cloud Storage Security Rules</a>.</p> <p>You can create a custom token with the Firebase Admin SDK, or you can use a third-party JWT library if your server is written in a language which Firebase does not natively support.</p> <h2 id="before_you_begin">Before you begin</h2> <p>Custom tokens are signed JWTs where the private key used for signing belongs to a Google service account. There are several ways to specify the Google service account that should be used by the Firebase Admin SDK for signing custom tokens:</p> <ul> <li>
+<a href="#letting_the_admin_sdk_discover_a_service_account">Letting the Admin SDK discover a service account</a> -- This method can be used in environments managed by Google such as Google Cloud Functions and App Engine. You may have to configure some additional permissions via the Google Cloud console.</li> <li>
+<a href="#using_a_service_account_id">Using a service account ID</a> -- This method signs tokens using the specified service account's Google-managed keys, so you don't have to handle any private keys yourself. It uses a remote web service, and you may have to configure additional permissions for this service account via the Google Cloud console.</li> <li>
+<a href="#using_a_service_account_json_file">Using a service account key file</a> -- Use this method only if your code runs outside of a Google-managed environment and you can't use either of the methods above. It requires you to create, store, and protect a long-lived private key.</li> </ul> <p>We recommend the first two methods because they don't require you to download or manage service account keys.</p> <h3 id="letting_the_admin_sdk_discover_a_service_account">Letting the Admin SDK discover a service account</h3> <p>If your code is deployed in an environment managed by Google, the Admin SDK can attempt to auto-discover a means to sign custom tokens:</p> <ul> <li><p>If your code is deployed in the App Engine standard environment for Java, Python or Go, the Admin SDK can use the <a href="https://cloud.google.com/appengine/docs/standard/java/appidentity/">App Identity service</a> present in that environment to sign custom tokens. The App Identity service signs data using a service account provisioned for your app by Google App Engine.</p></li> <li><p>If your code is deployed in some other managed environment (e.g. Google Cloud Functions, Google Compute Engine), the Firebase Admin SDK can auto-discover a service account ID string from the local <a href="https://cloud.google.com/compute/docs/storing-retrieving-metadata">metadata server</a>. The discovered service account ID is then used in conjunction with the IAM service to sign tokens remotely.</p></li> </ul> <p>To make use of these signing methods, initialize the SDK with Google Application Default credentials and do not specify a service account ID string:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">initializeApp();
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">FirebaseApp.initializeApp();
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">default_app = firebase_admin.initialize_app()
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">app, err := firebase.NewApp(context.Background(), nil)
+if err != nil {
+	log.Fatalf("error initializing app: %v\n", err)
+}
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">FirebaseApp.Create();
+</pre></section> </div> <p>To test the same code locally without downloading a service account key, sign in with your own user credentials using the Google Cloud CLI:</p> 
+<pre>gcloud auth application-default login
+</pre> <p>Because there's no metadata server on your local machine, the Admin SDK can't auto-discover a service account ID there. Instead, <a href="#using_a_service_account_id">specify a service account ID</a> when you initialize the SDK, and make sure your user account has the <strong>Service Account Token Creator</strong> role on that service account.</p> <p>If the Firebase Admin SDK has to discover a service account ID string, it does so when your code creates a custom token for the first time. The result is cached and reused for subsequent token signing operations. The auto-discovered service account ID is usually one of the default service accounts provided by the Google Cloud:</p> <ul> <li><a href="https://cloud.google.com/compute/docs/access/service-accounts#google-managed_service_accounts">Default Compute Engine service account</a></li> <li><a href="https://cloud.google.com/functions/docs/concepts/iam#runtime_service_account">Default Cloud Functions service account</a></li> </ul> <p>Just like with explicitly specified service account IDs, auto-discoverd service account IDs must have the <code translate="no" dir="ltr">iam.serviceAccounts.signBlob</code> permission for the custom token creation to work. You may have to use the <a href="https://console.cloud.google.com/project/_/iam-admin">IAM and admin</a> section of the Google Cloud console to grant the default service accounts the necessary permissions. See the troubleshooting section below for more details.</p> <h3 id="using_a_service_account_id">Using a service account ID</h3> <p>To maintain consistency between various parts of your application, you can specify a service account ID whose Google-managed keys will be used to sign tokens. This can make IAM policies simpler and more secure, and avoids having to download, store, or deploy a service account key.</p> <p>The service account ID can be found in the <a href="https://console.cloud.google.com/iam-admin/serviceaccounts">Google Cloud console</a>. Service account IDs are email addresses that have the following format: <code translate="no" dir="ltr">&lt;client-id&gt;@&lt;project-id&gt;.iam.gserviceaccount.com</code>. They uniquely identify service accounts in Firebase and Google Cloud projects.</p> <p>To create custom tokens using a separate service account ID, initialize the SDK as shown below:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">initializeApp({
+  serviceAccountId: 'my-client-id@my-project-id.iam.gserviceaccount.com',
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">FirebaseOptions options = FirebaseOptions.builder()
+    .setCredentials(GoogleCredentials.getApplicationDefault())
+    .setServiceAccountId("my-client-id@my-project-id.iam.gserviceaccount.com")
+    .build();
+FirebaseApp.initializeApp(options);
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">options = {
+    'serviceAccountId': 'my-client-id@my-project-id.iam.gserviceaccount.com',
+}
+firebase_admin.initialize_app(options=options)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">conf := &amp;firebase.Config{
+	ServiceAccountID: "my-client-id@my-project-id.iam.gserviceaccount.com",
+}
+app, err := firebase.NewApp(context.Background(), conf)
+if err != nil {
+	log.Fatalf("error initializing app: %v\n", err)
+}
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.GetApplicationDefault(),
+    ServiceAccountId = "my-client-id@my-project-id.iam.gserviceaccount.com",
+});
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> This setting will have no effect if you are <a href="#using_a_service_account_json_file">using a service account key file</a>.</span></aside> <p>Service account IDs are not sensitive information and therefore their exposure is inconsequential. However, to sign custom tokens with the specified service account, the Firebase Admin SDK must invoke a remote service. Moreover, you must also make sure that the identity the Admin SDK is using to make this call —usually <code translate="no" dir="ltr">{project-name}@appspot.gserviceaccount.com</code> in production, or your own user account during local development— has the <code translate="no" dir="ltr">iam.serviceAccounts.signBlob</code> <a href="https://cloud.google.com/iam/docs/overview#permissions">permission</a>. See the troubleshooting section below for more details.</p> <h3 id="using_a_service_account_json_file">Using a service account key file</h3> <p>If your code runs in an environment outside of Google Cloud where neither of the methods above is available, you can initialize the Admin SDK with a service account key file. Follow the <a href="../../admin/setup#initialize-sdk-non-google">Admin SDK setup instructions</a> for details. With this method, the Admin SDK signs custom tokens locally using the private key in the file, without making remote API calls.</p> <aside class="special"><strong>Important:</strong><span> Extremely high security awareness is required when working with service account keys, as they are vulnerable to certain types of threats. See <a href="https://cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys">Best practices for managing service account keys</a>.</span></aside> <p>Service account keys are long-lived credentials. If a key is leaked, anyone who has it can act as the service account until the key is deleted. Never commit key files to version control, and consider using <a href="https://cloud.google.com/iam/docs/workload-identity-federation">Workload Identity Federation</a> instead of keys where your environment supports it. Also note that some organizations use <a href="https://cloud.google.com/resource-manager/docs/organization-policy/restricting-service-accounts#disable_service_account_key_creation">organization policy constraints</a> to prevent service account key creation, in which case you must use one of the other methods.</p> <h2 id="create_custom_tokens_using_the_firebase_admin_sdk">Create custom tokens using the Firebase Admin SDK</h2> <p>The Firebase Admin SDK has a built-in method for creating custom tokens. At a minimum, you need to provide a <code translate="no" dir="ltr">uid</code>, which can be any string but should uniquely identify the user or device you are authenticating. These tokens expire after one hour.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const uid = 'some-uid';
+
+getAuth()
+  .createCustomToken(uid)
+  .then((customToken) =&gt; {
+    // Send token back to client
+  })
+  .catch((error) =&gt; {
+    console.log('Error creating custom token:', error);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">String uid = "some-uid";
+
+String customToken = FirebaseAuth.getInstance().createCustomToken(uid);
+// Send token back to client
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">uid = 'some-uid'
+
+custom_token = auth.create_custom_token(uid)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">client, err := app.Auth(context.Background())
+if err != nil {
+	log.Fatalf("error getting Auth client: %v\n", err)
+}
+
+token, err := client.CustomToken(ctx, "some-uid")
+if err != nil {
+	log.Fatalf("error minting custom token: %v\n", err)
+}
+
+log.Printf("Got custom token: %v\n", token)
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">var uid = "some-uid";
+
+string customToken = await FirebaseAuth.DefaultInstance.CreateCustomTokenAsync(uid);
+// Send token back to client
+</pre></section> </div> <p>You can also optionally specify additional claims to be included in the custom token. For example, below, a <code translate="no" dir="ltr">premiumAccount</code> field has been added to the custom token, which will be available in the <code translate="no" dir="ltr">auth</code> / <code translate="no" dir="ltr">request.auth</code> objects in your Security Rules:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const userId = 'some-uid';
+const additionalClaims = {
+  premiumAccount: true,
+};
+
+getAuth()
+  .createCustomToken(userId, additionalClaims)
+  .then((customToken) =&gt; {
+    // Send token back to client
+  })
+  .catch((error) =&gt; {
+    console.log('Error creating custom token:', error);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">String uid = "some-uid";
+Map&lt;String, Object&gt; additionalClaims = new HashMap&lt;String, Object&gt;();
+additionalClaims.put("premiumAccount", true);
+
+String customToken = FirebaseAuth.getInstance()
+    .createCustomToken(uid, additionalClaims);
+// Send token back to client
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">uid = 'some-uid'
+additional_claims = {
+    'premiumAccount': True
+}
+
+custom_token = auth.create_custom_token(uid, additional_claims)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">client, err := app.Auth(context.Background())
+if err != nil {
+	log.Fatalf("error getting Auth client: %v\n", err)
+}
+
+claims := map[string]interface{}{
+	"premiumAccount": true,
+}
+
+token, err := client.CustomTokenWithClaims(ctx, "some-uid", claims)
+if err != nil {
+	log.Fatalf("error minting custom token: %v\n", err)
+}
+
+log.Printf("Got custom token: %v\n", token)
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">var uid = "some-uid";
+var additionalClaims = new Dictionary&lt;string, object&gt;()
+{
+    { "premiumAccount", true },
+};
+
+string customToken = await FirebaseAuth.DefaultInstance
+    .CreateCustomTokenAsync(uid, additionalClaims);
+// Send token back to client
+</pre></section> </div> <h3 id="reserved_custom_token_names">Reserved custom token names</h3> <aside class="note"> <p> Firebase tokens comply with the OpenID Connect JWT spec, which means the following claims are reserved and cannot be specified within the additional claims: </p> <table class="columns"> <tr> <td> <code translate="no" dir="ltr">acr</code><br> <code translate="no" dir="ltr">amr</code><br> <code translate="no" dir="ltr">at_hash</code><br> <code translate="no" dir="ltr">aud</code> </td> <td> <code translate="no" dir="ltr">auth_time</code><br> <code translate="no" dir="ltr">azp</code><br> <code translate="no" dir="ltr">cnf</code><br> <code translate="no" dir="ltr">c_hash</code> </td> <td> <code translate="no" dir="ltr">exp</code><br> <code translate="no" dir="ltr">iat</code><br> <code translate="no" dir="ltr">iss</code><br> <code translate="no" dir="ltr">jti</code> </td> <td> <code translate="no" dir="ltr">nbf</code><br> <code translate="no" dir="ltr">nonce</code><br> <code translate="no" dir="ltr">sub</code> </td> </tr> </table> <p> In addition, Firebase reserves the following claims: </p> <table class="columns"> <tr> <td> <code translate="no" dir="ltr">firebase</code><br> </td> <td> <code translate="no" dir="ltr">user_id</code><br> </td> </tr> </table> </aside> <h2 id="sign_in_using_custom_tokens_on_clients">Sign in using custom tokens on clients</h2> <p>After you create a custom token, you should send it to your client app. The client app authenticates with the custom token by calling <code translate="no" dir="ltr">signInWithCustomToken()</code>:</p> <div> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<h5 id="objective-c">Objective-C</h5> 
+<pre data-language="">[[FIRAuth auth] signInWithCustomToken:customToken
+                           completion:^(FIRAuthDataResult * _Nullable authResult,
+                                        NSError * _Nullable error) {
+  // ...
+}];
+</pre> <h5 id="swift">Swift</h5> 
+<pre data-language="">Auth.auth().signIn(withCustomToken: customToken ?? "") { user, error in
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+
+<pre data-language="java">mAuth.signInWithCustomToken(mCustomToken)
+        .addOnCompleteListener(this, new OnCompleteListener&lt;AuthResult&gt;() {
+            @Override
+            public void onComplete(@NonNull Task&lt;AuthResult&gt; task) {
+                if (task.isSuccessful()) {
+                    // Sign in success, update UI with the signed-in user's information
+                    Log.d(TAG, "signInWithCustomToken:success");
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    updateUI(user);
+                } else {
+                    // If sign in fails, display a message to the user.
+                    Log.w(TAG, "signInWithCustomToken:failure", task.getException());
+                    Toast.makeText(CustomAuthActivity.this, "Authentication failed.",
+                            Toast.LENGTH_SHORT).show();
+                    updateUI(null);
+                }
+            }
+        });
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">auth.SignInWithCustomTokenAsync(custom_token).ContinueWith(task =&gt; {
+  if (task.IsCanceled) {
+    Debug.LogError("SignInWithCustomTokenAsync was canceled.");
+    return;
+  }
+  if (task.IsFaulted) {
+    Debug.LogError("SignInWithCustomTokenAsync encountered an error: " + task.Exception);
+    return;
+  }
+
+  Firebase.Auth.AuthResult result = task.Result;
+  Debug.LogFormat("User signed in successfully: {0} ({1})",
+      result.User.DisplayName, result.User.UserId);
+});
+</pre></section> <section><p class="_firebase-tab"><strong>C++</strong></p>
+
+<pre data-language="cpp">firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;SignInWithCustomToken(custom_token);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">firebase.auth().signInWithCustomToken(token)
+  .then((userCredential) =&gt; {
+    // Signed in
+    var user = userCredential.user;
+    // ...
+  })
+  .catch((error) =&gt; {
+    var errorCode = error.code;
+    var errorMessage = error.message;
+    // ...
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { getAuth, signInWithCustomToken } from "firebase/auth";
+
+const auth = getAuth();
+signInWithCustomToken(auth, token)
+  .then((userCredential) =&gt; {
+    // Signed in
+    const user = userCredential.user;
+    // ...
+  })
+  .catch((error) =&gt; {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+    // ...
+  });
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> You can read more about this process on <a href="../ios/custom-auth">iOS+</a>, <a href="../android/custom-auth">Android</a>, <a href="../unity/custom-auth">Unity</a>, <a href="../cpp/custom-auth">C++</a>, and <a href="../web/custom-auth">web</a>.</span></aside> <p>If the authentication succeeds, your user will be now signed in into your client app with the account specified by the <code translate="no" dir="ltr">uid</code> included in the custom token. If that account did not previously exist, a record for that user will be created.</p> <p>In the same way as with other sign-in methods (such as <code translate="no" dir="ltr">signInWithEmailAndPassword()</code> and <code translate="no" dir="ltr">signInWithCredential()</code>) the <code translate="no" dir="ltr">auth</code> object in your <a href="../../database/security">Realtime Database Security Rules</a> and the <code translate="no" dir="ltr">request.auth</code> object in your <a href="../../storage/security">Cloud Storage Security Rules</a> will be populated with the user's <code translate="no" dir="ltr">uid</code>. In this case, the <code translate="no" dir="ltr">uid</code> will be the one that you specified when generating the custom token.</p> <div> <section><p class="_firebase-tab"><strong>Database Rules</strong></p>
+
+<pre data-language="">{
+  "rules": {
+    "adminContent": {
+      ".read": "auth.uid === 'some-uid'"
+    }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Storage Rules</strong></p>
+
+<pre data-language="">service firebase.storage {
+  match /b/&lt;your-firebase-storage-bucket&gt;/o {
+    match /adminContent/{filename} {
+      allow read, write: if request.auth != null &amp;&amp; request.auth.uid == "some-uid";
+    }
+  }
+}
+</pre></section> </div> <p>If the custom token contains additional claims, they can be referenced off of the <code translate="no" dir="ltr">auth.token</code> (Firebase Realtime Database) or <code translate="no" dir="ltr">request.auth.token</code> (Cloud Storage) object in your rules:</p> <div> <section><p class="_firebase-tab"><strong>Database Rules</strong></p>
+
+<pre data-language="">{
+  "rules": {
+    "premiumContent": {
+      ".read": "auth.token.premiumAccount === true"
+    }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Storage Rules</strong></p>
+
+<pre data-language="">service firebase.storage {
+  match /b/&lt;your-firebase-storage-bucket&gt;/o {
+    match /premiumContent/{filename} {
+      allow read, write: if request.auth.token.premiumAccount == true;
+    }
+  }
+}
+</pre></section> </div> <h2 id="create_custom_tokens_using_a_third-party_jwt_library">Create custom tokens using a third-party JWT library</h2> <p>If your backend is in a language that doesn't have an official Firebase Admin SDK, you can still manually create custom tokens. First, <a href="https://jwt.io/">find a third-party JWT library</a> for your language. Then, use that JWT library to mint a JWT which includes the following claims:</p> <table class="responsive"> <tr><th colspan="3">Custom Token Claims</th></tr> <tr> <td><code translate="no" dir="ltr">alg</code></td> <td>Algorithm</td> <td><code translate="no" dir="ltr">"RS256"</code></td> </tr> <tr> <td><code translate="no" dir="ltr">iss</code></td> <td>Issuer</td> <td>Your project's service account email address</td> </tr> <tr> <td><code translate="no" dir="ltr">sub</code></td> <td>Subject</td> <td>Your project's service account email address</td> </tr> <tr> <td><code translate="no" dir="ltr">aud</code></td> <td>Audience</td> <td><code translate="no" dir="ltr">"https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit"</code></td> </tr> <tr> <td><code translate="no" dir="ltr">iat</code></td> <td>Issued-at time</td> <td>The current time, in seconds since the UNIX epoch</td> </tr> <tr> <td><code translate="no" dir="ltr">exp</code></td> <td>Expiration time</td> <td> The time, in seconds since the UNIX epoch, at which the token expires. It can be a <b>maximum of 3600 seconds later</b> than the <code translate="no" dir="ltr">iat</code>. <br> Note: this only controls the time when the <i>custom token</i> itself expires. But once you sign a user in using <code translate="no" dir="ltr">signInWithCustomToken()</code>, they will remain signed in into the device until their session is invalidated or the user signs out. </td> </tr> <tr> <td><code translate="no" dir="ltr">uid</code></td> <td></td> <td> The unique identifier of the signed-in user must be a string, between 1-128 characters long, inclusive. Shorter <code translate="no" dir="ltr">uid</code>s offer better performance. </td> </tr> <tr> <td>
+<code translate="no" dir="ltr">claims</code> (optional)</td> <td></td> <td> Optional custom claims to include in the Security Rules <code translate="no" dir="ltr">auth</code> / <code translate="no" dir="ltr">request.auth</code> variables </td> </tr> </table> <p>Here are some example implementations of how to create custom tokens in a variety of languages that the Firebase Admin SDK does not support. These examples sign tokens locally with a service account private key, so the <a href="#using_a_service_account_json_file">security guidance for service account key files</a> applies. To avoid managing a private key, you can instead have Google sign the token payload remotely by calling the IAM Service Account Credentials API's <a href="https://cloud.google.com/iam/docs/reference/credentials/rest/v1/projects.serviceAccounts/signJwt"><code translate="no" dir="ltr">signJwt</code></a> method. The caller needs the <strong>Service Account Token Creator</strong> role on the service account.</p> <div> <section><p class="_firebase-tab"><strong>PHP</strong></p>
+<p>Using <a href="https://github.com/firebase/php-jwt"><code translate="no" dir="ltr">php-jwt</code></a>:</p> 
+<pre data-language="php">// Requires: composer require firebase/php-jwt
+use Firebase\JWT\JWT;
+
+// Placeholder values. In production, load your service account's email
+// address and private key from a secure secret store. Never hard-code
+// private keys in source code.
+$service_account_email = "abc-123@a-b-c-123.iam.gserviceaccount.com";
+$private_key = "-----BEGIN PRIVATE KEY-----...";
+
+function create_custom_token($uid, $is_premium_account) {
+  global $service_account_email, $private_key;
+
+  $now_seconds = time();
+  $payload = array(
+    "iss" =&gt; $service_account_email,
+    "sub" =&gt; $service_account_email,
+    "aud" =&gt; "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit",
+    "iat" =&gt; $now_seconds,
+    "exp" =&gt; $now_seconds+(60*60),  // Maximum expiration time is one hour
+    "uid" =&gt; $uid,
+    "claims" =&gt; array(
+      "premium_account" =&gt; $is_premium_account
+    )
+  );
+  return JWT::encode($payload, $private_key, "RS256");
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Ruby</strong></p>
+<p>Using <a href="https://github.com/jwt/ruby-jwt"><code translate="no" dir="ltr">ruby-jwt</code></a>:</p> 
+<pre data-language="ruby">require "jwt"
+
+# Placeholder values. In production, load your service account's email
+# address and private key from a secure secret store. Never hard-code
+# private keys in source code.
+$service_account_email = "service-account@my-project-abc123.iam.gserviceaccount.com"
+$private_key = OpenSSL::PKey::RSA.new "-----BEGIN PRIVATE KEY-----\n..."
+
+def create_custom_token(uid, is_premium_account)
+  now_seconds = Time.now.to_i
+  payload = {:iss =&gt; $service_account_email,
+             :sub =&gt; $service_account_email,
+             :aud =&gt; "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit",
+             :iat =&gt; now_seconds,
+             :exp =&gt; now_seconds+(60*60), # Maximum expiration time is one hour
+             :uid =&gt; uid,
+             :claims =&gt; {:premium_account =&gt; is_premium_account}}
+  JWT.encode payload, $private_key, "RS256"
+end
+</pre></section> </div> <p>After you create the custom token, send it to your client app to use to authenticate with Firebase. See the code samples above for how to do this.</p> <h2 id="troubleshooting">Troubleshooting</h2> <p>This section outlines some common problems developers may encounter when creating custom tokens, and how to resolve them.</p> <h3 id="iam_api_not_enabled">IAM API not enabled</h3> <p>If you are specifying a service account ID for signing tokens you may get an error similar to the following:</p> 
+<pre>
+Identity and Access Management (IAM) API has not been used in project
+1234567890 before or it is disabled. Enable it by visiting
+https://console.developers.google.com/apis/api/iam.googleapis.com/overview?project=1234567890
+then retry. If you enabled this API recently, wait a few minutes for the action
+to propagate to our systems and retry.
+</pre> <p>The Firebase Admin SDK uses the <a href="https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/signBlob">IAM API</a> to sign tokens. This error indicates that the IAM API is not currently enabled for your Firebase project. Open the link in the error message in a web browser, and click the "Enable API" button to enable it for your project.</p> <h3 id="service_account_does_not_have_required_permissions">Service account does not have required permissions</h3> <p>If the service account the Firebase Admin SDK is running as does not have the <code translate="no" dir="ltr">iam.serviceAccounts.signBlob</code> permission, you may get an error message like the following:</p> 
+<pre>
+Permission iam.serviceAccounts.signBlob is required to perform this operation
+on service account projects/-/serviceAccounts/{your-service-account-id}.
+</pre> <p>To resolve this, grant the <strong>Service Account Token Creator</strong> IAM role to the appropriate service account. The default service account used depends on the environment and Cloud Functions version:</p> <ul> <li>
+<strong>Cloud Functions (1st gen):</strong> Uses the default App Engine service account.</li> <li>
+<strong>Cloud Functions (2nd gen):</strong> Uses the default Compute Engine service account.</li> </ul> <ol> <li><p>In the Google Cloud console, go to <a href="https://console.cloud.google.com/project/_/iam-admin" class="external"><strong>IAM and Admin</strong></a>.</p></li> <li><p>Click the edit icon corresponding to the service account you want to update.</p></li> <li><p>Click <strong>Add Another Role</strong>.</p></li> <li><p>Type <code translate="no" dir="ltr">"Service Account Token Creator"</code> into the search filter, and select it from the results.</p></li> <li><p>Click <strong>Save</strong> to confirm the role grant.</p></li> </ol> <p>Refer to <a href="https://cloud.google.com/iam/docs/granting-roles-to-service-accounts">IAM documentation</a> for more details on this process, or learn how to do update roles using the gcloud command-line tools.</p> <h3 id="failed_to_determine_service_account">Failed to determine service account</h3> <p>If you get an error message similar to the following, the Firebase Admin SDK has not been properly initialized.</p> 
+<pre>
+Failed to determine service account ID. Initialize the SDK with service account
+credentials or specify a service account ID with iam.serviceAccounts.signBlob
+permission.
+</pre> <p>If you are relying on the SDK to auto-discover a service account ID, make sure the code is deployed in a managed Google environment with a metadata server. Otherwise, be sure to specify a service account ID at SDK initialization, or, in non-Google environments, initialize the SDK with a <a href="#using_a_service_account_json_file">service account key file</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/admin/create-custom-tokens" class="_attribution-link">https://firebase.google.com/docs/auth/admin/create-custom-tokens</a>
+  </p>
+</div>

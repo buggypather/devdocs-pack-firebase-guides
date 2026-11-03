@@ -1,0 +1,32 @@
+<h1>Get started using App Check in Unity apps</h1> <p>This page shows you how to enable App Check in a Unity app, using the default providers: Play Integrity on Android, and Device Check or App Attest on Apple platforms. When you enable App Check, you help ensure that only your app can access your project's Firebase resources. See an <a href="../../app-check">Overview</a> of this feature.</p> <h2 id="project-setup">1. Set up your Firebase project</h2> <ol> <li><p><a href="../../unity/setup">Add Firebase to your Unity project</a> if you haven't already done so.</p></li> <li><p>In the Firebase console, navigate to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/" class="external"><strong>App Check</strong></a>.</p></li> <li>
+<p>In the <strong>Apps</strong> tab, register your apps to use App Check with the Play Integrity, DeviceCheck, or App Attest providers.</p> <p>You usually need to register all of your project's apps, because once you enable enforcement for a Firebase product, only registered apps will be able to access the product's backend resources.</p> <p>For detailed instructions on how to register with each provider, refer to the Android and iOS specific documentation.</p>
+</li> <li>
+<p><strong>Optional</strong>: In the app registration settings, set a custom time-to-live (TTL) for App Check tokens issued by the provider. You can set the TTL to any value between 30 minutes and 7 days. When changing this value, be aware of the following tradeoffs:</p> <ul> <li>Security: Shorter TTLs provide stronger security, because it reduces the window in which a leaked or intercepted token can be abused by an attacker.</li> <li>Performance: Shorter TTLs mean your app will perform attestation more frequently. Because the app attestation process adds latency to network requests every time it's performed, a short TTL can impact the performance of your app.</li> <li>Quota and cost: Shorter TTLs and frequent re-attestation deplete your quota faster, and for paid services, potentially cost more. See <a href="../../app-check#quotas_limits">Quotas &amp; limits</a>.</li> </ul> <p>The default TTL is reasonable for most apps. Note that the App Check library refreshes tokens at approximately half the TTL duration.</p>
+</li> </ol> <h2 id="install-sdk">2. Add the App Check library to your app</h2> <p>Include the App Check library in your set of dependencies, following <a href="../../unity/setup#add-sdks">the setup instructions</a> for App Check.</p> <h2 id="initialize">3. Initialize App Check</h2> <p>Add the following initialization code to your app so that it runs before you use any Firebase services including any creation of Firebase Apps.</p> <div> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<ol> <li>
+<p>Add the using declaration for <code translate="no" dir="ltr">Firebase.AppCheck</code>:</p> 
+<pre data-language="java">using Firebase.AppCheck</pre>
+</li> <li>
+<p>Initialize the App Check library with the Play Integrity provider:</p> 
+<pre data-language="java">FirebaseAppCheck.SetAppCheckProviderFactory(
+    PlayIntegrityProviderFactory.Instance);
+</pre>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<ol> <li>
+<p>Add the using declaration for <code translate="no" dir="ltr">Firebase.AppCheck</code>:</p> 
+<pre data-language="">using Firebase.AppCheck</pre>
+</li> <li>
+<p>Initialize the App Check library with the Device Check or App Attest provider:</p> 
+<pre data-language="">FirebaseAppCheck.SetAppCheckProviderFactory(
+    DeviceCheckProviderFactory.Instance);
+</pre>
+</li> </ol></section> </div> <h2 id="next_steps">Next steps</h2> <p>Once the App Check library is installed in your app, start distributing the updated app to your users.</p> <p>The updated client app will begin sending App Check tokens along with every request it makes to Firebase, but Firebase products will not require the tokens to be valid until you enable enforcement in the App Check section of the Firebase console.</p> <h3 id="monitor">Monitor metrics and enable enforcement</h3> <p>Before you enable enforcement, however, you should make sure that doing so won't disrupt your existing legitimate users. On the other hand, if you're seeing suspicious use of your app resources, you might want to enable enforcement sooner.</p> <p>To help make this decision, you can look at App Check metrics for the services you use:</p> <ul> <li>
+<a href="../monitor-metrics">Monitor App Check request metrics</a> for Realtime Database, Cloud Firestore, and Cloud Storage.</li> <li>
+<a href="../monitor-functions-metrics">Monitor App Check request metrics for Cloud Functions</a>.</li> </ul> <h3 id="enforce">Enable App Check enforcement</h3> <p>When you understand how App Check will affect your users and you're ready to proceed, you can enable App Check enforcement:</p> <ul> <li>
+<a href="../enable-enforcement">Enable App Check enforcement</a> for Realtime Database, Cloud Firestore, and Cloud Storage.</li> <li>
+<a href="../cloud-functions">Enable App Check enforcement for Cloud Functions</a>.</li> </ul> <h3 id="debug">Use App Check in debug environments</h3> <p>If, after you have registered your app for App Check, you want to run your app in an environment that App Check would normally not classify as valid, such as on desktop, an emulator during development, or from a continuous integration (CI) environment, you can create a debug build of your app that uses the App Check debug provider instead of a real attestation provider.</p> <p>See <a href="debug-provider">Use App Check with the debug provider in Unity apps</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/unity/default-providers" class="_attribution-link">https://firebase.google.com/docs/app-check/unity/default-providers</a>
+  </p>
+</div>

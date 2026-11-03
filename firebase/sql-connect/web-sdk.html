@@ -1,0 +1,235 @@
+<h1>Use generated web SDKs</h1> <p>Firebase SQL Connect client SDKs let you call your server-side queries and mutations directly from a Firebase app. You generate a custom client SDK in parallel as you design the schemas, queries and mutations you deploy to your SQL Connect service. Then, you integrate methods from this SDK into your client logic.</p> <p>As we've mentioned elsewhere, it's important to note that SQL Connect queries and mutations are not submitted by client code and executed on the server. Instead, when deployed, SQL Connect operations are stored on the server like Cloud Functions. This means you need to deploy corresponding client-side changes to avoid breaking existing users (for example, on older app versions).</p> <p>That's why SQL Connect provides you with a developer environment and tooling that lets you prototype your server-deployed schemas, queries and mutations. It also generates client-side SDKs automatically, while you prototype.</p> <p>When you've iterated updates to your service and client apps, both server- and client-side updates are ready to deploy.</p> <h2 id="summarize-workflow">What is the client development workflow?</h2> <p>If you followed the <a href="quickstart">Get started</a>, you were introduced to the overall development flow for SQL Connect. In this guide, you'll find more detailed information about generating Web SDKs from your schema and working with client queries and mutations.</p> <aside class="objective">You can learn client development with a quickstart app repository and build a fully-featured SQL Connect app by following our <a href="https://firebase.google.com/codelabs/firebase-dataconnect-web">codelab for web</a>. </aside> <p>To summarize, to use generated Web SDKs in your client apps, you'll follow these prerequisite steps:</p> <ol> <li>Add Firebase to your <a href="../web/setup">web</a> app.</li> </ol> <p>Then:</p> <ol> <li>Develop your app schema.</li> <li>Initialize your client code with the <a href="#use-core">JavaScript SDK</a>.</li> <li>Set up SDK generation: <ul> <li>With the <strong>Add SDK to app</strong> button in the SQL Connect VS Code extension.</li> <li>By updating your <code translate="no" dir="ltr">connector.yaml</code> for the <a href="#generate-web">JavaScript SDK</a>.</li> </ul>
+</li> <li>Import libraries and generated code with <a href="#import-web">JavaScript SDK</a>.</li> <li>Implement calls to queries and mutations with the <a href="#using-queries">JavaScript SDK</a>.</li> <li>Test, by setting up the SQL Connect emulator with the <a href="#emulator">JavaScript SDK</a>.</li> </ol> <h2 id="set-client">Implement client code with the Firebase JavaScript SDK</h2> <p>This section covers how you can implement clients using the Firebase JavaScript SDK.</p> <p>If you're using React or Angular, see alternate setup instructions and links to additional documentation about <a href="#react-angular">generating SQL Connect SDKs for frameworks</a>.</p> <h3 id="use-core">Initialize your app</h3> <p>First, initialize your app using the <a href="../web/setup">standard Firebase sequence</a>.</p> 
+<pre>initializeApp({...});
+</pre> <h3 id="generate-web">Install the generated JavaScript SDK</h3> <p>Use the Firebase CLI to set up SQL Connect generated SDKs in your apps. The <code translate="no" dir="ltr">init</code> command should detect all apps in the current folder and install generated SDKs automatically.</p> 
+<pre>firebase init dataconnect:sdk
+</pre> <p>Connect your app to the SQL Connect service.</p> 
+<pre>import { connectDataConnectEmulator } from 'firebase/data-connect';
+import { connectorConfig } from '@dataconnect/generated';
+
+const dataConnect = getDataConnect(connectorConfig);
+// [Optionally] Configure the SDK to use Data Connect local emulator.
+connectDataConnectEmulator(dataConnect, 'localhost', 9399);
+</pre> <h3 id="update_sdks_while_prototyping">Update SDKs while prototyping</h3> <p>If you have SQL Connect VS Code extension installed, it will always keep generated SDKs up to date.</p> <p>If you don't use SQL Connect VS Code extension, you can use Firebase CLI to keep generated SDKs up to date.</p> 
+<pre>firebase dataconnect:sdk:generate --watch</pre> <h3 id="generate_sdks_in_build_pipelines">Generate SDKs in build pipelines</h3> <p>You can use the Firebase CLI to generate SQL Connect SDKs in CI/CD build processes.</p> 
+<pre>firebase dataconnect:sdk:generate</pre> <h4 id="import-web">Import libraries</h4> <p>There are two sets of imports needed to initialize your client code: general SQL Connect imports and specific, generated SDK imports.</p> <p>Note the <code translate="no" dir="ltr">ConnectorConfig</code> object included in the general imports.</p> 
+<pre>// general imports
+import { ConnectorConfig, DataConnect, getDataConnect, QueryRef, MutationRef, QueryPromise, MutationPromise } from 'firebase/data-connect';
+
+// generated queries and mutations from SDK
+import { listMovies, ListMoviesResponse, createMovie, connectorConfig } from '@dataconnect/generated';
+</pre>
+<aside class="note"><strong>Note:</strong><span> Generated JavaScript client SDKs use the same names for interfaces and operations as generated Node.js admin SDKs. Be sure to import the correct library for your platform. If you need to use both libraries in the same file, use an import alias or namespaced import for one or both of the libraries.<br> <br> <code translate="no" dir="ltr">import { listMovies as adminListMovies } from '@dataconnect/admin-generated';</code> <br> Or: <br> <code translate="no" dir="ltr">import * as Admin from '@dataconnect/admin-generated';</code></span></aside> <h3 id="using-queries">Use queries from the JavaScript SDK</h3> <p>The generated code will already come with predefined Query Refs. All you need to do is import and call execute on them.</p> 
+<pre>import { executeQuery } from 'firebase/data-connect';
+import { listMoviesRef } from '@dataconnect/generated';
+
+const ref = listMoviesRef();
+const { data } = await executeQuery(ref);
+console.log(data.movies);
+</pre> <h4 id="call-sdk">Call SDK query methods</h4> <p>Here's an example using these action shortcut functions:</p> 
+<pre>import { listMovies } from '@dataconnect/generated';
+function onBtnClick() {
+// This will call the generated JS from the CLI and then make an HTTP request out
+// to the server.
+  listMovies().then(data =&gt; showInUI(data)); // == executeQuery(listMoviesRef);
+}
+</pre> <h4 id="subscribing-changes">Subscribe to changes</h4> <p>See <a href="realtime">Get real-time updates from SQL Connect</a>.</p> <h4 id="enum-queries">Handle changes to enumeration fields</h4> <p>An app's schema can <a href="schemas-guide#enumeration-fields">contain enumerations</a>, which can be accessed by your <a href="queries-guide#query-enumerations">GraphQL queries</a>.</p> <p>As an app's design changes, you may add new enum supported values. For example, imagine that later in your application’s lifecycle you decide to add a FULLSCREEN value to the <code translate="no" dir="ltr">AspectRatio</code> enum.</p> <p>In the SQL Connect workflow, you can use local development tooling to update your queries and SDKs.</p> <p>However, before you release an updated version of your clients, older deployed clients may break.</p> <h5 id="example_resilient_implementation">Example resilient implementation</h5> <p>Always add a <code translate="no" dir="ltr">default</code> branch to a <code translate="no" dir="ltr">switch</code> statement over the enum values, or an <code translate="no" dir="ltr">else</code> branch to an <code translate="no" dir="ltr">if/else if</code> block comparing against the enum values. This is not enforced by the JavaScript/TypeScript language, but is the way to make client code robust in the case that new enum values are added.</p> 
+<pre>const queryResult = await getOldestMovie();
+
+if (queryResult.data) {
+  // we can use a switch statement's "default" case to check for unexpected values
+  const oldestMovieAspectRatio = queryResult.data.originalAspectRatio;
+  switch (oldestMovieAspectRatio) {
+      case AspectRatio.ACADEMY:
+      case AspectRatio.WIDESCREEN:
+      case AspectRatio.ANAMORPHIC:
+        console.log('This movie was filmed in Academy, widescreen or anamorphic aspect ratio!');
+        break;
+      default:
+        // the default case will catch FULLSCREEN, UNAVAILABLE or _UNKNOWN
+        // it will also catch unexpected values the SDK isn't aware of, such as CINEMASCOPE
+        console.log('This movie was was NOT filmed in Academy, widescreen or anamorphic.');
+        break;
+  }
+
+  // alternatively, we can check to see if the returned enum value is a known value
+  if (!Object.values(AspectRatio).includes(oldestMovieAspectRatio)) {
+    console.log(`Unrecognized aspect ratio: ${oldestAspectRatio}`);
+  }
+} else {
+  console.log("no movies found!");
+}
+</pre> <h3 id="using-mutations">Use mutations from the JavaScript SDK</h3> <p>Mutations are accessible the same way as queries.</p> 
+<pre>import { executeMutation } from 'firebase/data-connect';
+import { createMovieRef } from '@dataconnect/generated';
+
+const { data } = await executeMutation(createMovieRef({ movie: 'Empire Strikes Back' }));
+</pre> <h3 id="emulator">Connect to the SQL Connect emulator</h3> <p>Optionally, you can connect to the emulator by calling <code translate="no" dir="ltr">connectDataConnectEmulator</code> and then passing in the SQL Connect instance, like so:</p> 
+<pre>import { connectDataConnectEmulator } from 'firebase/data-connect';
+import { connectorConfig } from '@dataconnect/generated';
+
+const dataConnect = getDataConnect(connectorConfig);
+connectDataConnectEmulator(dataConnect, 'localhost', 9399);`
+
+// Make calls from your app
+
+</pre> <p>To switch to production resources, comment out lines for connecting to the emulator.</p> <aside class="note"><strong>Note:</strong><span> Calling <code translate="no" dir="ltr">getDataConnect</code> is only required if you'd like to connect to the SQL Connect emulator. Otherwise the generated SDK will automatically create an instance of the <code translate="no" dir="ltr">DataConnect</code> object for you.</span></aside> <h2 id="caching">Enable client-side caching</h2> <p>SQL Connect has an optional client-side caching feature, which you can enable by editing the <code translate="no" dir="ltr">connector.yaml</code> file. When this feature is enabled, the generated client SDKs will locally cache query responses, which can reduce the number of database requests your app makes and enables the database-dependent portions of your app to work when network availability is interrupted.</p> <p>To enable client-side caching, add a client caching configuration to your connector configuration:</p> 
+
+<pre>generate:
+  javascriptSdk:
+    outputDir: ../web/
+    package: "@dataconnect/generated"
+    clientCache:
+      maxAge: 5s
+      storage: memory
+</pre> <p>This configuration has two parameters, both optional:</p> <ul> <li>
+<p><code translate="no" dir="ltr">maxAge</code>: The maximum age a cached response can be before the client SDK fetches fresh values. Examples: "0", "30s", "1h30m".</p> <p>The default value for <code translate="no" dir="ltr">maxAge</code> is <code translate="no" dir="ltr">0</code>, which means that responses are cached, but the client SDK will always fetch fresh values. The cached values will only be used when <code translate="no" dir="ltr">CACHE_ONLY</code> is specified to <code translate="no" dir="ltr">executeQuery()</code> and the initial result returned from <code translate="no" dir="ltr">subscribe()</code>.</p>
+</li> <li><p><code translate="no" dir="ltr">storage</code>: The client SDK can be configured to cache responses either in <code translate="no" dir="ltr">persistent</code> storage or in <code translate="no" dir="ltr">memory</code>. Results cached in <code translate="no" dir="ltr">persistent</code> storage will persist across app restarts. In web SDKs, only <code translate="no" dir="ltr">memory</code> storage is supported.</p></li> </ul> <p>After you update your connector's caching configuration, regenerate your client SDKs and rebuild your app. Once you have done so, <code translate="no" dir="ltr">executeQuery()</code> and <code translate="no" dir="ltr">subscribe()</code> will cache responses and use cached values according to the policy you configured. This generally happens automatically, without any additional steps on your part; however, note the following:</p> <ul> <li>
+<p>The default behavior of <code translate="no" dir="ltr">executeQuery()</code> is as described above: if a result is cached for a query and the cached value is not older than <code translate="no" dir="ltr">maxAge</code>, then use the cached value. This default behavior is called the <code translate="no" dir="ltr">PREFER_CACHE</code> policy.</p> <p>You can also specify to individual invocations of <code translate="no" dir="ltr">executeQuery()</code> to either only serve cached values (<code translate="no" dir="ltr">CACHE_ONLY</code>) or to unconditionally fetch fresh values from the server (<code translate="no" dir="ltr">SERVER_ONLY</code>).</p> 
+
+<pre>await executeQuery(queryRef, QueryFetchPolicy.CACHE_ONLY);
+</pre>
+
+<pre>await executeQuery(queryRef, QueryFetchPolicy.SERVER_ONLY);
+</pre> </li> <li><p>When you call <code translate="no" dir="ltr">subscribe()</code>, it will always immediately return the cached content if it exists, regardless of the <code translate="no" dir="ltr">maxAge</code> setting. Subsequent calls to <code translate="no" dir="ltr">executeQuery()</code> will notify listeners according to the configured <code translate="no" dir="ltr">maxAge</code>.</p></li> </ul> <h2 id="data-types">Data types in the SDK</h2> <p>The SQL Connect server represents common GraphQL data types. These are represented in the SDK as follows.</p> <table> <thead> <tr> <th>SQL Connect Type</th> <th>TypeScript</th> </tr> </thead> <tbody> <tr> <td>Timestamp</td> <td>string</td> </tr> <tr> <td>Date</td> <td>string</td> </tr> <tr> <td>UUID</td> <td>string</td> </tr> <tr> <td>Int64</td> <td>string</td> </tr> <tr> <td>Double</td> <td>Number</td> </tr> <tr> <td>Float</td> <td>Number</td> </tr> </tbody> </table> <h2 id="react-angular">Generate React and Angular SDKs with TanStack</h2> <p>Firebase SQL Connect provides a generated SDK with hooks for React and Angular using libraries available from our partners at Invertase, <a href="https://react-query-firebase.invertase.dev/" class="external">TanStack Query Firebase</a>.</p> <p>This library provides a set of hooks that greatly ease handling of asynchronous tasks with Firebase in your applications.</p> <p>TanStack comes with its own implementation of client-side caching and real-time subscriptions, which can work alongside of SQL Connect's built-in real-time support, but only with some difficulty. We recommend that you use either the TanStack-based bindings or SQL Connect's built-in real time support, but <strong>not both</strong>.</p> <p>Note that SQL Connect's own real-time implementation has some advantages over the TanStack bindings:</p> <ul> <li>Normalized caching: SQL Connect implements <em>normalized caching</em>, which improves data consistency as well as memory and network efficiency compared to query-level caching. With normalized caching, if an entity updates in one area of your app, it will also update in other areas that use that entity.</li> <li>Remote invalidation: SQL Connect can remotely invalidate cached entities on all subscribed devices.</li> </ul> <h3 id="use-core-with-react-angular">Initialize your app</h3> <p>First, as with any Firebase web app, initialize your app using the <a href="../web/setup">standard Firebase sequence</a>.</p> 
+<pre>initializeApp({...});
+</pre> <h3 id="tanstack-install">Install TanStack Query Firebase packages</h3> <p>install packages for TanStack Query in your project.</p> <div> <section><p class="_firebase-tab"><strong>React</strong></p>
+
+<pre data-language="">npm i --save @tanstack/react-query @tanstack-query-firebase/react
+npm i --save firebase@latest # Note: React has a peer dependency on ^11.3.0
+</pre></section> <section><p class="_firebase-tab"><strong>Angular</strong></p>
+
+<pre data-language="">ng add @angular/fire
+</pre></section> </div> <h3 id="generate-react-angular">Generate your React or Angular SDK</h3> <p>As with the standard web SDK, as described <a href="#generate-web">earlier</a>, Firebase tooling handles automatic generation of SDKs based on your schema and operations.</p> <p>If you just added React or Angular to your project, re-run <code translate="no" dir="ltr">firebase init dataconnect:sdk</code> to re-configure the generated SDKs to include the extra framework bindings.</p> <h3 id="import-react-angular">Import libraries</h3> <p>There are four sets of imports needed to initialize your React or Angular client code: general SQL Connect imports, general TanStack imports, and specific imports for your JS and React generated SDKs.</p> <p>Note the <code translate="no" dir="ltr">ConnectorConfig</code> type included in the general imports.</p> <div> <section><p class="_firebase-tab"><strong>React</strong></p>
+
+<pre data-language="">// general imports
+import { ConnectorConfig, DataConnect, getDataConnect, QueryRef, MutationRef, QueryPromise, MutationPromise } from 'firebase/data-connect';
+
+// TanStack Query-related functions
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// generated queries and mutations from SDK
+import { ListMoviesResponse, connectorConfig } from '@dataconnect/generated';
+
+// generated React hooks from SDK
+import { useListAllMovies, useCreateMovie } from "@dataconnect/generated/react";
+</pre></section> <section><p class="_firebase-tab"><strong>Angular</strong></p>
+
+<pre data-language="">// general imports
+import { ConnectorConfig, DataConnect, getDataConnect, QueryRef, MutationRef, QueryPromise, MutationPromise } from 'firebase/data-connect';
+
+// TanStack Query-related functions
+import { provideTanStackQuery, QueryClient } from "@tanstack/angular-query-experimental";
+
+// generated queries and mutations from SDK
+import { ListMoviesResponse, connectorConfig } from '@dataconnect/generated';
+
+// generated React hooks from SDK
+import { injectListAllMovies, injectCreateMovie } from "@dataconnect/generated/angular";
+</pre></section> </div> <h3 id="operations-react-angular">Use queries and mutations in your React or Angular client</h3> <p>With setup complete, you can incorporate methods from the generated SDK.</p> <p>In the following snippet, notice the <code translate="no" dir="ltr">use</code>-prefixed method <code translate="no" dir="ltr">useListAllMovies</code> for React and the <code translate="no" dir="ltr">inject</code>-prefixed method <code translate="no" dir="ltr">injectListAllMovies</code> for Angular, both from the generated SDK.</p> <div> <section><p class="_firebase-tab"><strong>React</strong></p>
+<p>All such operations in the generated SDK, both queries and mutations, call TanStackQuery bindings:</p> <ul> <li>Queries call and return the<a href="https://react-query-firebase.invertase.dev/react/data-connect/querying" class="external">TanStack <code translate="no" dir="ltr">useDataConnectQuery</code> hook</a> </li> <li>Mutations call and return the <a href="https://react-query-firebase.invertase.dev/react/data-connect/mutations" class="external">TanStack <code translate="no" dir="ltr">useDataConnectMutation</code> hook</a> </li> </ul> 
+<pre data-language="">import { useListAllMovies } from '@dataconnect/generated/react';
+
+function MyComponent() {
+  const { isLoading, data, error } = useListAllMovies();
+  if(isLoading) {
+    return &lt;div&gt;Loading...&lt;/div&gt;
+  }
+  if(error) {
+    return &lt;div&gt; An Error Occurred: {error} &lt;/div&gt;
+  }
+}
+
+// App.tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import MyComponent from './my-component';
+
+function App() {
+  const queryClient = new QueryClient();
+  return &lt;QueryClientProvider client={queryClient}&gt;
+    &lt;MyComponent /&gt;
+  &lt;/QueryClientProvider&gt;
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Angular</strong></p>
+<aside class="note"><strong>Note:</strong><span> <code translate="no" dir="ltr">ng add @angular/fire</code> will automatically do this for you, but if you choose to manually set it up, you can do so with the following code:</span></aside>
+<pre data-language="">import { injectAllMovies, connectorConfig } from '@dataconnect/generated/angular';
+import { provideDataConnect, getDataConnect } from '@angular/fire/data-connect';
+import { provideTanStackQuery, QueryClient } from "@tanstack/angular-query-experimental";
+const queryClient = new QueryClient();
+...
+providers: [
+  ...
+  provideTanStackQuery(queryClient),
+  provideDataConnect(() =&gt; {
+    const dc = getDataConnect(connectorConfig);
+    return dc;
+  })
+]
+</pre></section> </div> <h3 id="use_auto_reload_queries_with_react_and_angular">Use auto reload queries with React and Angular</h3> <p>You can configure queries to automatically reload when data changes.</p> <div> <section><p class="_firebase-tab"><strong>React</strong></p>
+
+<pre data-language="">export class MovieListComponent {
+  movies = useListAllMovies();
+}
+
+export class AddPostComponent {
+  const mutation = useCreateMovie({ invalidate: [listAllMoviesRef()] });
+  addMovie() {
+    // The following will automatically cause TanStack to reload its listAllMovies query
+    mutation.mutate({ title: 'The Matrix });
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Angular</strong></p>
+
+<pre data-language="">// class
+export class MovieListComponent {
+  movies = injectListAllMovies();
+}
+
+// template
+@if (movies.isPending()) {
+    Loading...
+}
+@if (movies.error()) {
+    An error has occurred: {{  movies.error() }}
+}
+@if (movies.data(); as data) {
+    @for (movie of data.movies; track movie.id) {
+    &lt;mat-card appearance="outlined"&gt;
+        &lt;mat-card-content&gt;{{movie.description}}&lt;/mat-card-content&gt;
+    &lt;/mat-card&gt;
+    } @empty {
+        &lt;h2&gt;No items!&lt;/h2&gt;
+    }
+}
+</pre></section> </div> <h3 id="emulator-react-angular">Connect to the SQL Connect emulator</h3> <p>Optionally, you can connect to the emulator by calling <code translate="no" dir="ltr">connectDataConnectEmulator</code> and then passing in the SQL Connect instance to your generated hook, like so:</p> <div> <section><p class="_firebase-tab"><strong>React</strong></p>
+
+<pre data-language="">import { getDataConnect, connectDataConnectEmulator } from 'firebase/data-connect';
+import { connectorConfig } from '@dataconnect/generated';
+import { useListAllMovies } from '@dataconnect/generated/react';
+
+const dc = getDataConnect(connectorConfig);
+connectDataConnectEmulator(dc, 'localhost', 9399);
+
+class AppComponent() {
+  ...
+  const { isLoading, data, error } = useListAllMovies(dc);
+  ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Angular</strong></p>
+
+<pre data-language="">// app.config.ts
+import { provideDataConnect } from '@angular/fire/data-connect';
+import { getDataConnect, connectDataConnectEmulator } from 'firebase/data-connect';
+provideDataConnect(() =&gt; {
+  const dc = getDataConnect(connectorConfig);
+  connectDataConnectEmulator(dc, 'localhost', 9399);
+  return dc;
+}),
+</pre></section> </div> <p>To switch to production resources, comment out lines for connecting to the emulator.</p> <aside class="note"><strong>Note:</strong><span> Calling <code translate="no" dir="ltr">getDataConnect</code> is only required if you'd like to connect to the SQL Connect emulator. Otherwise the generated SDK will automatically create an instance of the <code translate="no" dir="ltr">DataConnect</code> object for you.</span></aside> <h3 id="update_sdks_while_prototyping_2">Update SDKs while prototyping</h3> <p>If you have SQL Connect VS Code extension installed, it will always keep generated SDKs up to date.</p> <p>If you don't use SQL Connect VS Code extension, you can use Firebase CLI to keep generated SDKs up to date.</p> 
+<pre>firebase dataconnect:sdk:generate --watch</pre> <h3 id="generate_sdks_in_build_pipelines_2">Generate SDKs in build pipelines</h3> <p>You can use the Firebase CLI to generate SQL Connect SDKs in CI/CD build processes.</p> 
+<pre>firebase dataconnect:sdk:generate</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/web-sdk" class="_attribution-link">https://firebase.google.com/docs/sql-connect/web-sdk</a>
+  </p>
+</div>

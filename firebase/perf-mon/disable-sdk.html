@@ -1,0 +1,156 @@
+<h1>Disable Firebase Performance Monitoring</h1>   <p><br></p> <p>To let your users opt-in or opt-out of using Firebase Performance Monitoring, you might want to configure your app so that you can enable and disable Performance Monitoring. You might also find this capability to be useful during app development and testing.</p> <p>The following are some options to consider:</p> <ul> <li><p>You can disable the Performance Monitoring SDK when building your app, with the option to re-enable it at runtime.</p></li> <li><p>You can build your app with the Performance Monitoring SDK enabled but have the option to disable it at runtime using Firebase Remote Config.</p></li> <li><p>You can completely deactivate the Performance Monitoring SDK, with no option to enable it at runtime.</p></li> </ul> <h2 id="disable-during-build">Disable Performance Monitoring during your app build process</h2> <p>One situation where disabling Performance Monitoring during your app build process could be useful is to avoid reporting performance data from a pre-release version of your app during app development and testing.</p> <p>To disable or deactivate Performance Monitoring, you can add one of two keys to the property list file (<code translate="no" dir="ltr">Info.plist</code>) for your Apple app:</p> <ul> <li><p>To disable Performance Monitoring, but allow your app to enable it at runtime, set <code translate="no" dir="ltr">firebase_performance_collection_enabled</code> to <code translate="no" dir="ltr">false</code> in your app's <code translate="no" dir="ltr">Info.plist</code> file.</p></li> <li>
+<p>To completely deactivate Performance Monitoring, with no option to enable it at runtime, set <code translate="no" dir="ltr">firebase_performance_collection_deactivated</code> to <code translate="no" dir="ltr">true</code> in your app's <code translate="no" dir="ltr">Info.plist</code> file.</p> <aside class="note"><strong>Note:</strong><span> This setting overrides the <code translate="no" dir="ltr">firebase_performance_collection_enabled</code> setting and must be removed from your app's <code translate="no" dir="ltr">Info.plist</code> file to re-enable Performance Monitoring.</span></aside>
+</li> </ul> <h2 id="disable-with-remote-config">Disable your app at runtime using Remote Config</h2> <p>Firebase Remote Config lets you make changes to the behavior and appearance of your app, so it provides an ideal way to let you disable Performance Monitoring in deployed instances of your app.</p> <p>To disable Performance Monitoring data collection the next time that your Apple app starts, use the example code shown below. For more information about using Remote Config in an Apple app, see <a href="../remote-config/get-started">Use Firebase Remote Config on Apple platforms</a>.</p> <ol> <li>
+<p>Ensure that Remote Config is used in your <code translate="no" dir="ltr">Podfile</code>:</p> 
+<pre>pod 'Firebase/RemoteConfig'
+</pre>
+</li> <li>
+<p>Add the following to the top of your app's <code translate="no" dir="ltr">AppDelegate</code> file:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="swift">import FirebaseRemoteConfig
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="objectivec">@import FirebaseRemoteConfig;
+</pre></section> </div>
+</li> <li>
+<p>In your <code translate="no" dir="ltr">AppDelegate</code> file, add the following code to the <code translate="no" dir="ltr">launchOptions</code> statements in the <code translate="no" dir="ltr">application:didFinishLaunchingWithOptions:</code> instance method:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="swift">remoteConfig = RemoteConfig.remoteConfig()
+// You can change the "false" below to "true" to permit more fetches when validating
+// your app, but you should change it back to "false" or remove this statement before
+// distributing your app in production.
+let remoteConfigSettings = RemoteConfigSettings(developerModeEnabled: false)
+remoteConfig.configSettings = remoteConfigSettings!
+// Load in-app defaults from a plist file that sets perf_disable to false until
+// you update values in the Firebase console.
+remoteConfig.setDefaultsFromPlistFileName("RemoteConfigDefaults")
+// Important! This needs to be applied before FirebaseApp.configure()
+if !remoteConfig["perf_disable"].boolValue {
+    // The following line disables all automatic (out-of-the-box) monitoring
+    Performance.sharedInstance().isInstrumentationEnabled = false
+    // The following line disables all custom monitoring
+    Performance.sharedInstance().isDataCollectionEnabled = false
+}
+else {
+    Performance.sharedInstance().isInstrumentationEnabled = true
+    Performance.sharedInstance().isDataCollectionEnabled = true
+}
+// Use Firebase library to configure APIs
+FirebaseApp.configure()
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="objectivec">self.remoteConfig = [FIRRemoteConfig remoteConfig];
+// You can change the NO below to YES to permit more fetches when validating
+// your app, but you should change it back to NO or remove this statement before
+// distributing your app in production.
+FIRRemoteConfigSettings *remoteConfigSettings =
+    [[FIRRemoteConfigSettings alloc] initWithDeveloperModeEnabled:NO];
+self.remoteConfig.configSettings = remoteConfigSettings;
+// Load in-app defaults from a plist file that sets perf_disable to false until
+// you update values in the Firebase console.
+[self.remoteConfig setDefaultsFromPlistFileName:@"RemoteConfigDefaults"];
+// Important! This needs to be applied before [FIRApp configure]
+if (!self.remoteConfig[@"perf_disable"].numberValue.boolValue) {
+    // The following line disables all automatic (out-of-the-box) monitoring
+    [FIRPerformance sharedInstance].instrumentationEnabled = NO;
+    // The following line disables all custom monitoring
+    [FIRPerformance sharedInstance].dataCollectionEnabled = NO;
+}
+else {
+    [FIRPerformance sharedInstance].instrumentationEnabled = YES;
+    [FIRPerformance sharedInstance].dataCollectionEnabled = YES;
+}
+// Use Firebase library to configure APIs
+[FIRApp configure];
+</pre></section> </div>
+</li> <li>
+<p>In <code translate="no" dir="ltr">ViewController.m</code>, or another implementation file used by your app, add the following code to fetch and activate Remote Config values:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="swift">//RemoteConfig fetch and activation in your app, shortly after startup
+remoteConfig.fetch(withExpirationDuration: TimeInterval(30.0)) { (status, error) -&gt; Void in
+  if status == .success {
+    print("Config fetched!")
+    self.remoteConfig.activateFetched()
+  } else {
+    print("Config not fetched")
+    print("Error \(error!.localizedDescription)")
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="objectivec">//RemoteConfig fetch and activation in your app, shortly after startup
+[self.remoteConfig fetchWithExpirationDuration:30.0 completionHandler:^(FIRRemoteConfigFetchStatus status, NSError *error) {
+  if (status == FIRRemoteConfigFetchStatusSuccess) {
+    NSLog(@"Config fetched!");
+    [self.remoteConfig activateFetched];
+  } else {
+    NSLog(@"Config not fetched");
+    NSLog(@"Error %@", error.localizedDescription);
+  }
+}];
+</pre></section> </div>
+</li> <li>
+<p>To disable Performance Monitoring in the Firebase console, create a <strong>perf_disable</strong> parameter in your app's project, then set its value to <code translate="no" dir="ltr">true</code>.</p> <p>If you set the value of <strong>perf_disable</strong> to <code translate="no" dir="ltr">false</code>, Performance Monitoring remains enabled.</p>
+</li> </ol> <h3 id="disable_automatic_or_custom_data_collection_separately">Disable automatic or custom data collection separately</h3> <p>You can make some changes to the code shown above and in the Firebase console to let you disable all automatic (out-of-the-box) monitoring separately from custom monitoring.</p> <ol> <li>
+<p>Add the following code to the <code translate="no" dir="ltr">launchOptions</code> statements in the <code translate="no" dir="ltr">application:didFinishLaunchingWithOptions:</code> instance method (instead of what's shown above for the same instance method):</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="swift">remoteConfig = FIRRemoteConfig.remoteConfig()
+let remoteConfigSettings = FIRRemoteConfigSettings(developerModeEnabled: true)
+remoteConfig.configSettings = remoteConfigSettings!
+// Important! This needs to be applied before FirebaseApp.configure()
+if remoteConfig["perf_disable_auto"].boolValue {
+    // The following line disables all automatic (out-of-the-box) monitoring
+    Performance.sharedInstance().isInstrumentationEnabled = false
+}
+else {
+    Performance.sharedInstance().isInstrumentationEnabled = true
+}
+if remoteConfig["perf_disable_manual"].boolValue {
+    // The following line disables all custom monitoring
+    Performance.sharedInstance().isDataCollectionEnabled = false
+}
+else {
+    Performance.sharedInstance().isDataCollectionEnabled = true
+}
+// Use Firebase library to configure APIs
+FirebaseApp.configure()
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="objectivec">self.remoteConfig = [FIRRemoteConfig remoteConfig];
+FIRRemoteConfigSettings *remoteConfigSettings =
+    [[FIRRemoteConfigSettings alloc] initWithDeveloperModeEnabled:YES];
+self.remoteConfig.configSettings = remoteConfigSettings;
+// Important! This needs to be applied before [FirebaseApp configure]
+if (self.remoteConfig[@"perf_disable_auto"].numberValue.boolValue) {
+    // The following line disables all automatic (out-of-the-box) monitoring
+    [FIRPerformance sharedInstance].instrumentationEnabled = NO;
+}
+else {
+    [FIRPerformance sharedInstance].instrumentationEnabled = YES;
+}
+if (self.remoteConfig[@"perf_disable_manual"].numberValue.boolValue) {
+    // The following line disables all custom monitoring
+    [FIRPerformance sharedInstance].dataCollectionEnabled = NO;
+}
+else {
+    [FIRPerformance sharedInstance].dataCollectionEnabled = YES;
+}
+// Use Firebase library to configure APIs
+[FirebaseApp configure];
+</pre></section> </div>
+</li> <li>
+<p>Complete the following in the Firebase console:</p> <ul> <li>To disable all automatic (out-of-the-box) monitoring, create a <strong>perf_disable_auto</strong> parameter in your app's project, then set its value to <code translate="no" dir="ltr">true</code>.</li> <li>To disable all custom monitoring, create a <strong>perf_disable_manual</strong> parameter in your app's project, then set its value to <code translate="no" dir="ltr">true</code>.</li> </ul> <aside class="note"><strong>Note:</strong><span> To enable either of these aspects of Performance Monitoring in your app, set the value of the corresponding parameter to <code translate="no" dir="ltr">false</code> in the Firebase console.</span></aside>
+</li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/perf-mon/disable-sdk" class="_attribution-link">https://firebase.google.com/docs/perf-mon/disable-sdk</a>
+  </p>
+</div>

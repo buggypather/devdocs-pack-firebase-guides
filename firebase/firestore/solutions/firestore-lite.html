@@ -1,0 +1,30 @@
+<h1>Cloud Firestore Lite Web SDK</h1> <p>Firestore is a good scalable database solution to keep data in sync across Web clients.</p> <p>For many apps, Firestore's managed offline support is especially important, letting you build responsive apps that work regardless of network latency or Internet connectivity. But feature-rich SDKs come at a size cost. What does Firebase offer for apps that only need to use basic create, read, update and delete operations, and don't need managed offline support?</p> <aside class="note"><strong>Note:</strong><span> Before using Firestore Lite, be sure you understand the standard Firestore Web API and Firestore's offline capabilities as part of the full <a href="../index">feature set</a>. We recommend Firestore Lite for developers who have experience building with Firestore and can evaluate the tradeoffs of using a lightweight version.</span></aside> <h2 id="solution_firestore_lite">Solution: Firestore Lite</h2> <p>Firestore Lite is a lightweight, standalone REST-only Firestore SDK that supports single document fetches, query execution, and document updates, at a fraction of the regular Web SDK size. Firestore Lite omits latency compensation, offline caching, query resumption and snapshot listeners, but for particular use cases, the reductions in library size and startup time make a great tradeoff.</p> <h3 id="import_firestore_lite">Import Firestore Lite</h3> <p>Firestore Lite is available via npm as part of the <a href="../../web/learn-more#modular-version">modular SDK</a>. It is thus fully modular and tree-shakeable.</p> <p>The following import style is supported.</p> 
+<pre>import { initializeApp } from "firebase/app";
+import {
+   getFirestore,
+   getDoc,
+   updateDoc
+} from 'firebase/firestore/lite';
+</pre> <h3 id="api_features_not_supported_by_firestore_lite">API features not supported by Firestore Lite</h3> <p>For size and speed, Firestore Lite omits these features from the standard Firestore SDK:</p> <ul> <li>
+<strong>DocumentSnapshot event handlers</strong>. The <code translate="no" dir="ltr">onSnapshot</code> method and <code translate="no" dir="ltr">DocumentChange</code>, <code translate="no" dir="ltr">SnapshotListenerOptions</code>, <code translate="no" dir="ltr">SnapshotMetadata</code>, <code translate="no" dir="ltr">SnapshotOptions</code> and <code translate="no" dir="ltr">Unsubscribe</code> objects are not included.</li> <li>
+<strong>Persistence helpers</strong>. The <code translate="no" dir="ltr">enableIndexedDBPersistence</code>, <code translate="no" dir="ltr">enableMultiTabIndexedDbPersistence</code>, and <code translate="no" dir="ltr">clearIndexedDbPersistence</code> methods are not included.</li> <li>
+<strong>Firestore bundles</strong>. The <code translate="no" dir="ltr">loadBundle</code> method and related methods, and the <code translate="no" dir="ltr">LoadBundleTask</code> and <code translate="no" dir="ltr">LoadBundleTaskProgress</code> objects are not included.</li> </ul> <h3 id="implement_document_fetches_queries_and_updates">Implement document fetches, queries and updates</h3> <p>After importing Firestore Lite, you can make all of the familiar API get and update calls. The use cases for <a href="../manage-data/add-data">adding data</a> and <a href="../query-data/get-data">getting data</a> all apply.</p> 
+<pre>import {
+ getFirestore,
+ getDoc,
+ updateDoc,
+ doc
+} from '@firebase/firestore/lite';
+
+const firestore = getFirestore(app);
+const docRef = doc(firestore, 'collection/doc');
+const docSnap = await getDoc(docRef);
+await updateDoc(docRef, "field", 'value');
+</pre> <h2 id="when_to_use_firestore_lite">When to use Firestore Lite</h2> <p>It can be tricky to decide when to let go of the standard Firestore SDK's offline persistence and caching features. You should understand these features before deciding to trade them away for the lower overhead of Firestore Lite. In general, weigh these factors when deciding whether to use Firestore Lite:</p> <ul> <li>
+<strong>Online status</strong> - Firestore Lite is good for apps that do not need live updates and have connectivity.</li> <li>
+<strong>Size constraints</strong> - Firestore Lite is great if you want to reduce your overall JavaScript bundle size.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/solutions/firestore-lite" class="_attribution-link">https://firebase.google.com/docs/firestore/solutions/firestore-lite</a>
+  </p>
+</div>

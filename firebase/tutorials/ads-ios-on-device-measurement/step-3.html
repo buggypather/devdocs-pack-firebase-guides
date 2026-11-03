@@ -1,0 +1,105 @@
+<h1>Tutorial: Measure iOS Ads conversions</h1> <h2 id="step_3_initiate_on-device_conversion_measurement_using" class="hide-from-toc">Step 3: Initiate on-device conversion measurement using Google Analytics</h2> <p><br></p> <table class="orange"> <tr> <td> Introduction: <a href="index-first-party">Measure iOS Ads conversions</a> </td> </tr> <tr> <td> Step 1: <a href="step-1"> Implement a sign-in experience</a> </td> </tr> <tr> <td> Step 2: <a href="step-2"> Integrate Google Analytics</a> </td> </tr> <tr class="alt"> <td> <br> <b>Step 3: Initiate on-device conversion measurement using Google Analytics</b> <br><br> </td> </tr> <tr> <td> Step 4: <a href="step-4"> Troubleshoot and handle common issues</a> </td> </tr> </table> <p><br></p> <p>Now that you can collect users' email addresses and phone numbers and your app has the Google Analytics for Firebase SDK, you can use the two to start measuring conversions.</p> <h3 id="call-the-api">Call the API</h3> <p>Call the conversion measurement API with the consented email address or phone number from Step 1, which is used for ads conversion measurement, without allowing any personally identifiable information to leave the user device.</p> <p>There are two ways to initiate measurement:</p> <ul> <li><a href="#use-plain-text-credentials">Using credentials</a></li> <li><a href="#use-hashed-credentials">Using hashed credentials</a></li> </ul> <h4 id="use-plain-text-credentials">Use email address or phone number</h4> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Import the <code translate="no" dir="ltr">FirebaseAnalytics</code> module and pass in the email address or phone number to the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement()</code> API.</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement(emailAddress:)</code> and <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement(phoneNumber:)</code> methods may be called sequentially, but only one match can be reported per user. If a match is found with either API, then subsequent API calls are effectively ignored.</span></aside> 
+<pre data-language="swift">import FirebaseAnalytics
+
+// ...
+// If you're using an email address....
+Analytics.initiateOnDeviceConversionMeasurement(emailAddress: "example@gmail.com")
+// If you're using a phone number....
+Analytics.initiateOnDeviceConversionMeasurement(phoneNumber: "+15555555555")</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+<p>Import the <code translate="no" dir="ltr">FirebaseAnalytics</code> module and pass in the email address to the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurementWithEmailAddress:</code> API or the phone number to the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurementWithPhoneNumber:</code> API.</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurementWithEmailAddress:</code> and <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurementWithPhoneNumber:</code> methods may be called sequentially, but only one match can be reported per user. If a match is found with either API, then subsequent API calls are effectively ignored.</span></aside> 
+<pre data-language="objectivec">@import FirebaseAnalytics;
+
+// ...
+// If you're using an email address....
+[FIRAnalytics initiateOnDeviceConversionMeasurementWithEmailAddress:@"example@gmail.com"];
+// If you're using a phone number....
+[FIRAnalytics initiateOnDeviceConversionMeasurementWithPhoneNumber:@"+15555555555"];</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Import the <code translate="no" dir="ltr">Firebase.Analytics</code> namespace and pass in the email address to the <code translate="no" dir="ltr">InitiateOnDeviceConversionMeasurementWithEmailAddress()</code> API or the phone number to the <code translate="no" dir="ltr">InitiateOnDeviceConversionMeasurementWithPhoneNumber()</code> API:</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">InitiateOnDeviceConversionMeasurementWithEmailAddress()</code> and <code translate="no" dir="ltr">InitiateOnDeviceConversionMeasurementWithPhoneNumber()</code> methods may be called sequentially, but only one match can be reported per user. If a match is found with either API, then subsequent API calls are effectively ignored.</span></aside> 
+<pre data-language="csharp">using Firebase.Analytics;
+
+// ...
+// If you're using an email address....
+FirebaseAnalytics.InitiateOnDeviceConversionMeasurementWithEmailAddress("example@gmail.com");
+// If you're using a phone number....
+FirebaseAnalytics.InitiateOnDeviceConversionMeasurementWithPhoneNumber("+15555555555");</pre></section> </div> <h3 id="best-practices">Best Practices for calling the API</h3> <p>To ensure accurate and continuous on-device conversion measurement, do any of the following:</p> <h4 id="call_on_every_app_update_recommended">Call on every app update (Recommended)</h4> <p>Google Analytics for Firebase SDK version 12.1.0 and later includes improvements to on-device conversion measurement. To ensure these improvements apply to all users, including those already signed in before your app was updated, it's crucial to call the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement</code> API again after the app updates.</p> <p>Specifically, users who signed in before your app updated to SDK version 12.1.0 are not included in the enhanced measurement scope until the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement</code> API is called again for them. Without the app update check, this would only happen if they sign out and sign back in.</p> <p>The best practice is to call the API for signed-in users at least once per app version. You can implement a check on app launch to call the API only when the app version has changed since the last call.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// On app launch if the app version has changed, call the API with the first-party data
+// (for example: email address, phone number, hashed email address, hashed phone number).
+let cachedAppVersion = UserDefaults.standard.string(forKey: "cachedAppVersion")
+let currentAppVersion =
+    Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+
+if cachedAppVersion != currentAppVersion {
+  let hashedEmailAddress = ...
+  Analytics.initiateOnDeviceConversionMeasurement(hashedEmailAddress: hashedEmailAddress)
+  UserDefaults.standard.set(currentAppVersion, forKey: "cachedAppVersion")
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">// On app launch if the app version has changed, call the API with the first-party data
+// (for example: email address, phone number, hashed email address, hashed phone number).
+NSString *cachedAppVersion =
+    [[NSUserDefaults standardUserDefaults] stringForKey:@"cachedAppVersion"];
+NSString *currentAppVersion = [[NSBundle mainBundle]
+    objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+
+if (![cachedAppVersion isEqualToString:currentAppVersion]) {
+  NSString *hashedEmailAddress = ...
+  [FIRAnalytics initiateOnDeviceConversionMeasurementWithHashedEmailAddress:hashedEmailAddress];
+  [[NSUserDefaults standardUserDefaults] setObject:currentAppVersion
+                                            forKey:@"cachedAppVersion"];
+}</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">// On app launch if the app version has changed, call the API with the first-party data
+// (for example: email address, phone number, hashed email address, hashed phone number).
+string cachedAppVersion = PlayerPrefs.GetString("cached_app_version", "");
+string currentAppVersion = Application.version;
+
+if (cachedAppVersion != currentAppVersion) {
+  byte[] hashedEmailAddress = ...
+  FirebaseAnalytics.InitiateOnDeviceConversionMeasurementWithHashedEmailAddress(
+      hashedEmailAddress);
+  PlayerPrefs.SetString("cached_app_version", currentAppVersion);
+  PlayerPrefs.Save();
+}</pre></section> </div> <h4 id="call_immediately_after_sign-in">Call immediately after sign-in</h4> <p>Always call the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement</code> API right after a user successfully signs in or registers their email or phone number.</p> <h4 id="timing_consideration_for_new_registrations">Timing consideration for new registrations</h4> <p>If a key conversion event occurs immediately after a user registers (and you call the API), consider implementing a small delay (for example, five seconds) between the API call and logging the key event. This helps ensure the on-device measurement is fully initialized before the event is logged.</p> <h4 id="use-hashed-credentials">Use a hashed email address or phone number</h4> <p>The API will accept email addresses and phone numbers hashed with SHA256. You can maintain control of your user's data by performing the hashing in your code before making calls to the SDK.</p> <p>To use hashed credentials, normalize addresses and numbers, hash them with SHA256, then call the API.</p> <h5 id="normalize-addresses-phone-numbers">Normalize email addresses and phone numbers</h5> <p>For <strong>email addresses</strong>, the Google Analytics API assumes that a particular normalization is performed before SHA256 is applied, so follow these steps to normalize your data:</p> <ol> <li><p>Convert the entire email address to lowercase.</p></li> <li><p>If the email address ends in domain <em>@googlemail.com</em>, replace the <em>@googlemail.com</em> domain with <em>@gmail.com</em>.</p></li> <li>
+<p>For addresses ending in domain <em>@gmail.com</em> (including those modified in the previous step):</p> <ol> <li><p>Remove all periods from the username portion.</p></li> <li>
+<p>Make the following substitutions in the username portion:</p> <ul> <li>For letters I or i, or digit 1, substitute letter l</li> <li>For digit 0, substitute letter o</li> <li>For digit 2, substitute letter z</li> <li>For digit 5, substitute letter s</li> </ul>
+</li> </ol>
+</li> </ol> <p>For example, after normalization:</p> <ul> <li>
+<code translate="no" dir="ltr">an.email.user0125@googlemail.com</code> becomes <code translate="no" dir="ltr">anemalluserolzs@gmail.com</code>
+</li> <li>
+<code translate="no" dir="ltr">CAPSUSER0125@provider.net</code> becomes <code translate="no" dir="ltr">capsuser0125@provider.net</code>
+</li> </ul> <p>For <strong>phone numbers</strong>, numbers must already be in E.164 format (that is, prefix with +, 1-3 digits for country code, max 12 digits for subscriber number) prior to hashing with SHA256.</p> <p>Note that the hashed SHA256 email or phone numbers must be 32 bytes long and not a hexadecimal string.</p> <h5 id="call-api-with-hashed-credentials">Call the API with hashed credentials</h5> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Import the <code translate="no" dir="ltr">FirebaseAnalytics</code> module and pass in the email address or phone number to the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement()</code> API.</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement(hashedEmailAddress:)</code> and <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement(hashedPhoneNumber:)</code> methods may be called sequentially, but only one match can be reported per user. If a match is found with either API, then subsequent API calls are effectively ignored.</span></aside> 
+<pre data-language="swift">import FirebaseAnalytics
+
+// ...
+// If you're using an email address....
+Analytics.initiateOnDeviceConversionMeasurement(hashedEmailAddress: hashedEmailAddress)
+// If you're using a phone number....
+Analytics.initiateOnDeviceConversionMeasurement(hashedPhoneNumber: hashedPhoneNumber)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+<p>Import the <code translate="no" dir="ltr">FirebaseAnalytics</code> module and pass in the email address to the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurementWithHashedEmailAddress:</code> API or the phone number to the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurementWithHashedPhoneNumber:</code> API.</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurementWithHashedEmailAddress:</code> and <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurementWithHashedPhoneNumber:</code> methods may be called sequentially, but only one match can be reported per user. If a match is found with either API, then subsequent API calls are effectively ignored.</span></aside> 
+<pre data-language="objectivec">@import FirebaseAnalytics;
+
+// ...
+// If you're using an email address....
+[FIRAnalytics initiateOnDeviceConversionMeasurementWithHashedEmailAddress:hashedEmailAddress];
+// If you're using a phone number....
+[FIRAnalytics initiateOnDeviceConversionMeasurementWithHashedPhoneNumber:hashedPhoneNumber];</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Import the <code translate="no" dir="ltr">Firebase.Analytics</code> namespace and pass in the email address to the <code translate="no" dir="ltr">InitiateOnDeviceConversionMeasurementWithHashedEmailAddress()</code> API or the phone number to the <code translate="no" dir="ltr">InitiateOnDeviceConversionMeasurementWithHashedPhoneNumber()</code> API:</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">InitiateOnDeviceConversionMeasurementWithHashedEmailAddress()</code> and <code translate="no" dir="ltr">InitiateOnDeviceConversionMeasurementWithHashedPhoneNumber()</code> methods may be called sequentially, but only one match can be reported per user. If a match is found with either API, then subsequent API calls are effectively ignored.</span></aside> 
+<pre data-language="csharp">using Firebase.Analytics;
+
+// ...
+// If you're using an email address....
+FirebaseAnalytics.InitiateOnDeviceConversionMeasurementWithHashedEmailAddress(hashedEmailAddress);
+// If you're using a phone number....
+FirebaseAnalytics.InitiateOnDeviceConversionMeasurementWithHashedPhoneNumber(hashedPhoneNumber);</pre></section> </div> <h3 id="verify-integration">Verify integration</h3> <p>Enable debug mode. After calling the initiate measurement API, ensure that a message like the following log message appears in the Xcode debug console:</p> 
+<pre>[FirebaseAnalytics][I-ACS023225] Initiated on-device conversion measurement
+</pre> <p>If you enabled debug mode and included the <code translate="no" dir="ltr">-DebugOnDeviceConversionMeasurement</code> launch argument, then calling the <code translate="no" dir="ltr">initiateOnDeviceConversionMeasurement()</code> API will simulate a match.</p> 
+<pre>[FirebaseAnalytics][I-ACS023229] On-device conversion measurement found a match
+</pre> <p><br></p> <hr> <p><br></p> <p><a class="button button-with-icon attempt-left" href="step-2"><span class="material-icons" aria-hidden="true" translate="no">arrow_back_ios</span><b>Step 2</b>: Integrate Google Analytics</a> <a class="button button-with-icon button-primary attempt-right" href="step-4"><b>Step 4</b>: Troubleshoot and handle common issues<span class="material-icons icon-after" aria-hidden="true" translate="no">arrow_forward_ios</span></a></p> <p><br></p> <hr><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/tutorials/ads-ios-on-device-measurement/step-3" class="_attribution-link">https://firebase.google.com/docs/tutorials/ads-ios-on-device-measurement/step-3</a>
+  </p>
+</div>

@@ -1,0 +1,341 @@
+<h1>Migrate from AndroidConfig to AndroidConfigV2</h1>     <aside class="note"><strong>Note:</strong><span> This feature is a <strong>preview</strong> release and is subject to the "Pre-GA Offerings Terms" in the General Service Terms section of the <a href="https://docs.cloud.google.com/terms/service-terms#1">Service Specific Terms</a>. Pre-GA products and features are available "as is" and might have limited support. For more information, see the <a href="https://cloud.google.com/products/#product-launch-stages">launch stage descriptions</a>.</span></aside> <p>Using the FCM <code translate="no" dir="ltr">AndroidConfigV2</code>, you can send intent driven messages to Android devices with timely notification delivery and a simplified API.</p> <p>This guide covers how to migrate your backend send requests from <code translate="no" dir="ltr">AndroidConfig</code> to <code translate="no" dir="ltr">AndroidConfigV2</code> and how to update your Android application clients from legacy <code translate="no" dir="ltr">onMessageReceived</code> handling to the new v2 client callbacks <code translate="no" dir="ltr">onNotificationReceived</code> and <code translate="no" dir="ltr">onBackgroundSyncReceived</code>.</p> <aside class="tip"><strong>Tip:</strong><span> <strong>Backward compatibility</strong>: <code translate="no" dir="ltr">AndroidConfigV2</code> is supported on all Android versions. When your server sends <code translate="no" dir="ltr">AndroidConfigV2</code>, FCM automatically translates the message for devices running older client SDKs. You can update your server-side message sending logic without waiting for client app updates.</span></aside> <h2 id="new-features">What's new in AndroidConfigV2</h2> <p>The FCM AndroidConfigV2 API simplifies developer experience by introducing two message types:</p> <ul> <li>
+<strong><code translate="no" dir="ltr">RemoteNotification</code></strong>: Recommended for all FCM messages that display an urgent, time-sensitive user-visible notification. These messages bypass any battery-saving measures and are delivered without delay. On the device, the FCM SDK and Google Play services take ownership of posting the notification to Android's <code translate="no" dir="ltr">NotificationManager</code>.</li> <li>
+<strong><code translate="no" dir="ltr">BackgroundSync</code></strong>: Non-urgent data messages intended for background synchronization and app state updates. Delivery can be batched or delayed to optimize battery life.</li> </ul> <table> <thead> <tr> <th style="text-align: left">Feature</th> <th style="text-align: left">Legacy (<code translate="no" dir="ltr">AndroidConfig</code> v1)</th> <th style="text-align: left">New (<code translate="no" dir="ltr">AndroidConfigV2</code>)</th> </tr> </thead> <tbody> <tr> <td style="text-align: left"><strong>Configuration field</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">message.android</code></td> <td style="text-align: left"><code translate="no" dir="ltr">message.android_v2</code></td> </tr> <tr> <td style="text-align: left"><strong>Priority definition</strong></td> <td style="text-align: left">Explicit <code translate="no" dir="ltr">priority: "high"</code> or <code translate="no" dir="ltr">priority: "normal"</code>
+</td> <td style="text-align: left">Implied by union type (<code translate="no" dir="ltr">remote_notification</code> for urgent alerts versus <code translate="no" dir="ltr">background_sync</code> for non-urgent sync)</td> </tr> <tr> <td style="text-align: left"><strong>Notification posting</strong></td> <td style="text-align: left">App manually calls <code translate="no" dir="ltr">NotificationManager.notify()</code>
+</td> <td style="text-align: left">FCM SDK and GMS Core posts directly or using <code translate="no" dir="ltr">NotificationResponse</code>
+</td> </tr> <tr> <td style="text-align: left"><strong>Client callbacks</strong></td> <td style="text-align: left">• <code translate="no" dir="ltr">onMessageReceived(RemoteMessage)</code><br>• <code translate="no" dir="ltr">onDeletedMessages()</code>
+</td> <td style="text-align: left">• <code translate="no" dir="ltr">onNotificationReceived(RemoteMessage)</code><br>• <code translate="no" dir="ltr">onBackgroundSyncReceived(RemoteMessage)</code><br>• <code translate="no" dir="ltr">onDeletedMessages()</code>
+</td> </tr> <tr> <td style="text-align: left"><strong>Collapsibility</strong></td> <td style="text-align: left">Varied; required explicit setting</td> <td style="text-align: left">Both message types can be collapsible or non-collapsible (not collapsible by default)</td> </tr> </tbody> </table> <h2 id="authorize-v2-send-requests">Authorize AndroidConfigV2 send requests</h2> <p>You can continue to use OAuth 2.0 access tokens derived from your Firebase service account using Google Application Default Credentials or the Admin SDK, and send <code translate="no" dir="ltr">POST</code> requests to the HTTP v1 <code translate="no" dir="ltr">messages:send</code> endpoint.</p> <p>If you're not using your Firebase service account, make sure to assign your dedicated account to the <a href="https://cloud.google.com/iam/docs/roles-permissions/firebasecloudmessaging#firebasecloudmessaging.admin" class="external"><strong>Firebase Cloud Messaging API Admin</strong> role (<code translate="no" dir="ltr">roles/firebase.messagingAdmin</code>)</a> and request the <code translate="no" dir="ltr">https://www.googleapis.com/auth/firebase.messaging</code> OAuth 2.0 scope when minting access tokens:</p> 
+<pre>POST https://fcm.googleapis.com/v1/projects/YOUR_PROJECT_ID/messages:send HTTP/1.1
+Authorization: Bearer YOUR_OAUTH_ACCESS_TOKEN
+Content-Type: application/json
+</pre> <h2 id="update-server-send-requests">Update server send requests (REST)</h2> <p>To send an <code translate="no" dir="ltr">AndroidConfigV2</code> request using the REST API, replace the <code translate="no" dir="ltr">android</code> object in your request body with <code translate="no" dir="ltr">android_v2</code>. Within <code translate="no" dir="ltr">android_v2</code>, specify common parameters (such as <code translate="no" dir="ltr">ttl</code>, <code translate="no" dir="ltr">collapse_key</code>, <code translate="no" dir="ltr">data</code>, and <code translate="no" dir="ltr">restricted_package_name</code>), and provide one of the following union fields: <code translate="no" dir="ltr">remote_notification</code> or <code translate="no" dir="ltr">background_sync</code>.</p> <h3 id="send-remotenotification-message">Send a RemoteNotification message</h3> <p>To send an urgent, user-facing notification, include the <code translate="no" dir="ltr">remote_notification</code> object and its recommended <code translate="no" dir="ltr">notification</code> payload. By default <code translate="no" dir="ltr">mutable_content</code> is set to false. The GMS Core immediately renders and posts the notification to the system tray without executing background app code.</p> <h4 id="sample-http-request">Complete HTTP request JSON sample (Auto-rendered notification)</h4> 
+<pre>POST https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+
+{
+  "message": {
+    "token": "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
+    "notification": {
+      "title": "FCM Message",
+      "body": "This is an FCM notification message!"
+    },
+    "android_v2": {
+      "ttl": "3600s",
+      "remote_notification": {
+        "mutable_content": false,
+        "notification": {
+          "title": "Order update",
+          "body": "Your order has been shipped!",
+          "icon": "ic_notification_custom",
+          "sound": "default",
+          "tag": "alert_tag_1",
+          "id": 100
+        }
+      }
+    }
+  }
+}
+</pre> <h3 id="send-notification-with-mutable-content">Send a RemoteNotification with mutable content</h3> <p>If your application needs to modify the notification on the device before it is displayed, set <code translate="no" dir="ltr">mutable_content: true</code> inside <code translate="no" dir="ltr">remote_notification</code>. This instructs GMS Core to bind to your client application and invoke <code translate="no" dir="ltr">onNotificationReceived()</code>. This is helpful when you want to <a href="#e2ee-notification-flow">decrypt an end-to-end encrypted payload</a>, attach user avatars, or localize strings.</p> <p>Make sure to include a <code translate="no" dir="ltr">notification</code> object inside <code translate="no" dir="ltr">remote_notification</code> even when <code translate="no" dir="ltr">mutable_content</code> is <code translate="no" dir="ltr">true</code>. GMS Core uses this <code translate="no" dir="ltr">notification</code> object as the fallback notification if the client callback times out or exceeds suppression limits.</p> <p>If you're migrating from legacy v1 data messages and want FCM to deliver the payload to older v1 client installations as a pure data message, set <code translate="no" dir="ltr">use_as_v1_data_message: true</code> inside <code translate="no" dir="ltr">remote_notification</code>.</p> <h4 id="remotenotification-sample">Complete HTTP request JSON sample</h4> 
+<pre>POST https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+
+{
+  "message": {
+    "token": "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
+    "data": {
+      "encrypted_content": "U2FsdGVkX19vN2m+",
+      "sender_id": "user_98124"
+    },
+    "android_v2": {
+      "ttl": "3600s",
+      "remote_notification": {
+        "mutable_content": true,
+        "use_as_v1_data_message": true,
+        "notification": {
+          "title": "New message",
+          "body": "You have a new message",
+          "tag": "chat_alert",
+          "id": 1001
+        }
+      }
+    }
+  }
+}
+</pre> <h3 id="send-backgroundsync-message">Send a BackgroundSync message</h3> <p>To send a non-urgent message for background data synchronization, silent state updates, or updating an app badge or widget, use the <code translate="no" dir="ltr">background_sync</code> object. Don't use these messages to post user-visible notifications, as these can be batched or delayed to optimize device battery life.</p> <h4 id="backgroundsync-sample">Complete HTTP request JSON sample</h4> 
+<pre>POST https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+
+{
+  "message": {
+    "token": "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
+    "data": {
+      "score": "FETCH_UPDATES",
+      "sync_action": "FETCH_UPDATES"
+    },
+    "android_v2": {
+      "ttl": "86400s",
+      "collapse_key": "app_state_sync",
+      "background_sync": {}
+    }
+  }
+}
+</pre> <h2 id="update-client-callbacks">Update Android client callbacks</h2> <p>To receive <code translate="no" dir="ltr">AndroidConfigV2</code> messages on Android, upgrade your app to use the latest <code translate="no" dir="ltr">firebase-messaging</code> SDK. Update your service extending <code translate="no" dir="ltr">FirebaseMessagingService</code> by implementing <code translate="no" dir="ltr">onNotificationReceived()</code> and <code translate="no" dir="ltr">onBackgroundSyncReceived()</code>.</p> <aside class="note"><strong>Note:</strong><span> If a device receives an <code translate="no" dir="ltr">AndroidConfigV2</code> message before your app overrides <code translate="no" dir="ltr">onNotificationReceived()</code> or <code translate="no" dir="ltr">onBackgroundSyncReceived()</code>, GMS Core detects that the v2 callbacks are unimplemented and automatically falls back to delivering the message through the legacy v1 <code translate="no" dir="ltr">onMessageReceived()</code> broadcast.</span></aside> <h3 id="install-eap-sdk">Install the EAP SDK</h3> <p>During the EAP, the <code translate="no" dir="ltr">firebase-messaging</code> v2 SDK is distributed as a local Maven repository archive rather than through Google's public Maven repository.</p> <ol> <li>
+<p>Add the <code translate="no" dir="ltr">m2repository</code> directory containing <code translate="no" dir="ltr">firebase-messaging:26.1.0-eap01</code> to the root directory of your Android project (<code translate="no" dir="ltr">&lt;project-root&gt;/m2repository</code>) using one of the following options:</p> <ol> <li>
+<strong>Option A: Download the prebuilt archive</strong>: Download <a href="https://dl.google.com/firebase/sdk/android/FirebaseMessaging_26.1.0-eap01.zip">FirebaseMessaging_26.1.0-eap01.zip</a> and extract the <code translate="no" dir="ltr">m2repository</code> directory into the root directory of your Android project (<code translate="no" dir="ltr">&lt;project-root&gt;/m2repository</code>).</li> <li>
+<p><strong>Option B: Build from GitHub with Gradle</strong>: Clone the <a href="https://github.com/firebase/firebase-android-sdk/tree/feature/fcm-android-config-v2-eap"><code translate="no" dir="ltr">feature/fcm-android-config-v2-eap</code></a> branch of <code translate="no" dir="ltr">firebase/firebase-android-sdk</code>, build the local Maven repository, and copy the generated <code translate="no" dir="ltr">build/m2repository</code> directory into your Android project root:</p> 
+<pre>git clone --branch feature/fcm-android-config-v2-eap --single-branch \
+  https://github.com/firebase/firebase-android-sdk.git
+cd firebase-android-sdk
+./gradlew -PprojectsToPublish="firebase-messaging" firebasePublish
+cp -R build/m2repository /path/to/your/android-project/m2repository
+</pre>
+</li> </ol>
+</li> <li>
+<p>In your project-level <code translate="no" dir="ltr">settings.gradle.kts</code> (or <code translate="no" dir="ltr">settings.gradle</code>), add the local <code translate="no" dir="ltr">m2repository</code> directory to the top of your <code translate="no" dir="ltr">repositories</code> block, above <code translate="no" dir="ltr">google()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (settings.gradle.kts)</strong></p>
+
+<pre data-language="kotlin">dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        maven { url = uri("${rootDir}/m2repository") }
+        google()
+        mavenCentral()
+    }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Groovy (settings.gradle)</strong></p>
+
+<pre data-language="">dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        maven { url "${rootDir}/m2repository" }
+        google()
+        mavenCentral()
+    }
+}
+</pre></section> </div>
+</li> <li>
+<p>In your module-level <code translate="no" dir="ltr">app/build.gradle.kts</code> (or <code translate="no" dir="ltr">app/build.gradle</code>), update your <code translate="no" dir="ltr">firebase-messaging</code> dependency to <code translate="no" dir="ltr">26.1.0-eap01</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+
+<pre data-language="kotlin">dependencies {
+    implementation("com.google.firebase:firebase-messaging:26.1.0-eap01")
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+
+<pre data-language="">dependencies {
+    implementation 'com.google.firebase:firebase-messaging:26.1.0-eap01'
+}
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> If your app uses the Firebase Android BoM (<code translate="no" dir="ltr">firebase-bom</code>), you must still specify the explicit <code translate="no" dir="ltr">26.1.0-eap01</code> version on <code translate="no" dir="ltr">firebase-messaging</code> so Gradle overrides the version managed by the BoM.</span></aside>
+</li> <li><p>Sync your project with Gradle files.</p></li> </ol> <h3 id="handling-remotenotifications">Handle RemoteNotifications with <code translate="no" dir="ltr">onNotificationReceived</code>
+</h3> <p>With <code translate="no" dir="ltr">AndroidConfigV2</code>, <code translate="no" dir="ltr">RemoteNotification</code> messages are displayed unless <code translate="no" dir="ltr">mutable_content</code> is set to true or they're explicitly silenced in <code translate="no" dir="ltr">onNotificationReceived()</code>.</p> <p>When a <code translate="no" dir="ltr">RemoteNotification</code> arrives with <code translate="no" dir="ltr">mutable_content: true</code>, GMS Core binds to your application and calls <code translate="no" dir="ltr">onNotificationReceived()</code>. Your method must return a <code translate="no" dir="ltr">NotificationResponse</code> within 20 seconds.</p> <h4 id="return-modified-notification">Return a modified notification</h4> <p>The <code translate="no" dir="ltr">Notification</code> object you pass to <code translate="no" dir="ltr">NotificationResponse.create</code> replaces the server's <code translate="no" dir="ltr">remote_notification.notification</code> fallback payload properties defined in the send request. To keep values from the send request, read them from <code translate="no" dir="ltr">message.notification</code> (<code translate="no" dir="ltr">message.getNotification()</code> in Java) while applying on-device modifications:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">import androidx.core.app.NotificationCompat
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.NotificationResponse
+import com.google.firebase.messaging.RemoteMessage
+
+class MyFirebaseMessagingService : FirebaseMessagingService() {
+
+    override fun onNotificationReceived(message: RemoteMessage): NotificationResponse {
+        val serverNotif = message.notification
+        val channelId = serverNotif?.channelId ?: "default_channel"
+        // Keep the server-defined title unchanged, or fall back to default
+        val title = serverNotif?.title ?: "New message"
+        // Modify the notification body on-device (for example, decrypting data)
+        val decryptedBody = decryptPayload(message.data["encrypted_content"])
+
+        val builder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.ic_stat_notification)
+            .setContentTitle(title)
+            .setContentText(decryptedBody)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+
+        // Return the response for the open-source FCM SDK to post to the Android platform
+        return NotificationResponse.create("optional_tag", 100, builder.build())
+    }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">import com.google.firebase.messaging.FirebaseMessagingService;
+import com.google.firebase.messaging.RemoteMessage;
+import com.google.firebase.messaging.NotificationResponse;
+import androidx.core.app.NotificationCompat;
+
+public class MyFirebaseMessagingService extends FirebaseMessagingService {
+
+    @Override
+    public NotificationResponse onNotificationReceived(RemoteMessage message) {
+        RemoteMessage.Notification serverNotif = message.getNotification();
+        String channelId = (serverNotif != null &amp;&amp; serverNotif.getChannelId() != null)
+                ? serverNotif.getChannelId()
+                : "default_channel";
+        // Keep the server-defined title unchanged, or fall back to default
+        String title = (serverNotif != null &amp;&amp; serverNotif.getTitle() != null)
+                ? serverNotif.getTitle()
+                : "New message";
+        // Modify the notification body on-device (for example, decrypting data)
+        String decryptedBody = decryptPayload(message.getData().get("encrypted_content"));
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(R.drawable.ic_stat_notification)
+                .setContentTitle(title)
+                .setContentText(decryptedBody)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true);
+
+        // Return the response for the open-source FCM SDK to post to the Android platform
+        return NotificationResponse.create("optional_tag", 100, builder.build());
+    }
+}
+</pre></section> </div> <h4 id="suppress-notifications">Suppress a notification</h4> <p>If the user has the relevant screen or chat active right now, you can suppress the notification by returning <code translate="no" dir="ltr">NotificationResponse.suppress()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ProcessLifecycleOwner
+
+override fun onNotificationReceived(message: RemoteMessage): NotificationResponse {
+    val chatId = message.data["chat_id"]
+    val isAppForeground = ProcessLifecycleOwner.get()
+        .lifecycle
+        .currentState
+        .isAtLeast(Lifecycle.State.STARTED)
+
+    if (isAppForeground &amp;&amp; chatRepository.isConversationActive(chatId)) {
+        // Suppress notification display because the user is actively viewing this chat
+        return NotificationResponse.suppress()
+    }
+
+    val builder = buildNotificationForChat(message)
+    return NotificationResponse.create("chat_tag", 101, builder.build())
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.ProcessLifecycleOwner;
+
+@Override
+public NotificationResponse onNotificationReceived(RemoteMessage message) {
+    String chatId = message.getData().get("chat_id");
+    boolean isAppForeground = ProcessLifecycleOwner.get()
+            .getLifecycle()
+            .getCurrentState()
+            .isAtLeast(Lifecycle.State.STARTED);
+
+    if (isAppForeground &amp;&amp; chatRepository.isConversationActive(chatId)) {
+        // Suppress notification display because the user is actively viewing this chat
+        return NotificationResponse.suppress();
+    }
+
+    NotificationCompat.Builder builder = buildNotificationForChat(message);
+    return NotificationResponse.create("chat_tag", 101, builder.build());
+}
+</pre></section> </div> <h4 id="stream_notifications_or_cancel_older_alerts_fcmnotificationmanager">Stream notifications or cancel older alerts (<code translate="no" dir="ltr">FcmNotificationManager</code>)</h4> <p>If you need to post multiple notifications for a single incoming push, or cancel a stale notification before displaying a new one, use <code translate="no" dir="ltr">FcmNotificationManager</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">override fun onNotificationReceived(message: RemoteMessage): NotificationResponse {
+    // Retrieve the scoped manager for this message execution
+    val manager = getFcmNotificationManager(message)
+
+    // 1. Cancel an outdated notification right away
+    manager.cancelNow("message_tag", 50)
+
+    // 2. Post the item notification immediately
+    val itemNotif = NotificationCompat.Builder(this, "chat_channel")
+        .setSmallIcon(R.drawable.ic_message)
+        .setContentTitle("Alex")
+        .setContentText(message.data["text"])
+    manager.postNow("item_tag", 51, itemNotif.build())
+
+    // 3. Post a group summary notification
+    val summaryNotif = NotificationCompat.Builder(this, "chat_channel")
+        .setSmallIcon(R.drawable.ic_message)
+        .setContentTitle("New Conversations")
+        .setGroupSummary(true)
+    manager.postNow("summary_tag", 52, summaryNotif.build())
+
+    // 4. Return finished() to complete the streaming workflow
+    return manager.finished()
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">@Override
+public NotificationResponse onNotificationReceived(RemoteMessage message) {
+    // Retrieve the scoped manager for this message execution
+    FcmNotificationManager manager = getFcmNotificationManager(message);
+
+    // 1. Cancel an outdated notification right away
+    manager.cancelNow("message_tag", 50);
+
+    // 2. Post the item notification immediately
+    NotificationCompat.Builder itemNotif = new NotificationCompat.Builder(this, "chat_channel")
+            .setSmallIcon(R.drawable.ic_message)
+            .setContentTitle("Alex")
+            .setContentText(message.getData().get("text"));
+    manager.postNow("item_tag", 51, itemNotif.build());
+
+    // 3. Post a group summary notification
+    NotificationCompat.Builder summaryNotif = new NotificationCompat.Builder(this, "chat_channel")
+            .setSmallIcon(R.drawable.ic_message)
+            .setContentTitle("New Conversations")
+            .setGroupSummary(true);
+    manager.postNow("summary_tag", 52, summaryNotif.build());
+
+    // 4. Return finished() to complete the streaming workflow
+    return manager.finished();
+}
+</pre></section> </div>
+<aside class="caution"><strong>Caution:</strong><span> <code translate="no" dir="ltr">FcmNotificationManager</code> instances are valid only during the execution of <code translate="no" dir="ltr">onNotificationReceived()</code>. You must call <code translate="no" dir="ltr">finished()</code> at the end of the callback and must never invoke <code translate="no" dir="ltr">postNow()</code> or <code translate="no" dir="ltr">cancelNow()</code> from background threads after the method returns.</span></aside> <h3 id="handling-backgroundsync-messages">Handle BackgroundSync messages using <code translate="no" dir="ltr">onBackgroundSyncReceived</code>
+</h3> <p>To process <code translate="no" dir="ltr">BackgroundSync</code> messages on Android, use <code translate="no" dir="ltr">onBackgroundSyncReceived()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">override fun onBackgroundSyncReceived(message: RemoteMessage) {
+    val syncCommand = message.data["sync_action"]
+
+    try {
+        // Perform local database synchronization or cache refresh
+        AppDataRepository.getInstance(applicationContext).syncWithServer(syncCommand)
+    } catch (e: Exception) {
+        Log.e("FCM", "Background sync operation failed", e)
+    }
+    // Execution completes -&gt; GMS Core marks the message as handled and unbinds.
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">@Override
+public void onBackgroundSyncReceived(RemoteMessage message) {
+    String syncCommand = message.getData().get("sync_action");
+
+    try {
+        // Perform local database synchronization or cache refresh
+        AppDataRepository.getInstance(getApplicationContext()).syncWithServer(syncCommand);
+    } catch (Exception e) {
+        Log.e("FCM", "Background sync operation failed", e);
+    }
+    // Execution completes -&gt; GMS Core marks the message as handled and unbinds.
+}
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> <code translate="no" dir="ltr">BackgroundSync</code> messages are intended for silent background updates, such as syncing state, refreshing app badges and widgets. Don't use these messages to post user-visible notifications, as these can be delayed to optimize device battery life.</span></aside> <h3 id="pending-message-deletions">Handle pending message deletions using <code translate="no" dir="ltr">onDeletedMessages</code>
+</h3> <p>In some situations, such as when a device hasn't connected to FCM for an extended period or when the server queue is full, FCM may delete pending messages before delivery. In these cases, override <code translate="no" dir="ltr">onDeletedMessages()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">override fun onDeletedMessages() {
+    // Perform a full state synchronization with your app server
+    AppDataRepository.getInstance(applicationContext).scheduleFullSync()
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">@Override
+public void onDeletedMessages() {
+    // Perform a full state synchronization with your app server
+    AppDataRepository.getInstance(getApplicationContext()).scheduleFullSync();
+}
+</pre></section> </div> <h2 id="migrate-specific-apps">Migrate specific apps</h2> <h3 id="e2ee-notification-flow">Deliver end-to-end encrypted (E2EE) notifications</h3> <p>When delivering an end-to-end encrypted notification using a <code translate="no" dir="ltr">RemoteNotification</code>, decrypted notification content stays within your app and the Android platform:</p> <ol> <li>
+<strong>Deliver mutable notification</strong>: Your server sends a <code translate="no" dir="ltr">RemoteNotification</code> with <code translate="no" dir="ltr">mutable_content: true</code>, the encrypted payload in <code translate="no" dir="ltr">data</code>, and a generic unencrypted backup <code translate="no" dir="ltr">notification</code>. GMS Core delivers the encrypted message to the open-source FCM SDK inside your app.</li> <li>
+<strong>Decrypt and return notification</strong>: The FCM SDK invokes <code translate="no" dir="ltr">onNotificationReceived()</code>. Your app decrypts the payload locally, builds the final decrypted Android <code translate="no" dir="ltr">Notification</code>, and passes it back to the open-source FCM SDK using <code translate="no" dir="ltr">NotificationResponse</code> or <code translate="no" dir="ltr">FcmNotificationManager</code>.</li> <li>
+<strong>Post to platform and report metadata</strong>: The open source FCM SDK posts the decrypted notification directly to the Android platform <code translate="no" dir="ltr">NotificationManager</code> API and sends only notification metadata, such as notification IDs and timestamps, back to GMS Core for delivery observability. Decrypted content is never sent to GMS Core.</li> <li>
+<strong>Post backup notification if necessary</strong>: Only if your app fails to respond within the 20 second timeout or exceeds background suppression limits does GMS Core post the generic backup <code translate="no" dir="ltr">notification</code> directly to the Android platform.</li> </ol> <p><img alt="Architecture diagram showing the 4-step end-to-end encrypted notification delivery flow between GMS Core, the open-source FCM SDK, your app, and the Android platform NotificationManager API." src="https://firebase.google.com/static/docs/cloud-messaging/images/e2ee-notification-delivery.png" width="90%"></p> <h2 id="understand-notification-timeouts">Understand notification suppression and timeouts</h2> <aside class="note"><strong>Note:</strong><span> Policy parameters such as the 20 second timeout and the 25% suppression threshold may change before General Availability (GA).</span></aside> <p>To maintain reliable delivery across the Android ecosystem, GMS Core applies processing timeouts and notification suppression limits when handling <code translate="no" dir="ltr">RemoteNotification</code> messages:</p> <h3 id="processing-timeout">Processing timeout</h3> <p>When <code translate="no" dir="ltr">mutable_content</code> is set to <code translate="no" dir="ltr">true</code>, your <code translate="no" dir="ltr">onNotificationReceived()</code> method must return a <code translate="no" dir="ltr">NotificationResponse</code> within 20 seconds. If execution exceeds this threshold, the callback is cancelled and GMS Core automatically posts a fallback notification rendered from the <code translate="no" dir="ltr">remote_notification.notification</code> payload.</p> <h3 id="notification-suppression-rate">Notification suppression rate</h3> <p>Since <code translate="no" dir="ltr">RemoteNotification</code> messages bypass Doze restrictions to alert users immediately and are delivered without delay, applications are expected to display notifications for received <code translate="no" dir="ltr">RemoteNotification</code> messages.</p> <p>Every application is permitted to suppress up to 25% of its <code translate="no" dir="ltr">RemoteNotification</code> traffic while running in the background. If an application's suppression rate exceeds 25%, GMS Core automatically renders and posts a fallback notification rendered from the <code translate="no" dir="ltr">remote_notification.notification</code> payload.</p> <p>Suppressions performed when the application is active in the foreground don't count toward this threshold. Applications granted unrestricted background usage permissions are also exempt from background suppression limits.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/send/v2-api" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/send/v2-api</a>
+  </p>
+</div>

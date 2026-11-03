@@ -1,0 +1,153 @@
+<h1>Get started with Firebase Cloud Messaging in Apple platform apps</h1>     <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button button-primary" href="get-started">iOS+</a> <a class="button" href="../android/get-started">Android</a> <a class="button" href="../web/get-started">Web</a> <a class="button" href="../flutter/get-started">Flutter</a> <a class="button" href="../unity/get-started">Unity</a> <a class="button" href="../cpp/get-started">C++</a> </td> </tr> </table> <p><br></p> <p>This guide describes how to get started with Firebase Cloud Messaging in your Apple platform (like iOS) client apps so that you can reliably send messages.</p> <p>For Apple client apps, you can receive notification and data payloads up to 4096 bytes over the Firebase Cloud Messaging APNs interface.</p> <p>To write your client code in Objective-C or Swift, we recommend that you use the <a href="https://firebase.google.com/docs/reference/ios/firebasemessaging/interface_f_i_r_messaging">FIRMessaging API</a>. The <a href="https://github.com/firebase/quickstart-ios/tree/master/messaging/">quickstart example</a> provides sample code for both languages.</p> <p>Before you get started, <a href="../../ios/setup">add Firebase to your Apple project</a>.</p> <h2 id="method-swizzling-in-fcm">Method swizzling in Firebase Cloud Messaging</h2> <p>The FCM SDK performs method swizzling in two key areas: mapping your APNs token to <a href="#access-firebase-installation-id">the Firebase Installation ID</a> or FCM registration token and capturing analytics data during <a href="receive-messages#handle-messages-swizzling-disabled">downstream message callback handling</a>. Developers who prefer not to use swizzling can disable it by adding the flag <code translate="no" dir="ltr">FirebaseAppDelegateProxyEnabled</code> in the app's <code translate="no" dir="ltr">Info.plist</code> file and setting it to the boolean value <code translate="no" dir="ltr">NO</code>. Relevant areas of the guides provide code examples, both with and without method swizzling enabled.</p> <aside class="special"><strong>Important:</strong><span> With the Firebase Unity SDK on iOS, <strong>do not disable method swizzling.</strong> Swizzling is required by the SDK, and without it key Firebase features such as FCM registration handling don't function properly.</span></aside> <h2 id="upload-apn-authentication-key">Upload your APNs authentication key</h2> <p> Upload your APNs authentication key to Firebase. If you don't already have an APNs authentication key, make sure to create one in the <a href="https://developer.apple.com/membercenter/index.action" class="external">Apple Developer Member Center</a>. </p> <ol> <li> In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <b>General</b>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><b>Cloud Messaging</b> tab</a>. </li> <li> In <b>APNs authentication key</b> under <b>iOS app configuration</b>, click <b>Upload</b> to upload your development authentication key, or production authentication key, or both. At least one is required. </li> <li> Browse to the location where you saved your key, select it, and click <b>Open</b>. Add the key ID for the key (available in the <a href="https://developer.apple.com/membercenter/index.action" class="external">Apple Developer Member Center</a>) and click <b>Upload</b>. </li> </ol> <h2 id="register-for-remote-notification">Register for remote notifications</h2> Either at startup, or at the desired point in your application flow, register your app for remote notifications. Call <code translate="no" dir="ltr">registerForRemoteNotifications</code> as shown: <aside class="note">Note: SwiftUI apps should use the <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code> property wrappers to provide a type corresponding to the appropriate app delegate protocol.</aside> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">UNUserNotificationCenter.current().delegate = self
+
+let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
+UNUserNotificationCenter.current().requestAuthorization(
+  options: authOptions,
+  completionHandler: { _, _ in }
+)
+
+application.registerForRemoteNotifications()
+</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[UNUserNotificationCenter currentNotificationCenter].delegate = self;
+UNAuthorizationOptions authOptions = UNAuthorizationOptionAlert |
+    UNAuthorizationOptionSound | UNAuthorizationOptionBadge;
+[[UNUserNotificationCenter currentNotificationCenter]
+    requestAuthorizationWithOptions:authOptions
+    completionHandler:^(BOOL granted, NSError * _Nullable error) {
+      // ...
+    }];
+
+[application registerForRemoteNotifications];</pre> </section> </div> <aside class="caution"> You must assign the UNUserNotificationCenter's <a href="https://developer.apple.com/documentation/usernotifications/unusernotificationcenter/1649522-delegate"> <code translate="no" dir="ltr">delegate</code></a> property and FIRMessaging's <a href="https://firebase.google.com/docs/reference/ios/firebasemessaging/api/reference/Classes/FIRMessaging#delegate"> <code translate="no" dir="ltr">delegate</code></a> property. For example, in an iOS app, assign it in the <code translate="no" dir="ltr">applicationWillFinishLaunchingWithOptions:</code> or <code translate="no" dir="ltr">applicationDidFinishLaunchingWithOptions:</code> method of the app delegate. </aside> <h2 id="access-firebase-installation-id">Access the Firebase Installation ID</h2> <aside class="tip"><strong>Tip:</strong><span> See <a href="../manage-tokens">Best practices for FCM registration management</a> for tips on managing registrations.</span></aside> <aside class="caution"> Apps still using <a href="../../projects/manage-installations#fid-iid">deprecated Instance ID APIs</a> for registration management should update all registration logic to use the FCM APIs described here. </aside> <p> By default, the FCM SDK registers the app instance with FCM and returns a <a href="../../projects/manage-installations"> Firebase Installation ID (FID)</a> for the client app instance on app launch. Similar to the APNs device token, this FID allows you to send targeted notifications to any particular instance of your app. </p> <p>In the same way that Apple platforms typically deliver an APNs device token at app startup, FCM provides an FID for targeting notifications. The FCM SDK delivers the FID using the <code translate="no" dir="ltr">FIRMessagingDelegate</code>'s <a href="https://firebase.google.com/docs/reference/swift/firebasemessaging/api/reference/Protocols/MessagingDelegate#messaging_:didreceiveregistration:"> <code translate="no" dir="ltr">messaging:didReceiveRegistration:</code></a> method, automatically monitors for FID changes, and invokes the method with a new FID when a change is detected. We recommend that you retrieve and upload the FID regularly because the FID can rotate after the initial startup. </p> For details on when FIDs are reissued and how to manually monitor them, see <a href="../../projects/manage-installations#monitor-id-lifecycle">Monitor the Firebase installation ID lifecycle</a>. <h3 id="enable-registration-using-firebase-installation-id">Enable registration using Firebase Installation ID</h3> <p>To enable registering your app instance with FCM using <a href="../../projects/manage-installations"> Firebase Installation ID (FID)</a>, add the following metadata flag to your <code translate="no" dir="ltr">Info.plist</code> file, not your <code translate="no" dir="ltr">GoogleService-Info.plist</code> file:</p> <p><code translate="no" dir="ltr">FirebaseMessagingInstallationIdEnabled = YES</code></p> <h3 id="set-the-messaging-delegate">Set the messaging delegate</h3> <p>To receive FIDs, implement the messaging delegate protocol and set the <code translate="no" dir="ltr">delegate</code> property of <code translate="no" dir="ltr">FIRMessaging</code> after calling <code translate="no" dir="ltr">[FIRApp configure]</code>. For example, if your application delegate conforms to the messaging delegate protocol, you can set the delegate on <code translate="no" dir="ltr">application:didFinishLaunchingWithOptions:</code> to itself.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">Messaging.messaging().delegate = self</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[FIRMessaging messaging].delegate = self;</pre> </section> </div> <h3 id="implement-the-didreceiveregistration-method">Implement the <code translate="no" dir="ltr">didReceiveRegistration</code> method</h3> <p> App instances are targeted using the FID once registration completes. To receive the FID upon registration, implement the <a href="https://firebase.google.com/docs/reference/swift/firebasemessaging/api/reference/Protocols/MessagingDelegate#messaging_:didreceiveregistration:"> <code translate="no" dir="ltr">messaging:didReceiveRegistration:</code></a> method. This method is typically invoked once per app startup with the FID. When this method is called, you can perform the following actions: </p> <ul> <li>If you haven't sent the FID to your server, or sent the FID recently, send it to your application server.</li> <li>If the subscription is new or the user re-installed the app, subscribe the FID to topics.</li> </ul> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">func messaging(_ messaging: Messaging, didReceiveRegistration installationId: String?) {
+  print("Firebase Installation ID: \(String(describing: installationId))")
+  // Note: This callback is fired at each app startup.
+
+  if let installationId = installationId {
+    // Send the Firebase Installation ID to your app server.
+    sendRegistrationToServer(installationId)
+  }
+}
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">- (void)messaging:(FIRMessaging *)messaging didReceiveRegistration:(nullable NSString *)installationId {
+  NSLog(@"Firebase Installation ID: %@", installationId);
+  // Note: This callback is fired at each app startup.
+
+  if (installationId != nil) {
+    // Send the Firebase Installation ID to your app server.
+    [self sendRegistrationToServer:installationId];
+  }
+}
+    </pre> </section> </div>  <h3 id="manually-register-when-auto-initialization-is-disabled">Manually register when auto-initialization is disabled</h3> <p>If you have disabled auto-initialization, the FCM SDK won't automatically register the app instance with FCM at app startup. You must call <a href="https://firebase.google.com/docs/reference/swift/firebasemessaging/api/reference/Classes/Messaging#register"><code translate="no" dir="ltr">register</code></a> on app startup to trigger registration and FID delivery through the <a href="https://firebase.google.com/docs/reference/swift/firebasemessaging/api/reference/Protocols/MessagingDelegate#messaging_:didreceiveregistration:"> <code translate="no" dir="ltr">messaging:didReceiveRegistration:</code></a> method: </p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// Trigger manual registration if auto-initialization is turned off.
+Messaging.messaging().register { error in
+    if let error = error {
+        // Handle the error
+        print("Failed registering: \(error)")
+        return
+    }
+    // Registration was successful. FID is delivered through the messaging:didReceiveRegistration: method.
+    print("Successfully registered.")
+}
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Trigger manual registration if auto-initialization is turned off.
+[[FIRMessaging messaging] registerWithCompletion:^(NSError * _Nullable error) {
+    if (error) {
+        // Handle the error
+        NSLog(@"Failed registering: %@", error);
+        return;
+    }
+    // Registration was successful. FID is delivered through the messaging:didReceiveRegistration: method.
+    NSLog(@"Successfully registered.");
+}];
+    </pre> </section> </div>  <h4 id="disable-swizzling-fid">Swizzling disabled: mapping your APNs token and FID</h4> <p>If you've disabled method swizzling or you're building a SwiftUI app, you must explicitly map your APNs token to the Firebase Installation IDs (FID). Implement the <code translate="no" dir="ltr">application(_:didRegisterForRemoteNotificationsWithDeviceToken:)</code> method to retrieve the APNs token, and then set the <a href="https://firebase.google.com/docs/reference/swift/firebasemessaging/api/reference/Classes/Messaging#apnstoken"><code translate="no" dir="ltr">apnsToken</code></a> property of <code translate="no" dir="ltr">Messaging</code>:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">func application(application: UIApplication,
+                 didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+  Messaging.messaging().apnsToken = deviceToken
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// With "FirebaseAppDelegateProxyEnabled": NO
+- (void)application:(UIApplication *)application
+    didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+    [FIRMessaging messaging].APNSToken = deviceToken;
+}</pre> </section> </div> <p>Once the FID is registered, you can access it and listen for refresh events using the same methods as when swizzling is enabled.</p> <h2 id="access-registration-token">Access the registration token (deprecated)</h2> <aside class="caution"><strong>Caution:</strong><span> This feature is deprecated. Use <a href="#access-firebase-installation-id">Firebase Installation IDs</a>, as this method will be removed in a future release.</span></aside><aside class="tip"><strong>Tip:</strong><span> See <a href="../manage-tokens">Best practices for FCM registration management</a> for tips on managing registrations.</span></aside> <p>By default, the FCM SDK generates a registration token for the client app instance on app launch. Similar to the APNs device token, this token allows you to send targeted notifications to any particular instance of your app.</p> <p>In the same way that Apple platforms typically deliver an APNs device token on app start, FCM provides a registration token via <code translate="no" dir="ltr">FIRMessagingDelegate</code>'s <code translate="no" dir="ltr">messaging:didReceiveRegistrationToken:</code> method. The FCM SDK retrieves a new or existing token during initial app launch and whenever the token is updated or invalidated. In all cases, the FCM SDK calls <code translate="no" dir="ltr">messaging:didReceiveRegistrationToken:</code> with a valid token.</p> <aside class="caution"> Apps still using <a href="../../projects/manage-installations#fid-iid">deprecated Instance ID APIs</a> for registration management should update all registration logic to use the FCM APIs described here. </aside> <p>The registration token may change when: </p>
+<ul> <li>The app is restored on a new device</li> <li>The user uninstalls/reinstall the app</li> <li>The user clears app data.</li> </ul> <h3 id="set-the-messaging-delegate_1">Set the messaging delegate</h3> <p>To receive registration tokens, implement the messaging delegate protocol and set <code translate="no" dir="ltr">FIRMessaging</code>'s <code translate="no" dir="ltr">delegate</code> property after calling <code translate="no" dir="ltr">[FIRApp configure]</code>. For example, if your application delegate conforms to the messaging delegate protocol, you can set the delegate on <code translate="no" dir="ltr">application:didFinishLaunchingWithOptions:</code> to itself.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">Messaging.messaging().delegate = self</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[FIRMessaging messaging].delegate = self;</pre> </section> </div> <h3 id="fetching-the-current-registration-token">Fetching the current registration token</h3> <p>Registration tokens are delivered via the method <code translate="no" dir="ltr">messaging:didReceiveRegistrationToken:</code>. This method is called generally once per app start with registration token. When this method is called, it is the ideal time to:</p> <ul> <li>If the registration token is new, send it to your application server.</li> <li>Subscribe the registration token to topics. This is required only for new subscriptions or for situations where the user has re-installed the app.</li> </ul> <p>You can retrieve the token directly using <a href="https://firebase.google.com/docs/reference/swift/firebasemessaging/api/reference/Classes/Messaging#tokencompletion:">token(completion:)</a>. A non null error is provided if the token retrieval failed in any way. </p>
+<div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">Messaging.messaging().token { token, error in
+  if let error = error {
+    print("Error fetching remote FCM registration token: \(error)")
+  } else if let token = token {
+    print("Remote instance ID token: \(token)")
+  }
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[[FIRMessaging messaging] tokenWithCompletion:^(NSString * _Nullable token, NSError * _Nullable error) {
+  if (error != nil) {
+    NSLog(@"Error fetching the remote FCM registration token: %@", error);
+  } else {
+    NSLog(@"Remote FCM registration token: %@", token);
+    NSString* message =
+      [NSString stringWithFormat:@"FCM registration token: %@", token];
+    // display message
+    NSLog(@"%@", message);
+  }
+}];</pre> </section> </div> <p>You can use this method at any time to access the token instead of storing it.</p> <h3 id="monitor-token-refresh">Monitor token refresh</h3> <p>To be notified whenever the token is updated, supply a delegate conforming to the messaging delegate protocol. The following example registers the delegate and adds the proper delegate method: </p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+  print("Firebase registration token: \(String(describing: fcmToken))")
+  // TODO: If necessary send token to application server.
+  // Note: This callback is fired at each app startup and whenever a new token is generated.
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">- (void)messaging:(FIRMessaging *)messaging didReceiveRegistrationToken:(NSString *)fcmToken {
+    NSLog(@"FCM registration token: %@", fcmToken);
+    // Notify about received token.
+    NSDictionary *dataDict = [NSDictionary dictionaryWithObject:fcmToken forKey:@"token"];
+    [[NSNotificationCenter defaultCenter] postNotificationName:
+     @"FCMToken" object:nil userInfo:dataDict];
+    // TODO: If necessary send token to application server.
+    // Note: This callback is fired at each app startup and whenever a new token is generated.
+}</pre> </section> </div> <p>Alternatively, you can listen for an <code translate="no" dir="ltr">NSNotification</code> named <code translate="no" dir="ltr">kFIRMessagingRegistrationTokenRefreshNotification</code> rather than supplying a delegate method. The token property always has the current token value.</p> <h4 id="disable-swizzling-token">Swizzling disabled: mapping your APNs token and registration token</h4> <p>If you have disabled method swizzling, or you are building a SwiftUI app, you'll need to explicitly map your APNs token to the FCM registration token. Implement the <code translate="no" dir="ltr">application(_:didRegisterForRemoteNotificationsWithDeviceToken:)</code> method to retrieve the APNs token, and then set <code translate="no" dir="ltr">Messaging</code>'s <a href="https://firebase.google.com/docs/reference/swift/firebasemessaging/api/reference/Classes/Messaging#apnstoken"><code translate="no" dir="ltr">apnsToken</code></a> property:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">func application(application: UIApplication,
+                 didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+  Messaging.messaging().apnsToken = deviceToken
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// With "FirebaseAppDelegateProxyEnabled": NO
+- (void)application:(UIApplication *)application
+    didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+    [FIRMessaging messaging].APNSToken = deviceToken;
+}</pre> </section> </div> <p>After the FCM registration token is generated, you can access it and listen for refresh events using the same methods as with swizzling enabled.</p> <h2 id="prevent-auto-initialization">Prevent auto initialization</h2> <p>When a FCM registration is generated, the library uploads the identifier and configuration data to Firebase. If you want to get an explicit opt-in from users first, you can prevent auto registration at configure time by disabling FCM. To do this, add a metadata value to your <code translate="no" dir="ltr">Info.plist</code> (not your <code translate="no" dir="ltr">GoogleService-Info.plist</code>):</p> <p><code translate="no" dir="ltr">FirebaseMessagingAutoInitEnabled = NO</code></p> <p>To re-enable FCM, you can make a runtime call:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">Messaging.messaging().autoInitEnabled = true</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[FIRMessaging messaging].autoInitEnabled = YES;</pre> </section> </div> <p>This value persists across app restarts once set.</p> <h2 id="set-up-notification-service-extension">Set up the notification service extension</h2> <p>To send notifications that include images to Apple devices, you must add a notification service extension. This extension allows devices to display images delivered in the notification payload. If you don't plan to send images in notifications, you can skip this step.</p> <p>To add a service extension, perform the required setup tasks for <a href="https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/ModifyingNotifications.html">modifying and presenting notifications</a> in APNs, and then add the FCM extension helper API in <code translate="no" dir="ltr">NotificationService.m</code>. Specifically, instead of completing the callback with <code translate="no" dir="ltr">self.contentHandler(self.bestAttemptContent);</code>, complete it with <code translate="no" dir="ltr">FIRMessaging
+extensionHelper</code> as shown:</p> 
+<pre>@interface NotificationService () &lt;NSURLSessionDelegate&gt;
+@property(nonatomic) void (^contentHandler)(UNNotificationContent *contentToDeliver);
+@property(nonatomic) UNMutableNotificationContent *bestAttemptContent;
+@end
+</pre> <p>@implementation NotificationService</p> 
+<pre>- (void)didReceiveNotificationRequest:(UNNotificationRequest *)request withContentHandler:(void (^)(UNNotificationContent * _Nonnull))contentHandler {
+    self.contentHandler = contentHandler;
+self.bestAttemptContent = [request.content mutableCopy];
+
+    // Modify the notification content here as you want
+self.bestAttemptContent.title = [NSString stringWithFormat:@"%@ [modified]",
+self.bestAttemptContent.title];
+
+  // Call FIRMessaging extension helper API.
+  [[FIRMessaging extensionHelper] populateNotificationContent:self.bestAttemptContent
+withContentHandler:contentHandler];
+
+}
+...
+</pre> <h2 id="send-notification-message">Send a notification message</h2> <ol> <li><p>Install and run the app on the target device. On Apple devices, accept the request for permission to receive remote notifications.</p></li> <li><p>Check that the app is in the background on the device.</p></li> <li><p>In the Firebase console, go to <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/messaging/" class="external"><strong>Messaging</strong></a> </p></li> <li>
+<p>Create a campaign.</p> <ul> <li>
+<p>If this is your first message:</p> <ol> <li><p>Select <strong>Create your first campaign</strong>.</p></li> <li><p>Select <strong>Firebase Notification messages</strong> and select <strong>Create</strong>.</p></li> </ol>
+</li> <li>
+<p>If you have previously created campaigns:</p> <ol> <li><p>On the <strong>Campaigns</strong> tab, select <strong>New campaign</strong>.</p></li> <li><p>Click <strong>Notifications</strong>.</p></li> </ol>
+</li> </ul>
+</li> <li><p>Enter the message text.</p></li> <li><p>Select <strong>Send test message</strong> from the right pane.</p></li> <li><p>In the field labeled <strong>Add a Firebase Installation ID or FCM registration token</strong>, enter your registration token.</p></li> <li><p>Select <strong>Test</strong>.</p></li> </ol> <p>After you select <strong>Test</strong>, the targeted client device, with the app in the background, should receive the notification.</p> <p>For insight into message delivery to your app, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Messaging</strong> &gt; <a href="https://console.firebase.google.com/project/_/notification/reporting" class="external"><strong>Reports</strong> dashboard</a> in the Firebase console. This dashboard records the number of messages sent and opened on Apple and Android devices, along with data for "impressions" (notifications seen by users) for Android apps.</p> <h2 id="next-steps">Next steps</h2> <p>After you have completed the setup steps, here are a few options for moving forward with FCM for Apple platforms:</p> <ul> <li><a href="../server-environment">Send messages to devices</a></li> <li><a href="../receive-messages">Receive messages in an Apple app</a></li> <li><a href="../topic-messaging">Send messages to topics</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/ios/certs" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/ios/certs</a>
+  </p>
+</div>

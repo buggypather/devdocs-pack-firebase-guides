@@ -1,0 +1,102 @@
+<h1>Troubleshooting &amp; FAQ for Android and Firebase</h1> <p>This page offers tips and troubleshooting for Android-specific issues that you might encounter when using Firebase.</p> <p>Have other challenges or don't see your issue outlined below? Make sure to check out the <a href="https://firebase.google.com/support/faq">main Firebase FAQ</a> for more pan-Firebase or product-specific FAQ.</p> <p>You can also check out the <a href="https://github.com/firebase/firebase-android-sdk/issues" class="external">Firebase Android SDK GitHub repo</a> for an up-to-date list of reported issues and troubleshooting. We encourage you to file your own Firebase Android SDK related issues there, too!</p> <div class="expandable" id="ktx-module-error"> <h4 class="showalways" id="ktx-module-error"> I'm getting an error that the <code translate="no" dir="ltr">ktx</code> library failed to resolve or could not be found. </h4> <p>This error is likely because you're using the Firebase BoM and specifying a KTX module as your product library dependency. </p> <p><strong>In July 2025, we stopped releasing new versions of the KTX modules, and we removed the KTX libraries from the Firebase Android BoM (v34.0.0).</strong> </p> <p>If you use KTX APIs from previously released KTX modules, we recommend that you <strong><em>migrate your app to use KTX APIs from the main modules instead</em></strong>. For details, see the <a href="kotlin-migration">FAQ about this initiative</a>. </p> </div> <div class="expandable" id="android-app-sha1"> <h4 class="showalways" id="android-app-sha1"> Do I need to provide a SHA-1 when adding an Android app to a Firebase project? </h4> <p><a class="external" href="https://developers.google.com/android/guides/client-auth">SHA-1 information</a> is required by Firebase Authentication (when using <a href="../auth/android/google-signin">Google signin</a> or <a href="../auth/android/phone-auth">phone number signin</a>) and <a href="../dynamic-links">Firebase Dynamic Links</a>. If you're not using these features, you don't have to provide a SHA-1.</p> </div> <div class="expandable" id="error-oauth2-client"> <h4 class="showalways" id="error-oauth2-client"> How do I resolve this error: "An OAuth2 client already exists for this package name and SHA-1 in another project"? </h4> <p>This error occurs if we detect that another Firebase or Google Cloud project contains an OAuth 2.0 client ID with the package name and SHA-1 that you specified. Learn how to <a href="https://support.google.com/firebase/answer/6401008" class="external">resolve this error</a>.</p> </div> <div class="expandable" id="gmaven-repo-error"> <h4 class="showalways" id="gmaven-repo-error"> When I add Firebase to my Android project, I get a "Could not find" error. </h4> <p>This error usually means that your app is missing one or more references to Google's Maven repository. Make sure to include Google's Maven repository (<code translate="no" dir="ltr">google()</code>) in your Gradle Configuration file. </p>
+<ul> <li>If your project is using the <code translate="no" dir="ltr">plugins</code> syntax, include it in the <code translate="no" dir="ltr">plugins</code> section in your <code translate="no" dir="ltr">settings.gradle.kts</code> or <code translate="no" dir="ltr">settings.gradle</code> file. </li> <li>If your project is using the <code translate="no" dir="ltr">buildscript</code> syntax, include it in both the <code translate="no" dir="ltr">buildscript</code> and <code translate="no" dir="ltr">allprojects</code> sections in your project-level <code translate="no" dir="ltr">build.gradle.kts</code> or <code translate="no" dir="ltr">build.gradle</code> file. </li> </ul> </div> <p><section class="expandable" id="desugaring-build-failure"> <h4 class="showalways" id="desugaring-build-failure"> When I add a Firebase SDK to my Android project, I get an error about invoke-custom support and enabling desugaring. </h4></section></p> <p>In May 2021 (Firebase BoM v28.0.0), Firebase disabled desugaring for all its Android libraries (see <a href="https://firebase.google.com/support/release-notes/android#2021-05-11">release note</a>).</p> <p>This change means that Gradle builds that use Android Gradle plugin (AGP) v4.2 or earlier need to enable Java 8 support. Otherwise, when adding a Firebase SDK, these Android projects get the following build failure:</p> 
+<pre>D8: Invoke-customs are only supported starting with Android O (--min-api 26)
+Caused by: com.android.builder.dexing.DexArchiveBuilderException: Error while dexing.
+The dependency contains Java 8 bytecode. Please enable desugaring by adding the following to build.gradle
+android {
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+}
+See https://developer.android.com/studio/write/java8-support.html for details.
+Alternatively, increase the minSdkVersion to 26 or above.
+</pre> <p>To fix this build failure, you can follow one of two options:</p> <ul> <li>Add the listed <code translate="no" dir="ltr">compileOptions</code> from the error message to your <strong>app-level</strong> <code translate="no" dir="ltr">build.gradle.kts</code> or <code translate="no" dir="ltr">build.gradle</code> file.</li> <li>Increase the <code translate="no" dir="ltr">minSdkVersion</code> for your Android project to 26 or above.</li> </ul>  <div class="expandable" id="android-app-error12500"> <h4 class="showalways" id="android-app-error12500"> Google Sign-in is showing the error "12500:" after I released my app. How do I fix it? </h4> <p> There are two possible reasons why this would happen: you haven’t provided a support email or you’re missing a SHA key. In order to fix this error, make sure <b>all</b> of these conditions are true: </p> <ul> <li>You've added a support email to the <a href="https://console.firebase.google.com/project/_/settings/general/" class="external">General Settings of your project</a> in the Firebase console. </li> <li>You've added the <a href="https://developers.google.com/android/guides/client-auth#using_keytool_on_the_certificate" class="external">SHA-1 Certificate fingerprint from your release/production keystore</a> to your Firebase Android App in the Firebase console (go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><b>Project settings</b></a></nobr>, scroll down to <i>Your apps</i>, and then select your Android App). </li> <li>You've added the <a href="https://developer.android.com/studio/publish/app-signing#api-providers" class="external">SHA-1 Certificate fingerprint from the Google Play Console</a> to your Firebase Android App in the Firebase console (go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><b>Project settings</b></a></nobr>, scroll down to <i>Your apps</i>, and then select your Android App). </li> </ul> </div> 
+<div class="expandable" id="add-plugins-using-buildscript-syntax"> 
+<h4 class="showalways" id="add-plugins-using-buildscript-syntax"> How to add Firebase plugins to an Android project using the <code translate="no" dir="ltr">buildscript</code> syntax? </h4> <aside class="tip"><strong>Tip:</strong><span> Consider <a href="https://developer.android.com/build/migrate-to-kotlin-dsl#migrate-buildscript" class="external">migrating from <code translate="no" dir="ltr">buildscript</code> to <code translate="no" dir="ltr">plugin</code> syntax</a> as this allows Android Studio to perform code completion and provide other helpful suggestions.</span></aside> <p>Firebase has the following Gradle plugins: </p>
+<table> <tr> <th>Plugin name</th> <th>Maven coordinates</th> <th>Latest version</th> <th>Plugin ID</th> </tr> <tr> <td>Google Play services plugin</td> <td><code translate="no" dir="ltr">com.google.gms:google-services</code></td> <td>4.5.0</td> <td><code translate="no" dir="ltr">com.google.gms.google-services</code></td> </tr> <tr> <td>App Distribution plugin</td> <td><code translate="no" dir="ltr">com.google.firebase:firebase-appdistribution-gradle</code></td> <td>5.3.1</td> <td><code translate="no" dir="ltr">com.google.firebase.appdistribution</code></td> </tr> <tr> <td>Crashlytics plugin</td> <td><code translate="no" dir="ltr">com.google.firebase:firebase-crashlytics-gradle</code></td> <td>3.0.8</td> <td><code translate="no" dir="ltr">com.google.firebase.crashlytics</code></td> </tr> <tr> <td>Performance Monitoring plugin</td> <td><code translate="no" dir="ltr">com.google.firebase:perf-plugin</code></td> <td>2.0.2</td> <td><code translate="no" dir="ltr">com.google.firebase.firebase-perf</code></td> </tr> </table> <p>Here's how to add a Firebase plugin to an Android project that still uses the <code translate="no" dir="ltr">buildscript</code> syntax:</p> <ol> <li>
+<p>In your <strong>root-level (project-level)</strong> Gradle file (<code translate="no" dir="ltr">&lt;project&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/build.gradle</code>), add the plugin as a dependency using its Maven coordinates:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+
+<pre data-language="kotlin">buildscript {
+
+    repositories {
+      // Make sure that you have the following two repositories
+      google()  // Google's Maven repository
+      mavenCentral()  // Maven Central repository
+    }
+
+    dependencies {
+      ...
+
+      // Add the Maven coordinates and latest version of the plugin
+      classpath ("PLUGIN_MAVEN_COORDINATES:PLUGIN_VERSION")
+    }
+}
+
+allprojects {
+  ...
+
+  repositories {
+    // Make sure that you have the following two repositories
+    google()  // Google's Maven repository
+    mavenCentral()  // Maven Central repository
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+
+<pre data-language="">buildscript {
+
+    repositories {
+      // Make sure that you have the following two repositories
+      google()  // Google's Maven repository
+      mavenCentral()  // Maven Central repository
+    }
+
+    dependencies {
+      ...
+
+      // Add the Maven coordinates and latest version of the plugin
+      classpath 'PLUGIN_MAVEN_COORDINATES:PLUGIN_VERSION'
+    }
+}
+
+allprojects {
+  ...
+
+  repositories {
+    // Make sure that you have the following two repositories
+    google()  // Google's Maven repository
+    mavenCentral()  // Maven Central repository
+  }
+}
+</pre></section> </div>
+</li> <li>
+<p>In your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the plugin using its plugin ID:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+
+<pre data-language="kotlin">plugins {
+    id("com.android.application")
+
+    // Add the ID of the plugin
+    id("FIREBASE_PLUGIN_ID")
+    ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+
+<pre data-language="">plugins {
+    id 'com.android.application'
+
+    // Add the ID of the plugin
+    id 'FIREBASE_PLUGIN_ID'
+    ...
+}
+</pre></section> </div>
+</li> </ol> 
+</div> 
+<div class="expandable" id="oss-license"> 
+<h4 class="showalways" id="oss-license"> What open source notices should I include in my app? </h4> <p>The Firebase Android SDK contains a <a href="https://developers.google.com/android/guides/opensource" class="external">helper <code translate="no" dir="ltr">Activity</code></a> for showing license information.</p> 
+</div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/android/troubleshooting-faq" class="_attribution-link">https://firebase.google.com/docs/android/troubleshooting-faq</a>
+  </p>
+</div>

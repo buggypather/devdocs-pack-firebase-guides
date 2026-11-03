@@ -1,0 +1,100 @@
+<h1>Manage indexes in Cloud Firestore</h1> <p>Cloud Firestore ensures query performance by requiring an index for every query. The indexes required for the most basic queries are <a href="index-overview#single-field-indexes">automatically created</a> for you. As you use and test your app, Cloud Firestore generates error messages that help you create additional indexes that your app requires. This page describes how to manage your <a href="index-overview#single-field-indexes">automatic</a>, <a href="index-overview#composite_indexes">manual</a>, and <a href="../vector-search#create_and_manage_vector_indexes">vector</a> indexes.</p>  <h2 id="create-missing-index-error">Create a missing index through an error message</h2> <p>If you attempt a compound query with a range clause that doesn't map to an existing index, you receive an error. The error message includes a direct link to create the missing index in the Firebase console.</p> <aside class="note"><strong>Note:</strong><span> You can manage Cloud Firestore through the Firebase console or the Google Cloud console, but these links will always open in the Firebase console.</span></aside> <p>Follow the generated link to the Firebase console, review the automatically populated info, and click <strong>Create</strong>.</p> <aside class="note"><strong>Note:</strong><span> For non-array and non-map fields, you must select <strong>ascending</strong> or <strong>descending</strong> ordering, even if you don't need the field for ordering. Your choice doesn't impact the behavior of equalities in the query.</span></aside> <p>In the case that a vector index is required, the error message will include a Google Cloud CLI command to create the missing vector index. Run the command to create the missing index.</p> <h2 id="roles-permissions">Roles and permissions</h2> <p>Before you can create an index in Cloud Firestore, make sure that you are assigned either of the following roles:</p> <aside class="note"><strong>Note:</strong><span> The following roles are managed through Identity and Access Management (IAM). For more information about roles and associated permissions, see <a href="https://cloud.google.com/firestore/docs/security/iam#predefined_roles">Predefined roles</a>.</span></aside> <ul> <li><code translate="no" dir="ltr">roles/datastore.owner</code></li> <li><code translate="no" dir="ltr">roles/datastore.indexAdmin</code></li> <li><code translate="no" dir="ltr">roles/editor</code></li> <li><code translate="no" dir="ltr">roles/owner</code></li> </ul> <p>If you have defined custom roles, assign all of the following permissions to create indexes:</p> <ul> <li><code translate="no" dir="ltr">datastore.indexes.create</code></li> <li><code translate="no" dir="ltr">datastore.indexes.delete</code></li> <li><code translate="no" dir="ltr">datastore.indexes.get</code></li> <li><code translate="no" dir="ltr">datastore.indexes.list</code></li> <li><code translate="no" dir="ltr">datastore.indexes.update</code></li> </ul> <h3 id="use-the-firebase-console">Use the Firebase console</h3> <p>To manually create a new index from the Firebase console:</p> <p><img src="https://firebase.google.com/docs/firestore/images/indexing-firestore.png" class="attempt-right" width="350px" alt="image of the
+Firestore indexing interface in the Firebase console"></p> <ol> <li>In the Firebase console, go to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/firestore/data"><strong>Firestore</strong></a>.</li> <li>In the <strong>Indexes</strong> tab, click <strong>Add Index</strong>.</li> <li>Enter the collection name and set the fields you want to order the index by.</li> <li>Click <strong>Create</strong>.</li> </ol> <p>Index fields <strong>must</strong> conform to the <a href="../quotas#collections_documents_and_fields">constraints on field paths</a>.</p> <p>Indexes can take a few minutes to build, depending on the size of the query. After you create them, you can see your indexes and their status in the <strong>Composite Indexes</strong> section. If they're still building, the Firebase console includes a building status bar.</p> <h2 id="remove-indexes">Remove indexes</h2> <p>To delete an index:</p> <ol> <li>In the Firebase console, go to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/firestore/data"><strong>Firestore</strong></a>.</li> <li>In the <strong>Indexes</strong> tab, hover over the index you want to delete and select <strong>Delete</strong> from the context menu.</li> <li>Confirm that you want to delete it by clicking <strong>Delete</strong> from the alert.</li> </ol> <h2 id="use-firebase-cli">Use the Firebase CLI</h2> <p>You can also deploy indexes with the <a href="../../cli">Firebase CLI</a>. To get started, run <code translate="no" dir="ltr">firebase init firestore</code> in your project directory. During setup, the Firebase CLI generates a JSON file with the default indexes in the correct format. Edit the file to add more indexes and deploy it with the <code translate="no" dir="ltr">firebase deploy</code> command.</p> <p>To deploy Cloud Firestore indexes and rules only, add the <code translate="no" dir="ltr">--only firestore</code> flag.</p> <p>If you make edits to the indexes using the Firebase console, make sure you also update your local indexes file. Refer to the <a href="https://firebase.google.com/docs/reference/firestore/indexes/">JSON index definition reference</a>.</p> <h2 id="use-terraform">Use Terraform</h2> <h3 id="create-indexes">Creating indexes in the database</h3> <p>Cloud Firestore databases can include both single-field (automatic) and composite (manual) indexes. You can edit the Terraform configuration file to create an index for your database. Automatic and manual indexes use distinct Terraform resource types (<a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_index"><code translate="no" dir="ltr">google_firestore_index</code></a> and <a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_field"><code translate="no" dir="ltr">google_firestore_field</code></a>).</p> <h4 id="single-field-index">Single-field (automatic) index</h4> <p>The following example Terraform configuration file creates a single-field index on the <code translate="no" dir="ltr">name</code> field in the <code translate="no" dir="ltr">chatrooms</code> collection:</p> <p><strong>firestore.tf</strong></p> 
+<pre>
+resource "random_id" "variable"{
+  byte_length = 8
+}
+
+resource "google_firestore_field" "single-index" {
+  project = "project-id"
+  database = "database-id"
+  collection = "chatrooms_${random_id.variable.hex}"
+  field = "name"
+
+  index_config {
+    indexes {
+        order = "ASCENDING"
+        query_scope = "COLLECTION_GROUP"
+    }
+    indexes {
+        array_config = "CONTAINS"
+    }
+  }
+
+  ttl_config {}
+}
+</pre> <ul> <li>Replace <var translate="no">project-id</var> with your project ID. Project IDs must be unique.</li> <li>Replace <var translate="no">database-id</var> with your database ID.</li> </ul> <h4 id="composite-index">Composite (manual) index</h4> <p>The following example Terraform configuration file creates a composite index for a combination of the <code translate="no" dir="ltr">name</code> field and the <code translate="no" dir="ltr">description</code> field in the <code translate="no" dir="ltr">chatrooms</code> collection:</p> <p><strong>firestore.tf</strong></p> 
+<pre>
+resource "google_firestore_index" "composite-index" {
+  project = "project-id"
+  database = "database-id"
+
+  collection = "chatrooms"
+
+  fields {
+    field_path = "name"
+    order      = "ASCENDING"
+  }
+
+  fields {
+    field_path = "description"
+    order      = "DESCENDING"
+  }
+
+}
+</pre> <ul> <li>Replace <var translate="no">project-id</var> with your project ID. Project IDs must be unique.</li> <li>Replace <var translate="no">database-id</var> with your database ID.</li> </ul> <h4 id="vector-index">Vector index</h4> <p>The following example Terraform configuration file creates a vector index on the <code translate="no" dir="ltr">embedding</code> field in the <code translate="no" dir="ltr">chatrooms</code> collection:</p> <p><strong>firestore.tf</strong></p> 
+<pre>
+resource "google_firestore_index" "vector-index" {
+  project = "project-id"
+  database = "database-id"
+  collection = "chatrooms"
+
+  fields {
+    field_path = "__name__"
+    order = "ASCENDING"
+  }
+
+  fields {
+    field_path = "embedding"
+    vector_config {
+      dimension = 128
+      flat {}
+    }
+  }
+}
+</pre> <ul> <li>Replace <var translate="no">project-id</var> with your project ID. Project IDs must be unique.</li> <li>Replace <var translate="no">database-id</var> with your database ID.</li> </ul>  <h2 id="index-build-time">Index build time</h2> <p>To build an index, Cloud Firestore must set up the index and then backfill the index with existing data. Index build time is the sum of setup time and backfill time:</p> <ul> <li><p>Setting up an index takes a few minutes. The minimum build time for an index is a few minutes, even for an empty database.</p></li> <li><p>Backfill time depends on how much existing data belongs in the new index. The more field values that match the index definition, the longer it takes to backfill the index.</p></li> </ul> <p>Index builds are <em>long-running operations</em>.</p> <aside class="key-term"><strong>Key Term:</strong><span> Cloud Firestore supports several administrative operations that can take a long time to complete. These operations are called <strong><em>long-running operations</em></strong>. Cloud Firestore includes features to execute and manage long- running operations. Supported long-running operations include index builds and export operations.</span></aside> <p>After you start an index build, Cloud Firestore assigns the operation a unique name. Operation names are prefixed with <code translate="no" dir="ltr">projects/[PROJECT_ID]/databases/(default)/operations/</code>, for example:</p> 
+<pre>
+projects/project-id/databases/(default)/operations/ASA1MTAwNDQxNAgadGx1YWZlZAcSeWx0aGdpbi1zYm9qLW5pbWRhEgopEg
+</pre> <p>However, you can leave out the prefix when specifying an operation name for the <code translate="no" dir="ltr">describe</code> command.</p> <h3 id="list-long-running">Listing all long-running operations</h3> <p>To list long-running operations, use the <a href="https://cloud.google.com/sdk/gcloud/reference/firestore/operations/list">gcloud firestore operations list</a> command. This command lists ongoing and recently completed operations. Operations are listed for a few days after completion:</p> 
+<pre>
+gcloud firestore operations list
+</pre> <h3 id="check-op-status">Check operation status</h3> <p>Instead of listing all long-running operations, you can list the details of a single operation:</p> 
+
+<pre>
+gcloud firestore operations describe operation-name</pre> <h3 id="estimate-completion-time">Estimating the completion time</h3> <p>As your operation runs, see the value of the <a href="https://docs.cloud.google.com/firestore/docs/reference/rpc/google.firestore.admin.v1#state"><code translate="no" dir="ltr">state</code> field</a> for the overall status of the operation.</p> <p>A request for the status of a long-running operation also returns the metrics <code translate="no" dir="ltr">workEstimated</code> and <code translate="no" dir="ltr">workCompleted</code>. These metrics are returned for the number of documents. <code translate="no" dir="ltr">workEstimated</code> shows the estimated total number of documents an operation will process. <code translate="no" dir="ltr">workCompleted</code> shows the number of documents processed so far. After the operation completes, <code translate="no" dir="ltr">workCompleted</code> reflects the total number of documents that were actually processed, which might be different than the value of <code translate="no" dir="ltr">workEstimated</code>.</p> <p>Divide <code translate="no" dir="ltr">workCompleted</code> by <code translate="no" dir="ltr">workEstimated</code> for a rough progress estimate. The estimate might be inaccurate because it depends on delayed statistics collection.</p> <p>For example, here is the progress status of an index build:</p> 
+<pre>
+{
+  "operations": [
+    {
+      "name": "projects/project-id/operations/AyAyMDBiM2U5NTgwZDAtZGIyYi0zYjc0LTIzYWEtZjg1ZGdWFmZWQHEjF0c2Flc3UtcmV4ZWRuaS1uaW1kYRUKSBI",
+      "metadata": {
+        "@type": "type.googleapis.com/google.firestore.admin.v1.IndexOperationMetadata",
+        "common": {
+          "operationType": "CREATE_INDEX",
+          "startTime": "2020-06-23T16:52:25.697539Z",
+          "state": "PROCESSING"
+        },
+        "progressDocuments": {
+          "workCompleted": "219327",
+          "workEstimated": "2198182"
+        }
+       },
+    },
+    ...
+</pre> <p>When an operation is done, the operation description will contain <a href="https://docs.cloud.google.com/firestore/docs/reference/rpc/google.longrunning#operation"><code translate="no" dir="ltr">"done":
+true</code></a>. See the value of the <a href="https://docs.cloud.google.com/firestore/docs/reference/rpc/google.firestore.admin.v1#state"><code translate="no" dir="ltr">state</code> field</a> for the result of the operation. If the <code translate="no" dir="ltr">done</code> field is not set in the response, then its value is <code translate="no" dir="ltr">false</code>. Do not depend on the existence of the <code translate="no" dir="ltr">done</code> value for in-progress operations.</p>  <h2 id="index-errors">Index building errors</h2> <p>You might encounter index building errors when managing manual indexes and automatic index exemptions. An indexing operation can fail if Cloud Firestore encounters a problem with the data it's indexing. Most commonly, this means you hit an <a href="index-overview#index_limitations">index limit</a>. For example, the operation may have reached the maximum number of index entries per document.</p> <p>If index creation fails, you see the error message in the console. After you verify that you are not hitting any <a href="index-overview#index_limitations">index limits</a>, re-try your index operation.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/query-data/indexing" class="_attribution-link">https://firebase.google.com/docs/firestore/query-data/indexing</a>
+  </p>
+</div>

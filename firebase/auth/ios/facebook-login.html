@@ -1,0 +1,360 @@
+<h1>Authenticate Using Facebook Login on Apple Platforms</h1> <p>You can let your users authenticate with Firebase using their Facebook accounts by integrating Facebook Login or Facebook Limited Login into your app.</p> <h2 id="before_you_begin">Before you begin</h2> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+<pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Firebase Authentication library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> <p>Next, perform some configuration steps:</p> <ol> <li> In the <a href="https://developers.facebook.com/" class="external">Facebook for Developers site</a>, get the <b>App ID</b> and an <b>App Secret</b> for your app. </li> <li> Enable Facebook Login as a sign-in provider for your Firebase project: <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Facebook</b> sign-in provider, and specify the <b>App ID</b> and <b>App Secret</b> you got from Facebook. </li> <li> Make sure your <b>OAuth redirect URI</b> (for example, <code translate="no" dir="ltr">my-app-12345.firebaseapp.com/__/auth/handler</code>) is listed as one of your <b>OAuth redirect URIs</b> in your Facebook app's settings page on the <a href="https://developers.facebook.com/" class="external">Facebook for Developers site</a> in the <b>Product Settings &gt; Facebook Login</b> config. </li> </ol> </li> </ol> <h2 id="implement_facebook_login">Implement Facebook Login</h2> <p>To use "classic" Facebook Login, complete the following steps. Alternatively, you can use Facebook Limited Login, as shown in the next section. </p> <ol> <li>Integrate Facebook Login into your app by following the <a href="https://developers.facebook.com/docs/facebook-login/ios"> developer's documentation</a>. When you initialize the <code translate="no" dir="ltr">FBSDKLoginButton</code> object, set a delegate to receive login and logout events. For example: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">let loginButton = FBSDKLoginButton()
+loginButton.delegate = self</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">FBSDKLoginButton *loginButton = [[FBSDKLoginButton alloc] init];
+loginButton.delegate = self;</pre> </section> </div> In your delegate, implement <code translate="no" dir="ltr">didCompleteWithResult:error:</code>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: Error!) {
+  if let error = error {
+    print(error.localizedDescription)
+    return
+  }
+  // ...
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">- (void)loginButton:(FBSDKLoginButton *)loginButton
+    didCompleteWithResult:(FBSDKLoginManagerLoginResult *)result
+                    error:(NSError *)error {
+  if (error == nil) {
+    // ...
+  } else {
+    NSLog(error.localizedDescription);
+  }
+}</pre> </section> </div> </li> <li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">import SwiftUI
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">@import FirebaseCore;
+@import FirebaseFirestore;
+@import FirebaseAuth;
+// ...
+      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Use Firebase library to configure APIs
+[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">@main
+struct YourApp: App {
+  // register app delegate for Firebase setup
+  @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
+  var body: some Scene {
+    WindowGroup {
+      NavigationView {
+        ContentView()
+      }
+    }
+  }
+}
+      </pre> </section> </div> </li> <li>After a user successfully signs in, in your implementation of <code translate="no" dir="ltr">didCompleteWithResult:error:</code>, get an access token for the signed-in user and exchange it for a Firebase credential: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">let credential = FacebookAuthProvider
+  .credential(withAccessToken: AccessToken.current!.tokenString)</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">FIRAuthCredential *credential = [FIRFacebookAuthProvider
+    credentialWithAccessToken:[FBSDKAccessToken currentAccessToken].tokenString];</pre> </section> </div> </li> </ol> <h2 id="implement_facebook_limited_login">Implement Facebook Limited Login</h2> <p>To use Facebook Limited Login instead of "classic" Facebook Login, complete the following steps. </p> <ol> <li>Integrate Facebook Limited Login into your app by following the <a href="https://developers.facebook.com/docs/facebook-login/limited-login/ios"> developer's documentation</a>. </li> <li>For every sign-in request, generate a unique random string—a "nonce"—which you will use to make sure the ID token you get was granted specifically in response to your app's authentication request. This step is important to prevent replay attacks. You can generate a cryptographically secure nonce with <code translate="no" dir="ltr">SecRandomCopyBytes(_:_:_)</code>, as in the following example: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">private func randomNonceString(length: Int = 32) -&gt; String {
+  precondition(length &gt; 0)
+  var randomBytes = [UInt8](repeating: 0, count: length)
+  let errorCode = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &amp;randomBytes)
+  if errorCode != errSecSuccess {
+    fatalError(
+      "Unable to generate nonce. SecRandomCopyBytes failed with OSStatus \(errorCode)"
+    )
+  }
+
+  let charset: [Character] =
+    Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+
+  let nonce = randomBytes.map { byte in
+    // Pick a random character from the set, wrapping around if needed.
+    charset[Int(byte) % charset.count]
+  }
+
+  return String(nonce)
+}
+
+        </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Adapted from https://auth0.com/docs/api-auth/tutorials/nonce#generate-a-cryptographically-random-nonce
+- (NSString *)randomNonce:(NSInteger)length {
+  NSAssert(length &gt; 0, @"Expected nonce to have positive length");
+  NSString *characterSet = @"0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._";
+  NSMutableString *result = [NSMutableString string];
+  NSInteger remainingLength = length;
+
+  while (remainingLength &gt; 0) {
+    NSMutableArray *randoms = [NSMutableArray arrayWithCapacity:16];
+    for (NSInteger i = 0; i &lt; 16; i++) {
+      uint8_t random = 0;
+      int errorCode = SecRandomCopyBytes(kSecRandomDefault, 1, &amp;random);
+      NSAssert(errorCode == errSecSuccess, @"Unable to generate nonce: OSStatus %i", errorCode);
+
+      [randoms addObject:@(random)];
+    }
+
+    for (NSNumber *random in randoms) {
+      if (remainingLength == 0) {
+        break;
+      }
+
+      if (random.unsignedIntValue &lt; characterSet.length) {
+        unichar character = [characterSet characterAtIndex:random.unsignedIntValue];
+        [result appendFormat:@"%C", character];
+        remainingLength--;
+      }
+    }
+  }
+
+  return [result copy];
+}
+        </pre> </section> </div> You will send the SHA-256 hash of the nonce with your sign-in request, which Facebook will pass unchanged in the response. Firebase validates the response by hashing the original nonce and comparing it to the value passed by Facebook. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">@available(iOS 13, *)
+private func sha256(_ input: String) -&gt; String {
+  let inputData = Data(input.utf8)
+  let hashedData = SHA256.hash(data: inputData)
+  let hashString = hashedData.compactMap {
+    String(format: "%02x", $0)
+  }.joined()
+
+  return hashString
+}
+
+        </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">- (NSString *)stringBySha256HashingString:(NSString *)input {
+  const char *string = [input UTF8String];
+  unsigned char result[CC_SHA256_DIGEST_LENGTH];
+  CC_SHA256(string, (CC_LONG)strlen(string), result);
+
+  NSMutableString *hashed = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH * 2];
+  for (NSInteger i = 0; i &lt; CC_SHA256_DIGEST_LENGTH; i++) {
+    [hashed appendFormat:@"%02x", result[i]];
+  }
+  return hashed;
+}
+        </pre> </section> </div> </li> <li>When you set up the <code translate="no" dir="ltr">FBSDKLoginButton</code>, set a delegate to receive login and logout events, set the tracking mode to <code translate="no" dir="ltr">FBSDKLoginTrackingLimited</code>, and attach a nonce. For example: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">func setupLoginButton() {
+    let nonce = randomNonceString()
+    currentNonce = nonce
+    loginButton.delegate = self
+    loginButton.loginTracking = .limited
+    loginButton.nonce = sha256(nonce)
+}
+        </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">- (void)setupLoginButton {
+  NSString *nonce = [self randomNonce:32];
+  self.currentNonce = nonce;
+  self.loginButton.delegate = self;
+  self.loginButton.loginTracking = FBSDKLoginTrackingLimited
+  self.loginButton.nonce = [self stringBySha256HashingString:nonce];
+}
+        </pre> </section> </div> In your delegate, implement <code translate="no" dir="ltr">didCompleteWithResult:error:</code>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">func loginButton(_ loginButton: FBSDKLoginButton!, didCompleteWith result: FBSDKLoginManagerLoginResult!, error: Error!) {
+  if let error = error {
+    print(error.localizedDescription)
+    return
+  }
+  // ...
+}
+        </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">- (void)loginButton:(FBSDKLoginButton *)loginButton
+    didCompleteWithResult:(FBSDKLoginManagerLoginResult *)result
+                    error:(NSError *)error {
+  if (error == nil) {
+    // ...
+  } else {
+    NSLog(error.localizedDescription);
+  }
+}
+        </pre> </section> </div> </li> <li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">import SwiftUI
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">@import FirebaseCore;
+@import FirebaseFirestore;
+@import FirebaseAuth;
+// ...
+      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Use Firebase library to configure APIs
+[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">@main
+struct YourApp: App {
+  // register app delegate for Firebase setup
+  @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
+  var body: some Scene {
+    WindowGroup {
+      NavigationView {
+        ContentView()
+      }
+    }
+  }
+}
+      </pre> </section> </div> </li> <li>After a user successfully signs in, in your implementation of <code translate="no" dir="ltr">didCompleteWithResult:error:</code>, use the ID token from Facebook's response with the unhashed nonce to get a Firebase credential: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// Initialize a Firebase credential.
+let idTokenString = AuthenticationToken.current?.tokenString
+let nonce = currentNonce
+let credential = OAuthProvider.credential(withProviderID: "facebook.com",
+                                          idToken: idTokenString!,
+                                          rawNonce: nonce)
+        </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Initialize a Firebase credential.
+NSString *idTokenString = FBSDKAuthenticationToken.currentAuthenticationToken.tokenString;
+NSString *rawNonce = self.currentNonce;
+FIROAuthCredential *credential = [FIROAuthProvider credentialWithProviderID:@"facebook.com"
+                                                                    IDToken:idTokenString
+                                                                   rawNonce:rawNonce];
+        </pre> </section> </div> </li> </ol> <h2 id="authenticate_with_firebase">Authenticate with Firebase</h2> <p>Finally, authenticate with Firebase using the Firebase credential:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">Auth.auth().signIn(with: credential) { authResult, error in
+    if let error = error {
+      let authError = error as NSError
+      if isMFAEnabled, authError.code == AuthErrorCode.secondFactorRequired.rawValue {
+        // The user is a multi-factor user. Second factor challenge is required.
+        let resolver = authError
+          .userInfo[AuthErrorUserInfoMultiFactorResolverKey] as! MultiFactorResolver
+        var displayNameString = ""
+        for tmpFactorInfo in resolver.hints {
+          displayNameString += tmpFactorInfo.displayName ?? ""
+          displayNameString += " "
+        }
+        self.showTextInputPrompt(
+          withMessage: "Select factor to sign in\n\(displayNameString)",
+          completionBlock: { userPressedOK, displayName in
+            var selectedHint: PhoneMultiFactorInfo?
+            for tmpFactorInfo in resolver.hints {
+              if displayName == tmpFactorInfo.displayName {
+                selectedHint = tmpFactorInfo as? PhoneMultiFactorInfo
+              }
+            }
+            PhoneAuthProvider.provider()
+              .verifyPhoneNumber(with: selectedHint!, uiDelegate: nil,
+                                 multiFactorSession: resolver
+                                   .session) { verificationID, error in
+                if error != nil {
+                  print(
+                    "Multi factor start sign in failed. Error: \(error.debugDescription)"
+                  )
+                } else {
+                  self.showTextInputPrompt(
+                    withMessage: "Verification code for \(selectedHint?.displayName ?? "")",
+                    completionBlock: { userPressedOK, verificationCode in
+                      let credential: PhoneAuthCredential? = PhoneAuthProvider.provider()
+                        .credential(withVerificationID: verificationID!,
+                                    verificationCode: verificationCode!)
+                      let assertion: MultiFactorAssertion? = PhoneMultiFactorGenerator
+                        .assertion(with: credential!)
+                      resolver.resolveSignIn(with: assertion!) { authResult, error in
+                        if error != nil {
+                          print(
+                            "Multi factor finanlize sign in failed. Error: \(error.debugDescription)"
+                          )
+                        } else {
+                          self.navigationController?.popViewController(animated: true)
+                        }
+                      }
+                    }
+                  )
+                }
+              }
+          }
+        )
+      } else {
+        self.showMessagePrompt(error.localizedDescription)
+        return
+      }
+      // ...
+      return
+    }
+    // User is signed in
+    // ...
+}
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[[FIRAuth auth] signInWithCredential:credential
+                          completion:^(FIRAuthDataResult * _Nullable authResult,
+                                       NSError * _Nullable error) {
+    if (isMFAEnabled &amp;&amp; error &amp;&amp; error.code == FIRAuthErrorCodeSecondFactorRequired) {
+      FIRMultiFactorResolver *resolver = error.userInfo[FIRAuthErrorUserInfoMultiFactorResolverKey];
+      NSMutableString *displayNameString = [NSMutableString string];
+      for (FIRMultiFactorInfo *tmpFactorInfo in resolver.hints) {
+        [displayNameString appendString:tmpFactorInfo.displayName];
+        [displayNameString appendString:@" "];
+      }
+      [self showTextInputPromptWithMessage:[NSString stringWithFormat:@"Select factor to sign in\n%@", displayNameString]
+                           completionBlock:^(BOOL userPressedOK, NSString *_Nullable displayName) {
+       FIRPhoneMultiFactorInfo* selectedHint;
+       for (FIRMultiFactorInfo *tmpFactorInfo in resolver.hints) {
+         if ([displayName isEqualToString:tmpFactorInfo.displayName]) {
+           selectedHint = (FIRPhoneMultiFactorInfo *)tmpFactorInfo;
+         }
+       }
+       [FIRPhoneAuthProvider.provider
+        verifyPhoneNumberWithMultiFactorInfo:selectedHint
+        UIDelegate:nil
+        multiFactorSession:resolver.session
+        completion:^(NSString * _Nullable verificationID, NSError * _Nullable error) {
+          if (error) {
+            [self showMessagePrompt:error.localizedDescription];
+          } else {
+            [self showTextInputPromptWithMessage:[NSString stringWithFormat:@"Verification code for %@", selectedHint.displayName]
+                                 completionBlock:^(BOOL userPressedOK, NSString *_Nullable verificationCode) {
+             FIRPhoneAuthCredential *credential =
+                 [[FIRPhoneAuthProvider provider] credentialWithVerificationID:verificationID
+                                                              verificationCode:verificationCode];
+             FIRMultiFactorAssertion *assertion = [FIRPhoneMultiFactorGenerator assertionWithCredential:credential];
+             [resolver resolveSignInWithAssertion:assertion completion:^(FIRAuthDataResult * _Nullable authResult, NSError * _Nullable error) {
+               if (error) {
+                 [self showMessagePrompt:error.localizedDescription];
+               } else {
+                 NSLog(@"Multi factor finanlize sign in succeeded.");
+               }
+             }];
+           }];
+          }
+        }];
+     }];
+    }
+  else if (error) {
+    // ...
+    return;
+  }
+  // User successfully signed in. Get user data from the FIRUser object
+  if (authResult == nil) { return; }
+  FIRUser *user = authResult.user;
+  // ...
+}];
+    </pre> </section> </div> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_user"><code translate="no" dir="ltr">User</code> </a> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_auth#ab0d5111f05c3f1906243852cc8ef41b1"> <code translate="no" dir="ltr">signOut:</code></a>.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">let firebaseAuth = Auth.auth()
+do {
+  try firebaseAuth.signOut()
+} catch let signOutError as NSError {
+  print("Error signing out: %@", signOutError)
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">NSError *signOutError;
+BOOL status = [[FIRAuth auth] signOut:&amp;signOutError];
+if (!status) {
+  NSLog(@"Error signing out: %@", signOutError);
+  return;
+}</pre> </section> </div> <p>You may also want to add error handling code for the full range of authentication errors. See <a href="errors">Handle Errors</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/ios/facebook-login" class="_attribution-link">https://firebase.google.com/docs/auth/ios/facebook-login</a>
+  </p>
+</div>

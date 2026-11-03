@@ -1,0 +1,47 @@
+<h1>Use Handlebars templates with the Trigger Email extension</h1> <p>If you specified a "Templates collection" parameter during configuration of the extension, you can create and manage <a href="https://handlebarsjs.com/" class="external">Handlebars templates</a> templates for your emails.</p> <h2 id="template_collection_structure">Template collection structure</h2> <p>Give each document a memorable ID that you use as the <em>template name</em> in the documents you write to your templates collection.</p> <p>The template document can include any of the following fields:</p> <ul> <li>
+<strong>subject:</strong> A template string for the subject of the email.</li> <li>
+<strong>text:</strong> A template string for the plaintext content of the email.</li> <li>
+<strong>html:</strong> A template string for the HTML content of the email.</li> <li>
+<strong>amp:</strong> A template string for the <a href="https://amp.dev/documentation/guides-and-tutorials/learn/email-spec/amp-email-format/">AMP4EMAIL</a> content of the email.</li> <li>
+<strong>attachments:</strong> An array of attachments with template strings as values; <a href="https://nodemailer.com/message/attachments/">Nodemailer options</a> supported: utf-8 string, custom content type, URL, encoded string, data URI, and pre-generated MIME node (be aware that your email has no access to the cloud server's file system).</li> </ul> <p>An example template might have an ID of <code translate="no" dir="ltr">following</code> and content like:</p> 
+<pre>{
+  subject: "@{{username}} is now following you!",
+  html: "Just writing to let you know that &lt;code&gt;@{{username}}&lt;/code&gt; ({{name}}) is now following you.",
+  attachments: [
+    {
+     filename: "{{username}}.jpg",
+     path: "{{imagePath}}"
+    }
+  ]
+}
+</pre> <h2 id="send_emails_using_templates">Send emails using templates</h2> <p>To deliver email using templates, when adding documents to your mail collection, include a <code translate="no" dir="ltr">template</code> field with <code translate="no" dir="ltr">name</code> and <code translate="no" dir="ltr">data</code> properties. For example, using our <code translate="no" dir="ltr">following</code> template from above:</p> 
+<pre>admin
+  .firestore()
+  .collection("MAIL_COLLECTION")
+  .add({
+    toUids: ["abc123"],
+    template: {
+      name: "following",
+      data: {
+        username: "ada",
+        name: "Ada Lovelace",
+        imagePath: "https://example.com/path/to/file/image-name.jpg"
+      },
+    },
+  });
+</pre> <h2 id="template_partials">Template Partials</h2> <p>You can compose templates using reusable <a href="https://handlebarsjs.com/guide/partials.html" class="external">partials</a> by specifying <code translate="no" dir="ltr">{partial: true}</code> in the template document. Each of the standard data fields (<code translate="no" dir="ltr">subject</code>, <code translate="no" dir="ltr">html</code>, <code translate="no" dir="ltr">text</code>, and <code translate="no" dir="ltr">amp</code>) will be defined as a partial used only in its own environment. For example, a partial called <code translate="no" dir="ltr">footer</code> might have data like:</p> 
+<pre>{
+  partial: true,
+  html: "&lt;p&gt;This mail was sent by ExampleApp, Inc. &lt;a href='https://example.com/unsubscribe'&gt;Unsubscribe&lt;/a&gt;&lt;/p&gt;",
+  text: "This mail was sent by ExampleApp, Inc. Unsubscribe here: https://example.com/unsubscribe"
+}
+</pre> <p>In another template, include the partial by referencing its name (document ID):</p> 
+<pre>&lt;p&gt;This is my main template content, but it will use a common footer.&lt;/p&gt;
+
+{{&gt; footer }}
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/official/firestore-send-email/templates" class="_attribution-link">https://firebase.google.com/docs/extensions/official/firestore-send-email/templates</a>
+  </p>
+</div>

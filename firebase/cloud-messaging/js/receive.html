@@ -1,0 +1,164 @@
+<h1>Receive messages in Web apps</h1>     <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/receive-messages">iOS+</a> <a class="button" href="../android/receive-messages">Android</a> <a class="button button-primary" href="../web/receive-messages">Web</a> <a class="button" href="../flutter/receive-messages">Flutter</a> <a class="button" href="../unity/receive-messages">Unity</a> <a class="button" href="../cpp/receive-messages">C++</a> </td> </tr> </table> <p><br></p> <p>The behavior of messages differs depending on whether the page is in the foreground (has focus), or in the background, hidden behind other tabs, or completely closed. In all cases the page must handle the <a href="https://firebase.google.com/docs/reference/js/messaging#onmessage_b9887da"><code translate="no" dir="ltr">onMessage</code></a> callback, but in background cases you may also need to handle <a href="https://firebase.google.com/docs/reference/js/messaging_sw#onbackgroundmessage_b9887da"><code translate="no" dir="ltr">onBackgroundMessage</code></a> or configure the display notification to allow the user to bring your web app into the foreground.</p> <table> <thead> <tr> <th style="text-align: left">App state</th> <th style="text-align: left">Notification</th> <th style="text-align: left">Data</th> <th style="text-align: left">Both</th> </tr> </thead> <tbody> <tr> <td style="text-align: left">Foreground</td> <td style="text-align: left"><code translate="no" dir="ltr">onMessage</code></td> <td style="text-align: left"><code translate="no" dir="ltr">onMessage</code></td> <td style="text-align: left"><code translate="no" dir="ltr">onMessage</code></td> </tr> <tr> <td style="text-align: left">Background (service worker)</td> <td style="text-align: left">
+<code translate="no" dir="ltr">onBackgroundMessage</code> (display notification automatically shown)</td> <td style="text-align: left"><code translate="no" dir="ltr">onBackgroundMessage</code></td> <td style="text-align: left">
+<code translate="no" dir="ltr">onBackgroundMessage</code> (display notification automatically shown)</td> </tr> </tbody> </table> <p>The JavaScript <a href="https://github.com/firebase/quickstart-js/tree/master/messaging">quickstart sample</a> demonstrates all code required to receive messages.</p> <aside class="special"><strong>Important:</strong><span> This guide mentions initializing Firebase in a service worker. To use the modular SDK in a service worker, you must bundle your service worker file, since ES modules are relatively new and not widely supported (See <a href="https://web.dev/articles/es-modules-in-sw">ES modules in service workers</a>). If you don't want to bundle your service worker file, you can use the namespaced API provided by the compat packages. To see how you can use module bundlers with Firebase, see <a href="../../web/module-bundling">Using module bundlers with Firebase</a>.</span></aside> <h2 id="foreground-messages">Handle messages when your web app is in the foreground</h2> <p>In order to receive the <code translate="no" dir="ltr">onMessage</code> event, your app must define the Firebase messaging service worker in <code translate="no" dir="ltr">firebase-messaging-sw.js</code>. Alternatively, you can provide an existing service worker to the SDK through <a href="https://firebase.google.com/docs/reference/js/messaging#gettoken_b538f38"><code translate="no" dir="ltr">getToken(): Promise&lt;string&gt;</code></a>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { initializeApp } from "firebase/app";
+import { getMessaging } from "firebase/messaging/sw";
+
+// Initialize the Firebase app in the service worker by passing in
+// your app's Firebase config object.
+// https://firebase.google.com/docs/web/setup#config-object
+const firebaseApp = initializeApp({
+  apiKey: 'api-key',
+  authDomain: 'project-id.firebaseapp.com',
+  databaseURL: 'https://project-id.firebaseio.com',
+  projectId: 'project-id',
+  storageBucket: 'project-id.appspot.com',
+  messagingSenderId: 'sender-id',
+  appId: 'app-id',
+  measurementId: 'G-measurement-id',
+});
+
+// Retrieve an instance of Firebase Messaging so that it can handle background
+// messages.
+const messaging = getMessaging(firebaseApp);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Give the service worker access to Firebase Messaging.
+// Note that you can only use Firebase Messaging here. Other Firebase libraries
+// are not available in the service worker.
+// Replace 13.0.0 with latest version of the Firebase JS SDK.
+importScripts('https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/13.0.0/firebase-messaging-compat.js');
+
+// Initialize the Firebase app in the service worker by passing in
+// your app's Firebase config object.
+// https://firebase.google.com/docs/web/setup#config-object
+firebase.initializeApp({
+  apiKey: 'api-key',
+  authDomain: 'project-id.firebaseapp.com',
+  databaseURL: 'https://project-id.firebaseio.com',
+  projectId: 'project-id',
+  storageBucket: 'project-id.appspot.com',
+  messagingSenderId: 'sender-id',
+  appId: 'app-id',
+  measurementId: 'G-measurement-id',
+});
+
+// Retrieve an instance of Firebase Messaging so that it can handle background
+// messages.
+const messaging = firebase.messaging();</pre> </section> </div> <p>When your app is in the foreground (the user is viewing your web page), you can receive data and notification payloads directly in the page.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">// Handle incoming messages. Called when:
+// - a message is received while the app has focus
+// - the user clicks on an app notification created by a service worker
+//   `messaging.onBackgroundMessage` handler.
+import { getMessaging, onMessage } from "firebase/messaging";
+
+const messaging = getMessaging();
+onMessage(messaging, (payload) =&gt; {
+  console.log('Message received. ', payload);
+  // ...
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Handle incoming messages. Called when:
+// - a message is received while the app has focus
+// - the user clicks on an app notification created by a service worker
+//   `messaging.onBackgroundMessage` handler.
+messaging.onMessage((payload) =&gt; {
+  console.log('Message received. ', payload);
+  // ...
+});</pre> </section> </div> <h2 id="handle-background-messages">Handle messages when your web app is in the background</h2> <p>All messages received while the app is in the background trigger a display notification in the browser. You can specify options for this notification, such as title or click action, either in the send request from your app server, or using service worker logic on the client.</p> <aside class="caution"><strong>Caution:</strong><span> Click actions support only secure HTTPS URLs.</span></aside> <h3 id="set-notification-options">Set notification options in the send request</h3> <p>For notification messages sent from the app server, the FCM JavaScript API supports the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#WebpushFcmOptions"><code translate="no" dir="ltr">fcm_options.link</code></a> key. Typically this is set to a page in your web app:</p> 
+<pre>    https://fcm.googleapis.com/v1/projects/&lt;YOUR-PROJECT-ID&gt;/messages:send
+    Content-Type: application/json
+    Authorization: bearer &lt;YOUR-ACCESS-TOKEN&gt;
+
+    {
+      "message": {
+        ,
+        "notification": {
+          "title": "Background Message Title",
+          "body": "Background message body"
+        },
+        "webpush": {
+          "fcm_options": {
+            "link": "https://dummypage.com"
+          }
+        }
+      }
+    }
+</pre> <p>If the link value points to a page that is already open in a browser tab, clicking the notification brings that tab into the foreground. If the page is not already open, a notification click opens the page in a new tab.</p> <p>Because data messages don't support <code translate="no" dir="ltr">fcm_options.link</code>, you are recommended to add a notification payload to all data messages. Alternatively, you can handle notifications using the service worker.</p> <p>For an explanation of the difference between notification and data messages, see <a href="../customize-messages/set-message-type">Message types</a>.</p> <aside class="note"><strong>Note:</strong><span> To <a href="topic-messaging">send messages to topics</a>, use the Admin SDK to subscribe app instances to topics. To use the Admin FCM API, you must first follow the steps in <a href="../../admin/setup">Add the Firebase Admin SDK to your Server</a> to initialize the SDK.</span></aside> <h3 id="set-notification-options-sw">Set notification options in the service worker</h3> <p>For data messages, you can set notification options in the service worker. First, initialize your app in the service worker:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { initializeApp } from "firebase/app";
+import { getMessaging } from "firebase/messaging/sw";
+
+// Initialize the Firebase app in the service worker by passing in
+// your app's Firebase config object.
+// https://firebase.google.com/docs/web/setup#config-object
+const firebaseApp = initializeApp({
+  apiKey: 'api-key',
+  authDomain: 'project-id.firebaseapp.com',
+  databaseURL: 'https://project-id.firebaseio.com',
+  projectId: 'project-id',
+  storageBucket: 'project-id.appspot.com',
+  messagingSenderId: 'sender-id',
+  appId: 'app-id',
+  measurementId: 'G-measurement-id',
+});
+
+// Retrieve an instance of Firebase Messaging so that it can handle background
+// messages.
+const messaging = getMessaging(firebaseApp);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Give the service worker access to Firebase Messaging.
+// Note that you can only use Firebase Messaging here. Other Firebase libraries
+// are not available in the service worker.
+// Replace 13.0.0 with latest version of the Firebase JS SDK.
+importScripts('https://www.gstatic.com/firebasejs/13.0.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/13.0.0/firebase-messaging-compat.js');
+
+// Initialize the Firebase app in the service worker by passing in
+// your app's Firebase config object.
+// https://firebase.google.com/docs/web/setup#config-object
+firebase.initializeApp({
+  apiKey: 'api-key',
+  authDomain: 'project-id.firebaseapp.com',
+  databaseURL: 'https://project-id.firebaseio.com',
+  projectId: 'project-id',
+  storageBucket: 'project-id.appspot.com',
+  messagingSenderId: 'sender-id',
+  appId: 'app-id',
+  measurementId: 'G-measurement-id',
+});
+
+// Retrieve an instance of Firebase Messaging so that it can handle background
+// messages.
+const messaging = firebase.messaging();</pre> </section> </div> <p>To set options, call <a href="https://firebase.google.com/docs/reference/js/messaging_sw#onbackgroundmessage_b9887da"><code translate="no" dir="ltr">onBackgroundMessage</code></a> in <code translate="no" dir="ltr">firebase-messaging-sw.js</code>. In this example, we create a notification with title, body and icon fields.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getMessaging } from "firebase/messaging/sw";
+import { onBackgroundMessage } from "firebase/messaging/sw";
+
+const messaging = getMessaging();
+onBackgroundMessage(messaging, (payload) =&gt; {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  // Customize notification here
+  const notificationTitle = 'Background Message Title';
+  const notificationOptions = {
+    body: 'Background Message body.',
+    icon: '/firebase-logo.png'
+  };
+
+  self.registration.showNotification(notificationTitle,
+    notificationOptions);
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">messaging.onBackgroundMessage((payload) =&gt; {
+  console.log(
+    '[firebase-messaging-sw.js] Received background message ',
+    payload
+  );
+  // Customize notification here
+  const notificationTitle = 'Background Message Title';
+  const notificationOptions = {
+    body: 'Background Message body.',
+    icon: '/firebase-logo.png'
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});</pre> </section> </div> <aside class="note"><strong>Note:</strong><span> If you want to define customized behavior in the service worker when the notification is clicked, make sure to handle <a href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerGlobalScope/notificationclick_event"><code translate="no" dir="ltr">notificationclick</code></a> before you import FCM functions or libraries. Otherwise, FCM may overwrite the custom behavior.</span></aside> <h3 id="best-practices-notifications">Best practices for notifications</h3> <p>For developers sending notifications through FCM for Web, the most important considerations are precision and relevance. Here are some specific recommendations for keeping your notifications precise and relevant:</p> <ul> <li>Use the icon field to send a meaningful image. For many use cases, this should be a company or app logo that your users immediately recognize. Or, for a chat application, it might be the sending user's profile image.</li> <li>Use the title field to express the precise nature of the message. For example, "Jimmy replied" conveys more precise information than "New message." Don't use this valuable space for your company or app name — use the icon for that purpose.</li> <li>Don't use the notification title or body to display your website name or domain; notifications already contain your domain name.</li> <li>Add <code translate="no" dir="ltr">fcm_options.link</code>, usually to link the user back to your web app and bring it into focus in the browser. In rare cases where all the information you need to convey can be fit into the notification, you might not need a link.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/js/receive" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/js/receive</a>
+  </p>
+</div>

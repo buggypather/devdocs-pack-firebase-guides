@@ -1,0 +1,244 @@
+<h1>Understand Firebase for web</h1> <p>As you're developing a web app using Firebase, you might encounter unfamiliar concepts, or areas where you need more information to make the right decisions for your project. This page aims to answer those questions or point you to resources to learn more.</p> <p>If you have questions about a topic not covered on this page, visit one of our <a href="https://firebase.google.com/community#join-the-discussion">online communities</a>. We'll also update this page with new topics periodically, so check back to see if we've added the topic you want to learn about.</p> <h2 id="modular-version">SDK versions: namespaced and modular</h2> <p>Firebase provides two API surfaces for web apps:</p> <ul> <li>
+<strong>JavaScript - namespaced.</strong> This is the JavaScript interface that Firebase maintained for many years and is familiar to web developers with older Firebase apps. Because the namespaced API does not benefit from ongoing new feature support, most new apps should instead adopt the modular API.</li> <li>
+<strong>JavaScript - modular</strong>. This SDK is based on a modular approach that provides reduced SDK size and greater efficiency with modern JavaScript build tools such as <a href="https://webpack.js.org/" class="external">webpack</a> or <a href="https://rollupjs.org/" class="external">Rollup</a>.</li> </ul> <p>The modular API integrates well with build tools that strip out code that isn't being used in your app, a process known as "tree-shaking." Apps built with this SDK benefit from greatly reduced size footprints. The namespaced API, though available as a module, does not have a strictly modular structure and does not provide the same degree of size reduction.</p> <p>Though the majority of the modular API follows the same patterns as the namespaced API, the organization of the code is different. Generally, the namespaced API is oriented towards a namespace and service pattern, while the modular API is oriented toward discrete functions. For example, the namespaced API's dot-chaining, such as <code translate="no" dir="ltr">firebaseApp.auth()</code>, is replaced in the modular API by a single <code translate="no" dir="ltr">getAuth()</code> function that takes <code translate="no" dir="ltr">firebaseApp</code> and returns an Authentication instance.</p> <p>This means that web apps created with the namespaced API require refactoring in order to take advantage of modular app design. See the <a href="modular-upgrade">upgrade guide</a> for further details.</p> <h3 id="v9-new-apps">JavaScript - modular API for new apps</h3> <p>If you're starting on a new integration with Firebase, you can opt into the modular API when you <a href="setup">add and initialize the SDK</a>.</p> <p>As you develop your app, keep in mind that your code will be organized principally around <strong>functions</strong>. In the modular API, services are passed as the first argument, and the function then uses the details of the service to do the rest. For example:</p> 
+<pre>import { getAuth, onAuthStateChanged } from "firebase/auth";
+
+const auth = getAuth(firebaseApp);
+onAuthStateChanged(auth, user =&gt; {
+  // Check for user status
+});
+</pre> <p>For more examples and details, see the guides for each product area as well as the <a href="https://firebase.google.com/docs/reference/js">the modular API reference documentation</a>.</p> <h2 id="ways-to-add-web-sdks">Ways to add the web SDKs to your app</h2> <p>Firebase provides JavaScript libraries for most Firebase products, including Remote Config, FCM, and more. How you add Firebase SDKs to your Web app depends on what tooling you're using with your app (like a module bundler).</p> <p>You can add any of the <a href="#available-libraries">available libraries</a> to your app via one of the supported methods:</p> <ul> <li>npm (for module bundlers)</li> <li>CDN (content delivery network)</li> </ul> <p>For detailed setup instructions, see <a href="setup">Add Firebase to your JavaScript App</a>. The rest of this section contains information to help you choose from the available options.</p> <aside class="note"><strong>Note:</strong><span> We do not recommend creating a new Firebase app with namespaced API libraries, which don't provide optimization such as tree-shaking. Existing apps using the namespaced API can still find details and code snippets in the how-to guides for each product area (for instance, FCM <a href="../cloud-messaging/js/receive">message handling</a> guides).</span></aside> <h3 id="add-sdks-npm">npm</h3> <p>Downloading the Firebase npm package (which includes both browser and Node.js bundles) provides you with a local copy of the Firebase SDK, which may be needed for non-browser applications such as Node.js apps, React Native, or Electron. The download includes Node.js and React Native bundles as an option for some packages. The Node.js bundles are necessary for the server-side rendering (SSR) step of SSR frameworks.</p> <p>Using npm with a module bundler such as <a href="https://webpack.js.org/" class="external">webpack</a> or <a href="https://rollupjs.org/" class="external">Rollup</a> provides optimization options to "tree-shake" unused code and apply targeted polyfills, which can greatly reduce the size footprint of your app. Implementing these features may add some complexity to your configuration and build chain, but various mainstream CLI tools can help mitigate that. These tools include <a href="https://angular.io" class="external">Angular</a>, <a href="https://reactjs.org" class="external">React</a>, <a href="https://vuejs.org/" class="external">Vue</a>, <a href="https://nextjs.org/" class="external">Next</a>, and others.</p> <p>In summary:</p> <ul> <li>Provides valuable app size optimization</li> <li>Robust tooling is available to manage modules</li> <li>Required for SSR with Node.js</li> </ul> <h3 id="add-sdks-cdn">CDN (content delivery network)</h3> <p>Adding libraries that are stored on Firebase's CDN is a simple SDK setup method that may be familiar to many developers. Using the CDN to add the SDKs, you won't need a build tool, and your build chain may tend to be simpler and easier to work with compared to module bundlers. If you're not especially concerned about the installed size of your app and don't have special requirements such as transpiling from TypeScript, then CDN could be a good choice.</p> <p>In summary:</p> <ul> <li>Familiar and simple</li> <li>Appropriate when app size is not a major concern</li> <li>Appropriate when your website does not use build tools.</li> </ul> <h2 id="sdk-variants">Firebase web SDK variants</h2> <p>Firebase's web SDK can be used in both browser and Node applications. However, several products are not available in Node environments. See the list of <a href="environments-js-sdk">supported environments</a>.</p> <p>Some product SDKs provide separate browser and Node variants, each of which are provided in both ESM and CJS formats, and some product SDKs even provide Cordova or React Native variants. The web SDK is configured to provide the correct variant based on your tooling config or environment and should not require manual selection in most cases. All SDK variants are designed to help build web apps or client apps for end-user access, such as in a Node.js desktop or IoT application. If your goal is to set up administrative access from privileged environments (such as servers) use the <a href="../admin/setup">Firebase Admin SDK</a> instead.</p> <h3 id="environment-detection">Environment detection with bundlers and frameworks</h3> <p>When you install the Firebase web SDK using npm, the JavaScript and Node.js versions are both installed. The package provides detailed environment detection to enable the right bundles for your application.</p> <p>If your code uses Node.js <code translate="no" dir="ltr">require</code> statements, the SDK finds the Node-specific bundle. Otherwise, your bundler's settings must be correctly figured to detect the right entry point field in your <code translate="no" dir="ltr">package.json</code> file (for example, <code translate="no" dir="ltr">main</code>, <code translate="no" dir="ltr">browser</code>, or <code translate="no" dir="ltr">module</code>). If you experience runtime errors with the SDK, check to make sure your bundler is configured to prioritize the correct type of bundle for your environment.</p> <h2 id="config-object">Learn about the Firebase config object</h2> <p>To initialize Firebase in your app, you need to provide your app's Firebase configuration. You can <a href="https://support.google.com/firebase/answer/7015592" class="external">obtain your Firebase config object</a> at any time.</p> <ul> <li><p>We do not recommend manually editing your config object, especially the following required "Firebase options": <code translate="no" dir="ltr">apiKey</code>, <code translate="no" dir="ltr">projectId</code>, and <code translate="no" dir="ltr">appID</code>. If you initialize your app with invalid or missing values for these required "Firebase options", users of your app may experience serious issues. The exception to this is the <code translate="no" dir="ltr">authDomain</code>, which can be updated following <a href="../auth/web/redirect-best-practices#update-authdomain">Best practices for using signInWithRedirect</a>.</p></li> <li><p>If you enabled Google Analytics in your Firebase project, your config object contains the field <code translate="no" dir="ltr">measurementId</code>. Learn more about this field in the <a href="../analytics/get-started">Analytics getting started page</a>.</p></li> <li><p>If you enable Google Analytics or Realtime Database <em>after</em> you create your Firebase Web App, make sure that the Firebase config object that you use in your app is updated with the associated config values (<code translate="no" dir="ltr">measurementId</code> and <code translate="no" dir="ltr">databaseURL</code>, respectively). You can <a href="https://support.google.com/firebase/answer/7015592" class="external">obtain your Firebase config object</a> at any time.</p></li> </ul> <aside class="note"><strong>Note:</strong><span> The Firebase config object contains unique, but non-secret identifiers for your Firebase project and app. <br>Visit <a href="../projects/learn-more#config-files-objects">Understand Firebase Projects</a> to learn more about this config object.</span></aside> <p>Here's the format of a config object with all services enabled (these values are automatically populated):</p> 
+<pre>var firebaseConfig = {
+  apiKey: "API_KEY",
+  authDomain: "PROJECT_ID.firebaseapp.com",
+  // The value of `databaseURL` depends on the location of the database
+  databaseURL: "https://DATABASE_NAME.firebaseio.com",
+  projectId: "PROJECT_ID",
+  // The value of `storageBucket` depends on when you provisioned your default bucket (learn more)
+  storageBucket: "PROJECT_ID.firebasestorage.app",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID",
+  // For Firebase JavaScript SDK v7.20.0 and later, `measurementId` is an optional field
+  measurementId: "G-MEASUREMENT_ID",
+};</pre> <h2 id="available-libraries">Available libraries</h2> <section class="expandable" id="libraries-cdn"> <h3 class="showalways hide-from-toc" id="libraries-cdn">Available Firebase JS SDKs (from the CDN)</h3> <h4 id="modular-libraries">Modular libraries</h4> <p>Learn how to use these import statements in the guide for <a href="alt-setup#from-the-cdn">alternative ways to add the JS SDK</a>. </p> <table> <thead> <tr> <th width="15%"><strong>Firebase product</strong></th> <th><strong>Library reference</strong></th> </tr> </thead> <tbody> <tr> <td>Firebase core<br>(required)</td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js"</code></td> </tr> <tr> <td>
+<a href="../ai-logic/get-started"><span class='\"notranslate\"'>Firebase AI Logic</span></a> <sup>1</sup>
+</td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-ai.js"</code></td> </tr> <tr> <td><a href="../analytics/web/get-started">Analytics</a></td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js"</code></td> </tr> <tr> <td><a href="../app-check">App Check</a></td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app-check.js"</code></td> </tr> <tr> <td><a href="../auth/web/start">Authentication</a></td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js"</code></td> </tr> <tr> <td><a href="../firestore/quickstart">Cloud Firestore</a></td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js"</code></td> </tr> <tr> <td><a href="../functions/callable#call_the_function">Cloud Functions for Firebase Client SDK</a></td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-functions.js"</code></td> </tr> <tr> <td><a href="../projects/manage-installations">Firebase installations</a></td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-installations.js"</code></td> </tr> <tr> <td><a href="../cloud-messaging/js/client">Cloud Messaging</a></td> <td>
+<code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-messaging.js"</code> <p>For an optimal experience using Cloud Messaging, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td><a href="../storage/web/start">Cloud Storage</a></td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-storage.js"</code></td> </tr> <tr> <td>
+<a href="../perf-mon/get-started-web">Performance Monitoring</a> <br><em>(<strong>beta</strong> release)</em>
+</td> <td>
+<code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-performance.js"</code> <p>We also provide a standalone, lightweight Performance Monitoring SDK (via the CDN). Visit the <a href="../perf-mon/troubleshooting">FAQ</a> to learn more. </p>
+</td> </tr> <tr> <td><a href="../database/web/start">Realtime Database</a></td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js"</code></td> </tr> <tr> <td>
+<a href="../remote-config/web/get-started">Remote Config</a> <br><em>(<strong>beta</strong> release)</em>
+</td> <td>
+<code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-remote-config.js"</code> <p>For an optimal experience using Remote Config, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td>
+<a href="../sql-connect">SQL Connect</a> <sup>2</sup>
+</td> <td><code translate="no" dir="ltr">import { } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-data-connect.js"</code></td> </tr> </tbody> </table> <sup> <b>1</b> <em><span class='\"notranslate\"'>Firebase AI Logic</span> was formerly called "<span class='\"notranslate\"'>Vertex AI in Firebase</span>" with the import <code translate="no" dir="ltr">../firebase-vertexai.js</code>.</em> </sup> <br> <sup> <b>2</b> <em>Firebase SQL Connect was formerly called "Firebase Data Connect".</em> </sup> <h4 id="namespaced-libraries">Namespaced libraries</h4> <table> <thead> <tr> <th width="15%"><strong>Firebase product</strong></th> <th><strong>Library reference</strong></th> </tr> </thead> <tbody> <tr> <td>Firebase core<br>(required)</td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-app-compat.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../analytics/web/get-started">Analytics</a></td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics-compat.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../app-check">App Check</a></td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-app-check-compat.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../auth/web/start">Authentication</a></td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth-compat.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../firestore/quickstart">Cloud Firestore</a></td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore-compat.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../functions/callable#call_the_function">Cloud Functions for Firebase Client SDK</a></td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-functions-compat.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../projects/manage-installations">Firebase installations</a></td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-installations-compat.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../cloud-messaging/js/client">Cloud Messaging</a></td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-messaging-compat.js"&gt;&lt;/script&gt;</pre> <p>For an optimal experience using Cloud Messaging, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td><a href="../storage/web/start">Cloud Storage</a></td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-storage-compat.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td>
+<a href="../perf-mon/get-started-web">Performance Monitoring</a> <br><em>(<strong>beta</strong> release)</em>
+</td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-performance-compat.js"&gt;&lt;/script&gt;</pre> <p>We also provide a standalone, lightweight Performance Monitoring SDK (via the CDN). Visit the <a href="../perf-mon/troubleshooting">FAQ</a> to learn more. </p>
+</td> </tr> <tr> <td><a href="../database/web/start">Realtime Database</a></td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-database-compat.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td>
+<a href="../remote-config/web/get-started">Remote Config</a> <br><em>(<strong>beta</strong> release)</em>
+</td> <td>
+
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-remote-config-compat.js"&gt;&lt;/script&gt;</pre> <p>For an optimal experience using Remote Config, also add the Firebase SDK for Analytics.</p>
+</td> </tr> </tbody> </table> </section> <section class="expandable" id="libraries-bundle"> <h3 class="showalways hide-from-toc" id="libraries-bundle">Available Firebase JS SDKs (using bundler with modules)</h3> <h4 id="modular-libraries_1">Modular libraries</h4> <table> <thead> <tr> <th><strong>Firebase product</strong></th> <th><strong>Library reference</strong></th> </tr> </thead> <tbody> <tr> <td>Firebase core <em>(required)</em>
+</td> <td><code translate="no" dir="ltr">import {} from "firebase/app";</code></td> </tr> <tr> <td>
+<a href="../ai-logic/get-started"><span class='\"notranslate\"'>Firebase AI Logic</span></a> <sup>1</sup>
+</td> <td><code translate="no" dir="ltr">import {} from "firebase/ai";</code></td> </tr> <tr> <td><a href="../analytics/web/get-started">Analytics</a></td> <td><code translate="no" dir="ltr">import {} from "firebase/analytics";</code></td> </tr> <tr> <td><a href="../app-check">App Check</a></td> <td><code translate="no" dir="ltr">import {} from "firebase/app-check";</code></td> </tr> <tr> <td><a href="../auth/web/start">Authentication</a></td> <td><code translate="no" dir="ltr">import {} from "firebase/auth";</code></td> </tr> <tr> <td><a href="../firestore/quickstart">Cloud Firestore</a></td> <td><code translate="no" dir="ltr">import {} from "firebase/firestore";</code></td> </tr> <tr> <td><a href="../functions/callable#call_the_function">Cloud Functions for Firebase Client SDK</a></td> <td><code translate="no" dir="ltr">import {} from "firebase/functions";</code></td> </tr> <tr> <td><a href="../projects/manage-installations">Firebase installations</a></td> <td><code translate="no" dir="ltr">import {} from "firebase/installations";</code></td> </tr> <tr> <td><a href="../cloud-messaging/js/client">Cloud Messaging</a></td> <td>
+<code translate="no" dir="ltr">import {} from "firebase/messaging";</code> <p>For an optimal experience using Cloud Messaging, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td><a href="../storage/web/start">Cloud Storage</a></td> <td><code translate="no" dir="ltr">import {} from "firebase/storage";</code></td> </tr> <tr> <td>
+<a href="../perf-mon/get-started-web">Performance Monitoring</a> <em>(<strong>beta</strong> release)</em>
+</td> <td><code translate="no" dir="ltr">import {} from "firebase/performance";</code></td> </tr> <tr> <td><a href="../database/web/start">Realtime Database</a></td> <td><code translate="no" dir="ltr">import {} from "firebase/database";</code></td> </tr> <tr> <td>
+<a href="../remote-config/web/get-started">Remote Config</a> </td> <td>
+<code translate="no" dir="ltr">import {} from "firebase/remote-config";</code> <p>For an optimal experience using Remote Config, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td>
+<a href="../sql-connect">SQL Connect</a> <sup>2</sup>
+</td> <td><code translate="no" dir="ltr">import {} from "firebase/data-connect";</code></td> </tr> </tbody> </table> <sup> <b>1</b> <em><span class='\"notranslate\"'>Firebase AI Logic</span> was formerly called "<span class='\"notranslate\"'>Vertex AI in Firebase</span>" with the package <code translate="no" dir="ltr">firebase/vertexai</code>.</em> </sup> <br> <sup> <b>2</b> <em>Firebase SQL Connect was formerly called "Firebase Data Connect".</em> </sup> <h4 id="namespaced-libraries_1">Namespaced libraries</h4> <table> <thead> <tr> <th><strong>Firebase product</strong></th> <th><strong>Library reference</strong></th> </tr> </thead> <tbody> <tr> <td>Firebase core <em>(required)</em>
+</td> <td><code translate="no" dir="ltr">import firebase from "firebase/compat/app";</code></td> </tr> <tr> <td><a href="../analytics/get-started">Analytics</a></td> <td><code translate="no" dir="ltr">import "firebase/compat/analytics";</code></td> </tr> <tr> <td><a href="../app-check">App Check</a></td> <td><code translate="no" dir="ltr">import "firebase/compat/app-check";</code></td> </tr> <tr> <td><a href="../auth/web/start">Authentication</a></td> <td><code translate="no" dir="ltr">import "firebase/compat/auth";</code></td> </tr> <tr> <td><a href="../firestore/quickstart">Cloud Firestore</a></td> <td><code translate="no" dir="ltr">import "firebase/compat/firestore";</code></td> </tr> <tr> <td><a href="../functions/callable#call_the_function">Cloud Functions for Firebase Client SDK</a></td> <td><code translate="no" dir="ltr">import "firebase/compat/functions";</code></td> </tr> <tr> <td><a href="../projects/manage-installations">Firebase installations</a></td> <td><code translate="no" dir="ltr">import "firebase/compat/installations";</code></td> </tr> <tr> <td><a href="../cloud-messaging/js/client">Cloud Messaging</a></td> <td>
+<code translate="no" dir="ltr">import "firebase/compat/messaging";</code> <p>For an optimal experience using Cloud Messaging, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td><a href="../storage/web/start">Cloud Storage</a></td> <td><code translate="no" dir="ltr">import "firebase/compat/storage";</code></td> </tr> <tr> <td>
+<a href="../perf-mon/get-started-web">Performance Monitoring</a> <em>(<strong>beta</strong> release)</em>
+</td> <td><code translate="no" dir="ltr">import "firebase/compat/performance";</code></td> </tr> <tr> <td><a href="../database/web/start">Realtime Database</a></td> <td><code translate="no" dir="ltr">import "firebase/compat/database";</code></td> </tr> <tr> <td>
+<a href="../remote-config/get-started">Remote Config</a> <em>(<strong>beta</strong> release)</em>
+</td> <td>
+<code translate="no" dir="ltr">import "firebase/compat/remote-config";</code> <p>For an optimal experience using Remote Config, also add the Firebase SDK for Analytics.</p>
+</td> </tr> </tbody> </table> </section> <section class="expandable" id="libraries-hosting-urls"> <h3 class="showalways hide-from-toc" id="libraries-hosting-urls">Available Firebase JS SDKs (from reserved Hosting URLs)</h3> <aside class="warning"><b>Warning</b>: Reserved Firebase Hosting URLs are available only with version 8 and earlier. You cannot use version 9 or later of the Firebase JS SDK with reserved Hosting URLs. </aside> <table> <thead> <tr> <th><strong>Firebase product</strong></th> <th><strong>Library reference (reserved URL)</strong></th> </tr> </thead> <tbody> <tr> <td>Firebase core<br>(required)</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-app.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../analytics/web/get-started">Analytics</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-analytics.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../app-check">App Check</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-app-check.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../auth/web/start">Authentication</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-auth.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../firestore/quickstart">Cloud Firestore</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-firestore.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../functions/callable#call_the_function">Cloud Functions for Firebase Client SDK</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-functions.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../projects/manage-installations">Firebase installations</a></td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-installations.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../cloud-messaging/js/client">Cloud Messaging</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-messaging.js"&gt;&lt;/script&gt;</pre> <p>For an optimal experience using Cloud Messaging, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td> <a href="../storage/web/start">Cloud Storage</a>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-storage.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td> <a href="../perf-mon/get-started-web">Performance Monitoring</a> <br><em>(<strong>beta</strong> release)</em>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-performance.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td><a href="../database/web/start">Realtime Database</a></td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-database.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> <tr> <td>
+<a href="../remote-config/web/get-started">Remote Config</a> <br><em>(<strong>beta</strong> release)</em>
+</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase-remote-config.js"&gt;&lt;/script&gt;</pre> <p>For an optimal experience using Remote Config, also add the Firebase SDK for Analytics.</p>
+</td> </tr> <tr> <td>Firebase JavaScript SDK<br>(entire SDK)</td> <td>
+
+<pre>&lt;script src="/__/firebase/8.10.1/firebase.js"&gt;&lt;/script&gt;</pre>
+</td> </tr> </tbody> </table> </section> <h2 id="additional-setup-options">Additional setup options</h2> <h3 id="delay-sdks-cdn">Delay loading of Firebase SDKs (from CDN)</h3> <p>You can delay the inclusion of the Firebase SDKs until the entire page has loaded. If you are using modular API CDN scripts with <code translate="no" dir="ltr">&lt;script type="module"&gt;</code>, this is the default behavior. If you are using namespaced CDN scripts as a module, complete these steps to defer loading:</p> <ol> <li>
+<p>Add a <code translate="no" dir="ltr">defer</code> flag to each <code translate="no" dir="ltr">script</code> tag for the Firebase SDKs, then defer the initialization of Firebase using a second script, for example:</p> 
+<pre>&lt;script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"&gt;&lt;/script&gt;
+
+&lt;script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"&gt;&lt;/script&gt;
+&lt;script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"&gt;&lt;/script&gt;
+
+// ...
+
+&lt;script defer src="./init-firebase.js"&gt;&lt;/script&gt;
+</pre>
+</li> <li>
+<p>Create an <code translate="no" dir="ltr">init-firebase.js</code> file, then include the following in the file:</p> 
+<pre>// TODO: Replace the following with your app's Firebase configuration
+var firebaseConfig = {
+  // ...
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);</pre>
+</li> </ol> <h3 id="multiple-projects">Use multiple Firebase projects in a single app</h3> <p>In most cases, you only have to initialize Firebase in a single, default app. You can access Firebase from that app in two equivalent ways:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { initializeApp } from "firebase/app";
+import { getStorage } from "firebase/storage";
+import { getFirestore } from "firebase/firestore";
+
+// Initialize Firebase with a "default" Firebase project
+const defaultProject = initializeApp(firebaseConfig);
+
+console.log(defaultProject.name);  // "[DEFAULT]"
+
+// Option 1: Access Firebase services via the defaultProject variable
+let defaultStorage = getStorage(defaultProject);
+let defaultFirestore = getFirestore(defaultProject);
+
+// Option 2: Access Firebase services using shorthand notation
+defaultStorage = getStorage();
+defaultFirestore = getFirestore();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Initialize Firebase with a "default" Firebase project
+const defaultProject = firebase.initializeApp(firebaseConfig);
+
+console.log(defaultProject.name);  // "[DEFAULT]"
+
+// Option 1: Access Firebase services via the defaultProject variable
+let defaultStorage = defaultProject.storage();
+let defaultFirestore = defaultProject.firestore();
+
+// Option 2: Access Firebase services using shorthand notation
+defaultStorage = firebase.storage();
+defaultFirestore = firebase.firestore();</pre> </section> </div> <p>Sometimes, though, you need to access multiple Firebase projects at the same time. For example, you might want to read data from the database of one Firebase project but store files in a different Firebase project. Or you might want to authenticate one project while keeping a second project unauthenticated.</p> <p>The Firebase JavaScript SDK allows you to initialize and use multiple Firebase projects in a single app at the same time, with each project using its own Firebase configuration information.</p> <aside class="note"><strong>Note:</strong><span> Each Firebase project has its own Firebase configuration and authentication state.</span></aside> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { initializeApp, getApp } from "firebase/app";
+import { getStorage } from "firebase/storage";
+import { getFirestore } from "firebase/firestore";
+
+// Initialize Firebase with a default Firebase project
+initializeApp(firebaseConfig);
+
+// Initialize Firebase with a second Firebase project
+const otherProject = initializeApp(otherProjectFirebaseConfig, "other");
+
+console.log(getApp().name);  // "[DEFAULT]"
+console.log(otherProject.name);    // "otherProject"
+
+// Use the shorthand notation to access the default project's Firebase services
+const defaultStorage = getStorage();
+const defaultFirestore = getFirestore();
+
+// Use the otherProject variable to access the second project's Firebase services
+const otherStorage = getStorage(otherProject);
+const otherFirestore = getFirestore(otherProject);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Initialize Firebase with a default Firebase project
+firebase.initializeApp(firebaseConfig);
+
+// Initialize Firebase with a second Firebase project
+const otherProject = firebase.initializeApp(otherProjectFirebaseConfig, "other");
+
+console.log(firebase.app().name);  // "[DEFAULT]"
+console.log(otherProject.name);    // "otherProject"
+
+// Use the shorthand notation to access the default project's Firebase services
+const defaultStorage = firebase.storage();
+const defaultFirestore = firebase.firestore();
+
+// Use the otherProject variable to access the second project's Firebase services
+const otherStorage = otherProject.storage();
+const otherFirestore = otherProject.firestore();</pre> </section> </div> <h3 id="test-locally">Run a local web server for development</h3> <p>If you're building a web app, some parts of the Firebase JavaScript SDK require that you serve your web app from a server rather than from the local filesystem. You can use the <a href="../cli">Firebase CLI</a> to run a local server.</p> <p>If you already set up Firebase Hosting for your app, you might have already completed several of the steps below.</p> <p>To serve your web app, you'll use the Firebase CLI, a command-line tool.</p> <ol> <li><p>Visit the Firebase CLI documentation to learn how to <a href="../cli#install_the_firebase_cli">install the CLI</a> or <a href="../cli#update-cli">update to its latest version</a>.</p></li> <li>
+<p><a href="../cli#initialize_a_firebase_project">Initialize your Firebase project.</a> Run the following command from the root of your local app directory:</p> 
+<pre>firebase init</pre> <p><section class="expandable"> <p class="showalways"><b>What does this initialization command do?</b></p></section></p> <ul> <li><p>Links your local app directory with Firebase</p></li> <li><p>Generates a <a href="../cli#the_firebasejson_file"><code translate="no" dir="ltr">firebase.json</code> file</a> (a required file for Firebase Hosting)</p></li> <li>
+<p>Prompts you to specify a public root directory which contains your public static files (HTML, CSS, JS, etc.)</p> <p>The default name for the directory that Firebase looks for is "public". You can also <a href="../hosting/full-config#public">set the public directory</a> later by directly modifying your <code translate="no" dir="ltr">firebase.json</code> file.</p>
+</li> </ul> 
+</li> <li>
+<p><a href="../cli#test-locally">Start the local server</a> for development. Run the following command from the root of your local app directory:</p> 
+<pre>firebase serve</pre>
+</li> </ol> <h2 id="open-source">Open source resources for Firebase JavaScript SDKs</h2> <p>Firebase supports open source development, and we encourage community contributions and feedback.</p> <h3 id="open-source-sdks">Firebase JavaScript SDKs</h3> <p>Most Firebase JavaScript SDKs are developed as open source libraries in our public <a href="https://github.com/firebase/firebase-js-sdk" class="external">Firebase GitHub repository</a>.</p> <h3 id="open-source-quickstarts">Quickstart samples</h3> <p>Firebase maintains a collection of quickstart samples for most Firebase APIs on Web. Find these quickstarts in our public <a href="https://github.com/firebase/quickstart-js" class="external">Firebase GitHub quickstart repository</a>. You can use these quickstarts as example code for using Firebase SDKs.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/web/learn-more" class="_attribution-link">https://firebase.google.com/docs/web/learn-more</a>
+  </p>
+</div>

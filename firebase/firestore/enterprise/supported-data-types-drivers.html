@@ -1,0 +1,112 @@
+<h1>Supported MongoDB data types and drivers</h1> <p>The following tables list supported MongoDB data types, drivers, and third-party tools for Cloud Firestore.</p> <h2 id="data_types">Data types</h2> <table class="fixed"> <thead> <tr> <th><strong>BSON Type</strong></th> <th><strong>Supported</strong></th> </tr> </thead> <tbody> <tr> <td>32-bit Integer</td> <td>Yes</td> </tr> <tr> <td>64-bit Integer</td> <td>Yes</td> </tr> <tr> <td>Array</td> <td>Yes</td> </tr> <tr> <td>Binary Data</td> <td>Yes</td> </tr> <tr> <td>Boolean</td> <td>Yes</td> </tr> <tr> <td>Date</td> <td>Yes</td> </tr> <tr> <td>DBPointer</td> <td>No</td> </tr> <tr> <td>Decimal128</td> <td>Yes</td> </tr> <tr> <td>Double</td> <td>Yes</td> </tr> <tr> <td>JavaScript</td> <td>No</td> </tr> <tr> <td>JavaScript (with scope)</td> <td>No</td> </tr> <tr> <td>MaxKey</td> <td>Yes</td> </tr> <tr> <td>MinKey</td> <td>Yes</td> </tr> <tr> <td>Null</td> <td>Yes</td> </tr> <tr> <td>Object</td> <td>Yes</td> </tr> <tr> <td>ObjectId</td> <td>Yes</td> </tr> <tr> <td>Regular Expression</td> <td>Yes</td> </tr> <tr> <td>String</td> <td>Yes</td> </tr> <tr> <td>Symbol</td> <td>No</td> </tr> <tr> <td>Timestamp</td> <td>Yes</td> </tr> <tr> <td>Undefined</td> <td>No</td> </tr> </tbody> </table> <h2 id="document_id">Document <code translate="no" dir="ltr">_id</code>
+</h2> <p>The top-level <code translate="no" dir="ltr">_id</code> field in a document must be one of the following types:</p> <ul> <li>ObjectId</li> <li>String</li> <li>64-bit Integer</li> <li>32-bit Integer</li> <li>Double</li> <li>Binary</li> <li>Object</li> <li>Boolean</li> </ul> <p>The total size of the <code translate="no" dir="ltr">_id</code> must not exceed 1500 bytes.</p> <p>Each values within an Object-typed ID must also be of a supported ID type or an Array of values, each of which is of a supported ID type.</p> <p>Other BSON types are not supported.</p> <h2 id="languages_and_mongodb_drivers">Languages and MongoDB drivers</h2> <p>Cloud Firestore supports the following driver versions:</p> <table class="fixed"> <thead> <tr> <th><strong>Language</strong></th> <th><strong>Driver versions</strong></th> </tr> </thead> <tbody> <tr> <td>Java</td> <td>5.x</td> </tr> <tr> <td>Node.js</td> <td>6.x<br> 5.x</td> </tr> <tr> <td>Python</td> <td>4.x<br> 3.x (x ≥ 12)</td> </tr> <tr> <td>Go</td> <td>2.x</td> </tr> <tr> <td>C#</td> <td>3.x</td> </tr> <tr> <td>Ruby</td> <td>2.x (x ≥ 16)</td> </tr> </tbody> </table> <h3 id="oidc_authentication_support">OIDC authentication support</h3> <p>The Go, C#, and Ruby drivers support OpenID Connect (OIDC) authentication from Google Cloud for all supported driver versions.</p> <p>The Java, Node.js, and Python drivers support OIDC authentication from Google Cloud starting with the following driver versions:</p> <ul> <li>Java: 4.10</li> <li>Node.js: 6.7</li> <li>Python: 4.7</li> </ul> <h2 id="third-party-tools">Third-party tools</h2> <p>Cloud Firestore supports third-party tools described in this section.</p> <table class="fixed"> <thead> <tr> <th><strong>Tool</strong></th> <th><strong>Description</strong></th> <th><strong>Notes</strong></th> </tr> </thead> <tbody> <tr> <td> <a href="https://www.mongodb.com/docs/database-tools/mongoimport/"> mongoimport </a> </td> <td>MongoDB Database Tools</td> <td> See <a href="bulk-data-loading#mongoimport"> Bulk data loading </a> </td> </tr> <tr> <td> <a href="https://www.mongodb.com/docs/database-tools/mongoexport/"> mongoexport </a> </td> <td>MongoDB Database Tools</td> <td></td> </tr> <tr> <td> <a href="https://www.mongodb.com/docs/database-tools/mongodump/"> mongodump </a> </td> <td>MongoDB Database Tools</td> <td></td> </tr> <tr> <td> <a href="https://www.mongodb.com/docs/database-tools/mongorestore/"> mongorestore </a> </td> <td>MongoDB Database Tools</td> <td> See <a href="bulk-data-loading#mongorestore"> Bulk data loading </a> </td> </tr> <tr> <td> <a href="https://www.mongodb.com/docs/mongodb-shell/"> mongosh </a> </td> <td>MongoDB Shell</td> <td></td> </tr> <tr> <td> <a href="https://mongoosejs.com/">Mongoose</a> </td> <td>MongoDB object modeling tool</td> <td></td> </tr> <tr> <td> <a href="https://www.mongodb.com/products/tools/compass"> MongoDB Compass </a> </td> <td>GUI tool for data exploration</td> <td></td> </tr> </tbody> </table> <aside class="note"><strong>Note:</strong><span> Some third-party tools require a connection string. To obtain a connection string for your Cloud Firestore database, you can run the <a href="https://cloud.google.com/sdk/gcloud/reference/firestore/databases/connection-string"><code translate="no" dir="ltr">firestore databases connection-string</code> command</a> using Google Cloud CLI.</span></aside> <h2 id="bson-type-compatibility">BSON and Cloud Firestore type compatibility</h2> <p>This section summarizes the mapping between MongoDB BSON types and Cloud Firestore values. Since BSON is a binary format and the Cloud Firestore API uses Protocol Buffers, some types map directly, while others require special map representations.</p> <h3 id="mapping_overview">Mapping overview</h3> <p>The following tables show how BSON data types correspond to Cloud Firestore protocol buffer representations.</p> <h4 id="direct_mappings">Direct mappings</h4> <p>These types have a direct equivalent in both systems.</p> <table> <thead> <tr> <th style="text-align: left">BSON Type</th> <th style="text-align: left">BSON</th> <th style="text-align: left">Cloud Firestore Proto</th> <th style="text-align: left">Notes</th> </tr> </thead> <tbody> <tr> <td style="text-align: left"><strong>Double</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">1.23</code></td> <td style="text-align: left"><code translate="no" dir="ltr">double_value: 1.23</code></td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>String</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">"hello"</code></td> <td style="text-align: left"><code translate="no" dir="ltr">string_value: "hello"</code></td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Object</strong></td> <td style="text-align: left">
+
+<pre>{  "a": 1.23}</pre>
+</td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "a"    value {      double_value: 1.23    }  }}</pre>
+</td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Array</strong></td> <td style="text-align: left">
+
+<pre>[  1.23,  "a"]</pre>
+</td> <td style="text-align: left">
+
+<pre>array_value {  values {    double_value: 1.23  }  values {    string_value: "a"  }}</pre>
+</td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Binary (Subtype Zero)</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">BinData(0, 'SGVsbG8=')</code></td> <td style="text-align: left"><code translate="no" dir="ltr">bytes_value: "Hello"</code></td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Boolean</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">true</code></td> <td style="text-align: left"><code translate="no" dir="ltr">boolean_value: true</code></td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Null</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">null</code></td> <td style="text-align: left"><code translate="no" dir="ltr">null_value: NULL_VALUE</code></td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>64-bit Integer</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">Long('1234567890')</code></td> <td style="text-align: left"><code translate="no" dir="ltr">integer_value: 1234567890</code></td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Date</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">ISODate('2026-05-22T04:00:00Z')</code></td> <td style="text-align: left">
+
+<pre>timestamp_value {  seconds: 1779470400  nanos: 0}</pre>
+</td> <td style="text-align: left">Cloud Firestore timestamp values are stored at microsecond precision, but anything beyond millisecond precision is lost when converting to BSON.</td> </tr> </tbody> </table> <h4 id="bson-maps">BSON types represented as maps in Cloud Firestore API</h4> <p>These BSON types are wrapped in the Cloud Firestore <code translate="no" dir="ltr">map_value</code> with special keys to denote the type.</p> <table> <thead> <tr> <th style="text-align: left">BSON Type</th> <th style="text-align: left">BSON</th> <th style="text-align: left">Cloud Firestore Proto</th> <th style="text-align: left">Notes</th> </tr> </thead> <tbody> <tr> <td style="text-align: left"><strong>32-bit Integer</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">123</code></td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "__int__"    value {      integer_value: 123    }  }}</pre>
+</td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Binary (Non-Zero Subtype)</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">BinData(1, 'AQIDBA==')</code></td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "__binary__"    value {      bytes_value: "&lt;subtype + data&gt;"    }  }}</pre>
+</td> <td style="text-align: left">Subtype byte prepended to data.</td> </tr> <tr> <td style="text-align: left"><strong>ObjectId</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">ObjectId('67eea9446dc71ec469e9496a')</code></td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "__oid__"    value {      string_value:        "67eea9446dc71ec469e9496a"    }  }}</pre>
+</td> <td style="text-align: left">Lowercase hex string.</td> </tr> <tr> <td style="text-align: left"><strong>Timestamp (Internal)</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">Timestamp(123, 1)</code></td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "__request_timestamp__"    value {      map_value {        fields {          key: "seconds"          value {            integer_value: 123          }        }        fields {          key: "increment"          value {            integer_value: 1          }        }      }    }  }}</pre>
+</td> <td style="text-align: left">MongoDB internal timestamp.</td> </tr> <tr> <td style="text-align: left"><strong>Regular Expression</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">RegExp('.*', 'im')</code></td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "__regex__"    value {      map_value {        fields {          key: "pattern"          value {            string_value: ".*"          }        }        fields {          key: "options"          value {            string_value: "im"          }        }      }    }  }}</pre>
+</td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Min Key</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">MinKey()</code></td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "__min__"    value {      null_value: NULL_VALUE    }  }}</pre>
+</td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Max Key</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">MaxKey()</code></td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "__max__"    value {      null_value: NULL_VALUE    }  }}</pre>
+</td> <td style="text-align: left"></td> </tr> <tr> <td style="text-align: left"><strong>Decimal128</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">Decimal128('4E7')</code></td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "__decimal128__"    value {      string_value: "4E7"    }  }}</pre>
+</td> <td style="text-align: left"></td> </tr> </tbody> </table> <h4 id="firestore-types">Cloud Firestore types not natively in BSON</h4> <p>These Cloud Firestore types are represented as specially structured maps when converted to BSON.</p> <table> <thead> <tr> <th style="text-align: left">Cloud Firestore Type</th> <th style="text-align: left">BSON</th> <th style="text-align: left">Cloud Firestore Proto</th> </tr> </thead> <tbody> <tr> <td style="text-align: left"><strong>GeoPoint</strong></td> <td style="text-align: left">
+
+<pre>{  "__fs_geopoint__": {    "latitude": 37.42,    "longitude": -122.08  }}</pre>
+</td> <td style="text-align: left">
+
+<pre>geo_point_value {  latitude: 37.42  longitude: -122.08}</pre>
+</td> </tr> <tr> <td style="text-align: left"><strong>Vector</strong></td> <td style="text-align: left">
+
+<pre>{  "__fs_vector__": [    1.0,    2.0  ]}</pre>
+</td> <td style="text-align: left">
+
+<pre>map_value {  fields {    key: "__type__"    value {      string_value: "__vector__"    }  }  fields {    key: "value"    value {      array_value {        ...      }    }  }}</pre>
+</td> </tr> <tr> <td style="text-align: left"><strong>Document Ref</strong></td> <td style="text-align: left">
+
+<pre>{  "__fs_ref__": "projects/.../documents/col/doc"}</pre>
+</td> <td style="text-align: left"><code translate="no" dir="ltr">reference_value: "projects/.../documents/col/doc"</code></td> </tr> </tbody> </table> <h3 id="field_names">Field names</h3> <p>Field names from MongoDB that match <code translate="no" dir="ltr">__.*__</code> are escaped by incorporating <code translate="no" dir="ltr">r:</code> when stored in Cloud Firestore. For example, a BSON field <code translate="no" dir="ltr">__foo__</code> becomes <code translate="no" dir="ltr">__r:foo__</code> in Cloud Firestore.</p> <h3 id="bson_data_types_in_client_sdks">BSON data types in client SDKs</h3> <p>When using Cloud Firestore client SDKs, you can use specialized SDK classes to represent BSON data types like 128-bit decimals, regular expressions, and BSON timestamps.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">const { RegexValue, Decimal128Value, BsonTimestamp } = require('@google-cloud/firestore');
+
+// Setting fields with BSON data types
+const res = await db.collection('foo').doc('bar').set({
+  regex: new RegexValue('myRegexPattern', 'i'),
+  decimal: new Decimal128Value('0.73e-7'),
+  bsonTimestamp: new BsonTimestamp(1732754912, 500),
+});
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">import com.google.cloud.firestore.BsonTimestamp;
+import com.google.cloud.firestore.Decimal128Value;
+import com.google.cloud.firestore.RegexValue;
+import java.util.HashMap;
+import java.util.Map;
+
+Map&lt;String, Object&gt; data = new HashMap&lt;&gt;();
+data.put("regex", new RegexValue("myRegexPattern", "i"));
+data.put("decimal", new Decimal128Value("0.73e-7"));
+data.put("bson_timestamp", new BsonTimestamp(1732754912, 500));
+
+db.collection("foo").doc("bar").set(data);
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">import com.google.firebase.firestore.BsonTimestamp;
+import com.google.firebase.firestore.Decimal128Value;
+import com.google.firebase.firestore.RegexValue;
+import java.util.HashMap;
+import java.util.Map;
+
+Map&lt;String, Object&gt; data = new HashMap&lt;&gt;();
+data.put("regex", new RegexValue("myRegexPattern", "i"));
+data.put("decimal", new Decimal128Value("0.73e-7"));
+data.put("bson_timestamp", new BsonTimestamp(1732754912, 500));
+
+db.collection("foo").doc("bar").set(data);
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+<pre data-language="go">import (
+    "context"
+
+    "cloud.google.com/go/firestore"
+)
+
+func writeBsonTypes(ctx context.Context, client *firestore.Client) error {
+    _, err := client.Collection("foo").Doc("bar").Set(ctx, map[string]interface{}{
+        "regex":     firestore.RegexValue{Pattern: "myRegexPattern", Options: "i"},
+        "decimal":   firestore.Decimal128Value{Value: "0.73e-7"},
+        "bson_timestamp": firestore.BsonTimestamp{Seconds: 1732754912, Increment: 500},
+    })
+    return err
+}
+    </pre> </section> </div> <h2 id="whats_next">What's next</h2> <ul> <li>Run the <a href="create-and-query-database">Quickstart: Create a database and connect to it</a>.</li> <li>Learn about <a href="behavior-differences">Behavior differences</a>.</li> <li>For a breakdown of supported features depending on MongoDB version, see <ul> <li><a href="supported-features-80">Supported features: 8.0</a></li> <li><a href="supported-features-70">Supported features: 7.0</a></li> <li><a href="supported-features-60">Supported features: 6.0</a></li> <li><a href="supported-features-50">Supported features: 5.0</a></li> <li><a href="supported-features-40">Supported features: 4.0</a></li> <li><a href="supported-features-36">Supported features: 3.6</a></li> </ul>
+</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/enterprise/supported-data-types-drivers" class="_attribution-link">https://firebase.google.com/docs/firestore/enterprise/supported-data-types-drivers</a>
+  </p>
+</div>

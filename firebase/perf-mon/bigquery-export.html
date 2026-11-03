@@ -1,0 +1,101 @@
+<h1>Export Performance Monitoring data to BigQuery</h1> <aside class="note"><strong>Note:</strong><span> Exporting Performance Monitoring data into BigQuery is currently only available for <strong>Apple and Android apps</strong>.</span></aside> <p>You can export Performance Monitoring data from Apple and Android apps into <a href="https://bigquery.cloud.google.com" class="external">BigQuery</a> for further analysis. BigQuery allows you to analyze the data using BigQuery SQL, export it to another cloud provider, and even use the data for your custom ML models.</p> <h2 id="enable_export">Enable BigQuery export</h2> <aside class="note"><strong>Note:</strong><span> Make sure that you have the <a href="../projects/bigquery-export#permissions-and-roles">required level of access</a> to view or manage settings for data export to BigQuery.</span></aside> <ol> <li><p>Go to the <a href="https://console.firebase.google.com/project/_/settings/integrations" class="external"><em>Integrations</em></a> page in the Firebase console, then click <strong>Link</strong> in the <strong>BigQuery</strong> card.</p></li> <li>
+<p>Follow the on-screen instructions to enable BigQuery.</p> <p>When you enable BigQuery export for Performance Monitoring, the following occurs:</p> <ul> <li>
+<p>Firebase <a href="#what-data-exported">exports a copy of your existing data</a> to BigQuery. The initial propagation of data for export may take up to 48 hours to complete.</p> <ul> <li>You can <a href="https://cloud.google.com/bigquery/docs/working-with-transfers#manually_trigger_a_transfer" class="external">manually schedule data backfills</a> up to the past 30 days or for the most recent date when you enabled BigQuery export (whichever is most recent).</li> </ul>
+</li> <li><p>After the dataset is created, the location can't be changed, but you can copy the dataset to a different location or manually move (recreate) the dataset in a different location. To learn more, see <a href="../projects/bigquery-export">Change dataset location</a>.</p></li> <li><p>Firebase sets up regular syncs of your data from your Firebase project to BigQuery. These daily export operations usually finish in 24 hours after they are scheduled.</p></li> <li><p>By default, all apps in your project are linked to BigQuery. Any apps that you later add to the project are automatically linked to BigQuery. You can <a href="https://support.google.com/firebase/answer/6318765#manage" class="external">manage which apps send data</a>.</p></li> </ul>
+</li> </ol> <p>To deactivate BigQuery export, <a href="https://support.google.com/firebase/answer/6318765#unlink" class="external">unlink your project</a> in the Firebase console.</p> <h2 id="what-data-exported">What data is exported to BigQuery?</h2> <p>For each app in the project, the export creates a table that includes all the captured performance events. Each row in the table is a single performance event that can be one of the following:</p> <ul> <li>
+<p><strong>Duration trace</strong> — traces that collect, by default, the metric of "duration", which include app start, app-in-foreground, and app-in-background, as well as any developer-instrumented custom code traces</p> <ul> <li>
+<code translate="no" dir="ltr">event_type</code> is <code translate="no" dir="ltr">DURATION_TRACE</code>
+</li> <li>
+<code translate="no" dir="ltr">event_name</code> is the same as the trace name</li> </ul>
+</li> <li>
+<p><strong>Trace metric</strong> — custom metrics that are associated with developer-instrumented custom code traces</p> <ul> <li>
+<code translate="no" dir="ltr">event_type</code> is <code translate="no" dir="ltr">TRACE_METRIC</code>
+</li> <li>
+<code translate="no" dir="ltr">event_name</code> is the name of the metric</li> <li>
+<code translate="no" dir="ltr">parent_trace_name</code> is the trace name that contains this metric</li> </ul>
+</li> <li>
+<p><strong>Screen trace</strong> — traces spanning the lifetime of a screen (screen rendering traces)</p> <ul> <li>
+<code translate="no" dir="ltr">event_type</code> is <code translate="no" dir="ltr">SCREEN_TRACE</code>
+</li> <li>
+<code translate="no" dir="ltr">event_name</code> is prefix <code translate="no" dir="ltr">_st_</code> plus the actual screen name</li> </ul>
+</li> <li>
+<p><strong>Network request</strong> — traces spanning the lifetime of a network request (HTTP network request traces)</p> <ul> <li>
+<code translate="no" dir="ltr">event_type</code> is <code translate="no" dir="ltr">NETWORK_REQUEST</code>
+</li> <li>
+<code translate="no" dir="ltr">event_name</code> is the categorized pattern of the network request URL</li> </ul>
+</li> </ul> <p>Each performance event contains attributes of the event (such as country and carrier of the client device), as well as event-specific information:</p> <ul> <li>Duration traces, trace metrics, and screen traces contain <code translate="no" dir="ltr">trace_info</code>
+</li> <li>Trace metrics contain <code translate="no" dir="ltr">trace_info.metric_info</code>
+</li> <li>Screen traces contain <code translate="no" dir="ltr">trace_info.screen_info</code>
+</li> <li>Network traces contain <code translate="no" dir="ltr">network_info</code>
+</li> </ul> <h3 id="detailed_data_schema">Detailed data schema</h3> <table> <thead> <tr> <th><strong>Field Name</strong></th> <th><strong>Type</strong></th> <th><strong>Description</strong></th> </tr> </thead> <tbody> <tr> <td>event_timestamp</td> <td>timestamp</td> <td>Timestamp since Epoch when event started on client device (trace start, network start, etc.)</td> </tr> <tr> <td>app_display_version</td> <td>string</td> <td>Display version of the application (for example, "4.1.7") <ul> <li>For Android — <code translate="no" dir="ltr">VersionName</code>
+</li> <li>For iOS — <code translate="no" dir="ltr">CFBundleShortVersionString</code>
+</li> </ul>
+</td> </tr> <tr> <td>app_build_version</td> <td>string</td> <td>Build version of the application (for example, "1523456")<br> <ul> <li>For Android — <code translate="no" dir="ltr">VersionCode</code>
+</li> <li>For iOS — <code translate="no" dir="ltr">CFBundleVersion</code>
+</li> </ul>
+</td> </tr> <tr> <td>os_version</td> <td>string</td> <td>OS version of the client device<br> <ul> <li>For Android — Android API level (for example "26")</li> <li>For iOS — iOS version (for example "11.4")</li> </ul>
+</td> </tr> <tr> <td>device_name</td> <td>string</td> <td>Name of the client device (for example, "Google Pixel")</td> </tr> <tr> <td>country</td> <td>string</td> <td>Two-letter country code of the country from which the event took place (for example, "US", or "ZZ" for unknown country)</td> </tr> <tr> <td>carrier</td> <td>string</td> <td>Carrier of the client device</td> </tr> <tr> <td>radio_type</td> <td>string</td> <td>Active radio type when the event took place (for example, "WIFI")</td> </tr> <tr> <td>custom_attributes</td> <td>ARRAY&lt;RECORD&gt;</td> <td>All custom attributes attached to this event</td> </tr> <tr> <td>custom_attributes.key</td> <td>string</td> <td>Key of the custom attribute</td> </tr> <tr> <td>custom_attributes.value</td> <td>string</td> <td>Value of the custom attribute</td> </tr> <tr> <td>event_type</td> <td>string</td> <td>Type of the event; possible values: <ul> <li>
+<code translate="no" dir="ltr">DURATION_TRACE</code> — traces that collect, by default, the metric of "duration", which include app start, app-in-foreground, and app-in-background, as well as any developer-instrumented custom code traces </li>
+<li>
+<code translate="no" dir="ltr">SCREEN_TRACE</code> — traces spanning the lifetime of a screen (screen rendering traces) </li>
+<li>
+<code translate="no" dir="ltr">TRACE_METRIC</code> — custom metrics that are associated with developer-instrumented custom code traces </li>
+<li>
+<code translate="no" dir="ltr">NETWORK_REQUEST</code> — traces spanning the lifetime of a network request (HTTP network request traces) </li> </ul> </td> </tr> <tr> <td>event_name</td> <td>string</td> <td>Name of the event <ul> <li>For <code translate="no" dir="ltr">DURATION_TRACE</code> — trace name </li>
+<li>For <code translate="no" dir="ltr">TRACE_METRIC</code> — custom metric name </li>
+<li>For <code translate="no" dir="ltr">SCREEN_TRACE</code> — <code translate="no" dir="ltr">_st_</code> followed by the trace name </li>
+<li>For <code translate="no" dir="ltr">NETWORK_REQUEST</code> — network request URL pattern </li> </ul> </td> </tr> <tr> <td>parent_trace_name</td> <td>string</td> <td>Name of the parent trace that carries the trace metric<br> Only present for <code translate="no" dir="ltr">TRACE_METRIC</code>
+</td> </tr> <tr> <td>trace_info</td> <td>RECORD</td> <td>Only present for <code translate="no" dir="ltr">DURATION_TRACE</code>, <code translate="no" dir="ltr">SCREEN_TRACE</code>, and <code translate="no" dir="ltr">TRACE_METRIC</code>
+</td> </tr> <tr> <td>trace_info.duration_us</td> <td>int64</td> <td> <ul> <li>For <code translate="no" dir="ltr">DURATION_TRACE</code> and <code translate="no" dir="ltr">SCREEN_TRACE</code> — Length of time ("duration") from the beginning to the end of the trace </li>
+<li>For <code translate="no" dir="ltr">TRACE_METRIC</code> — length of time ("duration") from the beginning to the end of the parent trace </li> </ul> Unit: microsecond </td> </tr> <tr> <td>trace_info.screen_info</td> <td>RECORD</td> <td>Only present for <code translate="no" dir="ltr">SCREEN_TRACE</code>
+</td> </tr> <tr> <td>trace_info.screen_info.slow_frame_ratio</td> <td>float64</td> <td>Ratio of slow frames for this screen trace, between 0 and 1 (for example, a value of 0.05 means 5% of the frames for this screen instance took more than 16ms to render)</td> </tr> <tr> <td>trace_info.screen_info.frozen_frame_ratio</td> <td>float64</td> <td>Ratio of frozen frames for this screen trace, between 0 and 1 (for example, a value of 0.05 means 5% of the frames for this screen instance took more than 700ms to render)</td> </tr> <tr> <td>trace_info.metric_info</td> <td>RECORD</td> <td>Only present for <code translate="no" dir="ltr">TRACE_METRIC</code>
+</td> </tr> <tr> <td>trace_info.metric_info.metric_value</td> <td>int64</td> <td>Value of the trace metric</td> </tr> <tr> <td>network_info</td> <td>RECORD</td> <td>Only present for <code translate="no" dir="ltr">NETWORK_REQUEST</code>
+</td> </tr> <tr> <td>network_info.response_code</td> <td>int64</td> <td>HTTP response code for the network response (for example, 200, 404)</td> </tr> <tr> <td>network_info.response_mime_type</td> <td>string</td> <td>MIME type of the network response (for example, "text/html")</td> </tr> <tr> <td>network_info.request_http_method</td> <td>string</td> <td>HTTP method of the network request (for example, "GET" or "POST")</td> </tr> <tr> <td>network_info.request_payload_bytes</td> <td>int64</td> <td>Size of the network request payload<br> Unit: byte</td> </tr> <tr> <td>network_info.response_payload_bytes</td> <td>int64</td> <td>Size of the network response payload<br> Unit: byte</td> </tr> <tr> <td>network_info.request_completed_time_us</td> <td>int64</td> <td>Microseconds after <code translate="no" dir="ltr">event_timestamp</code> when network request sending is complete<br> Unit: microsecond</td> </tr> <tr> <td>network_info.response_initiated_time_us</td> <td>int64</td> <td>Microseconds after <code translate="no" dir="ltr">event_timestamp</code> when network response is initiated<br> Unit: microsecond</td> </tr> <tr> <td>network_info.response_completed_time_us</td> <td>int64</td> <td>Microseconds after <code translate="no" dir="ltr">event_timestamp</code> when network response is completed<br> Unit: microsecond</td> </tr> </tbody> </table> <h2 id="what-can-you-do">What can you do with the exported data?</h2> <p>The following sections offer examples of queries that you can run in BigQuery against your exported Performance Monitoring data.</p> <h3 id="match_the_data_seen_on_the_console">Match the data seen on the console</h3> <p>The Firebase dashboard aggregates daily data in <code translate="no" dir="ltr">America/Los_Angeles</code> timezone. To match what was seen on the console, date functions should explicitly set <code translate="no" dir="ltr">America/Los_Angeles</code> as the timezone otherwise the date function will <a href="https://cloud.google.com/bigquery/docs/reference/standard-sql/date_functions#date">default to using UTC</a>.</p> 
+<pre>SELECT
+  DATE(event_timestamp, 'America/Los_Angeles') AS daily_date,
+  APPROX_QUANTILES(trace_info.duration_us, 100)[OFFSET(90)] / 1000000 AS p90_seconds,
+FROM `TABLE_NAME`
+WHERE
+  DATE(event_timestamp, 'America/Los_Angeles')
+    &gt;= DATE_SUB( PARSE_DATE('%Y%m%d', 'YYYY-MM-DD'), INTERVAL 7 DAY)
+  AND DATE(event_timestamp, 'America/Los_Angeles')
+    &lt;= PARSE_DATE('%Y%m%d', 'YYYY-MM-DD')
+  AND event_name = '_app_start'
+GROUP BY 1
+ORDER BY 1 DESC;</pre> <h3 id="view_average_app_start_latency_break-down_by_country">View average app start latency break-down by country</h3> 
+<pre>SELECT AVG(trace_info.duration_us), country
+FROM `TABLE_NAME`
+WHERE _PARTITIONTIME &gt; TIMESTAMP("YYYY-MM-DD")
+AND event_type = "DURATION_TRACE"
+AND event_name = "_app_start"
+GROUP BY 2;</pre> <h3 id="check_the_ratio_of_frozen_frames_against_various_conditions">Check the ratio of frozen frames against various conditions</h3> <p>For example, you can check the ratio of frozen frames alongside the amount of time users spend on each screen of your app when on different radio types (WiFi, 4G, etc.).</p> 
+<pre>SELECT
+  AVG(trace_info.duration_us / 1000000) AS seconds_on_screen,
+  AVG(trace_info.screen_info.frozen_frame_ratio) AS frozen_frame_ratio,
+  event_name,
+  radio_type
+FROM `TABLE_NAME`
+WHERE _PARTITIONTIME &gt; TIMESTAMP("YYYY-MM-DD")
+AND event_type = "SCREEN_TRACE"
+GROUP BY event_name, radio_type
+ORDER BY event_name, radio_type;</pre> <h3 id="compute_cache_hit_rate_for_loading_certain_types_of_files_from_disk">Compute cache hit rate for loading certain types of files from disk</h3> <p>This analysis assumes that you instrumented a custom code trace for loading from disk with a custom attribute named <code translate="no" dir="ltr">file-extension</code> and a custom metric (a <code translate="no" dir="ltr">TRACE_METRIC</code>) named <code translate="no" dir="ltr">cache-hit</code> that is set to <code translate="no" dir="ltr">1</code> if cache hit and <code translate="no" dir="ltr">0</code> if cache miss.</p> <p>For example, you can compute the cache hit rate for loading PNG files from disk:</p> 
+<pre>SELECT AVG(trace_info.metric_info.metric_value) AS cache_hit_rate
+FROM `TABLE_NAME`
+WHERE _PARTITIONTIME &gt; TIMESTAMP("YYYY-MM-DD")
+AND event_type = "TRACE_METRIC"
+AND event_name = "cache-hit"
+AND parent_trace_name = "loadFromDisk"
+AND STRUCT("file-extension", "png") IN UNNEST(custom_attributes);</pre> <h3 id="check_for_the_time_of_day_that_users_issue_network_requests">Check for the time of day that users issue network requests</h3> <p>For example, you can check at what hour of the day users from the United States issue network requests from your app:</p> 
+<pre>SELECT
+  count(1) AS hourly_count,
+  EXTRACT(HOUR FROM event_timestamp) AS hour_of_day
+FROM `TABLE_NAME`
+WHERE _PARTITIONTIME &gt; TIMESTAMP("YYYY-MM-DD")
+AND event_type = "NETWORK_REQUEST"
+AND country = "US"
+GROUP BY 2 ORDER BY 2;</pre> <h3 id="take_your_data_anywhere">Take your Performance Monitoring data anywhere</h3> <p>Sometimes you want to access your Performance Monitoring data server-side or push it to another third-party solution. There is currently no charge for exporting data.</p> <p>You can export your data by:</p> <ul> <li><p>Using the BigQuery web UI</p></li> <li><p>Running the CLI command <a href="https://cloud.google.com/bigquery/docs/reference/bq-cli-reference#bq_extract" class="external"><code translate="no" dir="ltr">bq extract</code></a> </p></li> <li><p>Submitting an <a href="https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.extract" class="external">extract job</a> via the API or client libraries.</p></li> </ul> <h2 id="pricing">Pricing</h2> <p>There is no charge for exporting data from Performance Monitoring, and BigQuery provides generous no-cost usage limits. For detailed information, refer to <a href="https://cloud.google.com/bigquery/pricing" class="external">BigQuery pricing</a> or the <a href="https://cloud.google.com/bigquery/docs/sandbox" class="external">BigQuery sandbox</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/perf-mon/bigquery-export" class="_attribution-link">https://firebase.google.com/docs/perf-mon/bigquery-export</a>
+  </p>
+</div>

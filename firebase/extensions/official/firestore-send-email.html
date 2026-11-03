@@ -1,0 +1,52 @@
+<h1>Using the Trigger Email extension</h1> <p>The Trigger Email extension (<code translate="no" dir="ltr">firestore-send-email</code>) lets you automatically send emails based on documents in a Cloud Firestore collection. Adding a document to the collection triggers this extension to send an email built from the document's fields. The document's top-level fields specify the email sender and recipients, including <code translate="no" dir="ltr">to</code>, <code translate="no" dir="ltr">cc</code>, and <code translate="no" dir="ltr">bcc</code> options (each supporting UIDs). The document's <code translate="no" dir="ltr">message</code> field specifies the other email elements, like subject line and email body (either plaintext or HTML).</p> <p>Here's a basic example document write that would trigger this extension:</p> 
+<pre>admin.firestore().collection('mail').add({
+  to: 'someone@example.com',
+  message: {
+    subject: 'Hello from Firebase!',
+    html: 'This is an &lt;code&gt;HTML&lt;/code&gt; email body.',
+  },
+})
+</pre> <p>You can also optionally configure this extension to render emails using <a href="firestore-send-email/templates">Handlebars</a> templates.</p> <h2 id="pre-installation_setup">Pre-installation setup</h2> <p>Before you install the extension, complete these steps:</p> <ol> <li>
+<p>Set up your outgoing mail service.</p> <p>When you install the Trigger Email extension, you will need to specify the connection and authentication details of an SMTP server, which the extension uses to send emails. This is typically provided by an email delivery service such as Sendgrid, Mailgun, or Mailchimp Transactional Email, but it could also be a server you run yourself.</p>
+</li> <li>
+<p>Create an email documents collection.</p> <p>The Trigger Email extension listens for new documents in a Cloud Firestore collection that you specify. When it finds a new document, the extension sends an email based on the document's fields. You can use any Cloud Firestore collection for this purpose; the examples on this page use a collection named <code translate="no" dir="ltr">email</code>.</p>
+</li> <li>
+<p>Set up security rules for your email documents collection.</p> <p>This extension can be used to trigger email delivery directly from client applications. However, you should carefully control client access to the collection to avoid potential abuse (you don't want users able to send arbitrary emails from your company's address!).</p> <p>Security rules will vary from application to application, but you should always make sure that emails are sent only to intended recipients and free-form content is kept to a minimum. Templates can help here—you can use security rules to verify that the data being populated to the template matches your expectations for what a user should be allowed to trigger.</p>
+</li> <li>
+<p>Optional: Set up a users collection.</p> <p>Under basic usage of this extension, you specify the recipients of an email by specifying their email addresses in the <code translate="no" dir="ltr">to</code>, <code translate="no" dir="ltr">cc</code>, and <code translate="no" dir="ltr">bcc</code> fields of the message document. As an alternative, if you have a user database in Cloud Firestore, you can specify recipients using the users' UIDs. For this to work, your users collection must meet these criteria:</p> <ul> <li>The collection must be keyed on user IDs. That is, the document ID of each user document in the collection must be the user's Firebase Authentication UID.</li> <li>Each user document must have an <code translate="no" dir="ltr">email</code> field containing the user's email address.</li> </ul>
+</li> <li>
+<p>Optional: Set up a templates collection.</p> <p>You can render emails using <a href="https://handlebarsjs.com/" class="external">Handlebars templates</a>. To do so, you will need a Cloud Firestore collection to contain your templates.</p> <p>See <a href="firestore-send-email/templates">Use Handlebars templates with the Trigger Email extension</a> for details.</p>
+</li> </ol> <h2 id="install_the_extension">Install the extension</h2> <p>To install the extension, follow the steps on the <a href="../install-extensions">Install a Firebase Extension</a> page. In summary, do one of the following:</p> <ul> <li>
+<p><strong>Firebase console:</strong> Click the following button:</p> <p><a href="https://console.firebase.google.com/project/_/extensions/install" class="button button-primary">Install the Trigger Email extension</a> </p>
+</li> <li>
+<p><strong>CLI:</strong> Run the following command: </p>
+
+<pre>firebase ext:install firebase/firestore-send-email --project=projectId-or-alias</pre>
+</li> </ul> <p>When you install the extension, you will be prompted to specify your SMTP connection information and the Cloud Firestore collections you set up earlier.</p> <h2 id="use_the_extension">Use the extension</h2> <p>After installation, this extension monitors all document writes to the collection you configured. Email is delivered based on the contents of the document's fields. The top-level fields specify the email's sender and recipients. The <code translate="no" dir="ltr">message</code> field contains the details of the email to deliver, including the email body.</p> <h3 id="example_send_an_email">Example: Send an email</h3> <p>To send a simple message, add a document to your messages collection with a <code translate="no" dir="ltr">to</code> field and a <code translate="no" dir="ltr">message</code> field with the following content:</p> 
+<pre>to: ['someone@example.com'],
+message: {
+  subject: 'Hello from Firebase!',
+  text: 'This is the plaintext section of the email body.',
+  html: 'This is the &lt;code&gt;HTML&lt;/code&gt; section of the email body.',
+}
+</pre> <h3 id="sender_and_recipient_fields">Sender and recipient fields</h3> <p>The top-level fields of the document supply the email sender and recipient information. Available fields are:</p> <ul> <li>
+<strong>from:</strong> The sender's email address. If not specified in the document, uses the configured "Default FROM address" parameter.</li> <li>
+<strong>replyTo:</strong> The reply-to email address. If not specified in the document, uses the configured "Default REPLY-TO address" parameter.</li> <li>
+<strong>to:</strong> A single recipient email address or an array containing multiple recipient email addresses.</li> <li>
+<strong>toUids:</strong> An array containing the recipient UIDs.</li> <li>
+<strong>cc:</strong> A single recipient email address or an array containing multiple recipient email addresses.</li> <li>
+<strong>ccUids:</strong> An array containing the CC recipient UIDs.</li> <li>
+<strong>bcc:</strong> A single recipient email address or an array containing multiple recipient email addresses.</li> <li>
+<strong>bccUids:</strong> An array containing the BCC recipient UIDs.</li> <li>
+<strong>headers:</strong> An object of additional header fields (for example, <code translate="no" dir="ltr">{"X-Custom-Header": "value", "X-Second-Custom-Header": "value"}</code>).</li> </ul> <p><strong>NOTE:</strong> The <code translate="no" dir="ltr">toUids</code>, <code translate="no" dir="ltr">ccUids</code>, and <code translate="no" dir="ltr">bccUids</code> options deliver emails based on user UIDs keyed to email addresses within a Cloud Firestore document. To use these recipient options, you need to specify a Cloud Firestore collection for the extension's "Users collection" parameter. The extension can then read the <code translate="no" dir="ltr">email</code> field for each UID specified in the <code translate="no" dir="ltr">toUids</code>, <code translate="no" dir="ltr">ccUids</code>, and/or <code translate="no" dir="ltr">bccUids</code> fields.</p> <h3 id="message_field">Message field</h3> <p>The <code translate="no" dir="ltr">message</code> field of the document contains raw delivery information for the email. This field should generally only be populated by trusted code running in your own servers or Cloud Functions (refer to the "Security rules and sending email" section below).</p> <p>Available properties for the <code translate="no" dir="ltr">message</code> field are:</p> <ul> <li>
+<strong>messageId:</strong> A message ID header for the email, if any.</li> <li>
+<strong>subject:</strong> The subject of the email.</li> <li>
+<strong>text:</strong> The plaintext content of the email.</li> <li>
+<strong>html:</strong> The HTML content of the email.</li> <li>
+<strong>amp:</strong> The <a href="https://amp.dev/documentation/guides-and-tutorials/learn/email-spec/amp-email-format/" class="external">AMP4EMAIL</a> content of the email.</li> <li>
+<strong>attachments:</strong> An array containing attachment(s); <a href="https://nodemailer.com/message/attachments/" class="external">Nodemailer options</a> supported: utf-8 string, custom content type, URL, encoded string, data URI, and pregenerated MIME node (be aware that your email has no access to the cloud server's file system).</li> </ul> <h2 id="advanced">Advanced use</h2> <p>Learn about more advanced use of this extension:</p> <ul> <li><a href="firestore-send-email/templates">Use Handlebars templates with the Trigger Email extension</a></li> <li><a href="firestore-send-email/delivery-status">Manage delivery status with the Trigger Email extension</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/official/firestore-send-email" class="_attribution-link">https://firebase.google.com/docs/extensions/official/firestore-send-email</a>
+  </p>
+</div>

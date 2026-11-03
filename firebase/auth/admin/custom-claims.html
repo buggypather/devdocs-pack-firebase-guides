@@ -1,0 +1,510 @@
+<h1>Control Access with Custom Claims and Security Rules</h1> <p>The Firebase Admin SDK supports defining custom attributes on user accounts. This provides the ability to implement various access control strategies, including role-based access control, in Firebase apps. These custom attributes can give users different levels of access (roles), which are enforced in an application's security rules.</p> <p>User roles can be defined for the following common cases:</p> <ul> <li>Giving a user administrative privileges to access data and resources.</li> <li>Defining different groups that a user belongs to.</li> <li>Providing multi-level access: <ul> <li>Differentiating paid/unpaid subscribers.</li> <li>Differentiating moderators from regular users.</li> <li>Teacher/student application, etc.</li> </ul>
+</li> <li>Add an additional identifier on a user. For example, a Firebase user could map to a different UID in another system.</li> </ul> <p>Let's consider a case where you want to limit access to the database node "adminContent." You could do that with a database lookup on a list of admin users. However, you can achieve the same objective more efficiently using a custom user claim named <code translate="no" dir="ltr">admin</code> with the following Realtime Database rule:</p> 
+<pre>{
+  "rules": {
+    "adminContent": {
+      ".read": "auth.token.admin === true",
+      ".write": "auth.token.admin === true",
+    }
+  }
+}
+</pre> <p>Custom user claims are accessible via user's authentication tokens. In the above example, only users with <code translate="no" dir="ltr">admin</code> set to true in their token claim would have read/write access to <code translate="no" dir="ltr">adminContent</code> node. As the ID token already contains these assertions, no additional processing or lookup is needed to check for admin permissions. In addition, the ID token is a trusted mechanism for delivering these custom claims. All authenticated access must validate the ID token before processing the associated request.</p> <aside class="note"><strong>Note:</strong><span> Though they are related, do not confuse custom user claims with <em>custom authentication</em>. Custom authentication is generally used when using a different authentication system with Firebase services, or to augment Firebase Auth with providers that are not supported out of the box. Custom claims apply to users already signed in with supported providers (Email/Password, Google, Facebook, phone, etc). For example, a user signed in with Firebase Auth's Email/Password provider can have access control defined using custom claims.</span></aside> <p>The code examples and solutions described in this page draw from both the client-side Firebase Auth APIs and the server-side Auth APIs provided by the <a href="https://firebase.google.com/docs/reference/admin">Admin SDK</a>.</p> <h2 id="set_and_validate_custom_user_claims_via_the_admin_sdk">Set and validate custom user claims via the Admin SDK</h2> <p>Custom claims can contain sensitive data, therefore they should only be set from a privileged server environment by the Firebase Admin SDK.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Set admin privilege on the user corresponding to uid.
+
+getAuth()
+  .setCustomUserClaims(uid, { admin: true })
+  .then(() =&gt; {
+    // The new custom claims will propagate to the user's ID token the
+    // next time a new one is issued.
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">// Set admin privilege on the user corresponding to uid.
+Map&lt;String, Object&gt; claims = new HashMap&lt;&gt;();
+claims.put("admin", true);
+FirebaseAuth.getInstance().setCustomUserClaims(uid, claims);
+// The new custom claims will propagate to the user's ID token the
+// next time a new one is issued.
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Set admin privilege on the user corresponding to uid.
+auth.set_custom_user_claims(uid, {'admin': True})
+# The new custom claims will propagate to the user's ID token the
+# next time a new one is issued.
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">// Get an auth client from the firebase.App
+client, err := app.Auth(ctx)
+if err != nil {
+	log.Fatalf("error getting Auth client: %v\n", err)
+}
+
+// Set admin privilege on the user corresponding to uid.
+claims := map[string]interface{}{"admin": true}
+err = client.SetCustomUserClaims(ctx, uid, claims)
+if err != nil {
+	log.Fatalf("error setting custom claims %v\n", err)
+}
+// The new custom claims will propagate to the user's ID token the
+// next time a new one is issued.
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">// Set admin privileges on the user corresponding to uid.
+var claims = new Dictionary&lt;string, object&gt;()
+{
+    { "admin", true },
+};
+await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(uid, claims);
+// The new custom claims will propagate to the user's ID token the
+// next time a new one is issued.
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> this operation always overwrites the user's existing custom claims. However, if the same custom user claims are defined on a user signed in via <a href="create-custom-tokens">custom authentication</a>, the overlapping claims defined in the custom token have higher priority and always overwrite the custom user claims defined on a user via this API.<br> For example, calling <code translate="no" dir="ltr">setCustomUserClaims(uid, {foo: 'bar', key1: 'value1'})</code> and signing in the user with the custom token <code translate="no" dir="ltr">createCustomToken(uid, {foo: 'overwrite', key2: 'value2'})</code> results in the following claims on the user <code translate="no" dir="ltr">{foo: 'overwrite', key2: 'value2', key1: 'value1'})</code>.</span></aside> <p>The custom claims object should not contain any <a href="http://openid.net/specs/openid-connect-core-1_0.html#IDToken">OIDC</a> reserved key names or <a href="create-custom-tokens#reserved_custom_token_names">Firebase reserved names</a>. The payload must not exceed 1000 bytes. Custom claims must be JSON-serializable. Supported types include strings, numbers, booleans, arrays, objects, and null. Unsupported types such as Date, undefined, functions, or other non-JSON values will cause errors.</p> <p>An ID token sent to a backend server can confirm the user's identity and access level using the Admin SDK as follows:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Verify the ID token first.
+getAuth()
+  .verifyIdToken(idToken)
+  .then((claims) =&gt; {
+    if (claims.admin === true) {
+      // Allow access to requested admin resource.
+    }
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">// Verify the ID token first.
+FirebaseToken decoded = FirebaseAuth.getInstance().verifyIdToken(idToken);
+if (Boolean.TRUE.equals(decoded.getClaims().get("admin"))) {
+  // Allow access to requested admin resource.
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Verify the ID token first.
+claims = auth.verify_id_token(id_token)
+if claims['admin'] is True:
+    # Allow access to requested admin resource.
+    pass
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">// Verify the ID token first.
+token, err := client.VerifyIDToken(ctx, idToken)
+if err != nil {
+	log.Fatal(err)
+}
+
+claims := token.Claims
+if admin, ok := claims["admin"]; ok {
+	if admin.(bool) {
+		//Allow access to requested admin resource.
+	}
+}
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">// Verify the ID token first.
+FirebaseToken decoded = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(idToken);
+object isAdmin;
+if (decoded.Claims.TryGetValue("admin", out isAdmin))
+{
+    if ((bool)isAdmin)
+    {
+        // Allow access to requested admin resource.
+    }
+}
+
+</pre></section> </div> <p>You can also check a user's existing custom claims, which are available as a property on the user object:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Lookup the user associated with the specified uid.
+getAuth()
+  .getUser(uid)
+  .then((userRecord) =&gt; {
+    // The claims can be accessed on the user record.
+    console.log(userRecord.customClaims['admin']);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">// Lookup the user associated with the specified uid.
+UserRecord user = FirebaseAuth.getInstance().getUser(uid);
+System.out.println(user.getCustomClaims().get("admin"));
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Lookup the user associated with the specified uid.
+user = auth.get_user(uid)
+# The claims can be accessed on the user record.
+print(user.custom_claims.get('admin'))
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">// Lookup the user associated with the specified uid.
+user, err := client.GetUser(ctx, uid)
+if err != nil {
+	log.Fatal(err)
+}
+// The claims can be accessed on the user record.
+if admin, ok := user.CustomClaims["admin"]; ok {
+	if admin.(bool) {
+		log.Println(admin)
+	}
+}
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">// Lookup the user associated with the specified uid.
+UserRecord user = await FirebaseAuth.DefaultInstance.GetUserAsync(uid);
+Console.WriteLine(user.CustomClaims["admin"]);
+</pre></section> </div> <p>You can delete a user's custom claims by passing null for <code translate="no" dir="ltr">customClaims</code>.</p> <h2 id="propagate_custom_claims_to_the_client">Propagate custom claims to the client</h2> <p>After new claims are modified on a user via the Admin SDK, they are propagated to an authenticated user on the client side via the ID token in the following ways:</p> <ul> <li>A user signs in or re-authenticates after the custom claims are modified. The ID token issued as a result will contain the latest claims.</li> <li>An existing user session gets its ID token refreshed after an older token expires.</li> <li>An ID token is force refreshed by calling <code translate="no" dir="ltr">currentUser.getIdToken(true)</code>.</li> </ul> <h2 id="access_custom_claims_on_the_client">Access custom claims on the client</h2> <p>Custom claims can only be retrieved through the user's ID token. Access to these claims may be necessary to modify the client UI based on the user's role or access level. However, backend access should always be enforced through the ID token after validating it and parsing its claims. Custom claims should not be sent directly to the backend, as they can't be trusted outside of the token.</p> <p>Once the latest claims have propagated to a user's ID token, you can get them by retrieving the ID token:</p> <div> <section><p class="_firebase-tab"><strong>JavaScript</strong></p>
+
+<pre data-language="">import { getAuth } from "firebase/auth";
+getAuth().currentUser?.getIdTokenResult()
+  .then((idTokenResult) =&gt; {
+     // Confirm the user is an Admin.
+     if (!!idTokenResult.claims.admin) {
+       // Show admin UI.
+       showAdminUI();
+     } else {
+       // Show regular user UI.
+       showRegularUI();
+     }
+  })
+  .catch((error) =&gt; {
+    console.log(error);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+
+<pre data-language="java">user.getIdToken(false).addOnSuccessListener(new OnSuccessListener&lt;GetTokenResult&gt;() {
+  @Override
+  public void onSuccess(GetTokenResult result) {
+    boolean isAdmin = result.getClaims().get("admin");
+    if (isAdmin) {
+      // Show admin UI.
+      showAdminUI();
+    } else {
+      // Show regular user UI.
+      showRegularUI();
+    }
+  }
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">user.getIDTokenResult(completion: { (result, error) in
+  guard let admin = result?.claims?["admin"] as? NSNumber else {
+    // Show regular user UI.
+    showRegularUI()
+    return
+  }
+  if admin.boolValue {
+    // Show admin UI.
+    showAdminUI()
+  } else {
+    // Show regular user UI.
+    showRegularUI()
+  }
+})
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">user.getIDTokenResultWithCompletion:^(FIRAuthTokenResult *result,
+                                      NSError *error) {
+  if (error != nil) {
+    BOOL *admin = [result.claims[@"admin"] boolValue];
+    if (admin) {
+      // Show admin UI.
+      [self showAdminUI];
+    } else {
+      // Show regular user UI.
+      [self showRegularUI];
+    }
+  }
+}];
+</pre></section> </div> <h2 id="best_practices_for_custom_claims">Best practices for custom claims</h2> <p>Custom claims are only used to provide access control. They are not designed to store additional data (such as profile and other custom data). While this may seem like a convenient mechanism to do so, it is strongly discouraged as these claims are stored in the ID token and could cause performance issues because all authenticated requests always contain a Firebase ID token corresponding to the signed in user.</p> <ul> <li>Use custom claims to store data for controlling user access only. All other data should be stored separately via the real-time database or other server side storage.</li> <li>Custom claims are limited in size. Passing a custom claims payload greater than 1000 bytes will throw an error.</li> </ul> <h2 id="examples_and_use_cases">Examples and use cases</h2> <p>The following examples illustrate custom claims in context of specific Firebase use cases.</p> <h3 id="defining_roles_via_firebase_functions_on_user_creation">Defining roles via Firebase Functions on user creation</h3> <p>In this example, custom claims are set on a user on creation using Cloud Functions.</p> <p>Custom claims can be added using Cloud Functions, and propagated immediately with Realtime Database. The function is called only on signup using an <code translate="no" dir="ltr">onCreate</code> trigger. Once the custom claims are set, they propagate to all existing and future sessions. The next time the user signs in with the user credential, the token contains the custom claims.</p> <h4 id="client_side_implementation_javascript">Client side implementation (JavaScript)</h4> 
+<pre>import { GoogleAuthProvider, signInWithPopup, getAuth, onAuthStateChanged } from "firebase/auth";
+import { getDatabase, onValue, ref } from "firebase/database";
+
+const auth = getAuth();
+const database = getDatabase();
+
+const provider = new GoogleAuthProvider();
+
+signInWithPopup(auth, provider).catch(error =&gt; {
+  console.log(error);
+});
+
+let unsubscribeFn = null;
+let metadataRef = null;
+onAuthStateChanged(auth, user =&gt; {
+  // Remove previous listener.
+  if (unsubscribeFn) {
+    unsubscribeFn();
+  }
+  // On user login add new listener.
+  if (user) {
+    // Check if refresh is required.
+    metadataRef = ref(database, 'metadata/' + user.uid + '/refreshTime');
+    // Subscribe new listener to changes on that node.
+    unsubscribeFn = onValue(metadataRef, async (snapshot) =&gt; {
+      // Force refresh to pick up the latest custom claims changes.
+      // Note this is always triggered on first call. Further optimization could be
+      // added to avoid the initial trigger when the token is issued and already contains
+      // the latest claims.
+      user.getIdToken(true);
+    });
+  }
+});
+</pre> <h4 id="logic">Cloud Functions logic</h4> <p>A new database node (metadata/($uid)} with read/write restricted to the authenticated user is added.</p> 
+<pre>const functions = require('firebase-functions');
+const { initializeApp } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
+const { getDatabase } = require('firebase-admin/database');
+
+initializeApp();
+
+// On sign up.
+exports.processSignUp = functions.auth.user().onCreate(async (user) =&gt; {
+  // Check if user meets role criteria.
+  if (
+    user.email &amp;&amp;
+    user.email.endsWith('@admin.example.com') &amp;&amp;
+    user.emailVerified
+  ) {
+    const customClaims = {
+      admin: true,
+      accessLevel: 9
+    };
+
+    try {
+      // Set custom user claims on this newly created user.
+      await getAuth().setCustomUserClaims(user.uid, customClaims);
+
+      // Update real-time database to notify client to force refresh.
+      const metadataRef = getDatabase().ref('metadata/' + user.uid);
+
+      // Set the refresh time to the current UTC timestamp.
+      // This will be captured on the client to force a token refresh.
+      await  metadataRef.set({refreshTime: new Date().getTime()});
+    } catch (error) {
+      console.log(error);
+    }
+  }
+});
+</pre> <h4 id="database_rules">Database rules</h4> 
+<pre>{
+  "rules": {
+    "metadata": {
+      "$user_id": {
+        // Read access only granted to the authenticated user.
+        ".read": "$user_id === auth.uid",
+        // Write access only via Admin SDK.
+        ".write": false
+      }
+    }
+  }
+}
+</pre> <h3 id="defining_roles_via_an_http_request">Defining roles via an HTTP request</h3> <p>The following example sets custom user claims on a newly signed in user via an HTTP request.</p> <h4 id="client_side_implementation_javascript_2">Client side implementation (JavaScript)</h4> 
+<pre>import { GoogleAuthProvider, signInWithPopup, getAuth, onAuthStateChanged } from "firebase/auth";
+import { getDatabase, onValue, ref } from "firebase/database";
+
+const auth = getAuth();
+const database = getDatabase();
+
+const provider = new GoogleAuthProvider();
+
+signInWithPopup(auth, provider)
+.then((result) =&gt; {
+  // User is signed in. Get the ID token.
+  return result.user.getIdToken();
+})
+.then((idToken) =&gt; {
+  // Pass the ID token to the server.
+  $.post(
+    '/setCustomClaims',
+    {
+      idToken: idToken
+    },
+    (data, status) =&gt; {
+      // This is not required. You could just wait until the token is expired
+      // and it proactively refreshes.
+      if (status == 'success' &amp;&amp; data) {
+        const json = JSON.parse(data);
+        if (json &amp;&amp; json.status == 'success') {
+          // Force token refresh. The token claims will contain the additional claims.
+          auth.currentUser.getIdToken(true);
+        }
+      }
+    });
+}).catch((error) =&gt; {
+  console.log(error);
+});
+</pre> <h4 id="backend_implementation_admin_sdk">Backend implementation (Admin SDK)</h4> 
+<pre>app.post('/setCustomClaims', async (req, res) =&gt; {
+  // Get the ID token passed.
+  const idToken = req.body.idToken;
+
+  // Verify the ID token and decode its payload.
+  const claims = await getAuth().verifyIdToken(idToken);
+
+  // Verify user is eligible for additional privileges.
+  if (
+    typeof claims.email !== 'undefined' &amp;&amp;
+    typeof claims.email_verified !== 'undefined' &amp;&amp;
+    claims.email_verified &amp;&amp;
+    claims.email.endsWith('@admin.example.com')
+  ) {
+    // Add custom claims for additional privileges.
+    await getAuth().setCustomUserClaims(claims.sub, {
+      admin: true
+    });
+
+    // Tell client to refresh token on user.
+    res.end(JSON.stringify({
+      status: 'success'
+    }));
+  } else {
+    // Return nothing.
+    res.end(JSON.stringify({ status: 'ineligible' }));
+  }
+});
+</pre> <p>The same flow can be used when upgrading an existing user's access level. Take for example a free user upgrading to a paid subscription. The user's ID token is sent with the payment information to the backend server via an HTTP request. When the payment is successfully processed, the user is set as a paid subscriber via the Admin SDK. A successful HTTP response is returned to the client to force token refresh.</p> <h3 id="defining_roles_via_backend_script">Defining roles via backend script</h3> <p>A recurring script (not initiated from the client) could be set to run to update user custom claims:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">getAuth()
+  .getUserByEmail('user@admin.example.com')
+  .then((user) =&gt; {
+    // Confirm user is verified.
+    if (user.emailVerified) {
+      // Add custom claims for additional privileges.
+      // This will be picked up by the user on token refresh or next sign in on new device.
+      return getAuth().setCustomUserClaims(user.uid, {
+        admin: true,
+      });
+    }
+  })
+  .catch((error) =&gt; {
+    console.log(error);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">UserRecord user = FirebaseAuth.getInstance()
+    .getUserByEmail("user@admin.example.com");
+// Confirm user is verified.
+if (user.isEmailVerified()) {
+  Map&lt;String, Object&gt; claims = new HashMap&lt;&gt;();
+  claims.put("admin", true);
+  FirebaseAuth.getInstance().setCustomUserClaims(user.getUid(), claims);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">user = auth.get_user_by_email('user@admin.example.com')
+# Confirm user is verified
+if user.email_verified:
+    # Add custom claims for additional privileges.
+    # This will be picked up by the user on token refresh or next sign in on new device.
+    auth.set_custom_user_claims(user.uid, {
+        'admin': True
+    })
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">user, err := client.GetUserByEmail(ctx, "user@admin.example.com")
+if err != nil {
+	log.Fatal(err)
+}
+// Confirm user is verified
+if user.EmailVerified {
+	// Add custom claims for additional privileges.
+	// This will be picked up by the user on token refresh or next sign in on new device.
+	err := client.SetCustomUserClaims(ctx, user.UID, map[string]interface{}{"admin": true})
+	if err != nil {
+		log.Fatalf("error setting custom claims %v\n", err)
+	}
+
+}
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">UserRecord user = await FirebaseAuth.DefaultInstance
+    .GetUserByEmailAsync("user@admin.example.com");
+// Confirm user is verified.
+if (user.EmailVerified)
+{
+    var claims = new Dictionary&lt;string, object&gt;()
+    {
+        { "admin", true },
+    };
+    await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(user.Uid, claims);
+}
+
+</pre></section> </div> <p>Custom claims can also be modified incrementally via the Admin SDK:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">getAuth()
+  .getUserByEmail('user@admin.example.com')
+  .then((user) =&gt; {
+    // Add incremental custom claim without overwriting existing claims.
+    const currentCustomClaims = user.customClaims;
+    if (currentCustomClaims['admin']) {
+      // Add level.
+      currentCustomClaims['accessLevel'] = 10;
+      // Add custom claims for additional privileges.
+      return getAuth().setCustomUserClaims(user.uid, currentCustomClaims);
+    }
+  })
+  .catch((error) =&gt; {
+    console.log(error);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">UserRecord user = FirebaseAuth.getInstance()
+    .getUserByEmail("user@admin.example.com");
+// Add incremental custom claim without overwriting the existing claims.
+Map&lt;String, Object&gt; currentClaims = user.getCustomClaims();
+if (Boolean.TRUE.equals(currentClaims.get("admin"))) {
+  // Add level.
+  currentClaims.put("level", 10);
+  // Add custom claims for additional privileges.
+  FirebaseAuth.getInstance().setCustomUserClaims(user.getUid(), currentClaims);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">user = auth.get_user_by_email('user@admin.example.com')
+# Add incremental custom claim without overwriting existing claims.
+current_custom_claims = user.custom_claims
+if current_custom_claims.get('admin'):
+    # Add level.
+    current_custom_claims['accessLevel'] = 10
+    # Add custom claims for additional privileges.
+    auth.set_custom_user_claims(user.uid, current_custom_claims)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">user, err := client.GetUserByEmail(ctx, "user@admin.example.com")
+if err != nil {
+	log.Fatal(err)
+}
+// Add incremental custom claim without overwriting existing claims.
+currentCustomClaims := user.CustomClaims
+if currentCustomClaims == nil {
+	currentCustomClaims = map[string]interface{}{}
+}
+
+if _, found := currentCustomClaims["admin"]; found {
+	// Add level.
+	currentCustomClaims["accessLevel"] = 10
+	// Add custom claims for additional privileges.
+	err := client.SetCustomUserClaims(ctx, user.UID, currentCustomClaims)
+	if err != nil {
+		log.Fatalf("error setting custom claims %v\n", err)
+	}
+
+}
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">UserRecord user = await FirebaseAuth.DefaultInstance
+    .GetUserByEmailAsync("user@admin.example.com");
+// Add incremental custom claims without overwriting the existing claims.
+object isAdmin;
+if (user.CustomClaims.TryGetValue("admin", out isAdmin) &amp;&amp; (bool)isAdmin)
+{
+    var claims = user.CustomClaims.ToDictionary(kvp =&gt; kvp.Key, kvp =&gt; kvp.Value);
+    // Add level.
+    var level = 10;
+    claims["level"] = level;
+    // Add custom claims for additional privileges.
+    await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(user.Uid, claims);
+}
+
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/admin/custom-claims" class="_attribution-link">https://firebase.google.com/docs/auth/admin/custom-claims</a>
+  </p>
+</div>

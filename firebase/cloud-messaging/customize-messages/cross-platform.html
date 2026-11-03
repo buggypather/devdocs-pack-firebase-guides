@@ -1,0 +1,295 @@
+<h1>Customize a message across platforms</h1>     <p>The <a href="../send/admin-sdk">Firebase Admin SDK</a> and the <a href="../send/v1-api">FCM v1 HTTP API</a> lets your message requests to set all fields available in the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#Message"><code translate="no" dir="ltr">message</code></a> object. This includes:</p> <ul> <li>a common set of fields to be interpreted by <strong>all</strong> app instances that receive the message.</li> <li>platform-specific sets of fields, such as <code translate="no" dir="ltr">AndroidConfig</code> and <code translate="no" dir="ltr">WebpushConfig</code>, interpreted only by app instances running on the specified platform.</li> </ul> <p>Platform-specific blocks give you flexibility to customize messages for different platforms to ensure that they are handled correctly when received. The FCM backend will take all specified parameters into account and customize the message for each platform.</p> <h2 id="when-to-use-common-fields">When to use common fields</h2> <p>Use common fields when you're:</p> <ul> <li>Send fields to any platform</li> <li>Send messages to topics</li> </ul> <p>All app instances, regardless of platform, can interpret the following common fields:</p> <ul> <li><a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#Notification.FIELDS.title"><code translate="no" dir="ltr">message.notification.title</code></a></li> <li><a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#Notification.FIELDS.body"><code translate="no" dir="ltr">message.notification.body</code></a></li> <li><a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#Message.FIELDS.data"><code translate="no" dir="ltr">message.data</code></a></li> </ul> <h2 id="when-to-use-platform-specific-fields">When to use platform-specific fields</h2> <p>Use platform-specific fields when you want to:</p> <ul> <li>Send fields only to particular platforms</li> <li>Send platform-specific fields <em>in addition to</em> the common fields</li> </ul> <p>Whenever you want to send values only to particular platforms, use platform-specific fields. For example, to send a notification only to Apple and Web platforms but not to Android, you must use two separate sets of fields, one for Apple and one for Web.</p> <p>When you are sending messages with specific delivery options, use platform-specific fields to set them. You can specify different values per platform if you want. However, even when you want to set essentially the same value across platforms, you must use platform-specific fields. This is because each platform may interpret the value slightly differently—for example, time to live is set on Android as an expiration time in seconds, while on Apple it is set as an expiration <em>date</em>.</p> <h2 id="notification-platform-options">Notification message with platform-specific delivery options</h2> <p>The following HTTP v1 API send request sends a common notification title and content to all platforms, but also sends some platform-specific overrides. Specifically, the request:</p> <ul> <li>sets a long time to live for Android and Web platforms, while setting the APNs (Apple platforms) message priority to a low setting</li> <li>sets the appropriate keys to define the result of a user tap on the notification on Android and Apple — <code translate="no" dir="ltr">click_action</code>, and <code translate="no" dir="ltr">category</code>, respectively.</li> </ul> 
+<pre>{
+  "message":{
+     "token":"bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
+     "notification":{
+       "title":"Match update",
+       "body":"Arsenal goal in added time, score is now 3-0"
+     },
+     "android":{
+       "ttl":"86400s",
+       "notification"{
+         "click_action":"OPEN_ACTIVITY_1"
+       }
+     },
+     "apns": {
+       "headers": {
+         "apns-priority": "5",
+       },
+       "payload": {
+         "aps": {
+           "category": "NEW_MESSAGE_CATEGORY"
+         }
+       }
+     },
+     "webpush":{
+       "headers":{
+         "TTL":"86400"
+       }
+     }
+   }
+ }
+</pre> <p>To learn more, see the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages">HTTP v1 reference</a> page for more detail on the keys available in platform-specific blocks in the message body. For more information about building send requests that contain the message body, see <a href="../send/v1-api">Send a message using FCM HTTP v1 API</a>.</p> <h2 id="notification-message-color-icon">Notification message with color and icon options</h2> <p>In the following example, the send request sends a common notification title and content to all platforms, but it also sends some platform-specific overrides to Android devices.</p> <p>For Android, the request sets a special icon and color to display on Android devices. As noted in the reference for <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#androidnotification">AndroidNotification</a>, the color is specified in #rrggbb format, and the image must be a drawable icon resource local to the Android app.</p> <p>Here's an example of the visual effect on a user's device:</p> <p><img alt="Simple drawing of two devices, with one displaying a custom icon and color" src="https://firebase.google.com/static/docs/cloud-messaging/images/Icon_Notification_v2.png" width="65%"></p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const topicName = 'industry-tech';
+
+const message = {
+  notification: {
+    title: '`$FooCorp` up 1.43% on the day',
+    body: 'FooCorp gained 11.80 points to close at 835.67, up 1.43% on the day.'
+  },
+  android: {
+    notification: {
+      icon: 'stock_ticker_update',
+      color: '#7e55c3'
+    }
+  },
+  topic: topicName,
+};
+
+getMessaging().send(message)
+  .then((response) =&gt; {
+    // Response is a message ID string.
+    console.log('Successfully sent message:', response);
+  })
+  .catch((error) =&gt; {
+    console.log('Error sending message:', error);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">Message message = Message.builder()
+    .setNotification(Notification.builder()
+            .setTitle("$GOOG up 1.43% on the day")
+            .setTitle("$GOOG gained 11.80 points to close at 835.67, up 1.43% on the day.")
+            .build())
+    .setAndroidConfig(AndroidConfig.builder()
+        .setTtl(3600 * 1000)
+        .setNotification(AndroidNotification.builder()
+            .setIcon("stock_ticker_update")
+            .setColor("#f45342")
+            .build())
+        .build())
+    .setApnsConfig(ApnsConfig.builder()
+        .setAps(Aps.builder()
+            .setBadge(42)
+            .build())
+        .build())
+    .setTopic("industry-tech")
+    .build();
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">message = messaging.Message(
+    notification=messaging.Notification(
+        title='$GOOG up 1.43% on the day',
+        body='$GOOG gained 11.80 points to close at 835.67, up 1.43% on the day.',
+    ),
+    android=messaging.AndroidConfig(
+        ttl=datetime.timedelta(seconds=3600),
+        priority='normal',
+        notification=messaging.AndroidNotification(
+            icon='stock_ticker_update',
+            color='#f45342'
+        ),
+    ),
+    apns=messaging.APNSConfig(
+        payload=messaging.APNSPayload(
+            aps=messaging.Aps(badge=42),
+        ),
+    ),
+    topic='industry-tech',
+)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">oneHour := time.Duration(1) * time.Hour
+badge := 42
+message := &amp;messaging.Message{
+	Notification: &amp;messaging.Notification{
+		Title: "$GOOG up 1.43% on the day",
+		Body:  "$GOOG gained 11.80 points to close at 835.67, up 1.43% on the day.",
+	},
+	Android: &amp;messaging.AndroidConfig{
+		TTL: &amp;oneHour,
+		Notification: &amp;messaging.AndroidNotification{
+			Icon:  "stock_ticker_update",
+			Color: "#f45342",
+		},
+	},
+	APNS: &amp;messaging.APNSConfig{
+		Payload: &amp;messaging.APNSPayload{
+			Aps: &amp;messaging.Aps{
+				Badge: &amp;badge,
+			},
+		},
+	},
+	Topic: "industry-tech",
+}
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">var message = new Message
+{
+    Notification = new Notification()
+    {
+        Title = "$GOOG up 1.43% on the day",
+        Body = "$GOOG gained 11.80 points to close at 835.67, up 1.43% on the day.",
+    },
+    Android = new AndroidConfig()
+    {
+        TimeToLive = TimeSpan.FromHours(1),
+        Notification = new AndroidNotification()
+        {
+            Icon = "stock_ticker_update",
+            Color = "#f45342",
+        },
+    },
+    Apns = new ApnsConfig()
+    {
+        Aps = new Aps()
+        {
+            Badge = 42,
+        },
+    },
+    Topic = "industry-tech",
+};
+</pre></section> <section><p class="_firebase-tab"><strong>REST</strong></p>
+
+<pre data-language="">POST https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send HTTP/1.1
+
+Content-Type: application/json
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+{
+  "message":{
+     "topic":"industry-tech",
+     "notification":{
+       "title": "`$FooCorp` up 1.43% on the day",
+       "body": "FooCorp gained 11.80 points to close at 835.67, up 1.43% on the day."
+     },
+     "android":{
+       "notification":{
+         "icon":"stock_ticker_update",
+         "color":"#7e55c3"
+       }
+     }
+   }
+ }
+</pre></section> </div> <p>To learn more, see the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages">HTTP v1 reference</a> page for more detail on the keys available in platform-specific blocks in the message body.</p> <h2 id="notification-custom-image">Notification message with a custom image</h2> <p>Keep in mind:</p> <ul> <li>Images for notifications are limited to 1MB in size, and otherwise are restricted by built-in Android <a href="https://developer.android.com/guide/topics/media/media-formats#image-formats">image support</a>.</li> <li>To be able to receive and handle notification images in an Apple app, you must add a <a href="https://developer.apple.com/documentation/usernotifications/unnotificationserviceextension">Notification Service Extension</a>. The notification service extension allows your app to handle the image delivered in the FCM payload before displaying the notification to the end user, see <a href="../ios/get-started#set-up-notification-service-extension">Set up the notification service extension</a> for code sample.</li> <li>Images uploaded using the Notifications composer are limited to 300KB in size.</li> <li>Images stored or served from Cloud Storage are subject to standard <a href="https://firebase.google.com/pricing">quota limits</a>.</li> </ul> <p>In your notification send request, set the following options to enable the receiving client to handle the image delivered in the payload:</p> <ul> <li>For Android, set the following <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#AndroidConfig">AndroidConfig</a> option: <ul> <li>
+<code translate="no" dir="ltr">notification.image</code> containing the image URL</li> </ul>
+</li> <li>For iOS, set the following <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#ApnsConfig">ApnsConfig</a> options: <ul> <li>
+<code translate="no" dir="ltr">fcm_options.image</code> containing the image URL. Apple requires that the image URL includes a valid file extension to correctly identify the resource type.</li> <li><code translate="no" dir="ltr">headers({ "mutable-content": 1})</code></li> </ul>
+</li> </ul> <p>The following send request sends a common notification title to all platforms, but it also sends an image. Here's an example of the visual effect on a user's device:</p> <p><img alt="Simple drawing of an image in a display notification" src="https://firebase.google.com/static/docs/cloud-messaging/images/Image_Notification_v2.png" width="65%"></p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const topicName = 'industry-tech';
+
+const message = {
+  notification: {
+    title: 'Sparky says hello!'
+  },
+  android: {
+    notification: {
+      imageUrl: 'https://foo.bar.pizza-monster.png'
+    }
+  },
+  apns: {
+    payload: {
+      aps: {
+        'mutable-content': 1
+      }
+    },
+    fcm_options: {
+      image: 'https://foo.bar.pizza-monster.png'
+    }
+  },
+  webpush: {
+    headers: {
+      image: 'https://foo.bar.pizza-monster.png'
+    }
+  },
+  topic: topicName,
+};
+
+getMessaging().send(message)
+  .then((response) =&gt; {
+    // Response is a message ID string.
+    console.log('Successfully sent message:', response);
+  })
+  .catch((error) =&gt; {
+    console.log('Error sending message:', error);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>REST</strong></p>
+
+<pre data-language="">POST https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send HTTP/1.1
+
+Content-Type: application/json
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+{
+  "message":{
+     "topic":"industry-tech",
+     "notification":{
+       "title":"Sparky says hello!",
+     },
+     "android":{
+       "notification":{
+         "image":"https://foo.bar/pizza-monster.png"
+       }
+     },
+     "apns":{
+       "payload":{
+         "aps":{
+           "mutable-content":1
+         }
+       },
+       "fcm_options": {
+           "image":"https://foo.bar/pizza-monster.png"
+       }
+     },
+     "webpush":{
+       "headers":{
+         "image":"https://foo.bar/pizza-monster.png"
+       }
+     }
+   }
+ }
+</pre></section> </div> <p>To learn more, see the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages">HTTP v1 reference</a> page for more detail on the keys available in platform-specific blocks in the message body.</p> <h2 id="notification-click">Notification message with an associated click action</h2> <p>The following send request sends a common notification title to all platforms, but it also sends an action for the app to perform in response to the user interacting with the notification. Here's an example of the visual effect on a user's device:</p> <p><img alt="Simple drawing of a user tap opening a web page" src="https://firebase.google.com/static/docs/cloud-messaging/images/Click_Action_v2.png" width="65%"></p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const topicName = 'industry-tech';
+
+const message = {
+  notification: {
+    title: 'Breaking News....'
+  },
+  android: {
+    notification: {
+      clickAction: 'news_intent'
+    }
+  },
+  apns: {
+    payload: {
+      aps: {
+        'category': 'INVITE_CATEGORY'
+      }
+    }
+  },
+  webpush: {
+    fcmOptions: {
+      link: 'breakingnews.html'
+    }
+  },
+  topic: topicName,
+};
+
+getMessaging().send(message)
+  .then((response) =&gt; {
+    // Response is a message ID string.
+    console.log('Successfully sent message:', response);
+  })
+  .catch((error) =&gt; {
+    console.log('Error sending message:', error);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>REST</strong></p>
+
+<pre data-language="">POST https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send HTTP/1.1
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/customize-messages/cross-platform" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/customize-messages/cross-platform</a>
+  </p>
+</div>

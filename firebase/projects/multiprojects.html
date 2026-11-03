@@ -1,0 +1,169 @@
+<h1>Configure multiple projects</h1> <p>This page describes how to use more than one Firebase project in your app.</p> <p>Many apps need only a single Firebase project and the default set up described in the <em>Get Started</em> guides. Examples of when it can be useful to use multiple Firebase projects include:</p> <ul> <li>Setting up your development environment to use different Firebase projects based on build type or target.</li> <li>Accessing the content from multiple Firebase projects in your app.</li> </ul> <h2 id="support_different_environments">Support different environments</h2> <p>One common use case is to support separate Firebase projects for your development and production environments.</p> <p>The Web and Admin SDKs are configured by directly passing values to their initialization functions. For these SDK, you can use a runtime check to select development or production configuration variables.</p> <p>Android and Apple platforms (and their Unity and C++ wrappers) normally load configuration from a configuration file: <code translate="no" dir="ltr">GoogleService-Info.plist</code> on Apple platform and <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> on Android. These files are read into an options object (<code translate="no" dir="ltr">FIROption</code> or <code translate="no" dir="ltr">FirebaseOptions</code>) that is referenced by the Firebase application object (<code translate="no" dir="ltr">FIRApp</code> or <code translate="no" dir="ltr">FirebaseApp</code>).</p> <p>For these platforms, switching between environments is usually implemented as a build time decision, through use of different configuration files for each environment.</p> <h3 id="support_multiple_environments_in_your_apple_application">Support multiple environments in your Apple application</h3> <p>By default, <code translate="no" dir="ltr">FirebaseApp.configure()</code> will load the <code translate="no" dir="ltr">GoogleService-Info.plist</code> file bundled with the application. If your development and production environments are configured as separate targets in Xcode, you can:</p> <ul> <li>Download both <code translate="no" dir="ltr">GoogleService-Info.plist</code> files</li> <li>Store the two files in different directories</li> <li>Add both to your Xcode project</li> <li>Associate the different files with the different targets using the Target Membership panel:</li> </ul> <p><img src="https://firebase.google.com/static/docs/projects/images/multiprojects-ios-target-membership.png" alt="Target Membership panel"></p> <p>If the builds are part of a single target, the best option is to give both configuration files unique names (e.g. <code translate="no" dir="ltr">GoogleService-Info-Free.plist</code> and <code translate="no" dir="ltr">GoogleService-Info-Paid.plist</code>). Then choose at runtime which plist to load. This is shown in the following example:</p> 
+<pre>// Load a named file.
+guard 
+  let filePath = Bundle.main.path(forResource: "MyGoogleService", ofType: "plist"),
+  let fileOptions = FirebaseOptions(contentsOfFile: filePath)
+else { fatalError("Couldn't load config file.") }
+FirebaseApp.configure(options: fileOptions)</pre> <aside class="warning"><strong>Warning:</strong><span> This approach can impact Analytics collection in some circumstances, see the <a href="#reliable-analytics">reliable analytics</a> section.</span></aside> <h3 id="support_multiple_environments_in_your_android_application">Support multiple environments in your Android application</h3> <p>In Android projects, the <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file is processed into Android string resources by the <code translate="no" dir="ltr"><nobr>google-services</nobr></code> Gradle plugin. Learn about which resources are created by the plugin in <a href="../android/google-services-plugin-and-file#processing-json-file">How the JSON config file is processed</a>.</p> <p>You can have a <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file for each of your different <a href="https://developer.android.com/studio/build/build-variants.html" class="external">build variants</a> by placing each <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file in a dedicated directory named for each variant under the app module root. For example, if you have "development" and "release" build flavors, your configuration could be organized like this:</p> 
+<pre>app/
+    google-services.json
+    src/development/google-services.json
+    src/release/google-services.json
+    ...
+</pre> <p>To learn more, see <a href="../android/google-services-plugin-and-file#add-the-json-file">Add the JSON file</a>.</p> <p>These resources are then loaded by the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/provider/FirebaseInitProvider">FirebaseInitProvider</a>, which runs before your application code and initializes Firebase APIs using those values.</p> <p>Because this provider is just reading resources with known names, another option is to add the string resources directly to your app instead of using the <code translate="no" dir="ltr"><nobr>google-services</nobr></code> Gradle plugin. You can do this by:</p> <ul> <li>Removing the <code translate="no" dir="ltr"><nobr>google-services</nobr></code> Gradle plugin from your root <code translate="no" dir="ltr">build.gradle</code>
+</li> <li>Deleting the <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file from your project</li> <li>Adding the string resources directly</li> <li>Deleting <code translate="no" dir="ltr">apply plugin: 'com.google.gms.google-services'</code> from your app <code translate="no" dir="ltr">build.gradle</code>
+</li> </ul> <h2 id="use_multiple_projects_in_your_application">Use multiple projects in your application</h2> <p>Sometimes you need to access different projects using the same APIs - for example, accessing multiple database instances. In most cases there is a central Firebase application object that manages the configuration for all the Firebase APIs. This object is initialized as part of your normal setup. However, when you want to access multiple projects from a single application, you’ll need a distinct Firebase application object to reference each one individually. It’s up to you to initialize these other instances.</p> <p>In both cases, you need to first create a Firebase options object to hold the configuration data for the Firebase application. Full documentation for the options can be found in the API reference documentation for the following classes:</p> <ul> <li>Swift: <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseOptions#/c:objc(cs)FIROptions(im)initWithGoogleAppID:GCMSenderID:"><code translate="no" dir="ltr">FirebaseOptions(googleAppID:gcmSenderID:)</code></a>
+</li> <li>Android: <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/FirebaseOptions.Builder"><code translate="no" dir="ltr">FirebaseOptions.Builder</code></a>
+</li> <li>Web: <a href="https://firebase.google.com/docs/reference/js/app#initializeapp"><code translate="no" dir="ltr">initializeApp()</code></a>
+</li> <li>C++: <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/app#create"><code translate="no" dir="ltr">firebase::App::Create</code></a>
+</li> <li>Unity: <a href="https://firebase.google.com/docs/reference/unity/class/firebase/firebase-app#create"><code translate="no" dir="ltr">FirebaseApp.Create</code></a>
+</li> <li>Node.js: <a href="https://firebase.google.com/docs/reference/admin/node/firebase-admin#initializeapp"><code translate="no" dir="ltr">initializeApp</code></a>
+</li> <li>Java: <a href="https://firebase.google.com/docs/reference/admin/java/reference/com/google/firebase/FirebaseOptions.Builder"><code translate="no" dir="ltr">FirebaseOptions.Builder</code></a>
+</li> </ul> <p>The use of these classes to support multiple projects in an application is shown in the following examples:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Configure with manual options. Note that projectID and apiKey, though not
+// required by the initializer, are mandatory.
+let secondaryOptions = FirebaseOptions(googleAppID: "1:27992087142:ios:2a4732a34787067a",
+                                       gcmSenderID: "27992087142")
+secondaryOptions.apiKey = "AIzaSyBicqfAZPvMgC7NZkjayUEsrepxuXzZDsk"
+secondaryOptions.projectID = "projectid-12345"
+
+// The other options are not mandatory, but may be required
+// for specific Firebase products.
+secondaryOptions.bundleID = "com.google.firebase.devrel.FiroptionConfiguration"
+secondaryOptions.clientID = "27992087142-ola6qe637ulk8780vl8mo5vogegkm23n.apps.googleusercontent.com"
+secondaryOptions.databaseURL = "https://myproject.firebaseio.com"
+secondaryOptions.storageBucket = "myproject.appspot.com"
+secondaryOptions.deepLinkURLScheme = "myapp://"
+secondaryOptions.storageBucket = "projectid-12345.appspot.com"
+secondaryOptions.appGroupID = nil</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Manually configure Firebase Options. The following fields are REQUIRED:
+//   - Project ID
+//   - App ID
+//   - API Key
+val options = FirebaseOptions.Builder()
+    .setProjectId("my-firebase-project")
+    .setApplicationId("1:27992087142:android:ce3b6448250083d1")
+    .setApiKey("AIzaSyADUe90ULnQDuGShD9W23RDP0xmeDc6Mvw")
+    // .setDatabaseUrl(...)
+    // .setStorageBucket(...)
+    .build()</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// Manually configure Firebase Options. The following fields are REQUIRED:
+//   - Project ID
+//   - App ID
+//   - API Key
+FirebaseOptions options = new FirebaseOptions.Builder()
+        .setProjectId("my-firebase-project")
+        .setApplicationId("1:27992087142:android:ce3b6448250083d1")
+        .setApiKey("AIzaSyADUe90ULnQDuGShD9W23RDP0xmeDc6Mvw")
+        // setDatabaseURL(...)
+        // setStorageBucket(...)
+        .build();</pre></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+
+<pre data-language="javascript">// The following fields are REQUIRED:
+//  - Project ID
+//  - App ID
+//  - API Key
+const secondaryAppConfig = {
+    projectId: "&lt;PROJECT_ID&gt;",
+    appId: "&lt;APP_ID&gt;",
+    apiKey: "&lt;API_KEY&gt;",
+    // databaseURL: "...",
+    // storageBucket: "...",
+};</pre></section> <section><p class="_firebase-tab"><strong>C++</strong></p>
+
+<pre data-language="cpp">firebase::AppOptions secondary_app_options;
+
+// API key, app ID, and project ID are always required.
+secondary_app_options.set_api_key("&lt;API_KEY&gt;");
+secondary_app_options.set_app_id("&lt;GOOGLE_APP_ID&gt;");
+secondary_app_options.set_project_id("&lt;PROJECT_ID&gt;");
+
+// The following options are specific to individual Firebase products
+// and may not always be required.
+secondary_app_options.set_database_url("&lt;DATABASE_URL&gt;");
+secondary_app_options.set_messaging_sender_id("&lt;SENDER_ID&gt;");
+secondary_app_options.set_storage_bucket("&lt;STORAGE_BUCKET&gt;");
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">Firebase.AppOptions secondaryAppOptions = new Firebase.AppOptions {
+  ApiKey = "&lt;API_KEY&gt;",
+  AppId = "&lt;GOOGLE_APP_ID&gt;",
+  ProjectId = "&lt;PROJECT_ID&gt;"
+};
+</pre></section> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const secondaryServiceAccount = require('./path/to/serviceAccountKey.json');
+
+// All required options are specified by the service account,
+// add service-specific configuration like databaseURL as needed.
+const secondaryAppConfig = {
+    credential: cert(secondaryServiceAccount),
+    // databaseURL: 'https://&lt;DATABASE_NAME&gt;.firebaseio.com'
+};</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">FileInputStream serviceAccount = new FileInputStream("path/to/serviceAccountKey.json");
+
+FirebaseOptions secondaryAppConfig = new FirebaseOptions.Builder()
+  .setCredential(FirebaseCredentials.fromCertificate(serviceAccount))
+  .setDatabaseUrl("https://&lt;DATABASE_NAME&gt;.firebaseio.com/")
+  .build();
+</pre></section> </div> <p>After you have initialized this options object, you can use it to configure an additional Firebase application instance. Note that in all the examples shown below we use the string <em>secondary</em>. This name is used to retrieve the application instance, and to distinguish it from other instances, including the default instance (named <em>[DEFAULT]</em>). You should pick a string appropriate to the intended use of the other Firebase project.</p> <p>The following snippets demonstrate connecting to an alternative Realtime Database (the APIs for other Firebase features follow the same pattern).</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Configure an alternative FIRApp.
+FirebaseApp.configure(name: "secondary", options: secondaryOptions)
+
+// Retrieve a previous created named app.
+guard let secondary = FirebaseApp.app(name: "secondary")
+  else { fatalError("Could not retrieve secondary app") }
+
+
+// Retrieve a Real Time Database client configured against a specific app.
+let secondaryDb = Database.database(app: secondary)</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Initialize secondary FirebaseApp.
+Firebase.initialize(context = this, options, "secondary")
+
+// Retrieve secondary FirebaseApp.
+val secondary = Firebase.app("secondary")
+// Get the database for the other app.
+val secondaryDatabase = Firebase.database(secondary)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// Initialize with secondary app
+FirebaseApp.initializeApp(this /* Context */, options, "secondary");
+
+// Retrieve secondary FirebaseApp
+FirebaseApp secondary = FirebaseApp.getInstance("secondary");</pre></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+
+<pre data-language="javascript">// Initialize another app with a different config
+const secondaryApp = firebase.initializeApp(secondaryAppConfig, "secondary");
+// Access services, such as the Realtime Database
+// secondaryApp.database();</pre></section> <section><p class="_firebase-tab"><strong>C++</strong></p>
+
+<pre data-language="cpp">firebase::App* secondary_app = firebase::App::Create(secondary_app_options, "Secondary");
+firebase::database::Database* secondary_database = firebase::database::Database::GetInstance(secondary_app);
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">var secondaryApp = Firebase.FirebaseApp.Create(secondaryAppOptions, "Secondary"));
+var secondaryDatabase = Firebase.Database.FirebaseDatabase.getInstance(secondaryApp);
+</pre></section> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Initialize another app with a different config
+const secondary = initializeApp(secondaryAppConfig, 'secondary');
+// Access services, such as the Realtime Database
+// const secondaryDatabase = secondary.database();</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">// Initialize another app with a different config
+FirebaseApp secondaryApp = FirebaseApp.initializeApp(secondaryAppConfig, "secondary");
+
+// Retrieve the database.
+FirebaseDatabase secondaryDatabase = FirebaseDatabase.getInstance(secondaryApp);
+</pre></section> </div>
+<aside class="note"><strong>Note:</strong><span> On Android and Apple platforms, Analytics are only logged for the default app.</span></aside> <h2 id="reliable-analytics">Ensure reliable reporting for Analytics</h2> <p>Google Analytics collects events very early in the app start up flow, in some occasions before the primary Firebase app instance has been configured. In these cases, Firebase refers to the Android resource or <code translate="no" dir="ltr">GoogleService-Info.plist</code> on Apple platforms to look up the correct Google app ID to store events. For this reason, we recommend using the default configuration methods wherever possible.</p> <p>If runtime configuration is required, please note the following caveats:</p> <ol> <li>If you're using AdMob and request ads at startup as recommended, you may miss some Analytics data to related to mobile ads when not using the resource based configuration approach.</li> <li>Only ever supply a single Google app ID in each distributed variant of your app. For example, if you ship version 1 of your app with a certain <code translate="no" dir="ltr">GOOGLE_APP_ID</code> in the configuration then upload version 2 with a different ID, it may cause analytics data to be dropped.</li> <li>On Apple platforms, do not add GoogleService-Info.plist to your project if you are supplying different configuration at run time, as this can result in an apparent change of <code translate="no" dir="ltr">GOOGLE_APP_ID</code> and result in lost Analytics.</li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/projects/multiprojects" class="_attribution-link">https://firebase.google.com/docs/projects/multiprojects</a>
+  </p>
+</div>

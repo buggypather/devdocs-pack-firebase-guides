@@ -1,0 +1,258 @@
+<h1>Easily add sign-in to your Web app with FirebaseUI</h1> <p><img src="https://firebase.google.com/static/docs/auth/images/firebaseui-web-light.jpg" class="attempt-right" style="max-width: calc((100% - 40px)/3);"></p> <p>FirebaseUI for Web is a set of libraries built on the <a href="https://firebase.google.com/auth">Firebase Authentication</a> JavaScript SDK that help you ship authentication flows quickly.</p> <p>FirebaseUI for Web provides these benefits:</p> <ul> <li>Modern modular SDK support with <code translate="no" dir="ltr">initializeApp(...)</code> and the current Firebase JS SDK.</li> <li>Composable screens, forms, and buttons instead of a single monolithic widget.</li> <li>Support for React, Shadcn, and Angular.</li> <li>Configurable behaviors for redirect vs popup flows, Google One Tap, anonymous upgrade, phone settings, and more.</li> <li>Localization support via <code translate="no" dir="ltr">@firebase-oss/ui-translations</code>.</li> <li>Built-in support for email/password, email link, phone auth, OAuth providers, and multi-factor flows.</li> </ul> <aside class="note"><strong>Note:</strong><span> If you are migrating from FirebaseUI v6 or earlier, read <a href="https://github.com/firebase/firebaseui-web/blob/main/MIGRATION.md" class="external">the migration guide</a> in the FirebaseUI repository.</span></aside> <p>This guide walks through installation, initialization, sign-in methods, and common configuration for React, Shadcn, and Angular apps.</p> <h2 id="before-you-begin">Before you begin</h2> <ol> <li>
+<p>Add Firebase to your web app:</p> <p>Enable <strong>Authentication</strong> in the <a href="https://console.firebase.google.com/">Firebase console</a>.</p> <p>Install <code translate="no" dir="ltr">firebase</code> if it is not already in your project:</p> 
+<pre>npm install firebase
+</pre> <p>Use the modular Firebase JS SDK:</p> 
+<pre>import { initializeApp } from 'firebase/app';
+
+const app = initializeApp({
+  /* your Firebase config */
+});
+</pre>
+</li> <li>
+<p>Choose your platform and install FirebaseUI:</p> <p>For <a href="https://ui.shadcn.com/" class="external">shadcn/ui</a> based React apps, add the Firebase registry to <code translate="no" dir="ltr">components.json</code>:</p> 
+<pre>{
+  "registries": {
+    "@firebase": "https://firebaseopensource.com/r/{name}.json"
+  }
+}
+</pre> <p>The auth components used throughout this guide are available from that registry, including <code translate="no" dir="ltr">sign-in-auth-screen</code>, <code translate="no" dir="ltr">sign-up-auth-screen</code>, <code translate="no" dir="ltr">email-link-auth-screen</code>, <code translate="no" dir="ltr">oauth-screen</code>, <code translate="no" dir="ltr">phone-auth-screen</code>, <code translate="no" dir="ltr">google-sign-in-button</code>, <code translate="no" dir="ltr">apple-sign-in-button</code>, and <code translate="no" dir="ltr">github-sign-in-button</code>.</p> <p>Then add the components you want to use:</p> 
+<pre>npx shadcn@latest add @firebase/sign-in-auth-screen @firebase/google-sign-in-button
+</pre> <p>This installs the underlying React FirebaseUI dependencies for you.</p> <p>For React apps without shadcn/ui, install:</p> 
+<pre>npm install @firebase-oss/ui-react@beta @firebase-oss/ui-styles
+</pre> <p>For Angular apps, install:</p> 
+<pre>npm install @angular/fire @firebase-oss/ui-angular@beta @firebase-oss/ui-core@beta @firebase-oss/ui-styles@beta
+</pre>
+</li> </ol> <h2 id="initialize-firebaseui">Initialize FirebaseUI</h2> <p>Create a shared UI store with <code translate="no" dir="ltr">initializeUI(...)</code>, then pass it to your framework integration.</p> <h3 id="react">React</h3> 
+<pre>import { initializeApp } from 'firebase/app';
+import { initializeUI } from '@firebase-oss/ui-core';
+import { FirebaseUIProvider } from '@firebase-oss/ui-react';
+
+const app = initializeApp({
+  /* your Firebase config */
+});
+
+const ui = initializeUI({
+  app,
+});
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+  return &lt;FirebaseUIProvider ui={ui}&gt;{children}&lt;/FirebaseUIProvider&gt;;
+}
+</pre> <h3 id="shadcn">Shadcn</h3> <p>Shadcn uses the same setup as React, because it also uses <code translate="no" dir="ltr">@firebase-oss/ui-react</code> under the hood:</p> 
+<pre>import { initializeApp } from 'firebase/app';
+import { initializeUI } from '@firebase-oss/ui-core';
+import { FirebaseUIProvider } from '@firebase-oss/ui-react';
+
+const app = initializeApp({
+  /* your Firebase config */
+});
+
+const ui = initializeUI({
+  app,
+});
+
+export function AppProviders({ children }: { children: React.ReactNode }) {
+  return &lt;FirebaseUIProvider ui={ui}&gt;{children}&lt;/FirebaseUIProvider&gt;;
+}
+</pre> <p>These components use your existing shadcn styles; you typically do not import FirebaseUI's bundled CSS when using the shadcn registry.</p> <h3 id="angular">Angular</h3> 
+<pre>import { type ApplicationConfig } from '@angular/core';
+import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { provideFirebaseUI } from '@firebase-oss/ui-angular';
+import { initializeUI } from '@firebase-oss/ui-core';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideFirebaseApp(() =&gt;
+      initializeApp({
+        /* your Firebase config */
+      }),
+    ),
+    provideFirebaseUI((apps) =&gt;
+      initializeUI({
+        app: apps[0],
+      }),
+    ),
+  ],
+};
+</pre> <h2 id="include-styles">Include styles</h2> <p>FirebaseUI has pre-built UI components for React and Angular. To use the components, you need to include their CSS:</p> <p>If you are using Tailwind with React or Angular:</p> <p>Otherwise, include the FirebaseUI styles:</p> 
+<pre>@import '@firebase-oss/ui-styles/dist.min.css';
+</pre> <p>FirebaseUI for Web supports custom theming via CSS variable overrides. For more details, see the <a href="https://github.com/firebase/firebaseui-web#theming" class="external">theming documentation</a>.</p> <h2 id="set-up-sign-in-methods">Set up sign-in methods</h2> <p>Before users can sign in, enable each provider you want in <strong>Authentication</strong> -&gt; <strong>Sign-in method</strong> in the Firebase console.</p> <p>FirebaseUI for Web uses screens, forms, and buttons that you render directly. Shared configuration for those flows lives in <code translate="no" dir="ltr">behaviors</code> passed to <code translate="no" dir="ltr">initializeUI(...)</code>.</p> <h3 id="email_address_and_password">Email address and password</h3> <ol> <li>Enable <strong>Email/Password</strong> in the Firebase console.</li> <li>Render <code translate="no" dir="ltr">SignInAuthScreen</code> or <code translate="no" dir="ltr">SignUpAuthScreen</code> in React, the generated <code translate="no" dir="ltr">sign-in-auth-screen</code> or <code translate="no" dir="ltr">sign-up-auth-screen</code> components in Shadcn, or <code translate="no" dir="ltr">fui-sign-in-auth-screen</code> or <code translate="no" dir="ltr">fui-sign-up-auth-screen</code> in Angular.</li> </ol> <h3 id="email_link_authentication">Email link authentication</h3> <ol> <li>Enable <strong>Email/Password</strong> and <strong>Email link (passwordless sign-in)</strong> in the Firebase console.</li> <li>Render <code translate="no" dir="ltr">EmailLinkAuthScreen</code> in React, the generated <code translate="no" dir="ltr">email-link-auth-screen</code> component in Shadcn, or <code translate="no" dir="ltr">fui-email-link-auth-screen</code> in Angular.</li> <li>Complete sign-in with the current URL using the core helpers when needed.</li> </ol> 
+<pre>import { completeEmailLinkSignIn } from '@firebase-oss/ui-core';
+
+await completeEmailLinkSignIn(ui, window.location.href);
+</pre> <h3 id="oauth_providers">OAuth providers</h3> <p>FirebaseUI for Web supports built-in buttons for providers such as Google, Apple, Facebook, GitHub, Microsoft, and X/Twitter.</p> <ol> <li>Enable the provider in the Firebase console.</li> <li>Add your app domain to <strong>Authorized domains</strong> where required.</li> <li>Render <code translate="no" dir="ltr">OAuthScreen</code> with the provider buttons you want, such as <code translate="no" dir="ltr">GoogleSignInButton</code>, <code translate="no" dir="ltr">AppleSignInButton</code>, <code translate="no" dir="ltr">FacebookSignInButton</code>, <code translate="no" dir="ltr">GitHubSignInButton</code>, <code translate="no" dir="ltr">MicrosoftSignInButton</code>, or <code translate="no" dir="ltr">TwitterSignInButton</code> in React, the generated shadcn equivalents in your app, or <code translate="no" dir="ltr">fui-oauth-screen</code> with <code translate="no" dir="ltr">fui-google-sign-in-button</code>, <code translate="no" dir="ltr">fui-apple-sign-in-button</code>, <code translate="no" dir="ltr">fui-facebook-sign-in-button</code>, <code translate="no" dir="ltr">fui-github-sign-in-button</code>, <code translate="no" dir="ltr">fui-microsoft-sign-in-button</code>, or <code translate="no" dir="ltr">fui-twitter-sign-in-button</code> in Angular.</li> </ol> <h3 id="phone_number">Phone number</h3> <ol> <li>Enable <strong>Phone</strong> in the Firebase console.</li> <li>Add your app domain to <strong>Authorized domains</strong>.</li> <li>Render <code translate="no" dir="ltr">PhoneAuthScreen</code> or <code translate="no" dir="ltr">PhoneAuthForm</code> in React, the generated <code translate="no" dir="ltr">phone-auth-screen</code> or <code translate="no" dir="ltr">phone-auth-form</code> components in Shadcn, or <code translate="no" dir="ltr">fui-phone-auth-screen</code> in Angular.</li> </ol> <p>Optional: configure allowed countries, default country, or reCAPTCHA behavior:</p> 
+<pre>import {
+  countryCodes,
+  initializeUI,
+  recaptchaVerification,
+} from '@firebase-oss/ui-core';
+
+const ui = initializeUI({
+  app,
+  behaviors: [
+    countryCodes({
+      allowedCountries: ['GB', 'US', 'FR'],
+      defaultCountry: 'GB',
+    }),
+    recaptchaVerification({
+      size: 'compact',
+      theme: 'light',
+    }),
+  ],
+});
+</pre> <h2 id="customization">Customization</h2> <p>Configure shared auth behavior in <code translate="no" dir="ltr">behaviors</code> passed to <code translate="no" dir="ltr">initializeUI(...)</code>.</p> <h3 id="require_a_display_name_during_sign-up">Require a display name during sign-up</h3> 
+<pre>import { initializeUI, requireDisplayName } from '@firebase-oss/ui-core';
+
+const ui = initializeUI({
+  app,
+  behaviors: [requireDisplayName()],
+});
+</pre> <h3 id="upgrade_anonymous_users">Upgrade anonymous users</h3> <p>Use the <code translate="no" dir="ltr">autoUpgradeAnonymousUsers(...)</code> behavior to merge an anonymous session into a signed-in account.</p> 
+<pre>import {
+  autoUpgradeAnonymousUsers,
+  initializeUI,
+} from '@firebase-oss/ui-core';
+
+const ui = initializeUI({
+  app,
+  behaviors: [
+    autoUpgradeAnonymousUsers({
+      async onUpgrade(ui, oldUserId, credential) {
+        // Migrate or merge user data here if needed.
+      },
+    }),
+  ],
+});
+</pre> <p>For migration details, see <a href="https://github.com/firebase/firebaseui-web/blob/main/MIGRATION.md" class="external">MIGRATION.md</a>).</p> <h2 id="sign-in">Sign in</h2> <p>Render the auth screen you want and handle success in component callbacks or Angular outputs.</p> <h3 id="react_2">React</h3> ```tsx import { SignInAuthScreen } from '@firebase-oss/ui-react'; import { useNavigate } from 'react-router'; <p>export function SignInPage() { const navigate = useNavigate();</p> <p>return ( <signinauthscreen onsignin="{()"> { navigate('/dashboard'); }} /&gt; ); } ``` <h3 id="shadcn_2">Shadcn</h3> <p>Shadcn uses the same runtime and flow as React. The only difference is that you import the generated component from your app instead of from <code translate="no" dir="ltr">@firebase-oss/ui-react</code>:</p> ```tsx import { SignInAuthScreen } from '@/components/sign-in-auth-screen'; import { useNavigate } from 'react-router';</signinauthscreen></p> <p>export function SignInPage() { const navigate = useNavigate();</p> <p>return ( <signinauthscreen onsignin="{()"> { navigate('/dashboard'); }} /&gt; ); } ``` <h3 id="angular_2">Angular</h3> 
+<pre>import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { SignInAuthScreenComponent } from '@firebase-oss/ui-angular';
+import type { User } from '@angular/fire/auth';
+
+@Component({
+  selector: 'app-sign-in-page',
+  standalone: true,
+  imports: [SignInAuthScreenComponent],
+  template: `
+    &lt;fui-sign-in-auth-screen (signIn)="onSignIn($event)" /&gt;
+  `,
+})
+export class SignInPageComponent {
+  constructor(private router: Router) {}
+
+  onSignIn(user: User) {
+    this.router.navigate(['/dashboard']);
+  }
+}
+</pre> <h2 id="sign-out">Sign out</h2> <p>To sign users out, use the standard Firebase Authentication sign-out API:</p> 
+<pre>import { getAuth, signOut } from 'firebase/auth';
+
+const auth = getAuth(app);
+await signOut(auth);
+</pre> <h2 id="oauth-providers-popup-vs-redirect">OAuth providers: popup vs redirect</h2> <p>Choose the provider sign-in flow with behaviors:</p> <ul> <li>
+<code translate="no" dir="ltr">providerPopupStrategy()</code> for popup flows</li> <li>
+<code translate="no" dir="ltr">providerRedirectStrategy()</code> for redirect flows</li> </ul> <p>Popup is the default, so you only need to configure redirect explicitly:</p> 
+<pre>import { initializeUI, providerRedirectStrategy } from '@firebase-oss/ui-core';
+
+const ui = initializeUI({
+  app,
+  behaviors: [providerRedirectStrategy()],
+});
+</pre> <p>To render OAuth buttons, add them to your platform-specific screen.</p> <h3 id="react_3">React</h3> 
+<pre>import {
+  GitHubSignInButton,
+  GoogleSignInButton,
+  OAuthScreen,
+} from '@firebase-oss/ui-react';
+
+export function OAuthPage() {
+  return (
+    &lt;OAuthScreen&gt;
+      &lt;GoogleSignInButton /&gt;
+      &lt;GitHubSignInButton /&gt;
+    &lt;/OAuthScreen&gt;
+  );
+}
+</pre> <h3 id="shadcn_3">Shadcn</h3> 
+<pre>import { GitHubSignInButton } from '@/components/github-sign-in-button';
+import { GoogleSignInButton } from '@/components/google-sign-in-button';
+import { OAuthScreen } from '@/components/oauth-screen';
+
+export function OAuthPage() {
+  return (
+    &lt;OAuthScreen&gt;
+      &lt;GoogleSignInButton /&gt;
+      &lt;GitHubSignInButton /&gt;
+    &lt;/OAuthScreen&gt;
+  );
+}
+</pre> <h3 id="angular_3">Angular</h3> 
+<pre>import { Component } from '@angular/core';
+import {
+  GithubSignInButtonComponent,
+  GoogleSignInButtonComponent,
+  OAuthScreenComponent,
+} from '@firebase-oss/ui-angular';
+
+@Component({
+  selector: 'app-oauth-page',
+  standalone: true,
+  imports: [
+    OAuthScreenComponent,
+    GoogleSignInButtonComponent,
+    GithubSignInButtonComponent,
+  ],
+  template: `
+    &lt;fui-oauth-screen&gt;
+      &lt;fui-google-sign-in-button /&gt;
+      &lt;fui-github-sign-in-button /&gt;
+    &lt;/fui-oauth-screen&gt;
+  `,
+})
+export class OAuthPageComponent {}
+</pre> <h2 id="google-one-tap">Google One Tap</h2> <p>Use the <code translate="no" dir="ltr">oneTapSignIn(...)</code> behavior to enable Google One Tap:</p> 
+<pre>import { initializeUI, oneTapSignIn } from '@firebase-oss/ui-core';
+
+const ui = initializeUI({
+  app,
+  behaviors: [
+    oneTapSignIn({
+      clientId: 'YOUR_GOOGLE_WEB_CLIENT_ID',
+      autoSelect: false,
+      cancelOnTapOutside: false,
+    }),
+  ],
+});
+</pre> <p>Make sure Google sign-in is enabled in the Firebase console, then copy the web client ID from the Google provider settings.</p> <h2 id="terms-of-service-and-privacy-policy">Terms of service and privacy policy</h2> <p>Attach policy links through the platform provider configuration.</p> <h3 id="react_4">React</h3> ```tsx import { FirebaseUIProvider } from '@firebase-oss/ui-react';</signinauthscreen></p> <p>&lt;FirebaseUIProvider ui={ui} policies={{ termsOfServiceUrl: 'https://example.com/terms', privacyPolicyUrl: 'https://example.com/privacy', }}</p> <blockquote> <p>{children} ; ``` </p>
+</blockquote> <h3 id="shadcn_4">Shadcn</h3> <p>Use the same <code translate="no" dir="ltr">FirebaseUIProvider</code> configuration as React.</p> <h3 id="angular_4">Angular</h3> 
+<pre>import { type ApplicationConfig } from '@angular/core';
+import { provideFirebaseUIPolicies } from '@firebase-oss/ui-angular';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideFirebaseUIPolicies(() =&gt; ({
+      termsOfServiceUrl: 'https://example.com/terms',
+      privacyPolicyUrl: 'https://example.com/privacy',
+    })),
+  ],
+};
+</pre> <h2 id="translations">Translations</h2> <p>FirebaseUI for Web supports localization through <code translate="no" dir="ltr">@firebase-oss/ui-translations</code>.</p> 
+<pre>import { initializeUI } from '@firebase-oss/ui-core';
+import { registerLocale } from '@firebase-oss/ui-translations';
+
+const enUsCustom = registerLocale('en-US', {
+  labels: {
+    signIn: 'Continue',
+  },
+});
+
+const ui = initializeUI({
+  app,
+  locale: enUsCustom,
+});
+</pre> <h2 id="next-steps">Next steps</h2> <ul> <li>Read <a href="https://github.com/firebase/firebaseui-web/blob/main/README.md" class="external">README.md</a> for the full API, behaviors, and component reference.</li> <li>Read <a href="https://github.com/firebase/firebaseui-web/blob/main/MIGRATION.md" class="external">MIGRATION.md</a> if you are migrating an existing app to FirebaseUI for Web.</li> <li>See the package-specific docs in <a href="https://github.com/firebase/firebaseui-web/blob/main/packages/react/README.md" class="external">packages/react/README.md</a>, <a href="https://github.com/firebase/firebaseui-web/blob/main/packages/shadcn/README.md" class="external">packages/shadcn/README.md</a>, and <a href="https://github.com/firebase/firebaseui-web/blob/main/packages/angular/README.md" class="external">packages/angular/README.md</a>.</li> <li>Explore the examples in <a href="https://github.com/firebase/firebaseui-web/tree/main/examples/react" class="external">examples/react</a>, <a href="https://github.com/firebase/firebaseui-web/tree/main/examples/shadcn" class="external">examples/shadcn</a>, and <a href="https://github.com/firebase/firebaseui-web/tree/main/examples/angular" class="external">examples/angular</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/web/firebaseui" class="_attribution-link">https://firebase.google.com/docs/auth/web/firebaseui</a>
+  </p>
+</div>

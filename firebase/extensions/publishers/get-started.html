@@ -1,0 +1,432 @@
+<h1>Get started building an extension</h1> <p>This page walks you through the steps required to build a simple Firebase Extension, which you can install in your projects or share with others. This simple example of a Firebase Extension will watch your Realtime Database for messages and convert them to upper case.</p> <h2 id="setup">1. Set up your environment and initialize a project</h2> <p>Before you can start building an extension, you'll need to set up a build environment with the required tools.</p> <ol> <li><p>Install Node.js 16 or newer. One way to install Node is by using <a href="https://github.com/creationix/nvm" class="external">nvm</a> (or <a href="https://github.com/coreybutler/nvm-windows" class="external">nvm-windows</a>).</p></li> <li>
+<p>Install or update to the latest version of the <a href="../../cli">Firebase CLI</a>. To install or update using <code translate="no" dir="ltr">npm</code>, run this command:</p> 
+<pre>npm install -g firebase-tools</pre>
+</li> </ol> <p>Now use the Firebase CLI to initialize a new extension project:</p> <ol> <li>
+<p>Create a directory for your extension and <code translate="no" dir="ltr">cd</code> into it:</p> 
+<pre>mkdir rtdb-uppercase-messages &amp;&amp; cd rtdb-uppercase-messages</pre>
+</li> <li>
+<p>Run the Firebase CLI's <code translate="no" dir="ltr">ext:dev:init</code> command:</p> 
+<pre>firebase ext:dev:init</pre> <p>When prompted, choose JavaScript as the language for functions (but note that you can also use TypeScript when you develop your own extension), and, when asked to install dependencies, answer "yes". (Accept the defaults for any other options.) This command will set up a skeleton codebase for a new extension, from which you can start developing your extension.</p>
+</li> </ol> <p><aside class="key-point"> <strong>Key idea</strong></aside></p> <p>Use <code translate="no" dir="ltr">firebase ext:dev:init</code> to initialize a new extension directory. </p> <h2 id="try">2. Try the example extension using the emulator</h2> <p>When the Firebase CLI initialized the new extensions directory, it created a simple example function and an <code translate="no" dir="ltr">integration-tests</code> directory that contains the files necessary to run an extension using the Firebase emulator suite.</p> <p>Try running the example extension in the emulator:</p> <ol> <li>
+<p>Change to the <code translate="no" dir="ltr">integration-tests</code> directory:</p> 
+<pre>cd functions/integration-tests</pre>
+</li> <li>
+<p>Start the emulator with a demo project:</p> 
+<pre>firebase emulators:start --project=demo-test</pre> <p>The emulator loads the extension into a predefined "dummy" project (<code translate="no" dir="ltr">demo-test</code>). The extension so far consists of a single HTTP-triggered function, <code translate="no" dir="ltr">greetTheWorld</code>, which returns a "hello world" message when accessed.</p>
+</li> <li>
+<p>With the emulator still running, try the extension's <code translate="no" dir="ltr">greetTheWorld</code> function by visiting the URL it printed when you started it.</p> <p>Your browser displays the message "Hello World from greet-the-world".</p>
+</li> <li>
+<p>The source code for this function is in the extension's <code translate="no" dir="ltr">functions</code> directory. Open the source in the editor or IDE of your choice:</p> <p><em>functions/index.js</em></p> 
+<pre>const functions = require("firebase-functions/v1");
+
+exports.greetTheWorld = functions.https.onRequest((req, res) =&gt; {
+  // Here we reference a user-provided parameter
+  // (its value is provided by the user during installation)
+  const consumerProvidedGreeting = process.env.GREETING;
+
+  // And here we reference an auto-populated parameter
+  // (its value is provided by Firebase after installation)
+  const instanceId = process.env.EXT_INSTANCE_ID;
+
+  const greeting = `${consumerProvidedGreeting} World from ${instanceId}`;
+
+  res.send(greeting);
+});
+</pre>
+</li> <li>
+<p>While the emulator is running, it will automatically reload any changes you make to your Functions code. Try making a small change to the <code translate="no" dir="ltr">greetTheWorld</code> function:</p> <p><em>functions/index.js</em></p> 
+<pre>const greeting = `${consumerProvidedGreeting} everyone, from ${instanceId}`;
+</pre> <p>Save your changes. The emulator will reload your code, and now, when you visit the function URL, you'll see the updated greeting.</p>
+</li> </ol> <p><aside class="key-point"> <strong>Key idea</strong></aside></p> <p>Using the extensions emulator can speed up development by letting you quickly test and iterate on your code.</p> <p><strong>More information</strong></p> <p>Learn more about <a href="../../emulator-suite/use_extensions">using the extensions emulator</a>. </p> <h2 id="basic-yaml">3. Add basic information to extension.yaml</h2> <p>Now that you have a development environment set up and are running the extensions emulator, you can start writing your own extension.</p> <p>As a modest first step, edit the predefined extension metadata to reflect the extension you want to write instead of <code translate="no" dir="ltr">greet-the-world</code>. This metadata is stored in the <code translate="no" dir="ltr">extension.yaml</code> file.</p> <ol> <li>
+<p>Open <code translate="no" dir="ltr">extension.yaml</code> in your editor, and replace the entire contents of the file with the following:</p> 
+<pre>name: rtdb-uppercase-messages
+version: 0.0.1
+specVersion: v1beta  # Firebase Extensions specification version; don't change
+
+# Friendly display name for your extension (~3-5 words)
+displayName: Convert messages to upper case
+
+# Brief description of the task your extension performs (~1 sentence)
+description: &gt;-
+  Converts messages in RTDB to upper case
+
+author:
+  authorName: Your Name
+  url: https://your-site.example.com
+
+license: Apache-2.0  # Required license
+
+# Public URL for the source code of your extension
+sourceUrl: https://github.com/your-name/your-repo
+</pre> <p>Note the naming convention used in the <code translate="no" dir="ltr">name</code> field: official Firebase extensions are named with a prefix indicating the primary Firebase product the extension operates on, followed by a description of what the extension does. You should use the same convention in your own extensions.</p>
+</li> <li>
+<p>Since you've changed the name of your extension, you should also update your emulator configuration with the new name:</p> <ol> <li>In <code translate="no" dir="ltr">functions/integration-tests/firebase.json</code>, change <code translate="no" dir="ltr">greet-the-world</code> to <code translate="no" dir="ltr">rtdb-uppercase-messages</code>.</li> <li>Rename <code translate="no" dir="ltr">functions/integration-tests/extensions/greet-the-world.env</code> to <code translate="no" dir="ltr">functions/integration-tests/extensions/rtdb-uppercase-messages.env</code>.</li> </ol>
+</li> </ol> <p>There are still some remnants of the <code translate="no" dir="ltr">greet-the-world</code> extension remaining in your extension code, but leave them for now. You'll update those in the next few sections.</p> <p><aside class="key-point"> <strong>Key ideas</strong></aside></p> <ul> <li><p>The <code translate="no" dir="ltr">extension.yaml</code> file contains metadata about your extension. The most basic of this metadata is your extension's name and a description of what it does.</p></li> <li><p>Name your extensions with the following format: <code translate="no" dir="ltr">&lt;firebase-product&gt;-&lt;description-of-tasks-performed&gt;</code>.</p></li> </ul> <p><strong>More information</strong></p> <p>The <a href="../reference/extension-yaml"><code translate="no" dir="ltr">extension.yaml</code> reference</a> has a full specification of the file; however, this documentation will discuss specific uses of this file as you need to use them. </p> <h2 id="write-cf">4. Write a Cloud Function and declare it as an extension resource</h2> <p>Now you can get started writing some code. In this step, you will write a Cloud Function that performs the core task of your extension, which is to watch your Realtime Database for messages and convert them to upper case.</p> <ol> <li>
+<p>Open the source for the extension's functions (in the extension's <code translate="no" dir="ltr">functions</code> directory) in the editor or IDE of your choice. Replace its contents with the following:</p> <p><em>functions/index.js</em></p> 
+<pre>import { database, logger } from "firebase-functions/v1";
+
+const app = initializeApp();
+
+// Listens for new messages added to /messages/{pushId}/original and creates an
+// uppercase version of the message to /messages/{pushId}/uppercase
+// for all databases in 'us-central1'
+export const makeuppercase = database
+  .ref("/messages/{pushId}/uppercase")
+  .onCreate(async (snapshot, context) =&gt; {
+    // Grab the current value of what was written to the Realtime Database.
+    const original = snapshot.val();
+
+    // Convert it to upper case.
+    logger.log("Uppercasing", context.params.pushId, original);
+    const uppercase = original.toUpperCase();
+
+    // Setting an "uppercase" sibling in the Realtime Database.
+    const upperRef = snapshot.ref.parent.child("upper");
+    await upperRef.set(uppercase);
+});
+</pre> <p>The old function, which you replaced, was an HTTP-triggered function, which ran when an HTTP endpoint was accessed. The new function is triggered by real-time database events: it watches for new items at a particular path and, when one is detected, it writes the uppercase version of the value back to the database.</p> <p>By the way, this new file uses ECMAScript module syntax (<code translate="no" dir="ltr">import</code> and <code translate="no" dir="ltr">export</code>) instead of CommonJS (<code translate="no" dir="ltr">require</code>). To use ES modules in Node, specify <code translate="no" dir="ltr">"type": "module"</code> in <code translate="no" dir="ltr">functions/package.json</code>:</p> 
+<pre>{
+  "name": "rtdb-uppercase-messages",
+  "main": "index.js",
+  "type": "module",
+  …
+}
+</pre>
+</li> <li>
+<p>Every function in your extension must be declared in the <code translate="no" dir="ltr">extension.yaml</code> file. The example extension declared <code translate="no" dir="ltr">greetTheWorld</code> as the extension's only Cloud Function; now that you've replaced it with <code translate="no" dir="ltr">makeuppercase</code>, you also need to update its declaration.</p> <p>Open <code translate="no" dir="ltr">extension.yaml</code> and add a <code translate="no" dir="ltr">resources</code> field:</p> 
+<pre>resources:
+  - name: makeuppercase
+    type: firebaseextensions.v1beta.function
+    properties:
+      eventTrigger:
+        eventType: providers/google.firebase.database/eventTypes/ref.create
+        # DATABASE_INSTANCE (project's default instance) is an auto-populated
+        # parameter value. You can also specify an instance.
+        resource: projects/_/instances/${DATABASE_INSTANCE}/refs/messages/{pushId}/original
+      runtime: "nodejs18"
+</pre>
+</li> <li>
+<p>Since your extension is now using Realtime Database as a trigger, you need to update your emulator configuration to run the RTDB emulator alongside the Cloud Functions emulator:</p> <ol> <li><p>If the emulator is still running, stop it by pressing Ctrl-C.</p></li> <li>
+<p>From the <code translate="no" dir="ltr">functions/integration-tests</code> directory, run the following command:</p> 
+<pre>firebase init emulators</pre> <p>When asked, skip setting up a default project, then select the Functions and Database emulators. Accept the default ports and allow the setup tool to download any required files.</p>
+</li> <li>
+<p>Restart the emulator:</p> 
+<pre>firebase emulators:start --project=demo-test</pre>
+</li> </ol>
+</li> <li>
+<p>Try out your updated extension:</p> <ol> <li><p>Open the Database emulator UI using the link the emulator printed when you started it.</p></li> <li>
+<p>Edit the root node of the database:</p> <ul> <li>
+<strong>Field:</strong> <code translate="no" dir="ltr">messages</code>
+</li> <li>
+<strong>Type:</strong> <code translate="no" dir="ltr">json</code>
+</li> <li>
+<strong>Value:</strong> <code translate="no" dir="ltr">{"11": {"original": "recipe"}}</code>
+</li> </ul> <p>If everything is set up correctly, when you save your database changes, the extension's <code translate="no" dir="ltr">makeuppercase</code> function should trigger and add a child record to message 11 with the contents <code translate="no" dir="ltr">"upper": "RECIPE"</code>. Take a look at the logs and the database tabs of the emulator UI to confirm the expected results.</p>
+</li> <li><p>Try adding some more children to the <code translate="no" dir="ltr">messages</code> node (<code translate="no" dir="ltr">{"original":"any text"}</code>). Whenever you add a new record, the extension should add an <code translate="no" dir="ltr">uppercase</code> field containing the uppercase contents of the <code translate="no" dir="ltr">original</code> field.</p></li> </ol>
+</li> </ol> <p>You now have a complete, though simple, extension that operates on an RTDB instance. In the sections that follow, you will refine this extension with some additional features. Then, you'll get the extension ready to distribute to others, and finally, learn how to publish your extension on Extensions Hub.</p> <p><aside class="key-point"> <strong>Key ideas</strong></aside></p> <ul> <li>The functions that make up your extension's logic must be both defined as Cloud Functions code and declared as an extension resource in the <code translate="no" dir="ltr">extension.yaml</code> file.</li> <li>You can write functions that trigger when HTTP endpoints are accessed, or in response to events emitted by Firebase products, Google Cloud products, and other extensions.</li> </ul> <p><strong>More information</strong></p> <ul> <li>Learn more about <a href="functions">writing Cloud Functions for extensions</a>, including more about the supported event triggers.</li> <li>The <a href="../reference/extension-yaml"><code translate="no" dir="ltr">extension.yaml</code> reference</a> has a full specification of the file; however, this documentation will discuss specific uses of this file as you need to use them.</li> <li>The <a href="../../functions">Cloud Functions for Firebase documentation</a> has general information about using Cloud Functions, not specific to Firebase Extensions. </li> </ul> <h2 id="apis-roles">5. Declare APIs and roles</h2> <p>Firebase grants each instance of an installed extension limited access to the project and its data using a per-instance service account. Each account has the minimum set of permissions needed to operate. For this reason, you must explicitly declare any IAM roles your extension requires; when users install your extension, Firebase creates a service account with these roles granted and uses it to run the extension.</p> <p>You don't need to declare roles to trigger off a product's events, but you do need to declare a role to otherwise interact with it. Because the function you added in the last step writes to Realtime Database, you need to add the following declaration to <code translate="no" dir="ltr">extension.yaml</code>:</p> 
+<pre>roles:
+  - role: firebasedatabase.admin
+    reason: Allows the extension to write to RTDB.
+</pre> <p>Similarly, you declare the Google APIs that an extension uses in the <code translate="no" dir="ltr">apis</code> field. When users install your extension, they will be asked if they want to automatically enable these APIs for their project. This is typically only necessary for non-Firebase Google APIs, and isn't needed for this guide.</p> <p><aside class="key-point"> <strong>Key ideas</strong></aside></p> <ul> <li>Declare any IAM role your extension needs in the <code translate="no" dir="ltr">roles</code> field of <code translate="no" dir="ltr">extensions.yaml</code>. When installed, extensions are automatically granted these roles.</li> <li>Declare any Google APIs your extension needs in the <code translate="no" dir="ltr">apis</code> field of <code translate="no" dir="ltr">extensions.yaml</code>. When users install your extension, they can elect to automatically enable these APIs for their project.</li> <li>For documentation purposes, declare any non-Google APIs your extension needs in the <code translate="no" dir="ltr">externalServices</code> field of <code translate="no" dir="ltr">extensions.yaml</code>.</li> </ul> <p><strong>More information</strong></p> <ul> <li>Learn more about <a href="access">setting up appropriate access for an extension</a>.</li> <li>The <a href="../reference/extension-yaml"><code translate="no" dir="ltr">extension.yaml</code> reference</a> has a full specification of the file; however, this documentation will discuss specific uses of this file as you need to use them. </li> </ul> <h2 id="params">6. Define user-configurable parameters</h2> <p>The function you created in the last two steps watched a specific RTDB location for incoming messages. Sometimes, watching a specific location really is what you want, such as when your extension operates on a database structure that you use exclusively for your extension. However, most of the time, you will want to make these values configurable by users who install your extension in their projects. This way, users can make use of your extension to work with their existing database setup.</p> <p>Make the path that the extension watches for new messages user-configurable:</p> <ol> <li>
+<p>In the <code translate="no" dir="ltr">extension.yaml</code> file, add a <code translate="no" dir="ltr">params</code> section:</p> 
+<pre>- param: MESSAGE_PATH
+  label: Message path
+  description: &gt;-
+    What is the path at which the original text of a message can be found?
+  type: string
+  default: /messages/{pushId}/original
+  required: true
+  immutable: false
+</pre> <p>This defines a new string parameter that users will be prompted to set when they install your extension.</p>
+</li> <li>
+<p>Still in the <code translate="no" dir="ltr">extension.yaml</code> file, go back to your <code translate="no" dir="ltr">makeuppercase</code> declaration and change the <code translate="no" dir="ltr">resource</code> field to the following:</p> 
+<pre>resource: projects/_/instances/${DATABASE_INSTANCE}/refs/${param:MESSAGE_PATH}
+</pre> <p>The <code translate="no" dir="ltr">${param:MESSAGE_PATH}</code> token is a reference to the parameter you just defined. When your extension runs, this token will be replaced by whatever value the user configured for that parameter, with the result that the <code translate="no" dir="ltr">makeuppercase</code> function will listen to the path the user specified. You can use this syntax to reference any user-defined parameter anywhere in <code translate="no" dir="ltr">extension.yaml</code> (and in <code translate="no" dir="ltr">POSTINSTALL.md</code>—more on that later).</p>
+</li> <li>
+<p>You can also access user-defined parameters from your functions code.</p> <p>In the function you wrote in the last section, you hard-coded the path to watch for changes. Change the trigger definition to reference the user-defined value instead:</p> <p><em>functions/index.js</em></p> 
+<pre>export const makeuppercase = database.ref(process.env.MESSAGE_PATH).onCreate
+</pre> <p>Note that in Firebase Extensions, this change is purely for the sake of documentation: when a Cloud Function is deployed as part of an extension, it uses the trigger definition from the <code translate="no" dir="ltr">extension.yaml</code> file and ignores the value specified in the function definition. Nevertheless, it's a good idea to document in your code where this value comes from.</p>
+</li> <li>
+<p>You might find it disappointing to make a code change that has no runtime effect, but the important lesson to take away is that you can access any user-defined parameter in your function code and use it as an ordinary value in the function's logic. As a nod to this capability, add the following log statement to demonstrate that you are indeed accessing the value that the user defined:</p> <p><em>functions/index.js</em></p> 
+<pre>export const makeuppercase = database.ref(process.env.MESSAGE_PATH).onCreate(
+  async (snapshot, context) =&gt; {
+    logger.log("Found new message at ", snapshot.ref);
+
+    // Grab the current value of what was written to the Realtime Database.
+    ...
+</pre>
+</li> <li>
+<p>Normally, users are prompted to provide values for parameters when they install an extension. When you use the emulator for testing and development, however, you skip the installation process, so you instead provide values for user-defined parameters using an <code translate="no" dir="ltr">env</code> file.</p> <p>Open <code translate="no" dir="ltr">functions/integration-tests/extensions/rtdb-uppercase-messages.env</code> and replace the <code translate="no" dir="ltr">GREETING</code> definition with the following:</p> 
+<pre>MESSAGE_PATH=/msgs/{pushId}/original
+</pre> <p>Notice that the path above is different from the default path and from the path you defined previously; this is just to prove to yourself when you try your updated extension that your definition is taking effect.</p>
+</li> <li>
+<p>Now, restart the emulator and once again visit the database emulator UI.</p> <p>Edit the root node of the database, using the path you defined above:</p> <ul> <li>
+<strong>Field:</strong> <code translate="no" dir="ltr">msgs</code>
+</li> <li>
+<strong>Type:</strong> <code translate="no" dir="ltr">json</code>
+</li> <li>
+<strong>Value:</strong> <code translate="no" dir="ltr">{"11": {"original": "recipe"}}</code>
+</li> </ul> <p>When you save your database changes, the extension's <code translate="no" dir="ltr">makeuppercase</code> function should trigger as it did before, but now it should also print the user-defined parameter to the console log.</p>
+</li> </ol> <p><aside class="key-point"> <strong>Key ideas</strong></aside></p> <ul> <li>You can give users the ability to customize your extension for their needs by declaring user-defined parameters in the <code translate="no" dir="ltr">extension.yaml</code> file. Users are prompted to define these values when they install your extension.</li> <li>You can reference user-defined parameter values within the <code translate="no" dir="ltr">extension.yaml</code> file and in the <code translate="no" dir="ltr">POSTINSTALL.md</code> file using the following syntax: <code translate="no" dir="ltr">${param:PARAMETER_NAME}</code>
+</li> <li>You can access user-defined parameter values within your Cloud Functions code as environment variables: <code translate="no" dir="ltr">process.env.PARAMETER_NAME</code>
+</li> <li>When testing using the emulator, define user parameters in the <code translate="no" dir="ltr">&lt;extension-name&gt;.env</code> file.</li> </ul> <p><strong>More information</strong></p> <p>Learn more about <a href="parameters">setting up and using parameters in your extension</a>. </p> <h2 id="hooks">7. Provide event hooks for user-defined logic</h2> <p>You've already seen, as an extension author, how a Firebase product can trigger your extension-provided logic: the creation of new records in Realtime Database triggers your <code translate="no" dir="ltr">makeuppercase</code> function. Your extension can have an analogous relationship with the users who install your extension: your <em>extension</em> can trigger logic that the <em>user</em> defines.</p> <p>An extension can provide <em>synchronous hooks</em>, <em>asynchronous hooks</em>, or both. Synchronous hooks give users a way to perform tasks that block the completion of one of the extension's functions. This can be useful, for example, to give users a way to perform custom preprocessing before an extension does its work.</p> <p>In this guide, you'll add an asynchronous hook to your extension, which will enable users to define their own processing steps to be run after your extension writes the uppercase message to Realtime Database. Asynchronous hooks use <a href="https://cloud.google.com/eventarc/docs/targets">Eventarc</a> to trigger user-defined functions. Extensions declare the types of events they emit, and when users install the extension, they choose which event types they're interested in. If they choose at least one event, Firebase will provision an Eventarc channel for the extension as part of the installation process. Users can then deploy their own cloud functions that listen on that channel and trigger when the extension publishes new events.</p> <p>Follow these steps to add an asynchronous hook:</p> <ol> <li>
+<p>In the <code translate="no" dir="ltr">extension.yaml</code> file, add the following section, which declares the one event type the extension emits:</p> 
+<pre>events:
+  - type: test-publisher.rtdb-uppercase-messages.v1.complete
+    description: &gt;-
+      Occurs when message uppercasing completes. The event subject will contain
+      the RTDB URL of the uppercase message.
+</pre> <p>Event types must be universally unique; to ensure uniqueness, always name your events using the following format: <code translate="no" dir="ltr">&lt;publisher-id&gt;.&lt;extension-id&gt;.&lt;version&gt;.&lt;description&gt;</code>. (You don't have a publisher ID yet, so just use <code translate="no" dir="ltr">test-publisher</code> for now.)</p>
+</li> <li>
+<p>At the end of the <code translate="no" dir="ltr">makeuppercase</code> function, add some code that publishes an event of the type you just declared:</p> <p><em>functions/index.js</em></p> 
+<pre>// Import the Eventarc library:
+import { initializeApp } from "firebase-admin/app";
+import { getEventarc } from "firebase-admin/eventarc";
+
+const app = initializeApp();
+
+// In makeuppercase, after upperRef.set(uppercase), add:
+
+// Set eventChannel to a newly-initialized channel, or `undefined` if events
+// aren't enabled.
+const eventChannel =
+  process.env.EVENTARC_CHANNEL &amp;&amp;
+  getEventarc().channel(process.env.EVENTARC_CHANNEL, {
+    allowedEventTypes: process.env.EXT_SELECTED_EVENTS,
+  });
+
+// If events are enabled, publish a `complete` event to the configured
+// channel.
+eventChannel &amp;&amp;
+  eventChannel.publish({
+    type: "test-publisher.rtdb-uppercase-messages.v1.complete",
+    subject: upperRef.toString(),
+    data: {
+      "original": original,
+      "uppercase": uppercase,
+    },
+  });
+</pre> <p>This example code takes advantage of the fact that the <code translate="no" dir="ltr">EVENTARC_CHANNEL</code> environment variable is defined only when the user enabled at least one event type. if <code translate="no" dir="ltr">EVENTARC_CHANNEL</code> is not defined, the code does not attempt to publish any events.</p> <p>You can attach extra information to an Eventarc event. In the example above, the event has a <code translate="no" dir="ltr">subject</code> field that contains a reference to the newly-created value, and a <code translate="no" dir="ltr">data</code> payload that contains the original and uppercase messages. User-defined functions that trigger off the event can make use of this information.</p>
+</li> <li>
+<p>Normally, the <code translate="no" dir="ltr">EVENTARC_CHANNEL</code> and <code translate="no" dir="ltr">EXT_SELECTED_EVENTS</code> environment variables are defined based on the options the user selected during installation. For testing with the emulator, manually define these variables in the <code translate="no" dir="ltr">rtdb-uppercase-messages.env</code> file:</p> 
+<pre>EVENTARC_CHANNEL=locations/us-central1/channels/firebase
+EXT_SELECTED_EVENTS=test-publisher.rtdb-uppercase-messages.v1.complete
+</pre>
+</li> </ol> <p>At this point, you have completed the steps needed to add an asynchronous event hook to your extension.</p> <p>To try out this new feature that you have just implemented, in the next few steps, assume the role of a user who is installing the extension:</p> <ol> <li>
+<p>From the <code translate="no" dir="ltr">functions/integration-tests</code> directory, initialize a new Firebase project:</p> 
+<pre>firebase init functions</pre> <p>When prompted, decline to set up a default project, select JavaScript as the Cloud Functions language, and install the required dependencies. This project represents a <em>user's</em> project, which has your extension installed.</p>
+</li> <li>
+<p>Edit <code translate="no" dir="ltr">integration-tests/functions/index.js</code> and paste the following code:</p> 
+<pre>import { logger } from "firebase-functions/v1";
+import { onCustomEventPublished } from "firebase-functions/v2/eventarc";
+
+import { initializeApp } from "firebase-admin/app";
+import { getDatabase } from "firebase-admin/database";
+
+const app = initializeApp();
+
+export const extraemphasis = onCustomEventPublished(
+  "test-publisher.rtdb-uppercase-messages.v1.complete",
+  async (event) =&gt; {
+    logger.info("Received makeuppercase completed event", event);
+
+    const refUrl = event.subject;
+    const ref = getDatabase().refFromURL(refUrl);
+    const upper = (await ref.get()).val();
+    return ref.set(`${upper}!!!`);
+  }
+);
+</pre> <p>This is an example of a post-processing function a user might write. In this case, the function listens for the extension to publish a <code translate="no" dir="ltr">complete</code> event, and when triggered, adds three exclamation points to the newly-uppercased message.</p>
+</li> <li><p>Restart the emulator. The emulator will load the extension's functions as well as the post-processing function the "user" defined.</p></li> <li>
+<p>Visit the database emulator UI and edit the root node of the database, using the path you defined above:</p> <ul> <li>
+<strong>Field:</strong><code translate="no" dir="ltr">msgs</code>
+</li> <li>
+<strong>Type:</strong> <code translate="no" dir="ltr">json</code>
+</li> <li>
+<strong>Value:</strong> <code translate="no" dir="ltr">{"11": {"original": "recipe"}}</code>
+</li> </ul> <p>When you save your database changes, the extension's <code translate="no" dir="ltr">makeuppercase</code> function and the user's <code translate="no" dir="ltr">extraemphasis</code> function should trigger in sequence, resulting in the <code translate="no" dir="ltr">upper</code> field getting the value <code translate="no" dir="ltr">RECIPE!!!</code>.</p>
+</li> </ol> <p><aside class="key-point"> <strong>Key ideas</strong></aside></p> <ul> <li>Your extensions can include hooks that let users insert their own logic into your extension's basic operation.</li> <li>User hooks can be synchronous, which block the execution of an extension until they complete. Extensions often use synchronous hooks to perform user-defined preprocessing tasks.</li> <li>User hooks can also be asynchronous, as in the example above. Asynchronous hooks can be used to run user-defined logic that is not critical for the extension to function correctly.</li> </ul> <p><strong>More information</strong></p> <p>Learn more about <a href="user-hooks">adding hooks for user-defined logic</a>, including both asynchronous and synchronous hooks. </p> <h2 id="lifecycle-events">8. Add lifecycle event handlers</h2> <p>The extension you've written so far processes messages as they are created. But what if your users already have a database of messages when they install the extension? Firebase Extensions has a feature called <em>lifecycle event hooks</em> that you can use to trigger actions when your extension gets installed, updated, or reconfigured. In this section, you will use lifecycle event hooks to backfill a project's existing message database with uppercased messages when a user installs your extension.</p> <p>Firebase Extensions uses Cloud Tasks to run your lifecycle event handlers. You define event handlers using Cloud Functions; whenever an instance of your extension reaches one of the supported lifecycle events, if you have defined a handler, it will add the handler to a Cloud Tasks queue. Cloud Tasks will then asynchronously execute the handler. While a lifecycle event handler is running, the Firebase console will report to the user that the extension instance has a processing task in progress. It's up to your handler function to report ongoing status and task completion back to the user.</p> <p>To add a lifecycle event handler that backfills existing messages, do the following:</p> <ol> <li>
+<p>Define a new Cloud Function that's triggered by task queue events:</p> <p><em>functions/index.js</em></p> 
+<pre>import { tasks } from "firebase-functions/v1";
+
+import { getDatabase } from "firebase-admin/database";
+import { getExtensions } from "firebase-admin/extensions";
+import { getFunctions } from "firebase-admin/functions";
+
+export const backfilldata = tasks.taskQueue().onDispatch(async () =&gt; {
+  const batch = await getDatabase()
+    .ref(process.env.MESSAGE_PATH)
+    .parent.parent.orderByChild("upper")
+    .limitToFirst(20)
+    .get();
+
+  const promises = [];
+  for (const key in batch.val()) {
+    const msg = batch.child(key);
+    if (msg.hasChild("original") &amp;&amp; !msg.hasChild("upper")) {
+      const upper = msg.child("original").val().toUpperCase();
+      promises.push(msg.child("upper").ref.set(upper));
+    }
+  }
+  await Promise.all(promises);
+
+  if (promises.length &gt; 0) {
+    const queue = getFunctions().taskQueue(
+      "backfilldata",
+      process.env.EXT_INSTANCE_ID
+    );
+    return queue.enqueue({});
+  } else {
+    return getExtensions()
+      .runtime()
+      .setProcessingState("PROCESSING_COMPLETE", "Backfill complete.");
+  }
+});
+</pre> <p>Notice that the function only processes a few records before adding itself back to the task queue. This is a commonly used strategy to deal with processing tasks that cannot complete within the timeout window of a Cloud Function. Since you can't predict how many messages a user might already have in their database when they install your extension, this strategy is a good fit.</p>
+</li> <li>
+<p>In the <code translate="no" dir="ltr">extension.yaml</code> file, declare your backfill function as an extension resource that has the <code translate="no" dir="ltr">taskQueueTrigger</code> property:</p> 
+<pre>resources:
+  - name: makeuppercase
+    ...
+  - name: backfilldata
+    type: firebaseextensions.v1beta.function
+    description: &gt;-
+      Backfill existing messages with uppercase versions
+    properties:
+      runtime: "nodejs18"
+      taskQueueTrigger: {}
+</pre> <p>Then declare the function as the handler for the <code translate="no" dir="ltr">onInstall</code> lifecycle event:</p> 
+<pre>lifecycleEvents:
+  onInstall:
+    function: backfilldata
+    processingMessage: Uppercasing existing messages
+</pre>
+</li> <li>
+<p>Although backfilling existing messages is nice to have, the extension could still function without it. In situations like this, you should make running the lifecycle event handlers optional.</p> <p>To do so, add a new parameter to <code translate="no" dir="ltr">extension.yaml</code>:</p> 
+<pre>- param: DO_BACKFILL
+  label: Backfill existing messages
+  description: &gt;-
+    Generate uppercase versions of existing messages?
+  type: select
+  required: true
+  options:
+    - label: Yes
+      value: true
+    - label: No
+      value: false
+</pre> <p>Then at the beginning of the backfill function, check the value of the <code translate="no" dir="ltr">DO_BACKFILL</code> parameter and exit early if it's not set:</p> <p><em>functions/index.js</em></p> 
+<pre>if (!process.env.DO_BACKFILL) {
+  return getExtensions()
+    .runtime()
+    .setProcessingState("PROCESSING_COMPLETE", "Backfill skipped.");
+}
+</pre>
+</li> </ol> <p>With the above changes, the extension will now convert existing messages to uppercase when it is installed.</p> <p>Up to this point, you used the extension emulator to develop your extension and test ongoing changes. However, the extension emulator skips the installation process, so to test your <code translate="no" dir="ltr">onInstall</code> event handler, you'll need to install the extension in a real project. That's just as well though, since with the addition of this automatic backfill feature, the tutorial extension is now code-complete!</p> <p><aside class="key-point"> <strong>Key ideas</strong></aside></p> <ul> <li>
+<p>Lifecycle events are triggered when users perform certain extension management tasks:</p> <ul> <li>Installing an instance of an extension</li> <li>Updating an instance of an extension to a new version</li> <li>Reconfiguring an instance of an extension</li> </ul>
+</li> <li><p>You can define functions that trigger on your extension's lifecycle events.</p></li> <li><p>Use the Admin SDK's extension runtime API to report the status of a lifecycle event handler back to the user. Users will see an extension's current processing status in the Firebase console.</p></li> <li><p>Functions that operate over your entire database (such as backfill operations) often cannot complete before the Cloud Function times out. You can avoid this problem by splitting your task over several function invocations.</p></li> <li><p>If your extension includes lifecycle event handlers that are not critical for the extension to function, you should make the execution of the handler user configurable.</p></li> </ul> <p><strong>More information</strong></p> <p>Learn more about <a href="lifecycle-events">handling your extension's lifecycle events</a>. </p> <h2 id="deploy">9. Deploy into a real Firebase project</h2> <p>Although the extensions emulator is a great tool for rapidly iterating on an extension during development, at some point you'll want to try it in a real project.</p> <p>To do so, first set up a new project with some services enabled:</p> <ol> <li>In the <a href="https://console.firebase.google.com/">Firebase console</a>, add a new project.</li> <li>
+<a href="../../projects/billing/firebase-pricing-plans#upgrade-spark-to-blaze">Upgrade your project</a> to the pay-as-you-go Blaze plan. Cloud Functions for Firebase requires your project to have a billing account, so you also need a billing account to install an extension.</li> <li>In your new project, <a href="https://console.firebase.google.com/project/_/database">enable Real-time Database</a>.</li> <li>Since you want to test your extension's ability to backfill existing data on installation, import some sample data into your real-time database instance: <ol> <li>Download some <a href="https://raw.githubusercontent.com/firebase/extensions/next/samples/rtdb-uppercase-messages/rtdb-seed-data.json">seed RTDB data</a>.</li> <li>On the Real-time Database page of the Firebase console, click <strong><span class="material-icons" aria-hidden="true" translate="no">more_vert</span> (more) &gt; Import JSON</strong> and select the file you just downloaded.</li> </ol>
+</li> <li>
+<p>To enable the backfill function to use the <code translate="no" dir="ltr">orderByChild</code> method, configure the database to index messages on the value of <code translate="no" dir="ltr">upper</code>:</p> 
+<pre>{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "messages": {
+      ".indexOn": "upper"
+    }
+  }
+}
+</pre>
+</li> </ol> <p>Now install your extension from local source into the new project:</p> <ol> <li>
+<p>Create a new directory for your Firebase project:</p> 
+<pre>mkdir ~/extensions-live-test &amp;&amp; cd ~/extensions-live-test
+</pre>
+</li> <li>
+<p>Initialize a Firebase project in the working directory:</p> 
+<pre>firebase init database</pre> <p>When prompted, select the project you just created.</p>
+</li> <li>
+<p>Install the extension into your local Firebase project:</p> 
+<pre>firebase ext:install /path/to/rtdb-uppercase-messages</pre> <p>Here you can see what the user experience is like when installing an extension using the Firebase CLI tool. Be sure to select "yes" when the configuration tool asks if you want to backfill your existing database.</p> <p>After you select configuration options, the Firebase CLI will save your configuration in the <code translate="no" dir="ltr">extensions</code> directory and record the extension source location in the <code translate="no" dir="ltr">firebase.json</code> file. Collectively, these two records are called the <em>extensions manifest</em>. Users can use the manifest to save their extensions configuration and deploy it to different projects.</p>
+</li> <li>
+<p>Deploy your extension configuration to your live project:</p> 
+<pre>firebase deploy --only extensions</pre>
+</li> </ol> <p>If all goes well, the Firebase CLI should upload your extension to your project and install it. After installation completes, the backfill task will run and, in a few minutes, your database will be updated with uppercase messages. Add some new nodes to the messages database and make sure the extension is also working for new messages.</p> <p><aside class="key-point"> <strong>Key ideas</strong></aside></p> <ul> <li>Users can create an extension manifest using the <code translate="no" dir="ltr">firebase ext:install</code> command. You can also use this command to install an extension from local source.</li> <li>Deploy an extension configuration from a manifest into a live project using <code translate="no" dir="ltr">firebase deploy</code>.</li> <li>Although not demonstrated here, users can also install extensions into their projects from Extensions Hub.</li> </ul> <p><strong>More information</strong></p> <p>See the user documentation on <a href="../manifest">managing project configurations with the Extensions manifest</a>. </p> <h2 id="docs">10. Write documentation</h2> <p>Before you share your extension with users, make sure you're providing enough documentation for them to be successful.</p> <p>When you initialized the extension project, the Firebase CLI created stub versions of the minimum required documentation. Update these files to accurately reflect the extension you've built.</p> <h3 id="extension.yaml" class="hide-from-toc">extension.yaml</h3> <p>You've already been updating this file as you've developed this extension, so you don't need to make any more updates right now.</p> <p>However, don't overlook the importance of the documentation contained in this file. In addition to an extension's crucial identifying information—name, description, author, official repository location—the <code translate="no" dir="ltr">extension.yaml</code> file contains user-facing documentation for every resource and user-configurable parameter. This information is surfaced to users in the Firebase console, Extensions Hub, and Firebase CLI.</p> <h3 id="preinstall.md" class="hide-from-toc">PREINSTALL.md</h3> <p>In this file, provide information the user needs before they install your extension: briefly describe what the extension does, explain any prerequisites, and give the user information on the billing implications of installing the extension. If you have a website with additional information, this is also a good place to link it.</p> <p>The text of this file is displayed to the user in Extensions Hub and by the <code translate="no" dir="ltr">firebase ext:info</code> command.</p> <p>Here is an example of a PREINSTALL file:</p> 
+<pre>Use this extension to automatically convert strings to upper case when added to
+a specified Realtime Database path.
+
+This extension expects a database layout like the following example:
+
+    "messages": {
+      MESSAGE_ID: {
+        "original": MESSAGE_TEXT
+      },
+      MESSAGE_ID: {
+        "original": MESSAGE_TEXT
+      },
+    }
+
+When you create new string records, this extension creates a new sibling record
+with upper-cased text:
+
+    MESSAGE_ID: {
+      "original": MESSAGE_TEXT,
+      "upper": UPPERCASE_MESSAGE_TEXT,
+    }
+
+#### Additional setup
+
+Before installing this extension, make sure that you've
+[set up Realtime Database](https://firebase.google.com/docs/database/quickstart)
+in your Firebase project.
+
+#### Billing
+
+To install an extension, your project must be on the
+[Blaze (pay as you go) plan](https://firebase.google.com/pricing).
+
+- This extension uses other Firebase and Google Cloud Platform services, which
+  have associated charges if you exceed the service's no-cost tier:
+  - Realtime Database
+  - Cloud Functions (Node.js 10+ runtime)
+    [See FAQs](/docs/functions/faq-and-troubleshooting#extensions-pricing)
+- If you enable events,
+  [Eventarc fees apply](https://cloud.google.com/eventarc/pricing).
+</pre> <h3 id="postinstall.md" class="hide-from-toc">POSTINSTALL.md</h3> <p>This file contains information useful for users after they have successfully installed your extension: for example, follow-up setup steps, an example of the extension in action, and so on.</p> <p>The contents of POSTINSTALL.md are displayed in the Firebase console after an extension is configured and installed. You can reference user parameters in this file and they will be replaced by the configured values.</p> <p>Here is an example post-install file for the tutorial extension:</p> 
+<pre>### See it in action
+
+You can test out this extension right away!
+
+1.  Go to your
+    [Realtime Database dashboard](https://console.firebase.google.com/project/${param:PROJECT_ID}/database/${param:PROJECT_ID}/data) in the Firebase console.
+
+1.  Add a message string to a path that matches the pattern `${param:MESSAGE_PATH}`.
+
+1.  In a few seconds, you'll see a sibling node named `upper` that contains the
+    message in upper case.
+
+### Using the extension
+
+We recommend adding data by pushing -- for example,
+`firebase.database().ref().push()` -- because pushing assigns an automatically
+generated ID to the node in the database. During retrieval, these nodes are
+guaranteed to be ordered by the time they were added. Learn more about reading
+and writing data for your platform (iOS, Android, or Web) in the
+[Realtime Database documentation](https://firebase.google.com/docs/database/).
+
+### Monitoring
+
+As a best practice, you can
+[monitor the activity](https://firebase.google.com/docs/extensions/manage-installed-extensions#monitor)
+of your installed extension, including checks on its health, usage, and logs.
+</pre> <h3 id="changelog.md" class="hide-from-toc">CHANGELOG.md</h3> <p>You should also document the changes you make between releases of an extension in the <code translate="no" dir="ltr">CHANGELOG.md</code> file.</p> <p>Since the example extension has never been published before, the change log has only one entry:</p> 
+<pre>## Version 0.0.1
+
+Initial release of the _Convert messages to upper case_ extension.
+</pre> <h3 id="readme.md" class="hide-from-toc">README.md</h3> <p>Most extensions also provide a readme file for the benefit of users visiting the extension's repository. you can write this file by hand or generate a read me using the command.</p> <p>For the purpose of this guide, skip writing a readme file.</p> <h3 id="additional-documentation" class="hide-from-toc">Additional documentation</h3> <p>The documentation discussed above is the minimum set of documentation you should provide users. Many extensions require more detailed documentation for users to successfully use them. When this is the case, you should write additional documentation and host it somewhere you can point users to.</p> <p>For the purpose of this guide, skip writing more extensive documentation.</p> <p><aside class="key-point"> <strong>Key ideas</strong></aside></p> <ul> <li>At a minimum, every extension should provide user documentation in the following files: <code translate="no" dir="ltr">extension.yaml</code>, <code translate="no" dir="ltr">PREINSTALL.md</code>, <code translate="no" dir="ltr">POSTINSTALL.md</code>, and <code translate="no" dir="ltr">CHANGELOG.md</code>.</li> <li>You should also provide users with more detailed documentation when necessary.</li> </ul> <p><strong>More information</strong></p> <p>See the <a href="user-documentation">documentation on writing documentation</a>. </p> <h2 id="publish">11. Publish on Extensions Hub</h2> <p>Now that your extension is code complete and documented, you are ready to share it with the world on Extensions Hub. But since this is just a tutorial, don't actually do that. Go and start writing your own extension using what you've learned here and in the rest of the Firebase Extensions publisher documentation, and by examining the source of the official, Firebase-written, extensions.</p> <p>When you're ready to publish your work on Extensions Hub here's how you will do it:</p> <ol> <li>If you are publishing your first extension, <a href="register">register as an extension publisher</a>. When you register as an extensions publisher, you create a publisher ID that lets users quickly identify you as the author of your extensions.</li> <li>
+<p>Host your extension's source code in a publicly verifiable location. When your code is available from a verifiable source, Firebase can publish your extension directly from this location. Doing so helps ensure that you're publishing the currently released version of your extension, and helps users by letting them examine the code they're installing into their projects.</p> <p>Currently, this means making your extension available in a public GitHub repository.</p>
+</li> <li><p>Upload your extension to Extensions Hub using the <code translate="no" dir="ltr">firebase ext:dev:upload</code> command.</p></li> <li><p>Go to your publisher dashboard in the Firebase console, find the extension you just uploaded, and click "Publish to Extensions Hub". This requests a review from our review staff, which can take a few days. If approved, the extension will be published to Extensions Hub. If rejected, you'll get a message explaining the reason; you can then address the reported issues and resubmit for review.</p></li> </ol> <p><aside class="key-point"> <strong>Key ideas</strong></aside></p> <ul> <li>To share extensions on Extensions Hub, you must be registered as a publisher.</li> <li>Publishing from a verifiable source is required, and it gives users assurance that the code they are installing is the same code that they can examine on GitHub.</li> <li>Use the <code translate="no" dir="ltr">firebase ext:dev:upload</code> command to upload an extension to Extensions Hub.</li> <li>Submit your extensions for review from the publisher dashboard.</li> </ul> <p><strong>More information</strong></p> <p>Learn more about <a href="register">registering as a publisher</a> and <a href="upload-and-publish">publishing an extension</a>. </p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/publishers/get-started" class="_attribution-link">https://firebase.google.com/docs/extensions/publishers/get-started</a>
+  </p>
+</div>

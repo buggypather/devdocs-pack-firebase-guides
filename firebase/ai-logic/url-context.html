@@ -1,0 +1,451 @@
+<h1>URL context</h1> <p>The URL context tool lets you provide additional context to the model in the form of URLs. The model can access the content from those URLs to inform and enhance its response.</p> <p>The URL context has the following benefits:</p> <ul> <li><p><strong>Extract data</strong>: Provide specific information like prices, names, or key findings from an article or multiple URLs.</p></li> <li><p><strong>Compare information</strong>: Analyze multiple reports, articles, or PDFs to identify differences and track trends.</p></li> <li><p><strong>Synthesize and create content</strong>: Combine information from several source URLs to generate accurate summaries, blog posts, reports, or test questions.</p></li> <li><p><strong>Analyze code and technical content</strong>: Provide URLs to a GitHub repository or technical documentation to explain code, generate setup instructions, or answer questions.</p></li> </ul> <p>Make sure that you review the <a href="#best-practices">best practices</a> and the <a href="#limitations">limitations</a> when using the URL context tool.</p> <h3 id="supported-models" class="hide-from-toc">Supported models</h3> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li><code translate="no" dir="ltr">gemini-3.8-flash</code></li> <li>
+<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> and <span class='\"notranslate\"'>Gemini 2.5</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <h3 id="supported-languages" class="hide-from-toc">Supported languages</h3> <p>See <a href="models#languages">supported languages</a> for <span class='\"notranslate\"'>Gemini</span> models.</p> <h2 id="use-tool">Use the URL context tool</h2> <p>You can use the URL context tool in two main ways:</p> <ul> <li><p><a href="#use-tool-only">URL context tool only</a></p></li> <li><p>Combined with <a href="#use-tool-with-google-search">Grounding with <nobr>Google Search</nobr></a></p></li> </ul> <h3 id="use-tool-only">URL context tool only</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>When you create the <code translate="no" dir="ltr">GenerativeModel</code> instance, provide <code translate="no" dir="ltr">UrlContext</code> as a tool. Then, directly into your prompt, provide the specific URLs that you want the model to access and analyze.</p> <p>The following example shows how to compare two recipes from different websites:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+let model = ai.generativeModel(
+    modelName: "GEMINI_MODEL_NAME",
+    // Enable the URL context tool.
+    tools: [.urlContext()]
+)
+
+// Specify one or more URLs for the tool to access.
+let url1 = "FIRST_RECIPE_URL"
+let url2 = "SECOND_RECIPE_URL"
+
+// Provide the URLs in the prompt sent in the request.
+let prompt = "Compare the ingredients and cooking times from the recipes at \(url1) and \(url2)"
+
+// Get and handle the model's response.
+let response = try await model.generateContent(prompt)
+print(response.text ?? "No text in response.")
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = "GEMINI_MODEL_NAME",
+    // Enable the URL context tool.
+    tools = listOf(Tool.urlContext())
+)
+
+// Specify one or more URLs for the tool to access.
+val url1 = "FIRST_RECIPE_URL"
+val url2 = "SECOND_RECIPE_URL"
+
+// Provide the URLs in the prompt sent in the request.
+val prompt = "Compare the ingredients and cooking times from the recipes at $url1 and $url2"
+
+// Get and handle the model's response.
+val response = model.generateContent(prompt)
+print(response.text)
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+                .generativeModel("GEMINI_MODEL_NAME",
+                        null,
+                        null,
+                        // Enable the URL context tool.
+                        List.of(Tool.urlContext(new UrlContext())));
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+// Specify one or more URLs for the tool to access.
+String url1 = "FIRST_RECIPE_URL";
+String url2 = "SECOND_RECIPE_URL";
+
+// Provide the URLs in the prompt sent in the request.
+String prompt = "Compare the ingredients and cooking times from the recipes at " + url1 + " and " + url2 + "";
+
+ListenableFuture response = model.generateContent(prompt);
+  Futures.addCallback(response, new FutureCallback() {
+      @Override
+      public void onSuccess(GenerateContentResponse result) {
+          String resultText = result.getText();
+          System.out.println(resultText);
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+          t.printStackTrace();
+      }
+  }, executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+const model = getGenerativeModel(
+  ai,
+  {
+    model: "GEMINI_MODEL_NAME",
+    // Enable the URL context tool.
+    tools: [{ urlContext: {} }]
+  }
+);
+
+// Specify one or more URLs for the tool to access.
+const url1 = "FIRST_RECIPE_URL"
+const url2 = "SECOND_RECIPE_URL"
+
+// Provide the URLs in the prompt sent in the request.
+const prompt = `Compare the ingredients and cooking times from the recipes at ${url1} and ${url2}`
+
+// Get and handle the model's response.
+const result = await model.generateContent(prompt);
+console.log(result.response.text());
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_ai/firebase_ai.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'GEMINI_MODEL_NAME',
+  // Enable the URL context tool.
+  tools: [
+    Tool.urlContext(),
+  ],
+);
+
+// Specify one or more URLs for the tool to access.
+final url1 = "FIRST_RECIPE_URL";
+final url2 = "SECOND_RECIPE_URL";
+
+// Provide the URLs in the prompt sent in the request.
+final prompt = "Compare the ingredients and cooking times from the recipes at $url1 and $url2";
+
+// Get and handle the model's response.
+final response = await model.generateContent([Content.text(prompt)]);
+print(response.text);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  // Enable the URL context tool.
+  tools: new[] { new Tool(new UrlContext()) }
+);
+
+// Specify one or more URLs for the tool to access.
+var url1 = "FIRST_RECIPE_URL";
+var url2 = "SECOND_RECIPE_URL";
+
+// Provide the URLs in the prompt sent in the request.
+var prompt = $"Compare the ingredients and cooking times from the recipes at {url1} and {url2}";
+
+// Get and handle the model's response.
+var response = await model.GenerateContentAsync(prompt);
+UnityEngine.Debug.Log(response.Text ?? "No text in response.");
+
+</pre></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p> <h3 id="use-tool-with-google-search">URL context combined with Grounding with <nobr>Google Search</nobr>
+</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>You can enable both URL context and <a href="grounding-google-search">Grounding with <nobr>Google Search</nobr></a>. With this configuration, you can write prompts with or without specific URLs.</p> <p>When Grounding with <nobr>Google Search</nobr> is also enabled, the model may first use <nobr>Google Search</nobr> to find relevant information and then use the URL context tool to read the content of the search results for a more in-depth understanding of the information. This approach is powerful for prompts that require both broad searching and deep analysis of specific pages.</p> <p>Here are some use cases:</p> <ul> <li>
+<p>You provide a URL in the prompt to help with some of the generated response. However, to generate a proper response, the model still needs more information about other topics, so it uses the Grounding with <nobr>Google Search</nobr> tool.</p> <p>Example prompt:<br> <code translate="no" dir="ltr">Give me a three day event schedule based on <var translate="no">YOUR_URL</var>.
+Also what do I need to pack according to the weather?</code></p>
+</li> <li>
+<p>You don't provide a URL in the prompt at all. So, to generate a proper response, the model uses the Grounding with <nobr>Google Search</nobr> tool to find relevant URLs and then uses the URL context tool to analyze their content.</p> <p>Example prompt:<br> <code translate="no" dir="ltr">Recommend 3 beginner-level books to learn about the latest
+<var translate="no">YOUR_SUBJECT</var>.</code></p>
+</li> </ul> <p>The following example shows how to enable and use both tools — URL context and Grounding with <nobr>Google Search</nobr>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+let model = ai.generativeModel(
+    modelName: "GEMINI_MODEL_NAME",
+    // Enable both the URL context tool and Google Search tool.
+    tools: [
+      .urlContext(),
+      .googleSearch()
+    ]
+)
+
+// Specify one or more URLs for the tool to access.
+let url = "YOUR_URL"
+
+// Provide the URLs in the prompt sent in the request.
+// If the model can't generate a response using its own knowledge or the content in the specified URL,
+// then the model will use the grounding with Google Search tool.
+let prompt = "Give me a three day event schedule based on \(url). Also what do I need to pack according to the weather?"
+
+// Get and handle the model's response.
+let response = try await model.generateContent(prompt)
+print(response.text ?? "No text in response.")
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = "GEMINI_MODEL_NAME",
+    // Enable both the URL context tool and Google Search tool.
+    tools = listOf(Tool.urlContext(), Tool.googleSearch())
+)
+
+// Specify one or more URLs for the tool to access.
+val url = "YOUR_URL"
+
+// Provide the URLs in the prompt sent in the request.
+// If the model can't generate a response using its own knowledge or the content in the specified URL,
+// then the model will use the grounding with Google Search tool.
+val prompt = "Give me a three day event schedule based on $url. Also what do I need to pack according to the weather?"
+
+// Get and handle the model's response.
+val response = model.generateContent(prompt)
+print(response.text)
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+                .generativeModel("GEMINI_MODEL_NAME",
+                        null,
+                        null,
+                        // Enable both the URL context tool and Google Search tool.
+                        List.of(Tool.urlContext(new UrlContext()), Tool.googleSearch(new GoogleSearch())));
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+// Specify one or more URLs for the tool to access.
+String url = "YOUR_URL";
+
+// Provide the URLs in the prompt sent in the request.
+// If the model can't generate a response using its own knowledge or the content in the specified URL,
+// then the model will use the grounding with Google Search tool.
+String prompt = "Give me a three day event schedule based on " + url + ". Also what do I need to pack according to the weather?";
+
+ListenableFuture response = model.generateContent(prompt);
+  Futures.addCallback(response, new FutureCallback() {
+      @Override
+      public void onSuccess(GenerateContentResponse result) {
+          String resultText = result.getText();
+          System.out.println(resultText);
+      }
+
+      @Override
+      public void onFailure(Throwable t) {
+          t.printStackTrace();
+      }
+  }, executor);
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+const model = getGenerativeModel(
+  ai,
+  {
+    model: "GEMINI_MODEL_NAME",
+    // Enable both the URL context tool and Google Search tool.
+    tools: [{ urlContext: {} }, { googleSearch: {} }],
+  }
+);
+
+// Specify one or more URLs for the tool to access.
+const url = "YOUR_URL"
+
+// Provide the URLs in the prompt sent in the request.
+// If the model can't generate a response using its own knowledge or the content in the specified URL,
+// then the model will use the grounding with Google Search tool.
+const prompt = `Give me a three day event schedule based on ${url}. Also what do I need to pack according to the weather?`
+
+// Get and handle the model's response.
+const result = await model.generateContent(prompt);
+console.log(result.response.text());
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_ai/firebase_ai.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp.
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'GEMINI_MODEL_NAME',
+  // Enable both the URL context tool and Google Search tool.
+  tools: [
+    Tool.urlContext(),
+    Tool.googleSearch(),
+  ],
+);
+
+// Specify one or more URLs for the tool to access.
+final url = "YOUR_URL";
+
+// Provide the URLs in the prompt sent in the request.
+// If the model can't generate a response using its own knowledge or the content in the specified URL,
+// then the model will use the grounding with Google Search tool.
+final prompt = "Give me a three day event schedule based on $url. Also what do I need to pack according to the weather?";
+
+final response = await model.generateContent([Content.text(prompt)]);
+print(response.text);
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  // Enable both the URL context tool and Google Search tool.
+  tools: new[] { new Tool(new GoogleSearch()), new Tool(new UrlContext()) }
+);
+
+// Specify one or more URLs for the tool to access.
+var url = "YOUR_URL";
+
+// Provide the URLs in the prompt sent in the request.
+// If the model can't generate a response using its own knowledge or the content in the specified URL,
+// then the model will use the grounding with Google Search tool.
+var prompt = $"Give me a three day event schedule based on {url}. Also what do I need to pack according to the weather?";
+
+// Get and handle the model's response.
+var response = await model.GenerateContentAsync(prompt);
+UnityEngine.Debug.Log(response.Text ?? "No text in response.");
+
+// Make sure to comply with the "Grounding with Google Search" usage requirements,
+// which includes how you use and display the grounded result
+
+</pre></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p> <aside class="special"><strong>Important:</strong><span> If you use Grounding with <nobr>Google Search</nobr>, make sure that you comply with the "Grounding with <nobr>Google Search</nobr>" usage requirements, which includes how you display the result. Learn how to <a href="grounding-google-search#use-and-display-grounded-result">use and display a grounded result</a>.</span></aside> <h2 id="how-it-works">How the URL context tool works</h2> <p>The URL context tool uses a two-step retrieval process to balance speed, cost, and access to fresh data.</p> <p><strong>Step 1</strong>: When you provide a specific URL, the tool first attempts to fetch the content from an internal index cache. This acts as a highly optimized cache.</p> <p><strong>Step 2</strong>: If a URL is not available in the index (for example, if it's a very new page), the tool automatically falls back to do a live fetch. This directly accesses the URL to retrieve its content in real-time.</p> <aside class="note"><strong>Note:</strong><span> When Grounding with <nobr>Google Search</nobr> is also enabled, any URLs passed to the URL context tool will always be a live fetch of the URL.</span></aside> <h3 id="best-practices">Best practices</h3> <ul> <li><p><strong>Provide specific URLs</strong>: For the best results, provide direct URLs to the content you want the model to analyze. The model will only retrieve content from the URLs you provide, not any content from nested links.</p></li> <li><p><strong>Check for accessibility</strong>: Verify that the URLs you provide don't lead to pages that require a login or are behind a paywall.</p></li> <li><p><strong>Use the complete URL</strong>: Provide the full URL, including the protocol (for example, <code translate="no" dir="ltr">https://www.example.com</code> instead of only <code translate="no" dir="ltr">example.com</code>).</p></li> </ul> <h2 id="contextual-response">Understand the response</h2> <p>The model's response will be based on the content it retrieved from the URLs.</p> <p>If the model retrieved content from URLs, the response will include <code translate="no" dir="ltr">url_context_metadata</code>. Such a response might look something like the following (parts of the response have been omitted for brevity):</p> 
+<pre>{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "... \n"
+          }
+        ],
+        "role": "model"
+      },
+      ...
+      "url_context_metadata":
+      {
+          "url_metadata":
+          [
+            {
+              "retrieved_url": "https://www.example.com",
+              "url_retrieval_status": "URL_RETRIEVAL_STATUS_SUCCESS"
+            },
+            {
+              "retrieved_url": "https://www.example.org",
+              "url_retrieval_status": "URL_RETRIEVAL_STATUS_SUCCESS"
+            },
+          ]
+        }
+    }
+  ]
+}
+</pre> <h3 id="safety-checks">Safety checks</h3> <p>The system performs a content moderation check on the URL to confirm they meet safety standards. If the URL you provided fails this check, you'll get an <code translate="no" dir="ltr">url_retrieval_status</code> of <code translate="no" dir="ltr">URL_RETRIEVAL_STATUS_UNSAFE</code>.</p> <h2 id="limitations">Limitations</h2> <p>Here are some limitations of the URL context tool:</p> <ul> <li><p><strong>Combining with function calling</strong>: The URL context tool <em>cannot</em> be used in a request that also uses <a href="function-calling">function calling</a>.</p></li> <li><p><strong>URLs per request limit</strong>: The maximum number of URLs per request is 20 URLs.</p></li> <li><p><strong>URL content size limit</strong>: The maximum size for content retrieved from a single URL is 34MB.</p></li> <li><p><strong>Freshness</strong>: The tool does <em>not</em> fetch live versions of web pages, so there may be some issues with freshness or potentially out-of-date information.</p></li> <li><p><strong>URL public accessibility</strong>: The provided URLs must be publicly accessible on the web. The following are <em><strong>not</strong></em> supported: paywalled content, content that requires user sign-in, private networks, localhost addresses (like <code translate="no" dir="ltr">localhost</code> or <code translate="no" dir="ltr">127.0.0.1</code>), and tunneling services (like ngrok or pinggy).</p></li> </ul> <h3 id="limitations-content-types">Supported and unsupported content types</h3> <p> <strong>Supported</strong>: The tool can extract content from URLs with the following content types:</p> <ul> <li><p>Text (<code translate="no" dir="ltr">text/html</code>, <code translate="no" dir="ltr">application/json</code>, <code translate="no" dir="ltr">text/plain</code>, <code translate="no" dir="ltr">text/xml</code>, <code translate="no" dir="ltr">text/css</code>, <code translate="no" dir="ltr">text/javascript</code>, <code translate="no" dir="ltr">text/csv</code>, <code translate="no" dir="ltr">text/rtf</code>)</p></li> <li><p>Image (<code translate="no" dir="ltr">image/png</code>, <code translate="no" dir="ltr">image/jpeg</code>, <code translate="no" dir="ltr">image/bmp</code>, <code translate="no" dir="ltr">image/webp</code>)</p></li> <li><p>PDF (<code translate="no" dir="ltr">application/pdf</code>)</p></li> </ul> <p> <strong>Not supported</strong>: The tool does <em><strong>not</strong></em> support the following content types:</p> <ul> <li><p>YouTube videos (instead, see <a href="analyze-video">analyze videos</a>)</p></li> <li><p>Video and audio files (instead, see <a href="analyze-video">analyze videos</a> or <a href="analyze-audio">analyze audio</a>)</p></li> <li><p>Google workspace files, like Google docs or spreadsheets</p></li> <li><p><em>(if using the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>)</em> Cloud Storage URLs<br> These types of URLs aren't supported by the <span class='\"notranslate\"'>Gemini Developer API</span> no matter how you access it.</p></li> <li><p>Content that's not publicly accessible. The following are <em><strong>not</strong></em> supported: paywalled content, content that requires user sign-in, private networks, localhost addresses (like <code translate="no" dir="ltr">localhost</code> or <code translate="no" dir="ltr">127.0.0.1</code>), and tunneling services (like ngrok or pinggy).</p></li> </ul> <h2 id="pricing-and-tokens">Pricing and counting tool tokens</h2> <p>Content retrieved from URLs counts as input tokens.</p> <p>You can see the token count for your prompt and usage of tools in the <code translate="no" dir="ltr">usage_metadata</code> object of the model output. The following is an example output:</p> 
+<pre>'usage_metadata': {
+  'candidates_token_count': 45,
+  'prompt_token_count': 27,
+  'prompt_tokens_details': [{'modality': &lt;MediaModality.TEXT: 'TEXT'&gt;,
+    'token_count': 27}],
+  'thoughts_token_count': 31,
+  'tool_use_prompt_token_count': 10309,
+  'tool_use_prompt_tokens_details': [{'modality': &lt;MediaModality.TEXT: 'TEXT'&gt;,
+    'token_count': 10309}],
+  'total_token_count': 10412
+  }
+</pre> <p>Rate limit and pricing is based on the model used. Learn more about pricing for the URL context tool in your chosen <span class='\"notranslate\"'>Gemini API</span> provider documentation: <a href="https://ai.google.dev/gemini-api/docs/pricing" class="external"><span class='\"notranslate\"'>Gemini Developer API</span></a> | <a href="https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing" class="external"><span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span></a>.</p> <aside class="note"><strong>Note:</strong><span> Tool-use tokens aren't yet displayed in the dashboards when you use <a href="monitoring#ai-monitoring-in-console">AI monitoring in the Firebase console</a></span></aside><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/url-context" class="_attribution-link">https://firebase.google.com/docs/ai-logic/url-context</a>
+  </p>
+</div>

@@ -1,0 +1,129 @@
+<h1>Use App Check with the debug provider on Android</h1> <p>After App Check is enforced for a backend service, your app's features that depend on that backend service won't run in an emulator or from a continuous integration (CI) environment because these environments don't qualify as valid devices. To run your app in these environments during development and testing, you need to create a debug build of your app that uses the App Check <em>debug provider</em> instead of a production attestation provider.</p> <aside class="warning"><strong>Warning:</strong><span> <strong>Keep your debug token and debug build private.</strong> A valid debug token and the debug provider in your debug build allow access to your backend services from unverified devices. Do <strong><em>not</em></strong> commit your debug token to a public repository, and do <strong><em>not</em></strong> ship your debug token or debug build in production builds of your app. If a registered token is ever compromised, delete it immediately in the Firebase console.</span></aside> <h2 id="emulator">Use the debug provider in an emulator</h2> <p>Here's how to use the debug provider while running your app in an emulator interactively (for example, during local development):</p> <ol> <li>
+<p> In your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the dependency for the App Check library for Android. We recommend using the <a href="../../android/learn-more#bom">Firebase Android BoM</a> to control library versioning. </p> 
+
+<pre>dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Add the dependencies for the App Check libraries
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-appcheck-debug")
+}</pre> <p>By using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, your app will always use compatible versions of Firebase Android libraries. </p>  <p class="showalways"><em>(Alternative)</em> Add Firebase library dependencies <em>without</em> using the BoM </p> <p>If you choose not to use the Firebase BoM, you must specify each Firebase library version in its dependency line.</p> <p><strong>Note that if you use <em>multiple</em> Firebase libraries in your app, we strongly recommend using the BoM to manage library versions, which ensures that all versions are compatible.</strong> </p> 
+<pre>dependencies {
+    // Add the dependencies for the App Check libraries
+    // When NOT using the BoM, you must specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-appcheck-debug:20.0.0")
+}</pre>  </li> <li>
+<p>In your debug build, configure App Check to use the debug provider factory:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">Firebase.initialize(context = this)
+Firebase.appCheck.installAppCheckProviderFactory(
+    DebugAppCheckProviderFactory.getInstance(),
+)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseApp.initializeApp(/*context=*/ this);
+FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
+firebaseAppCheck.installAppCheckProviderFactory(
+        DebugAppCheckProviderFactory.getInstance());</pre></section> </div>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Run your app in the emulator or on your test device.</p></li> <li>
+<p>Look for the App Check debug token in your logs. For example:</p> 
+<pre>D DebugAppCheckProvider: Enter this debug secret into the allow list
+in the Firebase Console for your project: 123a4567-b89c-12d3-e456-789012345678
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the three-dot overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol> <p><img src="https://firebase.google.com/static/docs/app-check/manage-debug-tokens.png" alt="Screenshot of the Manage Debug Tokens menu item in the Firebase console" class="screenshot"></p>
+</li> </ol> <p>After you register the token with App Check, your backend services will accept it as valid.</p> <p>This token allows access to your backend services without a valid device, so it's crucial that you keep it private. Do <em><strong>not</strong></em> commit it to a public repository or ship it in production builds of your app. If a registered token is ever compromised, delete it immediately using <strong>Manage debug tokens</strong> in the Firebase console.</p> <h2 id="ci">Use the debug provider for unit testing in a CI environment</h2> <p>Here's how to use the debug provider for unit testing in a continuous integration (CI) environment:</p> <ol> <li>
+<p>In the Firebase console, create a debug token:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the three-dot overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to create a new debug token.</p></li> </ol> <p>This token allows access to your backend services without a valid device, so it's crucial that you keep it private. Do <em><strong>not</strong></em> commit it to a public repository or ship it in production builds of your app. If a registered token is ever compromised, delete it immediately using <strong>Manage debug tokens</strong> in the Firebase console.</p> <p><img src="https://firebase.google.com/static/docs/app-check/manage-debug-tokens.png" alt="Screenshot of the Manage Debug Tokens menu item" class="screenshot"></p>
+</li> <li><p>Add the debug token you just created to your CI system's secure key store (for example, GitHub Actions' <a href="https://docs.github.com/en/actions/reference/encrypted-secrets" class="external">encrypted secrets</a> or Travis CI's <a href="https://docs.travis-ci.com/user/environment-variables/#defining-encrypted-variables-in-travisyml" class="external">encrypted variables</a>).</p></li> <li><p>If necessary, configure your CI system to make your debug token available within the CI environment as an environment variable. Name the variable something like <code translate="no" dir="ltr">APP_CHECK_DEBUG_TOKEN_FROM_CI</code>.</p></li> <li>
+<p> In your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the dependency for the App Check library for Android. We recommend using the <a href="../../android/learn-more#bom">Firebase Android BoM</a> to control library versioning. </p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+
+<pre data-language="kotlin">dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Add the dependency for the App Check library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-appcheck-debug")
+}</pre> <p>By using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, your app will always use compatible versions of Firebase Android libraries. </p>  <p class="showalways"><em>(Alternative)</em> Add Firebase library dependencies <em>without</em> using the BoM </p> <p>If you choose not to use the Firebase BoM, you must specify each Firebase library version in its dependency line.</p> <p><strong>Note that if you use <em>multiple</em> Firebase libraries in your app, we strongly recommend using the BoM to manage library versions, which ensures that all versions are compatible.</strong> </p> 
+<pre data-language="kotlin">dependencies {
+    // Add the dependency for the App Check library
+    // When NOT using the BoM, you must specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-appcheck-debug:20.0.0")
+}</pre>  </section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+
+<pre data-language="java">dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Add the dependency for the App Check library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-appcheck-debug")
+}</pre> <p>By using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, your app will always use compatible versions of Firebase Android libraries. </p>  <p class="showalways"><em>(Alternative)</em> Add Firebase library dependencies <em>without</em> using the BoM </p> <p>If you choose not to use the Firebase BoM, you must specify each Firebase library version in its dependency line.</p> <p><strong>Note that if you use <em>multiple</em> Firebase libraries in your app, we strongly recommend using the BoM to manage library versions, which ensures that all versions are compatible.</strong> </p> 
+<pre data-language="java">dependencies {
+    // Add the dependency for the App Check library
+    // When NOT using the BoM, you must specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-appcheck-debug:20.0.0")
+}</pre>  </section> </div>
+</li> <li>
+<p>Add the following to the configuration of your CI build variant:</p> 
+<pre>testInstrumentationRunnerArguments["firebaseAppCheckDebugSecret"] =
+    System.getenv("APP_CHECK_DEBUG_TOKEN_FROM_CI") ?: ""
+</pre>
+</li> <li>
+<p>In your test classes, use the <code translate="no" dir="ltr">DebugAppCheckTestHelper</code> to wrap any code that needs an App Check token:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">@RunWith(AndroidJunit4::class)
+class MyTests {
+    private val debugAppCheckTestHelper =
+        DebugAppCheckTestHelper.fromInstrumentationArgs()
+
+    @Test
+    fun testWithDefaultApp() {
+        debugAppCheckTestHelper.withDebugProvider {
+            // Test code that requires a debug AppCheckToken.
+        }
+    }
+
+    @Test
+    fun testWithNonDefaultApp() {
+        debugAppCheckTestHelper.withDebugProvider(
+            FirebaseApp.getInstance("nonDefaultApp")
+        ) {
+            // Test code that requires a debug AppCheckToken.
+        }
+    }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">@RunWith(AndroidJunit4.class)
+public class YourTests {
+    private final DebugAppCheckTestHelper debugAppCheckTestHelper =
+            DebugAppCheckTestHelper.fromInstrumentationArgs();
+
+    @Test
+    public void testWithDefaultApp() {
+        debugAppCheckTestHelper.withDebugProvider(() -&gt; {
+            // Test code that requires a debug AppCheckToken.
+        });
+    }
+
+    @Test
+    public void testWithNonDefaultApp() {
+        debugAppCheckTestHelper.withDebugProvider(
+                FirebaseApp.getInstance("nonDefaultApp"),
+                () -&gt; {
+                    // Test code that requires a debug AppCheckToken.
+                });
+    }
+}
+</pre></section> </div>
+</li> </ol> <p>When your app runs in a CI environment, your backend services will accept the token it sends as valid.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/android/debug-provider" class="_attribution-link">https://firebase.google.com/docs/app-check/android/debug-provider</a>
+  </p>
+</div>

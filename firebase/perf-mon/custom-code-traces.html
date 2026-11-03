@@ -1,0 +1,83 @@
+<h1>Add custom monitoring for specific app code</h1>   <p><br></p> <p>Performance Monitoring collects <em>traces</em> to help you monitor the performance of your app. A trace is a report of performance data captured between two points in time in your app.</p> <p>You can create your own traces to monitor performance data associated with specific code in your app. With a <strong><em>custom code trace</em></strong>, you can measure how long it takes your app to complete a specific task or a set of tasks, for example loading a set of images or querying your database.</p> <p>The default metric for a custom code trace is its "duration" (the time between the starting and stopping points of the trace), but you can add <strong><em>custom metrics</em></strong>, as well.</p> <p>In your code, you define the beginning and the end of a custom code trace using the APIs provided by the Performance Monitoring SDK. Custom code traces can be started anytime after they've been created, and they are thread safe.</p> <p>Since the default metric collected for these traces is "duration", they are sometimes called "Duration traces".</p> <p>You can view data from these traces in the <em>Custom traces</em> subtab of the traces table, which is at the bottom of the <em>Performance</em> dashboard (learn more about <a href="#monitor-in-console">using the console</a> later on this page).</p> <aside class="note"><strong>Note:</strong><span> Starting and stopping traces too rapidly can be resource intensive, so you should avoid creating custom code traces at high frequencies (for example, once per frame in games).</span></aside> <h2 id="attributes-and-metrics">Default attributes, custom attributes, and custom metrics</h2> For custom code traces, Performance Monitoring automatically logs <a href="attributes"><strong><em>default attributes</em></strong></a> (common metadata like app version, country, device, etc.) so that you can filter the data for the trace in the Firebase console. You can also add and monitor <a href="#create-custom-attributes"><strong><em>custom attributes</em></strong></a> (such as, game level or user properties). <p>You can further configure a custom code trace to record <a href="#add-custom-metrics"><strong><em>custom metrics</em></strong></a> for performance-related events that occur within the trace's scope. For example, you can create a custom metric for the number of cache hits and misses or the number of times that the UI becomes unresponsive for a noticeable period of time.</p> <p>Custom attributes and custom metrics display in the Firebase console alongside the default attributes and default metric for the trace.</p> <aside class="objective">An <em>attribute</em> is a string value that helps you filter and segment data in the console. A <em>metric</em> is a numeric value that can be charted and measured over time.</aside> <h2 id="add-custom-code-traces">Add custom code traces</h2> <p>Use the Performance Monitoring Trace API (<a href="https://firebase.google.com/docs/reference/swift/firebaseperformance/api/reference/Classes/Trace">Swift</a> | <a href="https://firebase.google.com/docs/reference/ios/firebaseperformance/api/reference/Classes/FIRTrace">Obj-C</a>) to add custom code traces to monitor specific application code.</p> <p>Note the following:</p> <ul> <li>An app can have multiple custom code traces.</li> <li>More than one custom code trace can run at the same time.</li> <li>Names for custom code traces must meet the following requirements: no leading or trailing whitespace, no leading underscore (<code translate="no" dir="ltr">_</code>) character, and max length is 100 characters.</li> <li>Custom code traces support adding <a href="#add-custom-metrics">custom metrics</a> and <a href="#create-custom-attributes">custom attributes</a>.</li> </ul> <p>To start and stop a custom code trace, wrap the code that you want to trace with lines of code similar to the following:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="swift">// Add the Performance Monitoring module to your header
+import FirebasePerformance
+
+let trace = Performance.startTrace(name: "CUSTOM_TRACE_NAME")
+
+// code that you want to trace
+
+trace.stop()</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="objectivec">// Add the Performance Monitoring module to your header
+@import FirebasePerformance;
+
+FIRTrace *trace = [FIRPerformance startTraceWithName:@"CUSTOM_TRACE_NAME"];
+
+// code that you want to trace
+
+[trace stop];</pre></section> </div> <h2 id="add-custom-metrics">Add custom metrics to custom code traces</h2> <p>Use the Performance Monitoring Trace API (<a href="https://firebase.google.com/docs/reference/swift/firebaseperformance/api/reference/Classes/Trace">Swift</a> | <a href="https://firebase.google.com/docs/reference/ios/firebaseperformance/api/reference/Classes/FIRTrace">Obj-C</a>) to add custom metrics to custom code traces.</p> <p>Note the following:</p> <ul> <li>Names for custom metrics must meet the following requirements: no leading or trailing whitespace, no leading underscore (<code translate="no" dir="ltr">_</code>) character, and max length is 100 characters.</li> <li>Each custom code trace can record up to 32 metrics (including the default <em>Duration</em> metric).</li> </ul> <p>To add a custom metric, add a line of code similar to the following each time that the event occurs. For example, this custom metric counts performance- related events that occur in your app, such as cache hits or retries.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="swift">let trace = Performance.startTrace(name: "CUSTOM_TRACE_NAME")
+
+trace.incrementMetric("EVENT_NAME", by: 1)
+// code that you want to trace (and log custom metrics)
+
+trace.stop()</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="objectivec">FIRTrace *trace = [FIRPerformance startTraceWithName:@"CUSTOM_TRACE_NAME"];
+
+[trace incrementMetric:@"EVENT_NAME" byInt:1];
+// code that you want to trace (and log custom metrics)
+
+[trace stop];</pre></section> </div> <h2 id="create-custom-attributes">Create custom attributes for custom code traces</h2> <p>Use the Performance Monitoring Trace API (<a href="https://firebase.google.com/docs/reference/swift/firebaseperformance/api/reference/Classes/Trace">Swift</a> | <a href="https://firebase.google.com/docs/reference/ios/firebaseperformance/api/reference/Classes/FIRTrace">Obj-C</a>) to add custom attributes to custom code traces.</p> <p>To use custom attributes, add code to your app that defines the attribute and associates it with a specific custom code trace. You can set the custom attribute anytime between when the trace starts and when the trace stops.</p> <p>Note the following:</p> <ul> <li>
+<p>Names for custom attributes must meet the following requirements:</p> <ul> <li>No leading or trailing whitespace, no leading underscore (<code translate="no" dir="ltr">_</code>) character</li> <li>No spaces</li> <li>Max length is 32 characters</li> <li>Allowed characters for the name are <code translate="no" dir="ltr">A-Z</code>, <code translate="no" dir="ltr">a-z</code>, and <code translate="no" dir="ltr">_</code>.</li> </ul>
+</li> <li><p>Each custom code trace can record up to 5 custom attributes.</p></li> <li>
+<p>Please ensure that custom attributes do not contain any information that personally identifies an individual to Google.</p> <div>  <p class="showalways">Learn more about this guideline</p> <aside class="key-point"> <p><strong>Collecting user data:</strong> Performance Monitoring does not itself collect any personally identifiable information (PII), such as names, email addresses, or phone numbers. Developers can collect additional data using Performance Monitoring by creating custom attributes on custom code traces. Such data collected through Performance Monitoring should not contain information that personally identifies an individual to Google.</p> <p> Here's an example of a log message that <em>does not</em> contain personally identifiable information:</p> 
+<pre>trace.putAttribute("experiment", "A");</pre> <p> Here's an example that <em>does</em> contain personally identifiable information (<strong><em>do not use</em></strong> this type of custom attribute in your app):</p> 
+<pre>trace.putAttribute("email", user.getEmailAddress());</pre> <p>Data that exposes any personally identifiable information is subject to deletion without notice.</p> </aside>  </div>
+</li> </ul> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="swift">let trace = Performance.startTrace(name: "CUSTOM_TRACE_NAME")
+
+trace.setValue("A", forAttribute: "experiment")
+
+// Update scenario.
+trace.setValue("B", forAttribute: "experiment")
+
+// Reading scenario.
+let experimentValue:String? = trace.valueForAttribute("experiment")
+
+// Delete scenario.
+trace.removeAttribute("experiment")
+
+// Read attributes.
+let attributes:[String, String] = trace.attributes;</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on macOS, Mac Catalyst, watchOS targets. </div> 
+<pre data-language="objectivec">FIRTrace *trace = [FIRPerformance startTraceWithName:@"CUSTOM_TRACE_NAME"];
+
+[trace setValue:@"A" forAttribute:@"experiment"];
+
+// Update scenario.
+[trace setValue:@"B" forAttribute:@"experiment"];
+
+// Reading scenario.
+NSString *experimentValue = [trace valueForAttribute:@"experiment"];
+
+// Delete scenario.
+[trace removeAttribute:@"experiment"];
+
+// Read attributes.
+NSDictionary &lt;NSString *, NSString *&gt; *attributes = [trace attributes];</pre></section> </div> <h2 id="monitor-in-console">Track, view, and filter performance data</h2> <h3 id="track-in-dashboard">Track specific metrics in your dashboard</h3> <p>To learn how your key metrics are trending, add them to your metrics board at the top of the <i>Performance</i> dashboard. You can quickly identify regressions by seeing week-over-week changes or verify that recent changes in your code are improving performance. </p> <img src="https://firebase.google.com/static/docs/perf-mon/images/perf-mon-metrics-board.png" class="attempt-right" width="300px" alt="an image of the metrics board in the &lt;span class=" notranslate>Firebase Performance Monitoring dashboard" /&gt; <p>To add a metric to your metrics board, follow these steps: </p>
+<ol> <li>Go to the <a href="https://console.firebase.google.com/project/_/performance" class="external"><i>Performance</i> dashboard</a>in the Firebase console.</li> <li>Click an empty metric card, then select an existing metric to add to your board.</li> <li>Click <span class="material-icons" aria-hidden="true" translate="no">more_vert</span> on a populated metric card for more options, for example to replace or remove a metric.</li> </ol> <p>The metrics board shows collected metric data over time, both in graphical form and as a numerical percentage change. </p> <p>Learn more about <a href="console">using the dashboard</a>.</p> <h3 id="view-traces-and-data">View traces and their data</h3> <p>To view your traces, go to the <a href="https://console.firebase.google.com/project/_/performance" class="external"><i>Performance</i> dashboard</a> in the Firebase console, scroll down to the traces table, then click the appropriate subtab. The table displays some top metrics for each trace, and you can even sort the list by the percentage change for a specific metric. </p> <p>Performance Monitoring provides a troubleshooting page in the Firebase console that highlights metric changes, making it easy to quickly address and minimize the impact of performance issues on your apps and users. You can use the troubleshooting page when you learn about potential performance issues, for example, in the following scenarios: </p> <ul> <li>You select relevant metrics on the dashboard and you notice a big delta. </li> <li>In the traces table you sort to display the largest deltas at the top, and you see a significant percentage change. </li> <li>You receive an email alert notifying you of a performance issue. </li> </ul> <p>You can access the troubleshooting page in the following ways: </p> <ul> <li>On the metric dashboard, click the <b>View metric details</b> button. </li> <li>On any metric card, select <nobr><b><span class="material-icons" aria-hidden="true" translate="no">more_vert</span> =&gt; View details</b></nobr>. The troubleshooting page displays information about the metric you selected. </li> <li>In the traces table, click a trace name or any metric value in the row associated with that trace. </li> <li>In an email alert, click <b>Investigate now</b>. </li> </ul> <p>When you click a trace name in the traces table, you can then drill down into metrics of interest. Click the <nobr><b>Filter<span class="material-icons" aria-hidden="true" translate="no">add</span></b></nobr> button to filter the data by attribute, for example: </p> <img src="https://firebase.google.com/static/docs/perf-mon/images/perf-mon-filter-by-attribute_native-1.png" class="attempt-right" width="350" alt="an image of &lt;span class=" notranslate>Firebase Performance Monitoring data being filtered by attribute" /&gt; <ul> <li>Filter by <i>App version</i> to view data about a past release or your latest release</li> <li>Filter by <i>Device</i> to learn how older devices handle your app</li> <li>Filter by <i>Country</i> to make sure your database location isn't affecting a specific region</li> </ul> <p>Learn more about <a href="console#view-traces-and-data">viewing data for your traces</a>. </p> <h2 id="next_steps_2">Next Steps</h2> <ul> <li><p>Learn more about <a href="attributes">using attributes</a> to examine performance data.</p></li> <li><p>Learn more about how to <a href="issue-management">track performance issues</a> in the Firebase console.</p></li> <li><p><a href="alerts">Set up alerts</a> for code changes that are degrading the performance of your app. For example, you can configure an email alert for your team if the <em>duration</em> of a specific custom code trace exceeds a threshold that you set.</p></li> </ul> <ul> <li>View detailed reports of <a href="console#sessions">user sessions</a> in which you can see a specific trace in a timeline context of other traces collected during the same session. </li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/perf-mon/custom-code-traces" class="_attribution-link">https://firebase.google.com/docs/perf-mon/custom-code-traces</a>
+  </p>
+</div>

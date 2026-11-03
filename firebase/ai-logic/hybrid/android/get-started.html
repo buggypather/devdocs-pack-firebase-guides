@@ -1,0 +1,239 @@
+<h1>Build hybrid experiences in Android apps with on-device and cloud-hosted models</h1> <aside class="experimental"><strong>Experimental:</strong><span> Using the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK to build hybrid experiences is an Experimental feature (and the Prompt API from ML Kit is in beta), which means that this feature isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways.</span></aside> <p><br></p>  <p>You can build AI-powered Android apps and features with hybrid inference using <span class='\"notranslate\"'>Firebase AI Logic</span>. Hybrid inference enables running inference using on-device models when available and seamlessly falling back to cloud-hosted models otherwise (and vice versa).</p> <p>This page describes how to <a href="#get-started">get started using the client SDK</a>, as well as showing <a href="configuration-options">additional configuration options and capabilities</a>.</p> <p>Note that on-device inference via <span class='\"notranslate\"'>Firebase AI Logic</span> is supported for Android apps using <span class='\"notranslate\"'>Firebase AI Logic</span> SDK v17.10.0+ (BoM v34.10.0+) and running on <a href="https://developers.google.com/ml-kit/genai#prompt-device" class="external">specific devices</a>. It's governed by the <a href="https://developers.google.com/ml-kit/terms" class="external">ML Kit terms</a>, as well as <a href="https://developers.google.com/ml-kit/genai-terms" class="external">terms specific to the Gen AI aspects of ML Kit</a>.</p> <h2 id="use-cases-and-capabilities">Recommended use cases and supported capabilities</h2> <h4 id="use-cases">Recommended use cases</h4> <ul> <li>
+<p>Using an <strong>on-device model for inference</strong> offers:</p> <ul> <li>Enhanced privacy</li> <li>Local context</li> <li>Inference at no-cost</li> <li>Offline functionality</li> </ul>
+</li> <li>
+<p>Using <strong>hybrid</strong> functionality offers:</p> <ul> <li>Reach more of your audience by accommodating on-device model availability and internet connectivity</li> </ul>
+</li> </ul> <h4 id="supported-capabilities-for-on-device-inference">Supported capabilities and features for on-device inference</h4> <p>On-device inference only supports <strong>single-turn text generation (<em>not</em> chat)</strong>, with streaming or non-streaming output. It supports the following text-generation capabilities:</p> <ul> <li><p>Generating <a href="#text-in-text-out">text from text-only input</a></p></li> <li><p>Generating <a href="#image-in-text-out">text from text-and-image input</a>, specifically a single Bitmap image as input</p></li> </ul> <p>Make sure to review the list of <a href="#features-not-yet-available">not-yet-available features for on-device inference</a> at the bottom of this page.</p> <h2 id="before-you-begin">Before you begin</h2> <p>Take note of the following:</p> <ul> <li>
+<p>Supported APIs:</p> <ul> <li><p>In-cloud inference uses your chosen <span class='\"notranslate\"'>Gemini API</span> provider (either the <span class='\"notranslate\"'>Gemini Developer API</span> or the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>).</p></li> <li>
+<p>On-device inference uses the <a href="https://developers.google.com/ml-kit/genai/prompt/android" class="external">Prompt API from ML Kit</a>, which is in beta and only available on <a href="https://developers.google.com/ml-kit/genai#prompt-device" class="external">specific devices</a>.</p> <aside class="important">On-device models usage is governed by the <a href="https://developers.google.com/ml-kit/terms" class="external">ML Kit terms</a>, as well as <a href="https://developers.google.com/ml-kit/genai-terms" class="external">terms specific to the Gen AI aspects of ML Kit</a>. </aside>
+</li> </ul>
+</li> <li>
+<p>This page describes how to <strong>get started</strong>.</p> <p>After completing this standard setup, check out the <a href="configuration-options">additional configuration options and capabilities</a>.</p>
+</li> </ul> <h3 id="supported-devices-models">Supported Android devices and their on-device models</h3> <p>For on-device inference (which uses the Prompt API from ML Kit), you can find a list of <a href="https://developers.google.com/ml-kit/genai#prompt-device" class="external">supported devices and their on-device models</a> in the ML Kit documentation.</p> <h2 id="get-started">Get started</h2> <p>These get started steps describe the required general setup for any supported prompt request that you want to send.</p> <h3 id="set-up-firebase">
+<strong>Step 1</strong>: Set up a Firebase project and connect your app to Firebase</h3> <ol> <li>
+<p>Sign into the <a href="https://console.firebase.google.com/" class="external">Firebase console</a>, and then select your Firebase project.</p> <p><section class="expandable"> <p class="showalways">Don't already have a Firebase project?</p></section></p> <p>If you don't already have a Firebase project, click the button to create a new Firebase project, and then use either of the following options:</p> <ul> <li><p><strong>Option 1</strong>: Create a wholly new Firebase project (and its underlying Google Cloud project automatically) by entering a new project name in the first step of the workflow.</p></li> <li><p><strong>Option 2</strong>: "Add Firebase" to an existing Google Cloud project by clicking <strong>Add Firebase to Google Cloud project</strong> (at bottom of page). In the first step of the workflow, start entering the <strong>project name</strong> of the existing project, and then select the project from the displayed list.</p></li> </ul> <p>Complete the remaining steps of the on-screen workflow to create a Firebase project. Note that when prompted, you do <strong><em>not</em></strong> need to set up Google Analytics to use the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs.</p> 
+</li> <li><p>In the Firebase console, go to <strong>AI Services</strong> &gt; <a href="https://console.firebase.google.com/project/_/ailogic/" class="external"><b>AI Logic</b></a>.</p></li> <li><p>Click <strong>Get started</strong> to launch a guided workflow that helps you set up the <a href="../../faq-and-troubleshooting#required-apis">required APIs</a> and resources for your project.</p></li> <li><p>If prompted, follow the on-screen instructions to register your app and add your Firebase configuration to your app.</p></li> <li>
+<p>When asked to choose a "Gemini API provider", we recommend selecting the <strong>Gemini Developer API</strong>, which lets you get started quickly at no cost.</p> <p>At any point later, you can always <a href="https://console.firebase.google.com/project/_/ailogic">set up the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span></a> (and its requirement for billing).</p>
+</li> <li>
+<p>Continue in the workflow to set up the required APIs and associated services for <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <p>This stage of the workflow automatically <a href="../../app-check">enforces Firebase App Check for <span class='\"notranslate\"'>AI Logic</span></a>, which is a <em>critical</em> service to help protect the <span class='\"notranslate\"'>Gemini API</span> when it's directly accessed from your app. As part of getting started (see steps later in this guide), you'll need to configure the App Check <em>debug provider</em> for local development when App Check is enforced.</p> <aside class="note"><strong>Note:</strong><span> To release your app's AI feature to end users, you need to <a href="../../app-check">register your app with a production App Check attestation provider</a> so that they can use the feature when App Check is enforced.</span></aside>
+</li> <li><p>Continue to the next step in this guide to add the required SDKs to your app.</p></li> </ol> <h3 id="add-sdk">
+<strong>Step 2</strong>: Add the required SDKs</h3> <p>The <span class='\"notranslate\"'>Firebase AI Logic</span> SDK for Android (<nobr><code translate="no" dir="ltr">firebase-ai</code></nobr>) along with the <span class='\"notranslate\"'>Firebase AI Logic On-Device</span> SDK (<nobr><code translate="no" dir="ltr">firebase-ai-ondevice</code></nobr>) provide access to the APIs for interacting with generative models.</p> <aside class="special"><strong>Important:</strong><span> The <code translate="no" dir="ltr">firebase-ai-ondevice</code> library transitively includes the Prompt API from ML Kit and requires that your Android project target <em>at minimum</em> API level 26 (whereas the <code translate="no" dir="ltr">firebase-ai</code> library only requires <em>at minimum</em> level 24).</span></aside> <p>In your <strong>module (app-level) Gradle file</strong> (like <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code>), add the dependencies for the <span class='\"notranslate\"'>Firebase AI Logic</span> and App Check libraries for Android:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">dependencies {
+  // ... other androidx dependencies
+
+  // Add the dependencies for the Firebase AI Logic and App Check libraries
+  // Note that the on-device SDK is not yet included in the Firebase Android BoM
+  implementation("com.google.firebase:firebase-ai:18.1.0")
+  implementation("com.google.firebase:firebase-ai-ondevice:16.0.0-beta07")
+  implementation("com.google.firebase:firebase-appcheck-debug:20.0.0")
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>For Java, you need to add two additional libraries.</p> 
+<pre data-language="java">dependencies {
+  // ... other androidx dependencies
+
+  // Add the dependencies for the Firebase AI Logic and App Check libraries
+  // Note that the on-device SDK is not yet included in the Firebase Android BoM
+  implementation("com.google.firebase:firebase-ai:18.1.0")
+  implementation("com.google.firebase:firebase-ai-ondevice:16.0.0-beta07")
+  implementation("com.google.firebase:firebase-appcheck-debug:20.0.0")
+
+  // Required for one-shot operations (to use `ListenableFuture` from Guava Android)
+  implementation("com.google.guava:guava:31.0.1-android")
+
+  // Required for streaming operations (to use `Publisher` from Reactive Streams)
+  implementation("org.reactivestreams:reactive-streams:1.0.4")
+}</pre></section> </div> <h3 id="configure-debug-provider">
+<strong>Step 3</strong>: Configure the App Check debug provider for local development</h3> <p>As part of the guided setup workflow for <span class='\"notranslate\"'>AI Logic</span> in the console, Firebase App Check is automatically enforced to protect the <span class='\"notranslate\"'>Gemini API</span>. For local development, you need to configure the App Check <em>debug provider</em> to bypass attestation while still maintaining the enforcement of App Check.</p> <aside class="special"><strong>Important:</strong><span> Make sure that App Check is enforced for <span class='\"notranslate\"'>AI Logic</span>. In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/products/" class="external"><strong>APIs</strong> tab</a>, and then find the row for <span class='\"notranslate\"'>Firebase AI Logic</span>. If it says <code translate="no" dir="ltr">Unenforced</code>, then follow the <a href="../../app-check#enforce-app-check-for-debug-provider-only">instructions to enforce App Check yourself</a>.</span></aside><ol> <li>
+<p>In your debug build, configure App Check to use the debug provider factory:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin</strong></p>
+
+<pre data-language="kotlin">Firebase.initialize(context = this)
+Firebase.appCheck.installAppCheckProviderFactory(
+    DebugAppCheckProviderFactory.getInstance(),
+)
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">FirebaseApp.initializeApp(/*context=*/ this);
+FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
+firebaseAppCheck.installAppCheckProviderFactory(
+        DebugAppCheckProviderFactory.getInstance());
+</pre></section> </div>
+</li> <li>
+<p>Obtain your debug token:</p> <ol> <li><p>Run your app in the emulator or on your test device.</p></li> <li>
+<p>Look for the App Check debug token in your logs. For example:</p> 
+<pre>D DebugAppCheckProvider: Enter this debug secret into the allow list
+in the Firebase Console for your project: 123a4567-b89c-12d3-e456-789012345678
+</pre>
+</li> <li><p>Copy the token (for example, <code translate="no" dir="ltr">123a4567-b89c-12d3-e456-789012345678</code>).</p></li> </ol>
+</li> <li>
+<p>Register your debug token with App Check:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/products/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to register your debug token.</p></li> </ol>
+</li> </ol> <p>For details about the debug provider (including how to get a new debug token), check out the <a href="../../../app-check/android/debug-provider" class="external">official App Check docs</a>.</p> <aside class="caution"><strong>Here are some critical points about the App Check debug provider:</strong> <ul> <li> <strong>Keep your debug token and debug build private.</strong> Don't commit your debug token to a public repository, and don't ship your debug token or debug build in production builds of your app. </li> <li> <strong>Register your app with a production attestation provider before releasing to end users.</strong> You'll need to <a href="../../app-check" class="external">register your app with a production App Check attestation provider</a> (for example, Play Integrity) so that your end-users can use your feature with App Check enforced. </li> </ul> </aside> <h3 id="on-device-model-available">
+<strong>Step 4</strong>: Check if the on-device model is available</h3> <p>Using <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/ondevice/FirebaseAIOnDevice"><code translate="no" dir="ltr">FirebaseAIOnDevice</code></a>, check if the on-device model is available, and download the model if it's not available.</p> <p>Once downloaded, AICore will automatically keep the model updated. Check out the notes after the snippet for more details about AICore and managing the on-device model download.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val status = FirebaseAIOnDevice.checkStatus()
+when (status) {
+  OnDeviceModelStatus.UNAVAILABLE -&gt; {
+    Log.w(TAG, "On-device model is unavailable")
+  }
+
+  OnDeviceModelStatus.DOWNLOADABLE -&gt; {
+    FirebaseAIOnDevice.download().collect { status -&gt;
+      when (status) {
+        is DownloadStatus.DownloadStarted -&gt;
+          Log.w(TAG, "Starting download - ${status.bytesToDownload}")
+
+        is DownloadStatus.DownloadInProgress -&gt;
+          Log.w(TAG, "Download in progress ${status.totalBytesDownloaded} bytes downloaded")
+
+        is DownloadStatus.DownloadCompleted -&gt;
+          Log.w(TAG, "On-device model download complete")
+
+        is DownloadStatus.DownloadFailed -&gt;
+          Log.e(TAG, "Download failed ${status}")
+      }
+    }
+  }
+  OnDeviceModelStatus.DOWNLOADING -&gt; {
+    Log.w(TAG, "On-device model is being downloaded")
+  }
+
+  OnDeviceModelStatus.AVAILABLE -&gt; {
+    Log.w(TAG, "On-device model is available")
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">Checking for, downloading, and warming up the model is not yet available for Java.
+
+However, all other APIs and interactions in this guide are available for Java.
+</pre></section> </div> <p>Note the following about downloading the on-device model:</p> <ul> <li><p>The time it takes to download the on-device model depends on many factors, including your network.</p></li> <li><p>If your code uses an on-device model for its primary or fallback inference, make sure the model is downloaded early in your app's lifecycle so that the on-device model is available before your end-users encounter the code in your app.</p></li> <li><p>If the on-device model is <em>not available</em> when an on-device inference request is made, the SDK will <em>not automatically</em> trigger the download of the on-device model. The SDK will either fall back to the cloud-hosted model or throw an exception (see details about the behavior of <a href="configuration-options#inference-modes">inference modes</a>).</p></li> <li><p><a href="https://android-developers.googleblog.com/2023/12/a-new-foundation-for-ai-on-android.html" class="external">AICore</a> (an Android system service) manages for you which model and version is downloaded, keeping the model updated, etc. Note that the device will only have one model downloaded, so if another app on the device has previously successfully downloaded the on-device model, then this check will return that the model is available.</p></li> </ul> <h4 id="latency-optimization-warmup">Latency optimization</h4> <p>To optimize for the first inference call, you can have your app call <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/OnDeviceExtension#warmUp()"><code translate="no" dir="ltr">onDeviceExtension?.warmUp()</code></a> (currently available for Kotlin only). This loads the on-device model into memory and initializes runtime components.</p> <h3 id="initialize-service-and-model">
+<strong>Step 5</strong>: Initialize the service and create a model instance</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>Set up the following before you send a prompt request to the model.</p> <ol> <li><p>Initialize the service for your chosen API provider.</p></li> <li>
+<p>Create a <code translate="no" dir="ltr">GenerativeModel</code> instance, and set the <code translate="no" dir="ltr">mode</code> to one of the following. The descriptions here are very high-level, but you can learn details about the behavior of these modes in <a href="configuration-options#inference-modes">Set an inference mode</a>.</p> <ul> <li><p><strong><code translate="no" dir="ltr">PREFER_ON_DEVICE</code></strong>: Attempt to use on-device model; otherwise, <em>fall back to the cloud-hosted model</em>.</p></li> <li><p><strong><code translate="no" dir="ltr">ONLY_ON_DEVICE</code></strong>: Attempt to use on-device model; otherwise, <em>throw an exception</em>.</p></li> <li><p><strong><code translate="no" dir="ltr">PREFER_IN_CLOUD</code></strong>: Attempt to use the cloud-hosted model; otherwise, <em>fall back to the on-device model</em>.</p></li> <li><p><strong><code translate="no" dir="ltr">ONLY_IN_CLOUD</code></strong>: Attempt to use the cloud-hosted model; otherwise, <em>throw an exception</em>.</p></li> </ul> <aside class="note"><b>Note</b>: Keep the following in mind: <ul> <li> To use an on-device model, make sure to review the list of <a href="get-started#features-not-yet-available">not-yet-available features</a> at the bottom of this page. </li> <li> To use a cloud-hosted model, the device must be online and you must explicitly <a href="configuration-options#specify-model">specify a cloud-hosted model to use</a>. </li> <li> As part of the response, the SDK tells you <a href="configuration-options#determine-inference-mode">whether on-device or in-cloud inference was used</a>. </li> </ul> </aside>
+</li> </ol> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Using this SDK to access on-device inference is an Experimental release and requires opt-in
+@OptIn(PublicPreviewAPI::class)
+
+// ...
+
+// Initialize the Gemini Developer API backend service
+// Create a GenerativeModel instance with a model that supports your use case
+// Set the inference mode (like PREFER_ON_DEVICE to use the on-device model if available)
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+    .generativeModel(
+        modelName = "CLOUD_MODEL_NAME",
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.PREFER_ON_DEVICE)
+    )
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// Initialize the Gemini Developer API backend service
+// Create a GenerativeModel instance with a model that supports your use case
+// Set the inference mode (like PREFER_ON_DEVICE to use the on-device model if available)
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+    .generativeModel(
+        "CLOUD_MODEL_NAME",
+        new OnDeviceConfig(InferenceMode.PREFER_ON_DEVICE)
+    );
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+</pre></section> </div> <h3 id="call-api">
+<strong>Step 6</strong>: Send a prompt request to a model</h3> <p>This section shows you how to send various types of input to generate different types of output, including:</p> <ul> <li><p><a href="#text-in-text-out">Generate text from text-only input</a></p></li> <li><p><a href="#image-in-text-out">Generate text from text-and-image (multimodal) input</a></p></li> </ul> <aside class="special"><strong>Important:</strong><span> Make sure to review the <a href="#features-not-yet-available">list of <em><strong>not-yet-supported features and limitations for on-device inference</strong></em></a>. For many of these, the SDK will automatically fall back to the cloud-hosted model (if you allow that capability by your specified inference mode).</span></aside> <h4 id="text-in-text-out">Generate text from text-only input</h4> <table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, make sure that you've completed the <a href="#get-started">Get started</a> section of this guide.</em> </td> </tr> </table> <p>You can use <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#generateContent(kotlin.String)"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from a prompt that contains text:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Imports + initialization of Gemini API backend service + creation of model instance
+
+// Provide a prompt that contains text
+val prompt = "Write a story about a magic backpack."
+
+// To generate text output, call generateContent with the text input
+val response = model.generateContent(prompt)
+print(response.text)
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// Imports + initialization of Gemini API backend service + creation of model instance
+
+// Provide a prompt that contains text
+Content prompt = new Content.Builder()
+    .addText("Write a story about a magic backpack.")
+    .build();
+
+// To generate text output, call generateContent with the text input
+ListenableFuture&lt;GenerateContentResponse&gt; response = model.generateContent(prompt);
+Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;() {
+    @Override
+    public void onSuccess(GenerateContentResponse result) {
+        String resultText = result.getText();
+        System.out.println(resultText);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+</pre></section> </div> <p>Note that <span class='\"notranslate\"'>Firebase AI Logic</span> also supports streaming of text responses using <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#generateContentStream(kotlin.String)"><code translate="no" dir="ltr">generateContentStream</code></a> (instead of <code translate="no" dir="ltr">generateContent</code>).</p> <h4 id="image-in-text-out">Generate text from text-and-image (multimodal) input</h4> <table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, make sure that you've completed the <a href="#get-started">Get started</a> section of this guide.</em> </td> </tr> </table> <p>You can use <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#generateContent(kotlin.String)"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from a prompt that contains text and <em>up to <strong>one</strong> image file (Bitmap only)</em> — providing each input file's <code translate="no" dir="ltr">mimeType</code> and the file itself.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// Imports + initialization of Gemini API backend service + creation of model instance
+
+// Loads an image from the app/res/drawable/ directory
+val bitmap: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.sparky)
+
+// Provide a prompt that includes the image specified above and text
+val prompt = content {
+  image(bitmap)
+  text("What developer tool is this mascot from?")
+}
+
+// To generate text output, call generateContent with the prompt
+val response = model.generateContent(prompt)
+print(response.text)
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// Imports + initialization of Gemini API backend service + creation of model instance
+
+Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.sparky);
+
+// Provide a prompt that includes the image specified above and text
+Content content = new Content.Builder()
+        .addImage(bitmap)
+        .addText("What developer tool is this mascot from?")
+        .build();
+
+// To generate text output, call generateContent with the prompt
+ListenableFuture&lt;GenerateContentResponse&gt; response = model.generateContent(content);
+Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;() {
+    @Override
+    public void onSuccess(GenerateContentResponse result) {
+        String resultText = result.getText();
+        System.out.println(resultText);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+</pre></section> </div> <p>Note that <span class='\"notranslate\"'>Firebase AI Logic</span> also supports streaming of text responses using <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#generateContentStream(kotlin.Array)"><code translate="no" dir="ltr">generateContentStream</code></a> (instead of <code translate="no" dir="ltr">generateContent</code>).</p> <h2 id="what-else-to-do">What else can you do?</h2> <p>You can use various additional configuration options and capabilities for your hybrid experiences:</p> <ul> <li><p><a href="configuration-options#inference-modes">Set an inference mode.</a></p></li> <li><p><a href="configuration-options#determine-inference-mode">Determine whether on-device or in-cloud inference was used.</a></p></li> <li><p><a href="configuration-options#specify-model">Specify a model to use.</a></p></li> <li><p><a href="configuration-options#model-config">Use model configuration to control responses.</a></p></li> <li><p><a href="generate-structured-output">Generate structured output (like JSON or enums).</a></p></li> </ul> <h2 id="features-not-yet-available">Features not yet available for on-device inference</h2> <p>As an experimental release, not all the capabilities of cloud models are available for <em>on-device</em> inference. <strong>The following features are <em>not yet available for on-device inference</em> (but they are usually available for cloud-based inference).</strong></p> <aside class="note"><strong>Note:</strong><span> For many of these features, if you set the mode to <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>, the SDK will automatically fall back to use the cloud-hosted model for these not-yet-available capabilities.</span></aside> <ul> <li>
+<p>Generating images</p> <ul> <li>Can fall back to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an exception.</li> </ul>
+</li> <li>
+<p>Generating text from image file input types other than Bitmap (image loaded into memory)</p> <ul> <li>Can fall back to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an exception.</li> </ul>
+</li> <li>
+<p>Generating text from image-only file input. For on-device inference, you must provide text as part of the multimodal request.</p> <ul> <li>Can fall back to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an exception.</li> </ul>
+</li> <li>
+<p>Generating text from more than one image file input</p> <ul> <li>Can fall back to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an exception.</li> </ul>
+</li> <li>
+<p>Generating text from audio, video, and documents (like PDFs) inputs</p> <ul> <li>Can fall back to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an exception.</li> </ul>
+</li> <li>
+<p>Providing files using URLs in multimodal requests. For on-device inference, you must provide a single image as a Bitmap.</p> <ul> <li>If you provide a file URL using <code translate="no" dir="ltr">fileData</code> (<code translate="no" dir="ltr">FileDataPart</code>), it can fall back to the cloud-hosted model (<code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an exception).</li> <li>If you embed a URL directly in a text prompt, it does <em>not</em> automatically fall back to the cloud-hosted model (embedded URLs are ignored by the on-device model).</li> </ul>
+</li> <li>
+<p>Sending requests that exceed 4000 tokens (or approximately 3000 English words)</p> <ul> <li>Can fall back to the cloud-hosted model; however, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code> mode will throw an exception.</li> </ul>
+</li> <li>
+<p>Multi-turn chat</p> <ul> <li>Does <em>not</em> automatically fall back to the cloud-hosted model (on-device inference concatenates the prompt history into a single text prompt; because the on-device model doesn't distinguish between roles and sees the history as a single message, it won't be as precise as a cloud-hosted model).</li> <li>If you want to use multi-turn chat, we recommend using <code translate="no" dir="ltr">ONLY_IN_CLOUD</code> mode.</li> </ul>
+</li> <li>
+<p>Providing the model with <em>tools</em> to help it generate its response (like function calling, code execution, URL context, Grounding with <nobr>Google Search</nobr>, and Grounding with <nobr>Google Maps</nobr>)</p> <ul> <li>Does <em>not</em> automatically fall back to the cloud-hosted model. If you want to use tools, we recommend using <code translate="no" dir="ltr">ONLY_IN_CLOUD</code> mode.</li> </ul>
+</li> </ul> <p>AI monitoring in the Firebase console does <em><strong>not</strong></em> show any data for on-device inference (including on-device logs). However, any inference that uses a cloud-hosted model can be monitored just like other inference via <span class='\"notranslate\"'>Firebase AI Logic</span>.</p> <aside class="note"><strong>Note:</strong><span> The following are <em><strong>not supported for hybrid implementations</strong></em>: the Gemini Live API and server prompt templates. Also, count tokens shouldn't be relied upon because the count will differ between cloud-hosted and on-device models, so there's no intuitive fallback.</span></aside> <h3 id="additional-limitations-on-device">Additional limitations</h3> <p>In addition to the above, <strong><em>on-device</em> inference has the following limitations</strong> (learn more in the <a href="https://developers.google.com/ml-kit/genai/prompt/android/get-started#supported-features" class="external">ML Kit documentation</a>):</p> <ul> <li><p>The end-user of your app must be using a <a href="https://developers.google.com/ml-kit/genai#prompt-device" class="external">supported device</a> for on-device inference.</p></li> <li><p>Your app can only run on-device inference when it's in the foreground.</p></li> <li><p>Only English and Korean have been validated for on-device inference.</p></li> <li><p>The maximum token limit for the entire on-device inference request is 4000 tokens. If your requests might exceed this limit, then make sure to configure an inference mode that can use a cloud-hosted model.</p></li> <li><p>We recommend avoiding on-device inference use cases that require long output (more than 256 tokens).</p></li> <li><p><a href="https://android-developers.googleblog.com/2023/12/a-new-foundation-for-ai-on-android.html" class="external">AICore</a> (an Android system service that manages the on-device models) enforces an inference quota <em>per app</em>. Making too many API requests in a short period will result in an <code translate="no" dir="ltr">ErrorCode.BUSY</code> response. If you're receiving this error, consider using exponential backoff to retry the request. Also, <code translate="no" dir="ltr">ErrorCode.PER_APP_BATTERY_USE_QUOTA_EXCEEDED</code> can be returned if an app exceeds a long-duration quota (for example, daily quota).</p></li> </ul> <p><br></p> <p><a class="button button-primary" href="../../feedback">Give feedback about your experience with <span class='\"notranslate\"'>Firebase AI Logic</span></a></p> <p><br></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/hybrid/android/get-started" class="_attribution-link">https://firebase.google.com/docs/ai-logic/hybrid/android/get-started</a>
+  </p>
+</div>

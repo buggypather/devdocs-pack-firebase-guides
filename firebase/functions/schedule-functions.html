@@ -1,0 +1,73 @@
+<h1>Schedule functions</h1> <p>If you want to schedule functions to run at specified times, use the <code translate="no" dir="ltr">onSchedule</code> handler provided by <code translate="no" dir="ltr">firebase-functions/v2/scheduler</code>. These functions use <a href="https://cloud.google.com/scheduler/">Cloud Scheduler</a> to invoke function logic at the times or intervals that you define.</p> <h2 id="before_you_begin">Before you begin</h2> <p>Though scheduled functions are billed, you can expect the overall cost to be manageable, as each Cloud Scheduler job costs $0.10 (USD) per month, and there is an allowance of three jobs per Google account, at no charge. Use the Blaze <a href="https://firebase.google.com/pricing#blaze-calculator">pricing calculator</a> to generate a cost estimate based on your projected usage.</p> <p>The Cloud Scheduler API must be enabled for your project. It should already be enabled for most Firebase projects; you can verify in the <a href="https://console.cloud.google.com/">Google Cloud console</a>.</p> <h2 id="write_a_scheduled_function">Write a scheduled function</h2> <p>In Cloud Functions for Firebase, scheduling logic resides in your functions code, with no special deploy-time requirements. For example, to clean up inactive user accounts once daily, you could write a function starting with the following import statements:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// The Cloud Functions for Firebase SDK to set up triggers and logging.
+const {onSchedule} = require("firebase-functions/scheduler");
+const {logger} = require("firebase-functions");
+
+// The Firebase Admin SDK to delete inactive users.
+const {initializeApp} = require("firebase-admin/app");
+const {getAuth} = require("firebase-admin/auth");
+initializeApp();
+
+// The es6-promise-pool to limit the concurrency of promises.
+const PromisePool = /** @type {PromisePoolConstructor} */ (
+  require("es6-promise-pool")
+);
+// Maximum concurrent account deletions.
+const MAX_CONCURRENT = 3;
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># The Cloud Functions for Firebase SDK to set up triggers and logging.
+from firebase_functions import scheduler_fn
+
+# The Firebase Admin SDK to delete users.
+import firebase_admin
+from firebase_admin import auth
+
+firebase_admin.initialize_app()
+</pre></section> </div> <p>Then, you could use <code translate="no" dir="ltr">onSchedule</code> to start a Cloud Scheduler task:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Run once a day at midnight, to clean up the users
+// Manually run the task here https://console.cloud.google.com/cloudscheduler
+exports.accountcleanup = onSchedule("every day 00:00", async (event) =&gt; {
+  // Fetch all user details.
+  const inactiveUsers = await getInactiveUsers();
+
+  // Use a pool so that we delete maximum `MAX_CONCURRENT` users in parallel.
+  const promisePool = new PromisePool(
+      () =&gt; deleteInactiveUser(inactiveUsers),
+      MAX_CONCURRENT,
+  );
+  await promisePool.start();
+
+  logger.log("User cleanup finished");
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Run once a day at midnight, to clean up inactive users.
+# Manually run the task here https://console.cloud.google.com/cloudscheduler
+@scheduler_fn.on_schedule(schedule="every day 00:00")
+def accountcleanup(event: scheduler_fn.ScheduledEvent) -&gt; None:
+    """Delete users who've been inactive for 30 days or more."""
+    user_page: auth.ListUsersPage | None = auth.list_users()
+    while user_page is not None:
+        inactive_uids = [
+            user.uid for user in user_page.users if is_inactive(user, timedelta(days=30))
+        ]
+        auth.delete_users(inactive_uids)
+        user_page = user_page.get_next_page()
+</pre></section> </div> <p>Both Unix Crontab and App Engine syntax are supported by Cloud Scheduler. For example, to use Crontab, do something like this:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.scheduledFunctionCrontab = onSchedule("5 11 * * *", async (event) =&gt; {
+  // ...
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@scheduler_fn.on_schedule(schedule="5 11 * * *")
+</pre></section> </div>
+<aside class="special"><strong>Important:</strong><span> Depending on how you design your scheduling logic, a function may be triggered multiple times, with the next instance running while the previous instance is still executing.</span></aside> <h2 id="deploy_a_scheduled_function">Deploy a scheduled function</h2> <p>When you deploy a scheduled function, a scheduler job and an HTTP function are created automatically. The Firebase CLI echoes the function name, and you can view the job and the function in the <a href="https://console.cloud.google.com/project/_/cloudscheduler" class="external">Google Cloud console</a>. The topic is named according to the following convention:</p> <p><strong>firebase-schedule-<var translate="no">function_name</var>-<var translate="no">region</var></strong></p> <p>For example:</p> <p><strong>firebase-schedule-accountcleanup-us-east1.</strong></p> <p>At the scheduled time, the default compute service account invokes the associated HTTP function. This means that only the associated Cloud Scheduler job has permission to run the function.</p> <aside class="special"><strong>Important:</strong><span> Make sure you do not manually delete or modify the function or scheduler job in the console. Doing this could cause errors in the execution of your scheduled function.</span></aside><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/schedule-functions" class="_attribution-link">https://firebase.google.com/docs/functions/schedule-functions</a>
+  </p>
+</div>

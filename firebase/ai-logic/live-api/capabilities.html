@@ -1,0 +1,615 @@
+<h1>Capabilities of the Live API</h1> <aside class="preview"><b>Preview</b>: Using the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs with the Gemini Live API is a feature that's in Preview, which means that it isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways. </aside> <p><br></p> <p>This page describes the capabilities of the Live API when you use it via <span class='\"notranslate\"'>Firebase AI Logic</span>, including:</p> <ul> <li>
+<p>Supported input modalities, including:</p> <ul> <li><a href="#audio-in-audio-out">Audio input</a></li> <li><a href="#text-in-audio-out">Text + audio input</a></li> <li><a href="#video-in-audio-out">Video + audio input</a></li> </ul> <p>Note that the Live API also supports image + audio input.</p>
+</li> <li><p>Lists of <a href="#not-supported-features">not-yet-supported features</a>, many of which are coming soon!</p></li> </ul> <p>Visit other pages to learn about customizing your implementation by using various <a href="configuration">configuration options</a>, like adding transcription, setting the response voice, or configuring voice activity detection (VAD) (for example, to handle interruptions). You can also learn about <a href="sessions">managing sessions</a>.</p> <p><br></p> <hr> <h2 id="input-modalities">Input modalities</h2> <p>This section describes how to send various types of inputs to a Live API model. Native audio models always <em><strong>require audio input</strong></em> (along with <em>optional additional</em> modalities of text or video input), and they always <em><strong>respond with audio output</strong></em>.</p> <ul> <li><p><a href="#audio-in-audio-out">Audio input</a></p></li> <li><p><a href="#text-in-audio-out">Text + audio input</a></p></li> <li><p><a href="#video-in-audio-out">Video + audio input</a></p></li> </ul> <p>Note that the Live API also supports image + audio input.</p> <h3 id="audio-in-audio-out">Stream audio input</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>The most common capability of the Live API is bidirectional <em>audio</em> streaming, meaning real-time streaming of both audio input and output.</p> <p>The Live API supports the following audio formats:</p> <ul> <li>
+<strong>Input audio format:</strong> Raw 16 bit PCM audio at 16kHz little-endian</li> <li><p><strong>Output audio format:</strong> Raw 16 bit PCM audio at 24kHz little-endian</p></li> <li><p><strong>Supported MIME types</strong>: <code translate="no" dir="ltr">audio/x-aac</code>, <code translate="no" dir="ltr">audio/flac</code>, <code translate="no" dir="ltr">audio/mp3</code>, <code translate="no" dir="ltr">audio/m4a</code>, <code translate="no" dir="ltr">audio/mpeg</code>, <code translate="no" dir="ltr">audio/mpga</code>, <code translate="no" dir="ltr">audio/mp4</code>, <code translate="no" dir="ltr">audio/ogg</code>, <code translate="no" dir="ltr">audio/pcm</code>, <code translate="no" dir="ltr">audio/wav</code>, <code translate="no" dir="ltr">audio/webm</code></p></li> </ul> <p>To convey the sample rate of input audio, set the MIME type of each audio-containing Blob to a value like <code translate="no" dir="ltr">audio/pcm;rate=16000</code>.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/LiveGenerativeModel"><code translate="no" dir="ltr">LiveModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">audio</code>.</p> 
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+// Create a `liveModel` instance with a model that supports the Live API.
+let liveModel = FirebaseAI.firebaseAI(backend: .googleAI()).liveModel(
+  modelName: "GEMINI_LIVE_API_MODEL_NAME",
+  // Configure the model to respond with audio.
+  generationConfig: LiveGenerationConfig(
+    responseModalities: [.audio]
+  )
+)
+
+do {
+  let session = try await liveModel.connect()
+
+  // Load the audio file, or tap a microphone.
+  guard let audioFile = NSDataAsset(name: "audio.pcm") else {
+    fatalError("Failed to load audio file")
+  }
+
+  // Provide the audio data.
+  await session.sendAudioRealtime(audioFile.data)
+
+  var outputText = ""
+  for try await message in session.responses {
+    if case let .content(content) = message.payload {
+      content.modelTurn?.parts.forEach { part in
+        if let part = part as? InlineDataPart, part.mimeType.starts(with: "audio/pcm") {
+          // Handle 16bit pcm audio data at 24khz
+          playAudio(part.data)
+        }
+      }
+      // Optional: if you don't need to send more requests.
+      if content.isTurnComplete {
+        await session.close()
+      }
+    }
+  }
+} catch {
+  fatalError(error.localizedDescription)
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/LiveGenerativeModel"><code translate="no" dir="ltr">LiveModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">AUDIO</code>.</p> 
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `liveModel` instance with a model that supports the Live API.
+val liveModel = Firebase.ai(backend = GenerativeBackend.googleAI()).liveModel(
+    modelName = "GEMINI_LIVE_API_MODEL_NAME",
+    // Configure the model to respond with audio.
+    generationConfig = liveGenerationConfig {
+        responseModality = ResponseModality.AUDIO
+   }
+)
+
+val session = liveModel.connect()
+
+// This is the recommended approach.
+// However, you can create your own recorder and handle the stream.
+session.startAudioConversation()
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/LiveGenerativeModel"><code translate="no" dir="ltr">LiveModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">AUDIO</code>.</p> 
+<pre data-language="java">
+ExecutorService executor = Executors.newFixedThreadPool(1);
+// Initialize the Gemini Developer API backend service.
+// Create a `liveModel` instance with a model that supports the Live API.
+LiveGenerativeModel lm = FirebaseAI.getInstance(GenerativeBackend.googleAI()).liveModel(
+        "GEMINI_LIVE_API_MODEL_NAME",
+        // Configure the model to respond with audio.
+        new LiveGenerationConfig.Builder()
+                .setResponseModality(ResponseModality.AUDIO)
+                .build()
+);
+LiveModelFutures liveModel = LiveModelFutures.from(lm);
+
+ListenableFuture&lt;LiveSession&gt; sessionFuture =  liveModel.connect();
+
+Futures.addCallback(sessionFuture, new FutureCallback&lt;LiveSession&gt;() {
+    @Override
+    public void onSuccess(LiveSession ses) {
+	 LiveSessionFutures session = LiveSessionFutures.from(ses);
+        session.startAudioConversation();
+    }
+    @Override
+    public void onFailure(Throwable t) {
+        // Handle exceptions
+    }
+}, executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/js/ai.livegenerativemodel"><code translate="no" dir="ltr">LiveGenerativeModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">AUDIO</code>.</p> 
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getLiveGenerativeModel, GoogleAIBackend, ResponseModality } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `LiveGenerativeModel` instance with a model that supports the Live API.
+const liveModel = getLiveGenerativeModel(ai, {
+  model: "GEMINI_LIVE_API_MODEL_NAME",
+  // Configure the model to respond with audio.
+  generationConfig: {
+    responseModalities: [ResponseModality.AUDIO],
+  },
+});
+
+const session = await liveModel.connect();
+
+// Start the audio conversation.
+const audioConversationController = await startAudioConversation(session);
+
+// ... Later, to stop the audio conversation
+// await audioConversationController.stop()
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>To use the Live API, create a <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/LiveGenerativeModel-class.html" class="external"><code translate="no" dir="ltr">LiveGenerativeModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">audio</code>.</p> 
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:your_audio_recorder_package/your_audio_recorder_package.dart';
+
+late LiveSession _session;
+final _audioRecorder = YourAudioRecorder();
+
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `liveGenerativeModel` instance with a model that supports the Live API.
+final liveModel = FirebaseAI.googleAI().liveGenerativeModel(
+  model: 'GEMINI_LIVE_API_MODEL_NAME',
+  // Configure the model to respond with audio.
+  liveGenerationConfig: LiveGenerationConfig(
+    responseModalities: [ResponseModalities.audio],
+  ),
+);
+
+_session = await liveModel.connect();
+
+final audioRecordStream = _audioRecorder.startRecordingStream();
+// Map the Uint8List stream to InlineDataPart stream.
+final mediaChunkStream = audioRecordStream.map((data) {
+  return InlineDataPart('audio/pcm', data);
+});
+await for (final chunk in mediaChunkStream) {
+  await _session.sendAudioRealtime(chunk);
+}
+
+// In a separate thread, receive the audio response from the model.
+await for (final message in _session.receive()) {
+   // Process the received message.
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/live-generative-model"><code translate="no" dir="ltr">LiveModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">Audio</code>.</p> 
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+async Task SendTextReceiveAudio() {
+  // Initialize the Gemini Developer API backend service.
+  // Create a `LiveModel` instance with a model that supports the Live API.
+  var liveModel = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI()).GetLiveModel(
+      modelName: "GEMINI_LIVE_API_MODEL_NAME",
+      // Configure the model to respond with audio.
+      liveGenerationConfig: new LiveGenerationConfig(
+          responseModalities: new[] { ResponseModality.Audio })
+    );
+
+  LiveSession session = await liveModel.ConnectAsync();
+
+  // Start a coroutine to send audio from the Microphone.
+  var recordingCoroutine = StartCoroutine(SendAudio(session));
+
+  // Start receiving the response.
+  await ReceiveAudio(session);
+}
+
+IEnumerator SendAudio(LiveSession liveSession) {
+  string microphoneDeviceName = null;
+  int recordingFrequency = 16000;
+  int recordingBufferSeconds = 2;
+
+  var recordingClip = Microphone.Start(microphoneDeviceName, true,
+                                       recordingBufferSeconds, recordingFrequency);
+
+  int lastSamplePosition = 0;
+  while (true) {
+    if (!Microphone.IsRecording(microphoneDeviceName)) {
+      yield break;
+    }
+
+    int currentSamplePosition = Microphone.GetPosition(microphoneDeviceName);
+
+    if (currentSamplePosition != lastSamplePosition) {
+      // The Microphone uses a circular buffer, so we need to check if the
+      // current position wrapped around to the beginning, and handle it accordingly.
+      int sampleCount;
+      if (currentSamplePosition &gt; lastSamplePosition) {
+        sampleCount = currentSamplePosition - lastSamplePosition;
+      } else {
+        sampleCount = recordingClip.samples - lastSamplePosition + currentSamplePosition;
+      }
+
+      if (sampleCount &gt; 0) {
+        // Get the audio chunk.
+        float[] samples = new float[sampleCount];
+        recordingClip.GetData(samples, lastSamplePosition);
+
+        // Send the data, discarding the resulting Task to avoid the warning.
+        _ = liveSession.SendAudioAsync(samples);
+
+        lastSamplePosition = currentSamplePosition;
+      }
+    }
+
+    // Wait for a short delay before reading the next sample from the Microphone.
+    const float MicrophoneReadDelay = 0.5f;
+    yield return new WaitForSeconds(MicrophoneReadDelay);
+  }
+}
+
+Queue&lt;float&gt; audioBuffer = new();
+
+async Task ReceiveAudio(LiveSession liveSession) {
+  int sampleRate = 24000;
+  int channelCount = 1;
+
+  // Create a looping AudioClip to fill with the received audio data.
+  int bufferSamples = (int)(sampleRate * channelCount);
+  AudioClip clip = AudioClip.Create("StreamingPCM", bufferSamples, channelCount,
+                                    sampleRate, true, OnAudioRead);
+
+  // Attach the clip to an AudioSource and start playing it.
+  AudioSource audioSource = GetComponent&lt;AudioSource&gt;();
+  audioSource.clip = clip;
+  audioSource.loop = true;
+  audioSource.Play();
+
+  // Start receiving the response.
+  await foreach (var message in liveSession.ReceiveAsync()) {
+    // Process the received message
+    foreach (float[] pcmData in message.AudioAsFloat) {
+      lock (audioBuffer) {
+        foreach (float sample in pcmData) {
+          audioBuffer.Enqueue(sample);
+        }
+      }
+    }
+  }
+}
+
+// This method is called by the AudioClip to load audio data.
+private void OnAudioRead(float[] data) {
+  int samplesToProvide = data.Length;
+  int samplesProvided = 0;
+
+  lock(audioBuffer) {
+    while (samplesProvided &lt; samplesToProvide &amp;&amp; audioBuffer.Count &gt; 0) {
+      data[samplesProvided] = audioBuffer.Dequeue();
+      samplesProvided++;
+    }
+  }
+
+  while (samplesProvided &lt; samplesToProvide) {
+    data[samplesProvided] = 0.0f;
+    samplesProvided++;
+  }
+}
+
+</pre></section> </div> <h3 id="text-in-audio-out">Stream text + audio input</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>If needed, you can send <em>text</em> input along with the audio input and receive streamed <em>audio</em> output.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/LiveGenerativeModel"><code translate="no" dir="ltr">LiveModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">audio</code>.</p> 
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+// Create a `liveModel` instance with a model that supports the Live API.
+let liveModel = FirebaseAI.firebaseAI(backend: .googleAI()).liveModel(
+  modelName: "GEMINI_LIVE_API_MODEL_NAME",
+  // Configure the model to respond with audio.
+  generationConfig: LiveGenerationConfig(
+    responseModalities: [.audio]
+  )
+)
+
+do {
+  let session = try await liveModel.connect()
+
+  // Provide a text prompt.
+  let text = "tell a short story"
+
+  await session.sendTextRealtime(text)
+
+  var outputText = ""
+  for try await message in session.responses {
+    if case let .content(content) = message.payload {
+      content.modelTurn?.parts.forEach { part in
+        if let part = part as? InlineDataPart, part.mimeType.starts(with: "audio/pcm") {
+          // Handle 16-bit PCM audio data at 24 kHz.
+          playAudio(part.data)
+        }
+      }
+      // Optional: if you don't need to send more requests.
+      if content.isTurnComplete {
+        await session.close()
+      }
+    }
+  }
+} catch {
+  fatalError(error.localizedDescription)
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/LiveGenerativeModel"><code translate="no" dir="ltr">LiveModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">AUDIO</code>.</p> 
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `liveModel` instance with a model that supports the Live API.
+val liveModel = Firebase.ai(backend = GenerativeBackend.googleAI()).liveModel(
+    modelName = "GEMINI_LIVE_API_MODEL_NAME",
+    // Configure the model to respond with audio.
+    generationConfig = liveGenerationConfig {
+        responseModality = ResponseModality.AUDIO
+   }
+)
+
+val session = liveModel.connect()
+
+// Provide a text prompt.
+val text = "tell a short story"
+
+session.send(text)
+
+session.receive().collect {
+    if(it.turnComplete) {
+        // Optional: if you don't need to send more requests.
+        session.stopReceiving();
+    }
+    // Handle 16bit pcm audio data at 24khz.
+    playAudio(it.data)
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/LiveGenerativeModel"><code translate="no" dir="ltr">LiveModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">AUDIO</code>.</p> 
+<pre data-language="java">
+ExecutorService executor = Executors.newFixedThreadPool(1);
+// Initialize the Gemini Developer API backend service.
+// Create a `liveModel` instance with a model that supports the Live API.
+LiveGenerativeModel lm = FirebaseAI.getInstance(GenerativeBackend.googleAI()).liveModel(
+        "GEMINI_LIVE_API_MODEL_NAME",
+        // Configure the model to respond with audio.
+        new LiveGenerationConfig.Builder()
+                .setResponseModality(ResponseModality.AUDIO)
+                .build()
+);
+LiveModelFutures model = LiveModelFutures.from(lm);
+ListenableFuture&lt;LiveSession&gt; sessionFuture =  model.connect();
+class LiveContentResponseSubscriber implements Subscriber&lt;LiveContentResponse&gt; {
+    @Override
+    public void onSubscribe(Subscription s) {
+        s.request(Long.MAX_VALUE); // Request an unlimited number of items
+    }
+    @Override
+    public void onNext(LiveContentResponse liveContentResponse) {
+        // Handle 16bit pcm audio data at 24khz.
+	liveContentResponse.getData();
+    }
+    @Override
+    public void onError(Throwable t) {
+        System.err.println("Error: " + t.getMessage());
+    }
+    @Override
+    public void onComplete() {
+        System.out.println("Done receiving messages!");
+    }
+}
+Futures.addCallback(sessionFuture, new FutureCallback&lt;LiveSession&gt;() {
+    @Override
+    public void onSuccess(LiveSession ses) {
+	 LiveSessionFutures session = LiveSessionFutures.from(ses);
+        // Provide a text prompt.
+        String text = "tell me a short story?";
+        session.send(text);
+        Publisher&lt;LiveContentResponse&gt; publisher = session.receive();
+        publisher.subscribe(new LiveContentResponseSubscriber());
+    }
+    @Override
+    public void onFailure(Throwable t) {
+        // Handle exceptions
+    }
+}, executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/js/ai.livegenerativemodel"><code translate="no" dir="ltr">LiveGenerativeModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">AUDIO</code>.</p> 
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getLiveGenerativeModel, GoogleAIBackend, ResponseModality } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `LiveGenerativeModel` instance with a model that supports the Live API.
+const liveModel = getLiveGenerativeModel(ai, {
+  model: "GEMINI_LIVE_API_MODEL_NAME",
+  // Configure the model to respond with audio
+  generationConfig: {
+    responseModalities: [ResponseModality.AUDIO],
+  },
+});
+
+const session = await liveModel.connect();
+
+// Provide a text prompt.
+const prompt = "tell a short story";
+session.send(prompt);
+
+// Handle the model's audio output.
+const messages = session.receive();
+for await (const message of messages) {
+  switch (message.type) {
+    case "serverContent":
+      if (message.turnComplete) {
+        // TODO(developer): Handle turn completion
+      } else if (message.interrupted) {
+        // TODO(developer): Handle the interruption
+        break;
+      } else if (message.modelTurn) {
+        const parts = message.modelTurn?.parts;
+        parts?.forEach((part) =&gt; {
+          if (part.type === "inlineData") {
+            // TODO(developer): Play the audio chunk
+          }
+        });
+      }
+      break;
+    case "toolCall":
+      // Ignore
+    case "toolCallCancellation":
+      // Ignore
+  }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>To use the Live API, create a <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/LiveGenerativeModel-class.html" class="external"><code translate="no" dir="ltr">LiveGenerativeModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">audio</code>.</p> 
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'dart:async';
+import 'dart:typed_data';
+
+late LiveSession _session;
+
+Future&lt;Stream&lt;Uint8List&gt;&gt; textToAudio(String textPrompt) async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Initialize the Gemini Developer API backend service.
+  // Create a `liveGenerativeModel` instance with a model that supports the Live API.
+  final liveModel = FirebaseAI.googleAI().liveGenerativeModel(
+    model: 'GEMINI_LIVE_API_MODEL_NAME',
+    // Configure the model to respond with audio.
+    liveGenerationConfig: LiveGenerationConfig(
+      responseModalities: [ResponseModalities.audio],
+    ),
+  );
+
+  _session = await liveModel.connect();
+
+  final prompt = Content.text(textPrompt);
+
+  await _session.send(input: prompt);
+
+  return _session.receive().asyncMap((response) async {
+    final message = response.message;
+    if (message is LiveServerContent &amp;&amp; message.modelTurn?.parts != null) {
+       for (final part in message.modelTurn!.parts) {
+         if (part is InlineDataPart) {
+           return part.bytes;
+         }
+       }
+    }
+    throw Exception('Audio data not found');
+  });
+}
+
+Future&lt;void&gt; main() async {
+  try {
+    final audioStream = await textToAudio('Convert this text to audio.');
+
+    await for (final audioData in audioStream) {
+      // Process the audio data (e.g., play it using an audio player package).
+      print('Received audio data: ${audioData.length} bytes');
+      // Example using flutter_sound (replace with your chosen package):
+      // await _flutterSoundPlayer.startPlayer(fromDataBuffer: audioData);
+    }
+  } catch (e) {
+    print('Error: $e');
+  }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>To use the Live API, create a <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/live-generative-model"><code translate="no" dir="ltr">LiveModel</code></a> instance and set the <a href="../model-parameters#config-gemini-live-api">response modality</a> to <code translate="no" dir="ltr">Audio</code>.</p> 
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+async Task SendTextReceiveAudio() {
+  // Initialize the Gemini Developer API backend service.
+  // Create a `LiveModel` instance with a model that supports the Live API.
+  var liveModel = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI()).GetLiveModel(
+    modelName: "GEMINI_LIVE_API_MODEL_NAME",
+    // Configure the model to respond with audio.
+    liveGenerationConfig: new LiveGenerationConfig(
+        responseModalities: new[] { ResponseModality.Audio })
+  );
+
+  LiveSession session = await liveModel.ConnectAsync();
+
+  // Provide a text prompt.
+  var prompt = ModelContent.Text("Convert this text to audio.");
+  await session.SendAsync(content: prompt, turnComplete: true);
+
+  // Start receiving the response.
+  await ReceiveAudio(session);
+}
+
+Queue&lt;float&gt; audioBuffer = new();
+
+async Task ReceiveAudio(LiveSession session) {
+  int sampleRate = 24000;
+  int channelCount = 1;
+
+  // Create a looping AudioClip to fill with the received audio data.
+  int bufferSamples = (int)(sampleRate * channelCount);
+  AudioClip clip = AudioClip.Create("StreamingPCM", bufferSamples, channelCount,
+                                    sampleRate, true, OnAudioRead);
+
+  // Attach the clip to an AudioSource and start playing it.
+  AudioSource audioSource = GetComponent&lt;AudioSource&gt;();
+  audioSource.clip = clip;
+  audioSource.loop = true;
+  audioSource.Play();
+
+  // Start receiving the response.
+  await foreach (var message in session.ReceiveAsync()) {
+    // Process the received message.
+    foreach (float[] pcmData in message.AudioAsFloat) {
+      lock (audioBuffer) {
+        foreach (float sample in pcmData) {
+          audioBuffer.Enqueue(sample);
+        }
+      }
+    }
+  }
+}
+
+// This method is called by the AudioClip to load audio data.
+private void OnAudioRead(float[] data) {
+  int samplesToProvide = data.Length;
+  int samplesProvided = 0;
+
+  lock(audioBuffer) {
+    while (samplesProvided &lt; samplesToProvide &amp;&amp; audioBuffer.Count &gt; 0) {
+      data[samplesProvided] = audioBuffer.Dequeue();
+      samplesProvided++;
+    }
+  }
+
+  while (samplesProvided &lt; samplesToProvide) {
+    data[samplesProvided] = 0.0f;
+    samplesProvided++;
+  }
+}
+
+</pre></section> </div> <p>Note that you can also send text as <a href="sessions#add-incremental-content-updates">incremental content updates</a> during an active session.</p> <h3 id="video-in-audio-out">Stream video + audio input</h3> <p>Providing input video content provides visual context for the input audio.</p> <p>The Live API expects a sequence of discrete image frames and supports video frames input at 1 frame per second (FPS).</p> <ul> <li><p><strong>Recommended input</strong>: native 768x768 resolution at 1 FPS.</p></li> <li><p><strong>Supported MIME types</strong>: <code translate="no" dir="ltr">video/x-flv</code>, <code translate="no" dir="ltr">video/quicktime</code>, <code translate="no" dir="ltr">video/mpeg</code>, <code translate="no" dir="ltr">video/mpegs</code>, <code translate="no" dir="ltr">video/mpg</code>, <code translate="no" dir="ltr">video/mp4</code>, <code translate="no" dir="ltr">video/webm</code>, <code translate="no" dir="ltr">video/wmv</code>, <code translate="no" dir="ltr">video/3gpp</code></p></li> </ul> <p>Streaming video + audio input is a more advanced implementation, so check out a sample app to learn how to implement this capability: <strong>Swift</strong> - coming soon! | <strong>Android</strong> - <a href="https://github.com/firebase/quickstart-android/tree/master/firebase-ai/app/src/main/java/com/google/firebase/quickstart/ai/feature/live">sample app</a> | <strong>Web</strong> - coming soon! | <strong>Flutter</strong> - <a href="https://github.com/flutter/demos/tree/main/firebase_ai_logic_showcase/lib/demos/live_api">sample app</a> | <strong>Unity</strong> - coming soon!</p> <p><br></p> <hr> <h2 id="not-supported-features">Features not yet supported</h2> <ul> <li>
+<p>Features <em>not <strong>yet</strong></em> supported by <span class='\"notranslate\"'>Firebase AI Logic</span> when using the Live API, but they're coming soon!</p> <ul> <li><p>Configuring thinking (the default is <code translate="no" dir="ltr">minimal</code> for the <span class='\"notranslate\"'>Gemini Live 3.x</span> model)</p></li> <li><p>Setting input media resolution</p></li> <li><p>Adding a thinking configuration</p></li> <li><p>Enabling affective dialogue or proactive audio (only applicable for the Gemini Live 2.x models)</p></li> <li><p>Receiving <code translate="no" dir="ltr">UsageMetadata</code> in the response</p></li> </ul>
+</li> <li>
+<p>Features <em>not</em> supported by <span class='\"notranslate\"'>Firebase AI Logic</span> when using the Live API, and they're unplanned right now.</p> <ul> <li><p>Server prompt templates</p></li> <li><p>Hybrid or on-device inference</p></li> <li><p>AI monitoring in the Firebase console</p></li> </ul>
+</li> </ul> <aside class="note"><strong>Note:</strong><span> <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support using speech-to-speech (S2S) models or Lyria models.</span></aside> <p><br></p> <hr> <h2 id="what-else-can-you-do">What else can you do?</h2> <ul> <li><p>Customize your implementation by using various <a href="configuration">configuration options</a>, like adding transcription, setting the response voice, or configuring voice activity detection (VAD) (for example, to handle interruptions).</p></li> <li><p>Learn about <a href="sessions">managing sessions</a>, including updating content mid-session, manually signaling user activity, compressing the context window, detecting when a session is about to end, and resuming a session.</p></li> <li><p>Supercharge your implementation by giving the model access to tools, like function calling and Grounding with <nobr>Google Search</nobr>. Official documentation for using tools with the Live API is coming soon!</p></li> <li><p>Learn about <a href="limits-and-specs">limits and specifications</a>, for using the Live API, like session length, rate limits, supported languages, etc.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/live-api/capabilities" class="_attribution-link">https://firebase.google.com/docs/ai-logic/live-api/capabilities</a>
+  </p>
+</div>

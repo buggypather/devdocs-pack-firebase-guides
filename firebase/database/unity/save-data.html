@@ -1,0 +1,110 @@
+<h1>Save Data</h1> <h2 id="before_you_begin">Before you begin</h2> <p>Before you can use <a href="https://firebase.google.com/docs/reference/unity/namespace/firebase/database">Realtime Database</a>, you need to:</p> <ul> <li>
+<p>Register your Unity project and configure it to use Firebase.</p> <ul> <li><p>If your Unity project already uses Firebase, then it's already registered and configured for Firebase.</p></li> <li><p>If you don't have a Unity project, you can download a <a href="https://github.com/google/mechahamster">sample app</a>.</p></li> </ul>
+</li> <li><p>Add the <a href="https://firebase.google.com/download/unity">Firebase Unity SDK</a> (specifically, <code translate="no" dir="ltr">FirebaseDatabase.unitypackage</code>) to your Unity project.</p></li> </ul> <aside class="objective"><strong>Find detailed instructions for these initial setup tasks in <a href="../../unity/setup#prerequisites">Add Firebase to your Unity project</a>.</strong> </aside> <p>Note that adding Firebase to your Unity project involves tasks both in the <a href="https://console.firebase.google.com/">Firebase console</a> and in your open Unity project (for example, you download Firebase config files from the console, then move them into your Unity project).</p> <h2 id="saving_data">Saving Data</h2> <p>There are five methods for writing data to the Firebase Realtime Database:</p> <table> <tr> <th>Method</th> <th>Common uses</th> </tr> <tr> <td><code translate="no" dir="ltr">SetValueAsync()</code></td> <td>Write or replace data to a defined path, such as <code translate="no" dir="ltr">users/&lt;user-id&gt;/&lt;username&gt;</code>.</td> </tr> <tr> <td><code translate="no" dir="ltr">SetRawJsonValueAsync()</code></td> <td>Write or replace data with raw Json, such as <code translate="no" dir="ltr">users/&lt;user-id&gt;/&lt;username&gt;</code>.</td> </tr> <tr> <td><code translate="no" dir="ltr">Push()</code></td> <td>Add to a list of data. Every time you call <code translate="no" dir="ltr">Push()</code>, Firebase generates a unique key that can also be used as a unique identifier, such as <code translate="no" dir="ltr">user-scores/&lt;user-id&gt;/&lt;unique-score-id&gt;</code>.</td> </tr> <tr> <td><code translate="no" dir="ltr">UpdateChildrenAsync()</code></td> <td>Update some of the keys for a defined path without replacing all of the data.</td> </tr> <tr> <td><code translate="no" dir="ltr">RunTransaction()</code></td> <td>Update complex data that could be corrupted by concurrent updates.</td> </tr> </table> <aside class="note"><strong>Note:</strong><span> By default, read and write access to your database is restricted so only authenticated users can read or write data. To get started without setting up <a href="../../auth">Authentication</a>, you can <a href="../../rules/basics#default_rules_locked_mode" target="_blank">configure your rules for public access</a>. This does make your database open to anyone, even people not using your app, so be sure to restrict your database again when you set up authentication.</span></aside> <h2 id="get_a_databasereference">Get a DatabaseReference</h2> <p>To write data to the Database, you need an instance of <code translate="no" dir="ltr">DatabaseReference</code>:</p> 
+<pre>using Firebase;
+using Firebase.Database;
+
+public class MyScript: MonoBehaviour {
+  void Start() {
+    // Get the root reference location of the database.
+    DatabaseReference reference = FirebaseDatabase.DefaultInstance.RootReference;
+  }
+}</pre> <h2 id="write_update_or_delete_data_at_a_reference">Write, update, or delete data at a reference</h2> <h3 id="basic_write">Basic write operations</h3> <p>For basic write operations, you can use <code translate="no" dir="ltr">SetValueAsync()</code> to save data to a specified reference, replacing any existing data at that path. You can use this method to pass types that correspond to the available JSON types as follows:</p> <ul> <li><code translate="no" dir="ltr">string</code></li> <li><code translate="no" dir="ltr">long</code></li> <li><code translate="no" dir="ltr">double</code></li> <li><code translate="no" dir="ltr">bool</code></li> <li><code translate="no" dir="ltr">Dictionary&lt;string, Object&gt;</code></li> <li><code translate="no" dir="ltr">List&lt;Object&gt;</code></li> </ul> <p>If you use a typed C# object, you can use the built in <code translate="no" dir="ltr">JsonUtility.ToJson()</code> to convert the object to raw Json and call <code translate="no" dir="ltr">SetRawJsonValueAsync()</code>. For example, you may have a User class that looked as follows:</p> 
+<pre>public class User {
+    public string username;
+    public string email;
+
+    public User() {
+    }
+
+    public User(string username, string email) {
+        this.username = username;
+        this.email = email;
+    }
+}</pre> <p>You can add a user with <code translate="no" dir="ltr">SetRawJsonValueAsync()</code> as follows:</p> 
+<pre>private void writeNewUser(string userId, string name, string email) {
+    User user = new User(name, email);
+    string json = JsonUtility.ToJson(user);
+
+    mDatabaseRef.Child("users").Child(userId).SetRawJsonValueAsync(json);
+}</pre> <p>Using <code translate="no" dir="ltr">SetValueAsync()</code> or <code translate="no" dir="ltr">SetRawJsonValueAsync()</code> in this way overwrites data at the specified location, including any child nodes. However, you can still update a child without rewriting the entire object. If you want to allow users to update their profiles you could update the username as follows:</p> 
+<pre>mDatabaseRef.Child("users").Child(userId).Child("username").SetValueAsync(name);
+</pre> <h3 id="append_to_a_list_of_data">Append to a list of data</h3> <p>Use the <code translate="no" dir="ltr">Push()</code> method to append data to a list in multiuser applications. The <code translate="no" dir="ltr">Push()</code> method generates a unique key every time a new child is added to the specified Firebase reference. By using these auto-generated keys for each new element in the list, several clients can add children to the same location at the same time without write conflicts. The unique key generated by <code translate="no" dir="ltr">Push()</code> is based on a timestamp, so list items are automatically ordered chronologically.</p> <p>You can use the reference to the new data returned by the <code translate="no" dir="ltr">Push()</code> method to get the value of the child's auto-generated key or set data for the child. Calling <code translate="no" dir="ltr">Key</code> on a <code translate="no" dir="ltr">Push()</code> reference returns the value of the auto-generated key.</p> <h3 id="update_specific_fields">Update specific fields</h3> <p>To simultaneously write to specific children of a node without overwriting other child nodes, use the <code translate="no" dir="ltr">UpdateChildrenAsync()</code> method.</p> <p> When calling <code translate="no" dir="ltr">UpdateChildrenAsync()</code>, you can update lower-level child values by specifying a path for the key. If data is stored in multiple locations to scale better, you can update all instances of that data using <a href="../android/structure-data#fanout">data fan-out</a>. For example, a game might have a <code translate="no" dir="ltr">LeaderboardEntry</code> class like this:</p> 
+<pre>public class LeaderboardEntry {
+    public string uid;
+    public int score = 0;
+
+    public LeaderboardEntry() {
+    }
+
+    public LeaderboardEntry(string uid, int score) {
+        this.uid = uid;
+        this.score = score;
+    }
+
+    public Dictionary&lt;string, Object&gt; ToDictionary() {
+        Dictionary&lt;string, Object&gt; result = new Dictionary&lt;string, Object&gt;();
+        result["uid"] = uid;
+        result["score"] = score;
+
+        return result;
+    }
+}</pre> <p>To create a LeaderboardEntry and simultaneously update it to the recent score feed and the user's own score list, the game uses code like this:</p> 
+<pre>private void WriteNewScore(string userId, int score) {
+    // Create new entry at /user-scores/$userid/$scoreid and at
+    // /leaderboard/$scoreid simultaneously
+    string key = mDatabase.Child("scores").Push().Key;
+    LeaderBoardEntry entry = new LeaderBoardEntry(userId, score);
+    Dictionary&lt;string, Object&gt; entryValues = entry.ToDictionary();
+
+    Dictionary&lt;string, Object&gt; childUpdates = new Dictionary&lt;string, Object&gt;();
+    childUpdates["/scores/" + key] = entryValues;
+    childUpdates["/user-scores/" + userId + "/" + key] = entryValues;
+
+    mDatabase.UpdateChildrenAsync(childUpdates);
+}</pre> <p>This example uses <code translate="no" dir="ltr">Push()</code> to create an entry in the node containing entries for all users at <code translate="no" dir="ltr">/scores/$key</code> and simultaneously retrieve the key with <code translate="no" dir="ltr">Key</code>. The key can then be used to create a second entry in the user's scores at <code translate="no" dir="ltr">/user-scores/$userid/$key</code>.</p> <p>Using these paths, you can perform simultaneous updates to multiple locations in the JSON tree with a single call to <code translate="no" dir="ltr">UpdateChildrenAsync()</code>, such as how this example creates the new entry in both locations. Simultaneous updates made this way are atomic: either all updates succeed or all updates fail.</p> <h3 id="delete_data">Delete data</h3> <p>The simplest way to delete data is to call <code translate="no" dir="ltr">RemoveValue()</code> on a reference to the location of that data.</p> <p>You can also delete by specifying <code translate="no" dir="ltr">null</code> as the value for another write operation such as <code translate="no" dir="ltr">SetValueAsync()</code> or <code translate="no" dir="ltr">UpdateChildrenAsync()</code>. You can use this technique with <code translate="no" dir="ltr">UpdateChildrenAsync()</code> to delete multiple children in a single API call.</p> <h3 id="know_when_your_data_is_committed">Know when your data is committed.</h3> <p>To know when your data is committed to the Firebase Realtime Database server, you can add a continuation. Both <code translate="no" dir="ltr">SetValueAsync()</code> and <code translate="no" dir="ltr">UpdateChildrenAsync()</code> return a <code translate="no" dir="ltr">Task</code> that allows you to know when the operation is complete. If the call is unsuccessful for any reason, the Tasks <code translate="no" dir="ltr">IsFaulted</code> will be true with the <code translate="no" dir="ltr">Exception</code> property indicating why the failure occurred.</p> <h2 id="save_data_as_transactions">Save data as transactions</h2> <p>When working with data that could be corrupted by concurrent modifications, such as incremental counters, you can use a <a href="https://firebase.google.com/docs/reference/unity/class/firebase/database/transaction-result">transaction operation</a>. You give this operation a <code translate="no" dir="ltr">Func</code>. This update <code translate="no" dir="ltr">Func</code> takes the current state of the data as an argument and returns the new desired state you would like to write. If another client writes to the location before your new value is successfully written, your update function is called again with the new current value, and the write is retried.</p> <p>For instance, in a game you could allow users to update a leaderboard with the five highest scores:</p> 
+<pre>private void AddScoreToLeaders(string email, 
+                               long score,
+                               DatabaseReference leaderBoardRef) {
+
+    leaderBoardRef.RunTransaction(mutableData =&gt; {
+      List&lt;object&gt; leaders = mutableData.Value as List&lt;object&gt;
+
+      if (leaders == null) {
+        leaders = new List&lt;object&gt;();
+      } else if (mutableData.ChildrenCount &gt;= MaxScores) {
+        long minScore = long.MaxValue;
+        object minVal = null;
+        foreach (var child in leaders) {
+          if (!(child is Dictionary&lt;string, object&gt;)) continue;
+          long childScore = (long)
+                      ((Dictionary&lt;string, object&gt;)child)["score"];
+          if (childScore &lt; minScore) {
+            minScore = childScore;
+            minVal = child;
+          }
+        }
+        if (minScore &gt; score) {
+          // The new score is lower than the existing 5 scores, abort.
+          return TransactionResult.Abort();
+        }
+
+        // Remove the lowest score.
+        leaders.Remove(minVal);
+      }
+
+      // Add the new high score.
+      Dictionary&lt;string, object&gt; newScoreMap =
+                       new Dictionary&lt;string, object&gt;();
+      newScoreMap["score"] = score;
+      newScoreMap["email"] = email;
+      leaders.Add(newScoreMap);
+      mutableData.Value = leaders;
+      return TransactionResult.Success(mutableData);
+    });
+}</pre> <p>Using a transaction prevents the leaderboard from being incorrect if multiple users record scores at the same time or the client had stale data. If the transaction is rejected, the server returns the current value to the client, which runs the transaction again with the updated value. This repeats until the transaction is accepted or too many attempts have been made.</p> <aside class="note"><strong>Note:</strong><span> Because <code translate="no" dir="ltr">RunTransaction()</code> is called multiple times, it must be able to handle <code translate="no" dir="ltr">null</code> data. Even if there is existing data in your remote database, it may not be locally cached when the transaction function is run, resulting in <code translate="no" dir="ltr">null</code> for the initial value.</span></aside> <h2 id="write_data_offline">Write data offline</h2> <p>If a client loses its network connection, your app will continue functioning correctly.</p> <p>Every client connected to a Firebase database maintains its own internal version of any active data. When data is written, it's written to this local version first. The Firebase client then synchronizes that data with the remote database servers and with other clients on a "best-effort" basis.</p> <p>As a result, all writes to the database trigger local events immediately, before any data is written to the server. This means your app remains responsive regardless of network latency or connectivity.</p> <p>Once connectivity is reestablished, your app receives the appropriate set of events so that the client syncs with the current server state, without having to write any custom code.</p> <h2 id="next_steps">Next Steps</h2> <ul> <li><a href="retrieve-data">Retrieve data from your Realtime Database</a></li> <li><a href="structure-data">Learn how to structure data</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/unity/save-data" class="_attribution-link">https://firebase.google.com/docs/database/unity/save-data</a>
+  </p>
+</div>

@@ -1,0 +1,191 @@
+<h1>Unit testing of Cloud Functions</h1> <p>This page describes best practices and tools for writing unit tests for your functions, such as tests that would be a part of a Continuous Integration (CI) system. To make testing easier, Firebase provides the Firebase Test SDK for Cloud Functions. It is distributed on npm as <code translate="no" dir="ltr">firebase-functions-test</code>, and is a companion test SDK to <code translate="no" dir="ltr">firebase-functions</code>. The Firebase Test SDK for Cloud Functions:</p> <ul> <li>Takes care of the appropriate setup and teardown for your tests, such as setting and unsetting environment variables needed by <code translate="no" dir="ltr">firebase-functions</code>.</li> <li>Generates sample data and event context, so that you only have to specify the fields that are relevant to your test.</li> </ul> <aside class="note"><strong>Note:</strong><span> <code translate="no" dir="ltr">firebase-functions-test</code> can only be used with functions written with <code translate="no" dir="ltr">firebase-functions</code> 2.0.0 or above.</span></aside> <h2 id="test_setup">Test setup</h2> <p>Install both <code translate="no" dir="ltr">firebase-functions-test</code> and <a href="https://jestjs.io">Jest</a>, a testing framework, by running the following commands in your functions folder:</p> 
+<pre>npm install --save-dev firebase-functions-test
+npm install --save-dev jest
+</pre> <p>Next create a <code translate="no" dir="ltr">test</code> folder inside the functions folder, create a new file inside it for your test code, and name it something like <code translate="no" dir="ltr">index.test.js</code>.</p> <p>Finally, modify <code translate="no" dir="ltr">functions/package.json</code> to add the following:</p> 
+<pre>"scripts": {
+  "test": "jest"
+}
+</pre> <p>Once you have written the tests, you can run them by running <code translate="no" dir="ltr">npm test</code> inside your functions directory.</p> <h3 id="initializing">Initializing Firebase Test SDK for Cloud Functions</h3> <p>There are two ways to use <code translate="no" dir="ltr">firebase-functions-test</code>:</p> <ol> <li>
+<strong>Online mode (recommended):</strong> Write tests that interact with a Firebase project dedicated to testing so that database writes, user creates, etc. would actually happen, and your test code can inspect the results. This also means that other Google SDKs used in your functions will work as well.</li> <li>
+<strong>Offline mode:</strong> Write siloed and offline unit tests with no side effects. This means that any method calls that interact with a Firebase product (e.g. writing to the database or creating a user) need to be stubbed. Using offline mode is generally not recommended if you have Cloud Firestore or Realtime Database functions, since it greatly increases the complexity of your test code.</li> </ol> <h4 id="online-mode">Initialize SDK in online mode (recommended)</h4> <p>If you would like to write tests that interact with a test project, you need to supply the Firebase configuration values that are needed for initializing the app through <code translate="no" dir="ltr">firebase-admin</code>, and the path to a service account key file.</p> <p>To get your Firebase configuration values:</p> <ol> <li><p>In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general" class="external"><strong>General</strong> page</a>.</p></li> <li><p>Scroll to the <strong>Your apps</strong> card, and select the intended app.</p></li> <li>
+<p>Get your Firebase configuration:</p> <ul> <li><p>For Apple and Android apps, select the option to download a configuration file.</p></li> <li><p>For web apps, select <strong>Config</strong> to display the configuration values.</p></li> </ul>
+</li> </ol> <p>To create a key file:</p> <ol> <li><p>In the Google Cloud console, go to the <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" class="external"><strong>Service Accounts</strong> pane</a>.</p></li> <li><p>Select the App Engine default service account, and use the options menu at the right to select <strong>Create key</strong>.</p></li> <li><p>When prompted, select JSON for the key type, and click <strong>Create</strong>.</p></li> </ol> <p>After saving the key file, initialize the SDK:</p> 
+<pre>// At the top of test/index.test.js
+// Make sure to use values from your actual Firebase configuration
+const test = require('firebase-functions-test')({
+  databaseURL: 'https://PROJECT_ID.firebaseio.com',
+  storageBucket: 'PROJECT_ID.firebasestorage.app',
+  projectId: 'PROJECT_ID',
+}, 'path/to/serviceAccountKey.json');
+</pre>
+<aside class="warning"><strong>Warning:</strong><span> Use extra caution when handling service account credentials in your code. Do not commit them to a public repository, deploy them in a client app, or expose them in any way that could compromise the security of your Firebase project.</span></aside> <h4 id="offline-mode">Initialize SDK in offline mode</h4> <p>If you would like to write completely offline tests, you can initialize the SDK without any parameters:</p> 
+<pre>// At the top of test/index.test.js
+const test = require('firebase-functions-test')();
+</pre> <h3 id="mocking_config_values">Mocking config values</h3> <p>If you use <code translate="no" dir="ltr">functions.config()</code> in your functions code, you can mock the config values. For example, if <code translate="no" dir="ltr">functions/index.js</code> contains the following code:</p> 
+<pre>const functions = require('firebase-functions/v1');
+const key = functions.config().stripe.key;
+</pre> <p>Then you can mock the value inside your test file like so:</p> 
+<pre>// Mock functions config values
+test.mockConfig({ stripe: { key: '23wr42ewr34' }});
+</pre> <h3 id="importing_your_functions">Importing your functions</h3> <p>To import your functions, use <code translate="no" dir="ltr">require</code> to import your main functions file as a module. <strong>Be sure to only do this after initializing <code translate="no" dir="ltr">firebase-functions-test</code>, and mocking config values.</strong></p> 
+<pre>// after firebase-functions-test has been initialized
+const myFunctions = require('../index.js'); // relative path to functions code
+</pre> <p>If you initialized <code translate="no" dir="ltr">firebase-functions-test</code> in <a href="https://firebase.google.com/docs/reference/functions/test/test">offline mode</a>, and you have <code translate="no" dir="ltr">admin.initializeApp()</code> in your functions code, then you need to stub it before importing your functions. In your test file, require <code translate="no" dir="ltr">firebase-admin</code> as <code translate="no" dir="ltr">admin</code>, then replace <code translate="no" dir="ltr">initializeApp()</code> with a Jest mock:</p> 
+<pre>// If initializeApp() is called in index.js, we mock it out before requiring index.js
+adminInitStub = jest.spyOn(admin, 'initializeApp').mockImplementation(() =&gt; {});
+// Now we can require index.js and save the exports inside a namespace called myFunctions.
+myFunctions = require('../index');</pre> <h2 id="test-background">Testing background (non-HTTP) functions</h2> <p>The process for testing non-HTTP functions involves the following steps:</p> <ol> <li>Wrap the function you would like to test with the <code translate="no" dir="ltr">test.wrap</code> method</li> <li>Construct test data</li> <li>Invoke the wrapped function with the test data you constructed and any event context fields you'd like to specify.</li> <li>Make assertions about behavior.</li> </ol> <p>First wrap the function you'd like to test. Let's say you have a function in <code translate="no" dir="ltr">functions/index.js</code> called <code translate="no" dir="ltr">makeUppercase</code>, which you'd like to test. Write the following in <code translate="no" dir="ltr">functions/test/index.test.js</code></p> 
+<pre>// "Wrap" the makeUpperCase function from index.js
+const myFunctions = require('../index.js');
+const wrapped = test.wrap(myFunctions.makeUppercase);
+</pre> <p><code translate="no" dir="ltr">wrapped</code> is a function which invokes <code translate="no" dir="ltr">makeUppercase</code> when it is called. <code translate="no" dir="ltr">wrapped</code> takes 2 parameters:</p> <ol> <li>
+<strong>data</strong> (required): the data to send to <code translate="no" dir="ltr">makeUppercase</code>. This directly corresponds to the first parameter sent to the function handler that you wrote. <code translate="no" dir="ltr">firebase-functions-test</code> provides methods for constructing custom data or example data.</li> <li>
+<strong>eventContextOptions</strong> (optional): fields of the event context that you'd like to specify. The event context is the second parameter sent to the function handler that you wrote. If you do not include an <code translate="no" dir="ltr">eventContextOptions</code> parameter when calling <code translate="no" dir="ltr">wrapped</code>, an event context is still generated with sensible fields. You can override some of the generated fields by specifying them here. Note that you only have to include the fields that you'd like to override. Any fields that you did not override are generated.</li> </ol> 
+<pre>const data = … // See next section for constructing test data
+
+// Invoke the wrapped function without specifying the event context.
+wrapped(data);
+
+// Invoke the function, and specify params
+wrapped(data, {
+  params: {
+    pushId: '234234'
+  }
+});
+
+// Invoke the function, and specify auth and auth Type (for real time database functions only)
+wrapped(data, {
+  auth: {
+    uid: 'jckS2Q0'
+  },
+  authType: 'USER'
+});
+
+// Invoke the function, and specify all the fields that can be specified
+wrapped(data, {
+  eventId: 'abc',
+  timestamp: '2018-03-23T17:27:17.099Z',
+  params: {
+    pushId: '234234'
+  },
+  auth: {
+    uid: 'jckS2Q0' // only for real time database functions
+  },
+  authType: 'USER' // only for real time database functions
+});
+</pre> <h3 id="constructing_test_data">Constructing test data</h3> <p>The first parameter of a wrapped function is the test data to invoke the underlying function with. There are a number of ways to construct test data.</p> <h4 id="using_custom_data">Using custom data</h4> <p><code translate="no" dir="ltr">firebase-functions-test</code> has a number of functions for constructing data needed to test your functions. For example, use <code translate="no" dir="ltr">test.firestore.makeDocumentSnapshot</code> to create a Firestore <code translate="no" dir="ltr">DocumentSnapshot</code>. The first argument is the data, and the second argument is the full reference path, and there is an <a href="https://firebase.google.com/docs/reference/functions/test/test.firestore.DocumentSnapshotOptions">optional third argument</a> for other properties of the snapshot you can specify.</p> 
+<pre>// Make snapshot
+const snap = test.firestore.makeDocumentSnapshot({foo: 'bar'}, 'document/path');
+// Call wrapped function with the snapshot
+const wrapped = test.wrap(myFunctions.myFirestoreDeleteFunction);
+wrapped(snap);
+</pre> <p>If you are testing an <code translate="no" dir="ltr">onUpdate</code> or <code translate="no" dir="ltr">onWrite</code> function, you'll need to create two snapshots: one for the before state and one for the after state. Then, you can use the <code translate="no" dir="ltr">makeChange</code> method to create a <code translate="no" dir="ltr">Change</code> object with these snapshots.</p> 
+<pre>// Make snapshot for state of database beforehand
+const beforeSnap = test.firestore.makeDocumentSnapshot({foo: 'bar'}, 'document/path');
+// Make snapshot for state of database after the change
+const afterSnap = test.firestore.makeDocumentSnapshot({foo: 'faz'}, 'document/path');
+const change = test.makeChange(beforeSnap, afterSnap);
+// Call wrapped function with the Change object
+const wrapped = test.wrap(myFunctions.myFirestoreUpdateFunction);
+wrapped(change);
+</pre>
+<aside class="note"><strong>Note:</strong><span> You should only construct custom data for Cloud Firestore and Realtime Database if you initialized the SDK in <a href="#online-mode">online mode</a>. Otherwise, you should use <a href="#stubbed-data">stubbed data</a> to avoid unexpected behavior.</span></aside> <p>See the <a href="https://firebase.google.com/docs/reference/functions/test">API reference</a> for similar functions for all the other data types.</p> <h4 id="using_example_data">Using example data</h4> <p>If you don't need to customize the data used in the your tests, then <code translate="no" dir="ltr">firebase-functions-test</code> offers methods for generating example data for each function type.</p> 
+<pre>// For Firestore onCreate or onDelete functions
+const snap = test.firestore.exampleDocumentSnapshot();
+// For Firestore onUpdate or onWrite functions
+const change = test.firestore.exampleDocumentSnapshotChange();
+</pre>
+<aside class="note"><strong>Note:</strong><span> You should only construct example data for Cloud Firestore and Realtime Database if you initialized the SDK in <a href="#online-mode">online mode</a>. Otherwise, you should use <a href="#stubbed-data">stubbed data</a> to avoid unexpected behavior.</span></aside> <p>See the <a href="https://firebase.google.com/docs/reference/functions/test">API reference</a> for methods for getting example data for every function type.</p> <h4 id="stubbed-data">Using stubbed data (for offline mode)</h4> <p>If you initialized the SDK in offline mode, and are testing a Cloud Firestore or Realtime Database function, you should use a plain object with stubs instead of creating an actual <code translate="no" dir="ltr">DocumentSnapshot</code> or <code translate="no" dir="ltr">DataSnapshot</code>.</p> <p>Let's say you are writing a unit test for the following function:</p> 
+<pre>// Listens for new messages added to /messages/:pushId/original and creates an
+// uppercase version of the message to /messages/:pushId/uppercase
+exports.makeUppercase = functions.database.ref('/messages/{pushId}/original')
+    .onCreate((snapshot, context) =&gt; {
+      // Grab the current value of what was written to the Realtime Database.
+      const original = snapshot.val();
+      functions.logger.log('Uppercasing', context.params.pushId, original);
+      const uppercase = original.toUpperCase();
+      // You must return a Promise when performing asynchronous tasks inside a Functions such as
+      // writing to the Firebase Realtime Database.
+      // Setting an "uppercase" sibling in the Realtime Database returns a Promise.
+      return snapshot.ref.parent.child('uppercase').set(uppercase);
+    });</pre> <p>Inside of the function, <code translate="no" dir="ltr">snap</code> is used twice:</p> <ul> <li><code translate="no" dir="ltr">snap.val()</code></li> <li><code translate="no" dir="ltr">snap.ref.parent.child('uppercase').set(uppercase)</code></li> </ul> <p>In test code, create a plain object where both of these code paths will work, and use Jest <a href="https://jestjs.io/docs/mock-functions">mock functions</a> to stub the methods.</p> 
+<pre>// The following lines create a fake snapshot, 'snap', which returns 'input' when snap.val() is called,
+// and returns true when snap.ref.parent.child('uppercase').set('INPUT') is called.
+const snap = {
+  val: () =&gt; 'input',
+  ref: {
+    parent: {
+      child: childStub,
+    }
+  }
+};</pre> <h3 id="making_assertions">Making assertions</h3> <p>After initializing the SDK, wrapping the functions, and constructing data, you can invoke the wrapped functions with the constructed data and make assertions about behavior. You can use Jest's <a href="https://jestjs.io/docs/expect"><code translate="no" dir="ltr">expect</code></a> to make these assertions.</p> <h4 id="making_assertions_in_online_mode">Making assertions in online mode</h4> <p>If you initialized the Firebase Test SDK for Cloud Functions in <a href="#online-mode">online mode</a>, you can assert that the desired actions (such as a database write) has taken place by using the <code translate="no" dir="ltr">firebase-admin</code> SDK.</p> <p>The example below asserts that 'INPUT' has been written into the database of the test project.</p> 
+<pre>// Create a DataSnapshot with the value 'input' and the reference path 'messages/11111/original'.
+const snap = test.database.makeDataSnapshot('input', 'messages/11111/original');
+// Wrap the makeUppercase function
+const wrapped = test.wrap(myFunctions.makeUppercase);
+// Call the wrapped function with the snapshot you constructed.
+return wrapped(snap).then(() =&gt; {
+  // Read the value of the data at messages/11111/uppercase. Because `admin.initializeApp()` is
+  // called in functions/index.js, there's already a Firebase app initialized.
+  return admin.database().ref('messages/11111/uppercase').once('value').then((createdSnap) =&gt; {
+    // Assert that the value is the uppercased version of our input.
+    expect(createdSnap.val()).toBe('INPUT');
+  });
+});</pre> <h4 id="making_assertions_in_offline_mode">Making assertions in offline mode</h4> <p>You can make assertions about the expected return value of the function:</p> 
+<pre>const childParam = 'uppercase';
+const setParam = 'INPUT';
+// Spies/mocks are objects that fake and/or record function calls.
+// These are excellent for verifying that functions have been called and to validate the
+// parameters passed to those functions.
+const setStub = jest.fn().mockImplementation((val) =&gt; val === setParam ? true : undefined);
+const childStub = jest.fn().mockImplementation((path) =&gt; path === childParam ? { set: setStub } : undefined);
+// The following lines create a fake snapshot, 'snap', which returns 'input' when snap.val() is called,
+// and returns true when snap.ref.parent.child('uppercase').set('INPUT') is called.
+const snap = {
+  val: () =&gt; 'input',
+  ref: {
+    parent: {
+      child: childStub,
+    }
+  }
+};
+// Wrap the makeUppercase function.
+const wrapped = test.wrap(myFunctions.makeUppercase);
+// Since we've mocked snap.ref.parent.child(childParam).set(setParam) to return true if it was
+// called with the parameters we expect, we assert that it indeed returned true.
+return wrapped(snap).then(makeUppercaseResult =&gt; {
+  expect(makeUppercaseResult).toBe(true);
+});</pre> <p>You can also use Jest mock functions to assert that certain methods have been called, and with the parameters you expect.</p> <h2 id="testing_http_functions">Testing HTTP functions</h2> <p>To test HTTP onCall functions, use the same approach as <a href="#test-background">testing background functions</a>.</p> <p>If you are testing HTTP onRequest functions, you should use <code translate="no" dir="ltr">firebase-functions-test</code> if:</p> <ul> <li>You use <code translate="no" dir="ltr">functions.config()</code>
+</li> <li>Your function interacts with a Firebase project or other Google APIs, and you'd like to use a real Firebase project and its credentials for your tests.</li> </ul> <p>An HTTP onRequest function takes two parameters: a request object and a response object. Here is how you might test the <a href="https://github.com/firebase/functions-samples/tree/main/Node-1st-gen/quickstarts/uppercase-rtdb/functions/index.js"><code translate="no" dir="ltr">addMessage()</code> example function</a>:</p> <ul> <li>
+<p>Stub <code translate="no" dir="ltr">admin.database()</code>, because <code translate="no" dir="ltr">addMessage()</code> pushes to the Realtime Database. In offline mode you stubbed <code translate="no" dir="ltr">initializeApp()</code>, so there is no Firebase app for the Admin SDK to use, and the real <code translate="no" dir="ltr">admin.database()</code> fails with <code translate="no" dir="ltr">The default Firebase app does not exist</code>:</p> 
+<pre>const pushStub = jest.fn().mockResolvedValue({ ref: 'new_ref' });
+const refStub = jest.fn().mockReturnValue({ push: pushStub });
+Object.defineProperty(admin, 'database', {
+  configurable: true,
+  writable: true,
+  value: jest.fn().mockReturnValue({ ref: refStub }),
+});
+</pre>
+</li> <li><p>Override the redirect function in the response object, since <code translate="no" dir="ltr">addMessage()</code> calls it.</p></li> <li><p>Within the redirect function, use Jest's <code translate="no" dir="ltr">expect</code> to make assertions about what parameters the redirect function should be called with:</p></li> </ul> 
+<pre>// A fake request object, with req.query.text set to 'input'
+const req = { query: {text: 'input'} };
+// A fake response object, with a stubbed redirect function which asserts that it is called
+// with parameters 303, 'new_ref'.
+const res = {
+  redirect: (code, url) =&gt; {
+    expect(code).toBe(303);
+    expect(url).toBe('new_ref');
+    done();
+  }
+};
+
+// Invoke addMessage with our fake request and response objects. This will cause the
+// assertions in the response object to be evaluated.
+myFunctions.addMessage(req, res);</pre> <h2 id="test_cleanup">Test cleanup</h2> <p>At the very end of your test code, call the cleanup function. This unsets environment variables that the SDK set when it was initialized, and deletes Firebase apps that may have been created if you used the SDK to create a real time database <code translate="no" dir="ltr">DataSnapshot</code> or Firestore <code translate="no" dir="ltr">DocumentSnapshot</code>.</p> 
+<pre>test.cleanup();
+</pre> <h2 id="review_complete_examples_and_learn_more">Review complete examples and learn more</h2> <p>You can review the complete examples on the Firebase GitHub repository.</p> <ul> <li><a href="https://github.com/firebase/functions-samples/tree/main/Node-1st-gen/quickstarts/uppercase-rtdb/functions/test/online.test.js">Testing Realtime Database and HTTP Functions in Online Mode</a></li> <li><a href="https://github.com/firebase/functions-samples/tree/main/Node-1st-gen/quickstarts/uppercase-rtdb/functions/test/offline.test.js">Testing Realtime Database and HTTP Functions in Offline Mode</a></li> </ul> <p>To learn more, refer to the <a href="https://firebase.google.com/docs/reference/functions/test">API reference</a> for <code translate="no" dir="ltr">firebase-functions-test</code>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/unit-testing" class="_attribution-link">https://firebase.google.com/docs/functions/unit-testing</a>
+  </p>
+</div>

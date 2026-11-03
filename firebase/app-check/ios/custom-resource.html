@@ -1,0 +1,70 @@
+<h1>Protect custom backend resources with App Check on Apple platforms</h1> <p>You can use App Check to protect non-Google custom backend resources for your app, like your own self-hosted backend. To do so, you'll need to do both of the following:</p> <ul> <li>Modify your app client to send an App Check token along with each request to your backend, as described on this page.</li> <li>Modify your backend to require a valid App Check token with every request, as described in <a href="../custom-resource-backend">Verify App Check tokens from a custom backend</a>.</li> </ul> <h2 id="before_you_begin">Before you begin</h2> <p>Add App Check to your app, using either <a href="app-attest-provider">App Attest</a>, <a href="devicecheck-provider">DeviceCheck</a>, or a <a href="custom-provider">custom provider</a>.</p> <h2 id="send_tokens_with_backend_requests">Send App Check tokens with backend requests</h2> <p>To ensure your backend requests include a valid, unexpired, App Check token, wrap each request in a call to <code translate="no" dir="ltr">AppCheck.token()</code>. The App Check library will refresh the token if necessary, and you can access the token in the method's completion block.</p> <p>Once you have a valid token, send it along with the request to your backend. The specifics of how you accomplish this are up to you, but <em>don't send App Check tokens as part of URLs</em>, including in query parameters, as this makes them vulnerable to accidental leakage and interception. The following example sends the token in a custom HTTP header, which is the recommended approach.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">do {
+  let token = try await AppCheck.appCheck().token(forcingRefresh: false)
+
+  // Get the raw App Check token string.
+  let tokenString = token.token
+
+  // Include the App Check token with requests to your server.
+  let url = URL(string: "https://yourbackend.example.com/yourApiEndpoint")!
+  var request = URLRequest(url: url)
+  request.httpMethod = "GET"
+  request.setValue(tokenString, forHTTPHeaderField: "X-Firebase-AppCheck")
+
+  let task = URLSession.shared.dataTask(with: request) { data, response, error in
+      // Handle response from your backend.
+  }
+  task.resume()
+} catch(let error) {
+  print("Unable to retrieve App Check token: \(error)")
+  return
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRAppCheck appCheck] tokenForcingRefresh:NO
+                                 completion:^(FIRAppCheckToken * _Nullable token,
+                                              NSError * _Nullable error) {
+    if (error != nil) {
+        // Handle any errors if the token was not retrieved.
+        NSLog(@"Unable to retrieve App Check token: %@", error);
+        return;
+    }
+    if (token == nil) {
+        NSLog(@"Unable to retrieve App Check token.");
+        return;
+    }
+
+    // Get the raw App Check token string.
+    NSString *tokenString = token.token;
+
+    // Include the App Check token with requests to your server.
+    NSURL *url = [[NSURL alloc] initWithString:@"https://yourbackend.example.com/yourApiEndpoint"];
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
+    [request setHTTPMethod:@"GET"];
+    [request setValue:tokenString forHTTPHeaderField:@"X-Firebase-AppCheck"];
+
+    NSURLSessionDataTask *task =
+        [[NSURLSession sharedSession] dataTaskWithRequest:request
+                                        completionHandler:^(NSData * _Nullable data,
+                                                            NSURLResponse * _Nullable response,
+                                                            NSError * _Nullable error) {
+        // Handle response from your backend.
+    }];
+    [task resume];
+}];</pre></section> </div> <h3 id="replay-protection">Replay protection (beta)</h3> <p>When making a request to an endpoint for which you've enabled <a href="../custom-resource-backend#replay-protection">replay protection</a>, wrap the request in a call to <code translate="no" dir="ltr">limitedUseToken()</code> instead of <code translate="no" dir="ltr">token()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">AppCheck.appCheck().limitedUseToken() { token, error in
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">[[FIRAppCheck appCheck] limitedUseTokenWithCompletion:^(FIRAppCheckToken * _Nullable token,
+                                                        NSError * _Nullable error) {
+    // ...
+}];
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/ios/custom-resource" class="_attribution-link">https://firebase.google.com/docs/app-check/ios/custom-resource</a>
+  </p>
+</div>

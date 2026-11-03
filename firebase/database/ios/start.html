@@ -1,0 +1,60 @@
+<h1>Installation &amp; Setup on Apple platforms</h1> <p>The Firebase Realtime Database is a cloud-hosted database. Data is stored as JSON and synchronized in realtime to every connected client. When you build cross-platform apps with our Android, iOS, and JavaScript SDKs, all of your clients share one Realtime Database instance and automatically receive updates with the newest data.</p> <p>Firebase Realtime Database is available on all Apple platforms, including iOS, macOS, macOS Catalyst, tvOS, and watchOS. It is not available for App Clips. The setup instructions in this page reference iOS in specific examples, but are generic and work for any Apple platform target.</p> <h2 id="prerequisites">Prerequisites</h2> <ol> <li>
+<a href="../../ios/setup">Install the Firebase SDK</a>.</li> <li>Add your app to your Firebase project in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>.</li> </ol> <h2 id="create_a_database">Create a Database</h2> <ol> <li><p>In the Firebase console, navigate to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/database/" class="external gc-analytics-event" data-category="firebasedb_test_0220" data-label="console_rtdb_creation_event_test_0220"><strong>Realtime Database</strong></a>.</p></li> <li><p>Click <strong>Create database</strong>.</p></li> <li>
+<p>Select a starting mode for your Firebase Security Rules:</p> <dl> <dt>Test mode</dt> <dd><p>Good for getting started with the mobile and web client libraries, but allows anyone to read and overwrite your data. After testing, <strong>make sure to review the <a href="../security">Understand Firebase Realtime Database Rules</a> section.</strong></p></dd> <dd><aside class="note"><strong>Note:</strong><span> If you create a database in Test mode and make no changes to the default world-readable and world-writeable Security Rules within a trial period, you will be alerted by email, then your database rules will deny all requests. Note the expiration date during the Firebase console setup flow.</span></aside></dd> <dd><p>To get started with the web, Apple, or Android SDK, select testmode.</p></dd> <dt>Locked mode</dt> <dd><p>Denies all reads and writes from mobile and web clients. Your authenticated application servers can still access your database.</p></dd> </dl>
+</li> <li>
+<p>Choose a location for the database.</p> <p>Depending on the <a href="../../projects/locations#rtdb-locations">location of the database</a>, the URL for the new database will be in one of the following forms:</p> <ul> <li><p><nobr><code translate="no" dir="ltr"><var translate="no">DATABASE_NAME</var>.firebaseio.com</code></nobr> (for databases in <code translate="no" dir="ltr">us-central1</code>)</p></li> <li><p><nobr><code translate="no" dir="ltr"><var translate="no">DATABASE_NAME</var>.<var translate="no">REGION</var>.firebasedatabase.app</code></nobr> (for databases in all other locations)</p></li> </ul>
+</li> <li><p>Click <strong>Done</strong>.</p></li> </ol> <p>When you enable Realtime Database, it also enables the API in the <a href="https://console.cloud.google.com/projectselector/apis/api/firebasedatabase.googleapis.com/overview">Cloud API Manager</a>.</p> <h2 id="add_to_your_app">Add Firebase Realtime Database to your app</h2> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+<pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Realtime Database library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> <h2 id="configure">Configure Realtime Database Security Rules</h2> <p>The Realtime Database provides a declarative rules language that allows you to define how your data should be structured, how it should be indexed, and when your data can be read from and written to.</p> <aside class="note"><strong>Note:</strong><span> By default, read and write access to your database is restricted so only authenticated users can read or write data. To get started without setting up <a href="../../auth">Authentication</a>, you can <a href="../../rules/basics#default_rules_locked_mode" target="_blank">configure your rules for public access</a>. This does make your database open to anyone, even people not using your app, so be sure to restrict your database again when you set up authentication.</span></aside> <h2 id="set_up">Set up Firebase Realtime Database</h2> <p>You must initialize Firebase before any Firebase app reference is created or used. If you have already done this for another Firebase feature, you can skip this step.</p> <ol> <li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">import SwiftUI
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">@import FirebaseCore;
+@import FirebaseFirestore;
+@import FirebaseAuth;
+// ...
+      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Use Firebase library to configure APIs
+[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">@main
+struct YourApp: App {
+  // register app delegate for Firebase setup
+  @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
+  var body: some Scene {
+    WindowGroup {
+      NavigationView {
+        ContentView()
+      }
+    }
+  }
+}
+      </pre> </section> </div> </li> <li>Create a reference to your database and specify the location you want to write to. <aside class="note"><b>Important</b>: To get a reference to a database other than a <code translate="no" dir="ltr">us-central1</code> default database, you must pass the database URL to <code translate="no" dir="ltr">database()</code> (or for Objective-C <code translate="no" dir="ltr">databaseWithURL</code>). For a <code translate="no" dir="ltr">us-central1</code> default database, you can call <code translate="no" dir="ltr">database()</code> (or <code translate="no" dir="ltr">database</code>) without arguments. <p>You can find your Realtime Database URL in the <i>Realtime Database</i> section of the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. Depending on the <a href="../../projects/locations#rtdb-locations">location of the database</a>, the database URL will be in one of the following forms:</p> <ul> <li>
+<nobr><code translate="no" dir="ltr">https://<var translate="no">DATABASE_NAME</var>.firebaseio.com</code></nobr> (for databases in <code translate="no" dir="ltr">us-central1</code>) </li>
+<li>
+<nobr><code translate="no" dir="ltr">https://<var translate="no">DATABASE_NAME</var>.<var translate="no">REGION</var>.firebasedatabase.app</code></nobr> (for databases in all other locations) </li>
+</ul> </aside>  <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">var ref: DatabaseReference!
+
+ref = Database.database().reference()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">@property (strong, nonatomic) FIRDatabaseReference *ref;
+
+self.ref = [[FIRDatabase database] reference];</pre> </section>  </li> </ol> <h2 id="next_steps">Next Steps</h2> <ul> <li><p>Learn how to <a href="structure-data">structure data</a> for Realtime Database.</p></li> <li><p><a href="../usage/sharding">Scale your data across multiple database instances.</a></p></li> <li><p><a href="read-and-write">Read and write data.</a></p></li> <li><p><a href="https://console.firebase.google.com/project/_/database/data">View your database in the Firebase console.</a></p></li> <li>
+<p>Prepare to launch your app:</p> <ul> <li><p>Enable <a href="../../app-check/ios">App Check</a> to help ensure that only your apps can access your databases. </p></li> <li><p>Set up <a href="../../projects/billing/budget-alerts">budget alerts</a> for your project in the Google Cloud console.</p></li> <li><p>Monitor the <a href="https://console.firebase.google.com/project/_/usage" class="external"><em>Usage and billing</em> dashboard</a> in the Firebase console to get an overall picture of your project's usage across multiple Firebase services. You can also visit the <a href="https://console.firebase.google.com/project/_/database/usage">Realtime Database <em>Usage</em> dashboard</a> for more detailed usage information. </p></li> <li><p>Review the <a href="https://firebase.google.com/support/guides/launch-checklist">Firebase launch checklist</a>.</p></li> </ul>
+</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/ios/start" class="_attribution-link">https://firebase.google.com/docs/database/ios/start</a>
+  </p>
+</div>

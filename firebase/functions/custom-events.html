@@ -1,0 +1,78 @@
+<h1>Create and handle custom event triggers</h1> <p>With Cloud Functions (2nd gen), you can trigger functions in response to <em>custom events</em>. These are events provided by special or additional event providers, as opposed to the Firebase events natively supported by the Firebase SDK for Cloud Functions. Via custom event triggers, your app can respond to events provided by Firebase Extensions, or you can publish your own custom events and trigger functions in response to them.</p> <aside class="note"> <b>Note:</b> This feature is a public preview. This means that the functionality might change in backward-incompatible ways. A preview release is not subject to any SLA or deprecation policy and may receive limited or no support. </aside> <p>All custom events conform to the <a href="https://cloud.google.com/eventarc/docs/workflows/cloudevents">CloudEvents JSON event format</a> and are published to <a href="https://cloud.google.com/eventarc/docs/overview">Eventarc</a>. Eventarc <a href="https://cloud.google.com/eventarc/pricing">usage fees</a> apply.</p> <h2 id="custom-trigger">Trigger functions with custom events</h2> <p>You can publish custom events (or obtain events from Firebase extensions) and trigger functions in response to those events by implementing this basic flow:</p> <ol> <li>Publish the desired events to an Eventarc channel, or identify available events provided by an extension that you have installed.</li> <li>In your function code, subscribe to events on the Eventarc channel with an event handler.</li> <li>In the function, parse the payload returned in the CloudEvent object and perform whatever custom logic your app requires.</li> </ol> <p>For example, a game app might want to send notifications to users as they enter or leave the leaderboard of top ten competitors. This app could publish leaderboard events to the default channel, and then handle the event in a function that sends targeted push notifications to users.</p> <p>In another example, an extension designed to help apps process large images might emit an event on the completion of image resizing. Apps with this extension installed could handle the completion event by updating links in the app to point to resized versions of the image.</p> <h3 id="publish-to-channel">Publish an event to a channel</h3> <p>Eventarc events are published into <a href="https://cloud.google.com/eventarc/docs/third-parties/create-channels">channels</a>. Channels are a way to group related events and manage access permissions. When you install an extension or deploy a function that consumes custom events, Firebase automatically creates a default channel named <code translate="no" dir="ltr">firebase</code> in the <code translate="no" dir="ltr">us-central1</code> region. The Firebase Admin SDK provides an <code translate="no" dir="ltr">eventarc</code> subpackage for publishing to channels.</p> <p>To publish an event from a trusted server (or another function) using the default channel:</p> 
+<pre>import {getEventarc} from 'firebase-admin/eventarc';
+
+getEventarc().channel().publish({
+    type: 'achieved-leaderboard',
+    subject: 'Welcome to the top 10',
+    data: {
+      message: 'You have achieved the nth position in our leaderboard!  To see . . .'
+    }
+});
+
+</pre> <p>In addition to automatically creating the default channel, Firebase sets the environment variable <code translate="no" dir="ltr">EVENTARC_CLOUD_EVENT_SOURCE</code>, which specifies the source of the event. If you are publishing events outside of Cloud Functions for Firebase, you'll need to explicitly add the <code translate="no" dir="ltr">source</code> field in your event payload.</p> <h3 id="handle-events">Handle custom events</h3> <p>You can handle all custom events, including extensions events, with the <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.eventarc#eventarconcustomeventpublished"><code translate="no" dir="ltr">onCustomEventPublished</code></a> or <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/python/firebase_functions.eventarc_fn#on_custom_event_published"><code translate="no" dir="ltr">on_custom_event_published</code></a> handlers. First, import this handler from the Eventarc SDK along with the Firebase Admin SDK:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const {onCustomEventPublished} = require("firebase-functions/eventarc");
+const logger = require("firebase-functions/logger");
+const {initializeApp} = require("firebase-admin/app");
+const {getFirestore} = require("firebase-admin/firestore");
+
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_admin import firestore, initialize_app
+from firebase_functions import eventarc_fn
+</pre></section> </div> <p>In your function code, pass in the event name as shown for the example function:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.onimageresized = onCustomEventPublished(
+    "firebase.extensions.storage-resize-images.v1.complete",
+    (event) =&gt; {
+      logger.info("Received image resize completed event", event);
+      // For example, write resized image details into Firestore.
+      return getFirestore()
+          .collection("images")
+          .doc(event.subject.replace("/", "_")) // original file path
+          .set(event.data); // resized images paths and sizes
+    });
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@eventarc_fn.on_custom_event_published(
+    event_type="firebase.extensions.storage-resize-images.v1.complete"
+)
+def onimageresized(event: eventarc_fn.CloudEvent) -&gt; None:
+    print("Received image resize completed event: ", event.type)
+
+    if not isinstance(event.subject, str):
+        print("No 'subject' data.")
+        return
+
+    # For example, write resized image details into Firestore.
+    firestore_client: google.cloud.firestore.Client = firestore.client()
+    collection = firestore_client.collection("images")
+    doc = collection.document(event.subject.replace("/", "_"))  # original file path
+    doc.set(event.data)  # resized images paths and sizes
+</pre></section> </div> <p>For each particular extension, the payload returned in the event object provides data you can use to perform custom logic for your application flow. In this case, the function uses the Admin SDK to copy metadata about the resized image to a collection in Cloud Firestore, obtaining the filename from the <code translate="no" dir="ltr">subject</code> provided by the event, and saving metadata from the <code translate="no" dir="ltr">data</code> provided by the event.</p> <h3 id="non-default-channels">Publish and handle events on non-default channels</h3> <p>Custom channels can be useful for cases where you have special permission needs or other requirements, and don't want the same level of visibility and access for all events. You can create your own channels using the <a href="https://console.cloud.google.com/eventarc/channels">Google Cloud console</a>. Publishing and subscribing for events must be done on the same channel.</p> <p>In cases where a custom event is published on a non-default channel, you'll need to specify the channel in your function code. For example, if you want to handle events that are published in a non-default channel for the <code translate="no" dir="ltr">us-west1</code> location, you need to specify the channel as shown:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">import { onCustomEventPublished } from "firebase-functions/v2/eventarc";
+
+export const func = onCustomEventPublished(
+    {
+      eventType: "firebase.extensions.storage-resize-images.v1.complete",
+      channel: "locations/us-west1/channels/firebase",
+      region: "us-west1",
+    },
+    (event) =&gt; { ... });
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@eventarc_fn.on_custom_event_published(
+    event_type="firebase.extensions.storage-resize-images.v1.complete",
+    channel="locations/us-west1/channels/firebase",
+    region="us-west1",
+)
+def onimageresizedwest(event: eventarc_fn.CloudEvent) -&gt; None:
+    print("Received image resize completed event: ", event.type)
+    # ...
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/custom-events" class="_attribution-link">https://firebase.google.com/docs/functions/custom-events</a>
+  </p>
+</div>

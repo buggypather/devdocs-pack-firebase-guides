@@ -1,0 +1,92 @@
+<h1>Customize your Firebase Studio workspace</h1> <p>Firebase Studio lets you to tailor your workspace to your project's unique needs by defining a single <code translate="no" dir="ltr">.idx/dev.nix</code> configuration file that describes:</p> <ul> <li>The <strong>system tools</strong> that you need to be able to run (for example, from the Terminal), such as compilers or other binaries.</li> <li>The <strong>extensions</strong> you need installed (for example, programming language support).</li> <li>How your <strong><a href="preview-apps">app previews</a></strong> should show up (for example, the commands to run your web server).</li> <li>Global <strong>environment variables</strong> available to local servers running in your workspace.</li> </ul> <p>See the <a href="devnix-reference"><code translate="no" dir="ltr">dev.nix</code> reference</a> for a complete description of what's available.</p> <h2 id="nix+fs">Nix and Firebase Studio</h2> <p>Firebase Studio uses <a href="https://nixos.org/manual/nix/stable/introduction" class="external">Nix</a> to define the environment configuration for each workspace. Specifically, Firebase Studio uses:</p> <ul> <li><p>The <a href="https://nix.dev/tutorials/nix-language" class="external">Nix programming language</a> to describe workspace environments. Nix is a functional programming language. The attributes and package libraries you can define in the <code translate="no" dir="ltr">dev.nix</code> file follow the <a href="https://nix.dev/tutorials/first-steps/nix-language#attribute-set" class="external">Nix attribute set syntax</a>.</p></li> <li><p>The <a href="https://search.nixos.org/packages" class="external">Nix package manager</a> to manage the system tools available to your workspace. This is similar to OS-specific package managers such as APT (<code translate="no" dir="ltr">apt</code> and <code translate="no" dir="ltr">apt-get</code>), Homebrew (<code translate="no" dir="ltr">brew</code>), and <code translate="no" dir="ltr">dpkg</code>.</p></li> </ul> <p>Because Nix environments are reproducible and declarative, in the context of Firebase Studio, this means you can share your Nix configuration file as part of your Git repository to ensure everyone who works on your project has the same environment configuration.</p> <h2 id="example">A basic example</h2> <p>The following example shows a basic environment configuration enabling previews:</p> 
+<pre>{ pkgs, ... }: {
+
+  # Which nixpkgs channel to use.
+  channel = "stable-24.11"; # or "unstable"
+
+  # Use https://search.nixos.org/packages to find packages
+  packages = [
+    pkgs.nodejs_20
+  ];
+
+  # Sets environment variables in the workspace
+  env = {
+    SOME_ENV_VAR = "hello";
+  };
+
+  # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
+  idx.extensions = [
+    "angular.ng-template"
+  ];
+
+  # Enable previews and customize configuration
+  idx.previews = {
+    enable = true;
+    previews = {
+      web = {
+        command = [
+          "npm"
+          "run"
+          "start"
+          "--"
+          "--port"
+          "$PORT"
+          "--host"
+          "0.0.0.0"
+          "--disable-host-check"
+        ];
+        manager = "web";
+        # Optionally, specify a directory that contains your web app
+        # cwd = "app/client";
+      };
+    };
+  };
+}
+</pre> <h2 id="system-tools">Add system tools</h2> <p>To add system tools to your workspace, such as compilers or CLI programs for cloud services, <a href="https://search.nixos.org/packages" class="external">find the unique package ID in the Nix package registry</a> and add it to your <code translate="no" dir="ltr">dev.nix</code> file's <code translate="no" dir="ltr">packages</code> object, prefixed with `pkgs.:</p> 
+<pre>{ pkgs, ... }: {
+  # Which nixpkgs channel to use.
+  channel = "stable-24.11"; # or "unstable"
+
+  # Use https://search.nixos.org/packages to find packages
+  packages = [
+    pkgs.nodejs_20
+  ];
+  ...
+}
+</pre> <p>This is different from how you might typically install system packages using OS-specific package managers such as APT (<code translate="no" dir="ltr">apt</code> and <code translate="no" dir="ltr">apt-get</code>), Homebrew (<code translate="no" dir="ltr">brew</code>), and <code translate="no" dir="ltr">dpkg</code>. Declaratively describing exactly which system packages are needed means Firebase Studio workspaces are easier to share and reproduce.</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">channel</code> key specifies which Nix package registry channel to use. You can use the <code translate="no" dir="ltr">unstable</code> channel to use the latest versions of packages, but as the name of the channel implies, doing so can prevent your environment from building, depending on when you start your workspace.</span></aside> <h3 id="local-node-binaries">Use local node binaries</h3> <p>Just like on your local machine, binaries related to locally installed node packages (for example, packages defined in your <code translate="no" dir="ltr">package.json</code>) can be executed in a Terminal panel by invoking them with the <a href="https://docs.npmjs.com/cli/v7/commands/npx" class="external"><code translate="no" dir="ltr">npx</code> command</a>.</p> <p>As an additional convenience, if you're in a directory with a <code translate="no" dir="ltr">node_modules</code> folder (such as the root directory of a web project), locally installed binaries can be invoked directly, without the <code translate="no" dir="ltr">npx</code> prefix.</p> <h3 id="gcloud">Add <code translate="no" dir="ltr">gcloud</code> components</h3> <p>A default configuration of the <a href="https://cloud.google.com/sdk/gcloud"><code translate="no" dir="ltr">gcloud</code> CLI for Google Cloud</a> is available to all Firebase Studio workspaces.</p> <p>If you need additional components, you can add them to your <code translate="no" dir="ltr">dev.nix</code> file:</p> 
+<pre>{ pkgs }: {
+  packages = [
+    ...
+    (pkgs.google-cloud-sdk.withExtraComponents [
+      pkgs.google-cloud-sdk.components.cloud-datastore-emulator
+    ])
+    ...
+  ];
+}
+</pre> <h2 id="extensions">Add IDE extensions</h2> <p>You can install extensions in Firebase Studio using the <a href="https://open-vsx.org/" class="external">OpenVSX</a> extension registry in two ways:</p> <ul> <li>
+<p><strong>Use the <em>Extensions</em> panel in Firebase Studio to discover and install extensions.</strong> This approach is best for <strong>user-specific extensions</strong>, such as:</p> <ul> <li>Custom color themes</li> <li>Editor emulation, like VSCodeVim</li> </ul>
+</li> <li>
+<p><strong>Add extensions to your <code translate="no" dir="ltr">dev.nix</code> file</strong>. These extensions will be automatically installed when you share your workspace configuration. This approach is best for <strong>project-specific extensions</strong>, such as:</p> <ul> <li>Programming language extensions, including language-specific debuggers</li> <li>Official extensions for cloud services used in your project</li> <li>Code formatters</li> </ul>
+</li> </ul> <p>For the latter approach, you can include IDE extensions in your <code translate="no" dir="ltr">dev.nix</code> file by finding the fully-qualified extension ID (of the form <code translate="no" dir="ltr">&lt;publisher&gt;.&lt;id&gt;</code>) and adding it to the <code translate="no" dir="ltr">idx.extensions</code> object like so:</p> 
+<pre>{ pkgs, ... }: {
+  ...
+  # Search for the extensions you want on https://open-vsx.org/ and use the format
+  # "&lt;publisher&gt;.&lt;id&gt;"
+  idx.extensions = [
+    "angular.ng-template"
+  ];
+  ...
+}
+</pre> <h2 id="common-services">Add common services</h2> <p>Firebase Studio also offers simplified setup and configuration for common services you may need during development, including:</p> <ul> <li>Containers <ul> <li>Docker (<code translate="no" dir="ltr">services.docker.*</code>)</li> </ul>
+</li> <li>Messaging <ul> <li>Pub/Sub Emulator (<code translate="no" dir="ltr">services.pubsub.*</code>)</li> </ul>
+</li> <li>Databases <ul> <li>MySQL (<code translate="no" dir="ltr">services.mysql.*</code>)</li> <li>Postgres (<code translate="no" dir="ltr">services.postgres.*</code>)</li> <li>Redis (<code translate="no" dir="ltr">services.redis.*</code>)</li> <li>Spanner (<code translate="no" dir="ltr">services.spanner.*</code>)</li> </ul>
+</li> </ul> <p>For details on enabling these services in your workspace, see the <code translate="no" dir="ltr">services.*</code> portions of the <a href="devnix-reference"><code translate="no" dir="ltr">dev.nix</code> reference</a>.</p> <h2 id="previews">Customize previews</h2> <p>For details on how to customize your app previews, see <a href="preview-apps">Preview your app</a>.</p> <h2 id="custom-icon">Set your workspace icon</h2> <p>You can choose a custom icon for your workspace by placing a PNG file named <code translate="no" dir="ltr">icon.png</code> inside the <code translate="no" dir="ltr">.idx</code> directory at the same level as your <code translate="no" dir="ltr">dev.nix</code> file. Firebase Studio will then use this icon to represent your workspace in your dashboard.</p> <p>Because this file can be checked into source control (such as Git), this is a good way to help everyone who works on your project see the same icon for your project when using Firebase Studio. And because the file can vary across Git branches, you can use this icon to visually distinguish between beta and production app workspaces and for other purposes.</p> <h2 id="template">Turn your customizations into a template</h2> <p>To turn your environment configuration into a "starter environment" that anyone can use to build new projects, see the docs for <a href="custom-templates">Create custom templates</a>.</p> <h2 id="explore-all-customization-options">Explore all customization options</h2> <p>Check out the <a href="devnix-reference"><code translate="no" dir="ltr">dev.nix</code> reference</a> for a detailed description of the environment configuration schema.</p> <h2 id="download-files">Download your files</h2> <p>To download your files as a zip file:</p> <ul> <li>Right-click on any directory in the Explorer pane and select <strong>Zip and Download</strong>.</li> </ul> <p>To download everything in your project directory:</p> <ol> <li><p>Select <strong>File &gt; Open Folder</strong>.</p></li> <li><p>Accept the default <code translate="no" dir="ltr">/home/user</code> directory.</p></li> <li><p>After the files load, right-click your working directory and select <strong>Zip and Download</strong>. If using the App Prototyping agent, your working directory will be <code translate="no" dir="ltr">studio</code>. If using a template or uploaded project, this will be your project name.</p></li> <li><p>When prompted to rebuild the environment, click <strong>Cancel</strong>.</p></li> <li><p>After your download completes, re-open your working directory from the <strong>File</strong> menu to move back into your workspace.</p></li> </ol> <aside class="tip"><strong>Tip:</strong><span> You can also <a href="github">export to GitHub</a>.</span></aside> <h2 id="next-steps">Next steps</h2> <ul> <li>
+<a href="google-integrations">Integrate with Firebase and Google services</a>.</li> <li>
+<a href="custom-templates">Create custom templates</a>.</li> <li>
+<a href="open-in-firebase-studio">Add an Open in Firebase Studio button</a>.</li> <li>
+<a href="get-started-workspace">Learn more about Firebase Studio workspaces</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/studio/customize-workspace" class="_attribution-link">https://firebase.google.com/docs/studio/customize-workspace</a>
+  </p>
+</div>

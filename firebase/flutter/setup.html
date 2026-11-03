@@ -1,0 +1,109 @@
+<h1>Get started with Firebase in your Flutter project</h1>  <h2 id="prerequisites">Prerequisites</h2> <ul> <li><p>Install your preferred <a href="https://docs.flutter.dev/get-started/editor/" class="external">editor or IDE</a>.</p></li> <li>
+<p><a href="https://docs.flutter.dev/get-started/install/" class="external">Install Flutter</a> for your specific operating system, including the following:</p> <ul> <li>Flutter SDK</li> <li>Supporting libraries</li> <li>Platform-specific software and SDKs</li> </ul>
+</li> </ul> <p>Platform-specific prerequisites:</p> <div> <section><p class="_firebase-tab"><strong>Apple</strong></p>
+<ul> <li><p>Set up a physical Apple device or use a simulator to run your app.</p></li> <li>
+<p>Make sure that your Flutter app targets the following platform versions or later:</p> <ul> <li>iOS 15</li> <li>macOS 11</li> </ul>
+</li> </ul> <p><section class="expandable"> <p class="showalways">Do you want to use Cloud Messaging?</p></section></p>  <blockquote> <p>For Cloud Messaging on Apple platforms, here are the prerequisites:</p> <ul> <li>Set up a <em>physical Apple device</em>.</li> <li>Obtain an Apple Push Notification Authentication Key for your <a href="https://developer.apple.com/account" class="external">Apple Developer account</a>.</li> <li>Enable Push Notifications in Xcode under <strong>App &gt; Capabilities</strong>.</li> </ul> </blockquote> </section> <aside class="note"><strong>Note:</strong><span> If you're targeting macOS or macOS Catalyst, you must add the <a href="../ios/troubleshooting-faq#macos-keychain-sharing">Keychain Sharing capability</a> to your target. In Xcode, navigate to your target's <strong>Signing &amp; Capabilities</strong> tab, and then click <strong>+ Capabilities</strong> to add a new capability.</span></aside> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<ul> <li><p>Set up a device or emulator for running your app. <a href="https://developer.android.com/studio/run/managing-avds" class="external">Emulators</a> must use an emulator image with Google Play.</p></li> <li>
+<p>Make sure that your app meets the following requirements:</p> <ul> <li>Targets API level 24 (Nougat) or higher</li> <li>Uses Android 7.0 or higher</li> </ul>
+</li> </ul></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<p>No platform-specific prerequisites</p></section> </div> <p>If you don't already have a Flutter app, you can complete the <a href="https://docs.flutter.dev/get-started/test-drive" class="external">Get Started: Test Drive</a> to create a new Flutter app using your preferred editor or IDE.</p> <h2 id="install-cli-tools">
+<strong>Step 1</strong>: Install the required command line tools</h2> <ol> <li><p>If you haven't already, <a href="../cli#setup_update_cli">install the Firebase CLI</a>.</p></li> <li>
+<p>Log into Firebase using your Google Account by running the following command:</p> 
+<pre>firebase login
+</pre>
+</li> <li>
+<p>Install the FlutterFire CLI by running the following command from any directory:</p> 
+<pre>dart pub global activate flutterfire_cli
+</pre>
+</li> </ol> <h2 id="configure-firebase">
+<strong>Step 2</strong>: Configure your apps to use Firebase</h2> <p>Use the FlutterFire CLI to configure your Flutter apps to connect to Firebase.</p> <p>From your Flutter project directory, run the following command to start the app configuration workflow:</p> 
+<pre>flutterfire configure
+</pre> <p><section class="expandable"> <p class="showalways">What does this <code translate="no" dir="ltr">flutterfire configure</code> workflow do? </p></section></p> <blockquote> <p>The <code translate="no" dir="ltr">flutterfire configure</code> workflow does the following:</p> <ul> <li>
+<p>Asks you to select the platforms (iOS, Android, Web) supported in your Flutter app. For each selected platform, the FlutterFire CLI creates a new Firebase app in your Firebase project.</p> <p>You can select either to use an existing Firebase project or to create a new Firebase project. If you already have apps registered in an existing Firebase project, the FlutterFire CLI will attempt to match them based on your current Flutter project configuration.</p> <aside class="note"><b>Note:</b> Here are some tips about setting up and managing your Firebase project: <ul> <li>Check out our <a href="../projects/dev-workflows/general-best-practices">best practices</a> for adding apps to a Firebase project, including how to handle multiple variants. </li> <li>
+<a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">Enable Google Analytics</a> in your project, which provides an optimal experience using many Firebase products, like Crashlytics and Remote Config. </li> </ul> </aside>
+</li> <li>
+<p>Creates a Firebase configuration file (<code translate="no" dir="ltr">firebase_options.dart</code>) and adds it to your <code translate="no" dir="ltr">lib/</code> directory.</p> <aside class="note"><strong>Note:</strong><span> This Firebase config file contains unique, but non-secret identifiers for each platform you selected. <br>Visit <a href="../projects/learn-more#config-files-objects">Understand Firebase Projects</a> to learn more about this config file.</span></aside>
+</li> <li>
+<p><em>(for Crashlytics or Performance Monitoring on Android)</em> Adds the required product-specific Gradle plugins to your Flutter app.</p> <aside class="note"><strong>Note:</strong><span> For the FlutterFire CLI to add the appropriate Gradle plugin, the product's Flutter plugin must already be imported into your Flutter app.</span></aside>
+</li> </ul> </blockquote>  <p><br></p> <aside class="caution">After this initial running of <code translate="no" dir="ltr">flutterfire configure</code>, you need to re-run the command any time that you: <ul> <li> Start supporting a new platform in your Flutter app. </li> <li> Start using a new Firebase service or product in your Flutter app, especially if you start using sign-in with Google, Crashlytics, Performance Monitoring, or Realtime Database. </li> </ul> <p> Re-running the command ensures that your Flutter app's Firebase configuration is up-to-date and (for Android) automatically adds any required Gradle plugins to your app. </p> </aside> <h2 id="initialize-firebase">
+<strong>Step 3</strong>: Initialize Firebase in your app</h2> <ol> <li>
+<p>From your Flutter project directory, run the following command to install the core plugin:</p> 
+<pre>flutter pub add firebase_core
+</pre>
+</li> <li>
+<p>From your Flutter project directory, run the following command to ensure that your Flutter app's Firebase configuration is up-to-date:</p> 
+<pre>flutterfire configure
+</pre>
+</li> <li>
+<p>In your <code translate="no" dir="ltr">lib/main.dart</code> file, import the Firebase core plugin and the configuration file you generated earlier:</p> 
+<pre>import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+</pre>
+</li> <li>
+<p>Also in your <code translate="no" dir="ltr">lib/main.dart</code> file, initialize Firebase using the <code translate="no" dir="ltr">DefaultFirebaseOptions</code> object exported by the configuration file:</p> 
+<pre>WidgetsFlutterBinding.ensureInitialized();
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+runApp(const MyApp());
+</pre>
+</li> <li>
+<p>Rebuild your Flutter application:</p> 
+<pre>flutter run
+</pre>
+</li> </ol> <p>If you would rather use a demo project, you can start the <a href="../emulator-suite">Firebase Emulator</a> and in your <code translate="no" dir="ltr">lib/main.dart</code> file initialize Firebase using <code translate="no" dir="ltr">demoProjectId</code> (it should start with <code translate="no" dir="ltr">demo-</code>):</p> 
+<pre>await Firebase.initializeApp(
+  demoProjectId: "demo-project-id",
+);
+</pre> <h2 id="add-plugins">
+<strong>Step 4</strong>: Add Firebase plugins</h2> <p>You access Firebase in your Flutter app through the various <a href="setup#available-plugins">Firebase Flutter plugins</a>, one for each Firebase product (for example: Cloud Firestore, Authentication, Analytics, etc.).</p> <p>Since Flutter is a multi-platform framework, each Firebase plugin is applicable for Apple, Android, and web platforms. So, if you add any Firebase plugin to your Flutter app, it will be used by the Apple, Android, and web versions of your app.</p> <p>Here's how to add a Firebase Flutter plugin:</p> <ol> <li>
+<p>From your Flutter project directory, run the following command:</p> 
+<pre>flutter pub add PLUGIN_NAME</pre>
+</li> <li>
+<p>From your Flutter project directory, run the following command:</p> 
+<pre>flutterfire configure
+</pre> <p>Running this command ensures that your Flutter app's Firebase configuration is up-to-date and, for Crashlytics and Performance Monitoring on Android, adds the required Gradle plugins to your app.</p>
+</li> <li>
+<p>Once complete, rebuild your Flutter project:</p> 
+<pre>flutter run
+</pre>
+</li> </ol> <p>You're all set! Your Flutter apps are registered and configured to use Firebase.</p> <p><section class="expandable" id="web-notes"> <h3 class="showalways" id="web-notes">Special considerations for building web apps </h3></section></p> <p>Review the following configuration options when targeting the web platform.</p> <h4 id="trusted-types">Trusted Types support</h4> <p>The Firebase SDK for Flutter supports using Trusted Types to help prevent DOM-based (client-side) XSS attacks. When you <a href="https://web.dev/trusted-types/#switch-to-enforcing-content-security-policy" class="external">enable Trusted Type enforcement</a> for your app, the Firebase SDK injects its scripts into the DOM using custom Trusted Type policies, named <code translate="no" dir="ltr">flutterfire-firebase_core</code>, <code translate="no" dir="ltr">flutterfire-firebase_auth</code>, etc.</p> <h4 id="disable-auto">Disable Firebase JavaScript SDK auto-injection</h4> <p>By default, the Firebase Flutter SDK auto-injects the Firebase JavaScript SDK when building for the web. If you don't want the Firebase JavaScript SDK to be auto-injected, you can do the following:</p> <ol> <li>
+<p>Ignore the auto-injection script by adding the following property inside a <code translate="no" dir="ltr">&lt;script&gt;</code> tag within the <code translate="no" dir="ltr">web/index.html</code> file in your Flutter project:</p> 
+<pre>&lt;!-- Add this property inside a &lt;script&gt; tag within your "web/index.html" file in your Flutter project --&gt;
+&lt;!-- Put in the names of all the plugins you wish to ignore: --&gt;
+window.flutterfire_ignore_scripts = ['analytics', 'firestore'];
+</pre>
+</li> <li>
+<p>Load the script manually using one of the following options:</p> <ul> <li>
+<p><strong>Option 1</strong>: Add the SDK explicitly to your <code translate="no" dir="ltr">web/index.html</code> file, inside the <code translate="no" dir="ltr">window.addEventListener</code> callback:</p> 
+<pre>  window.addEventListener('load', async function (ev) {
+    window.firebase_firestore = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js");
+    window.firebase_analytics = await import("https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js");
+
+    _flutter.loader.loadEntrypoint().then(function (engineInitializer) {
+      // rest of the code
+</pre>
+</li> <li>
+<p><strong>Option 2</strong>: Download the plugin's Firebase JavaScript SDK code from the <code translate="no" dir="ltr">gstatic</code> domain, and save them to a JavaScript file to be kept within your project and loaded in manually:</p> 
+<pre>  // "web/my-analytics.js" &amp; "web/my-firestore.js" file loaded as a script into your "web/index.html" file:
+  window.addEventListener('load', async function (ev) {
+    window.firebase_analytics = await import("./my-analytics.js");
+    window.firebase_firestore = await import("./my-firestore.js");
+
+    _flutter.loader.loadEntrypoint().then(function (engineInitializer) {
+      // rest of the code
+</pre>
+</li> </ul>
+</li> </ol>  <p><br></p> <hr> <h2 id="available-plugins">Available plugins</h2> <table> <thead> <tr> <th>Product</th> <th>Plugin name</th> <th style="text-align: center;">iOS</th> <th style="text-align: center;">Android</th> <th style="text-align: center;">Web</th> <th style="text-align: center;">Other Apple<br>(macOS, etc.)</th> <th style="text-align: center;">Windows</th> </tr> </thead> <tbody> <tr> <td>
+<a href="../ai-logic/get-started"><span class='\"notranslate\"'>Firebase AI Logic</span></a> <sup>1</sup>
+</td> <td><code translate="no" dir="ltr">firebase_ai</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> <tr> <td><a href="../analytics/flutter/get-started">Analytics</a></td> <td><code translate="no" dir="ltr">firebase_analytics</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> <tr> <td><a href="../app-check/flutter/default-providers">App Check</a></td> <td><code translate="no" dir="ltr">firebase_app_check</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> <tr> <td><a href="../auth/flutter/start">Authentication</a></td> <td><code translate="no" dir="ltr">firebase_auth</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td style="text-align: center;">beta</td> </tr> <tr> <td><a href="../firestore/quickstart">Cloud Firestore</a></td> <td><code translate="no" dir="ltr">cloud_firestore</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td style="text-align: center;">beta</td> </tr> <tr> <td><a href="../functions/get-started">Cloud Functions</a></td> <td><code translate="no" dir="ltr">cloud_functions</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> <tr> <td><a href="../cloud-messaging/flutter/client">Cloud Messaging</a></td> <td><code translate="no" dir="ltr">firebase_messaging</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> <tr> <td><a href="../storage/flutter/start">Cloud Storage</a></td> <td><code translate="no" dir="ltr">firebase_storage</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td style="text-align: center;">beta</td> </tr> <tr> <td><a href="../crashlytics/flutter/get-started">Crashlytics</a></td> <td><code translate="no" dir="ltr">firebase_crashlytics</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> <tr> <td><a href="../in-app-messaging/get-started">In-App Messaging</a></td> <td><code translate="no" dir="ltr">firebase_in_app_messaging</code></td> <td></td> <td></td> <td></td> <td></td> <td></td> </tr> <tr> <td><a href="../projects/manage-installations">Firebase installations</a></td> <td><code translate="no" dir="ltr">firebase_app_installations</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> <tr> <td><a href="../perf-mon/flutter/get-started">Performance Monitoring</a></td> <td><code translate="no" dir="ltr">firebase_performance</code></td> <td></td> <td></td> <td></td> <td></td> <td></td> </tr> <tr> <td><a href="../database/flutter/start">Realtime Database</a></td> <td><code translate="no" dir="ltr">firebase_database</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> <tr> <td><a href="../remote-config/flutter/get-started">Remote Config</a></td> <td><code translate="no" dir="ltr">firebase_remote_config</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> <tr> <td>
+<a href="../sql-connect/flutter-sdk">SQL Connect</a> <sup>2</sup>
+</td> <td><code translate="no" dir="ltr">firebase_data_connect</code></td> <td></td> <td></td> <td></td> <td></td> <td></td> </tr> <tr class="alt"> <td colspan="7"><b>DEPRECATED OR UNSUPPORTED LIBRARIES</b></td> </tr> <tr> <td><a href="../dynamic-links/flutter/create">Dynamic Links</a></td> <td><code translate="no" dir="ltr">firebase_dynamic_links</code></td> <td></td> <td></td> <td></td> <td></td> <td></td> </tr> <tr> <td><a href="../ml/flutter/use-custom-models">ML Model Downloader</a></td> <td><code translate="no" dir="ltr">firebase_ml_model_downloader</code></td> <td></td> <td></td> <td></td> <td style="text-align: center;">beta</td> <td></td> </tr> </tbody> </table> <p><sup> <b>1</b> <em><span class='\"notranslate\"'>Firebase AI Logic</span> was formerly called "<span class='\"notranslate\"'>Vertex AI in Firebase</span>" with the plugin <code translate="no" dir="ltr">firebase_vertexai</code>.</em> </sup></p> <p><sup> <b>2</b> <em>Firebase SQL Connect was formerly called "Firebase Data Connect".</em> </sup></p> <aside class="caution"><strong>Caution:</strong><span> Firebase on Windows is not intended for production use cases, only local development workflows.</span></aside> <p><br></p> <hr> <h2 id="next-steps">Next steps</h2> <ul> <li><p>Get hands-on experience with the <a href="https://firebase.google.com/codelabs/firebase-get-to-know-flutter">Firebase Flutter Codelab</a>.</p></li> <li>
+<p>Prepare to launch your app:</p> <ul> <li>Set up <a href="../projects/billing/budget-alerts">budget alerts</a> for your project in the Google Cloud console.</li> <li>Monitor the <a href="https://console.firebase.google.com/project/_/usage" class="external"><em>Usage and billing</em> dashboard</a> in the Firebase console to get an overall picture of your project's usage across multiple Firebase services. </li> <li>Review the <a href="https://firebase.google.com/support/guides/launch-checklist">Firebase launch checklist</a>.</li> </ul>
+</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/flutter/setup" class="_attribution-link">https://firebase.google.com/docs/flutter/setup</a>
+  </p>
+</div>

@@ -1,0 +1,90 @@
+<h1>Security Rules and Firebase Authentication</h1> <p>Firebase Security Rules provide access control and data validation in a format that supports multiple levels of complexity. To build user-based and role-based access systems that keep your users' data safe, use <a href="../auth">Firebase Authentication</a> with Firebase Security Rules.</p> <h2 id="identify_users">Identify users</h2> <p>Authentication identifies users requesting access to your data and provides that information as a variable you can leverage in your rules. The <code translate="no" dir="ltr">auth</code> variable contains the following information:</p> <ul> <li>
+<strong><code translate="no" dir="ltr">uid</code>:</strong> A unique user ID, assigned to the requesting user.</li> <li>
+<strong><code translate="no" dir="ltr">token</code>:</strong> A map of values collected by Authentication.</li> </ul> <p>The <code translate="no" dir="ltr">auth.token</code> variable contains the following values:</p> <table> <thead> <tr> <th>Field</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">email</code></td> <td>The email address associated with the account, if present.</td> </tr> <tr> <td><code translate="no" dir="ltr">email_verified</code></td> <td>
+<code translate="no" dir="ltr">true</code> if the user has verified they have access to the <code translate="no" dir="ltr">email</code> address. Some providers automatically verify email addresses they own.</td> </tr> <tr> <td><code translate="no" dir="ltr">phone_number</code></td> <td>The phone number associated with the account, if present.</td> </tr> <tr> <td><code translate="no" dir="ltr">name</code></td> <td>The user's display name, if set.</td> </tr> <tr> <td><code translate="no" dir="ltr">sub</code></td> <td>The user's Firebase UID. This is unique within a project.</td> </tr> <tr> <td><code translate="no" dir="ltr">firebase.identities</code></td> <td>Dictionary of all the identities that are associated with this user's account. The keys of the dictionary can be any of the following: <code translate="no" dir="ltr">email</code>, <code translate="no" dir="ltr">phone</code>, <code translate="no" dir="ltr">google.com</code>, <code translate="no" dir="ltr">facebook.com</code>, <code translate="no" dir="ltr">github.com</code>, <code translate="no" dir="ltr">twitter.com</code>. The values of the dictionary are arrays of unique identifiers for each identity provider associated with the account. For example, <code translate="no" dir="ltr">auth.token.firebase.identities["google.com"][0]</code> contains the first Google user ID associated with the account.</td> </tr> <tr> <td><code translate="no" dir="ltr">firebase.sign_in_provider</code></td> <td>The sign-in provider used to obtain this token. Can be one of the following strings: <code translate="no" dir="ltr">custom</code>, <code translate="no" dir="ltr">password</code>, <code translate="no" dir="ltr">phone</code>, <code translate="no" dir="ltr">anonymous</code>, <code translate="no" dir="ltr">google.com</code>, <code translate="no" dir="ltr">facebook.com</code>, <code translate="no" dir="ltr">github.com</code>, <code translate="no" dir="ltr">twitter.com</code>.</td> </tr> <tr> <td><code translate="no" dir="ltr">firebase.tenant</code></td> <td>The tenantId associated with the account, if present. e.g. <code translate="no" dir="ltr">tenant2-m6tyz</code>
+</td> </tr> </tbody> </table> <p>If you want to add customized authentication attributes, the <code translate="no" dir="ltr">auth.token</code> variable also contains any <a href="../auth/admin/custom-claims">custom claims</a> you specify.</p> <p>When the user requesting access isn't signed in, the <code translate="no" dir="ltr">auth</code> variable is <code translate="no" dir="ltr">null</code>. You can leverage this in your rules if, for example, you want to limit read access to authenticated users — <code translate="no" dir="ltr">auth != null</code>. However, we generally recommend limiting write access further.</p> <p>For more information about the <code translate="no" dir="ltr">auth</code> variable, see the reference documentation for <a href="https://firebase.google.com/docs/reference/rules/rules.firestore.Request#auth">Cloud Firestore</a>, <a href="https://firebase.google.com/docs/reference/security/database/#variables">Realtime Database</a>, and <a href="https://firebase.google.com/docs/reference/security/storage/#request">Cloud Storage</a>.</p> <h2 id="leverage_user_information_in_rules">Leverage user information in rules</h2> <p>In practice, using authenticated information in your rules makes your rules more powerful and flexible. You can control access to data based on user identity.</p> <p>In your rules, define how the information in the <code translate="no" dir="ltr">auth</code> variable — the requestor's user information — matches the user information associated with the requested data.</p> <p>For example, your app may want to make sure users can only read and write their own data. In this scenario, you would want a match between the <code translate="no" dir="ltr">auth.uid</code> variable and the user ID on the requested data:</p> <div> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p>
+
+<pre data-language="">service cloud.firestore {
+  match /databases/{database}/documents {
+    // Make sure the uid of the requesting user matches name of the user
+    // document. The wildcard expression {userId} makes the userId variable
+    // available in rules.
+    match /users/{userId} {
+      allow read, write: if request.auth != null &amp;&amp; request.auth.uid == userId;
+    }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Realtime Database</strong></p>
+
+<pre data-language="">{
+  "rules": {
+    "users": {
+      "$userId": {
+        // grants write access to the owner of this user account
+        // whose uid must exactly match the key ($userId)
+        ".write": "$userId === auth.uid"
+      }
+    }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Cloud Storage</strong></p>
+
+<pre data-language="">service firebase.storage {
+  // Only a user can upload their file, but anyone can view it
+  match /users/{userId}/{fileName} {
+    allow read;
+    allow write: if request.auth != null &amp;&amp; request.auth.uid == userId;
+  }
+}
+</pre></section> </div> <h2 id="define_custom_user_information">Define custom user information</h2> <p>You can further leverage the <code translate="no" dir="ltr">auth</code> variable to define custom fields assigned to your app's users.</p> <p>For example, assume you want to create an "admin" role that enables write access on certain paths. You would assign that attribute to users, and then leverage it in the rules granting access on the paths.</p> <p>In Cloud Firestore, you can add a custom field to users' documents and retrieve that field's value with an embedded read in your rules. So, your admin-based rule would look like the following example:</p> <div> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p>
+
+<pre data-language="">service cloud.firestore {
+  match /databases/{database}/documents/some_collection: {
+    // Remember that, in Cloud Firestore, reads embedded in your rules are billed operations
+    write: if request.auth != null &amp;&amp; get(/databases/(database)/documents/users/$(request.auth.uid)).data.admin == true;
+    read: if request.auth != null;
+  }
+}
+</pre></section> </div> <p>You can access custom claims in Security Rules after <a href="../auth/admin/custom-claims">creating custom claims</a> in Authentication. You can then reference those custom claims using the <code translate="no" dir="ltr">auth.token</code> variable.</p> <div> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p>
+
+<pre data-language="">service cloud.firestore {
+  match /databases/{database}/documents {
+    // For attribute-based access control, check for an admin claim
+    allow write: if request.auth.token.admin == true;
+    allow read: true;
+
+    // Alterntatively, for role-based access, assign specific roles to users
+    match /some_collection/{document} {
+     allow read: if request.auth.token.reader == "true";
+     allow write: if request.auth.token.writer == "true";
+   }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Realtime Database</strong></p>
+
+<pre data-language="">{
+  "rules": {
+    "some_path": {
+      "$sub_path": {
+      // Create a custom claim for the admin role
+      ".write": "auth.uid !== null &amp;&amp; auth.token.writer === true",
+      ".read": "auth.uid !== null"
+      }
+    }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Cloud Storage</strong></p>
+
+<pre data-language="">service firebase.storage {
+  // Create a custom claim for the admin role
+  match /files/{fileName} {
+    allow read: if request.auth.uid != null;
+    allow write: if request.auth.token.admin == true;
+  }
+}
+</pre></section> </div> <p>To see more examples of basic Security Rules leveraging Authentication, see <a href="basics">Basic Security Rules</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/rules/rules-and-auth" class="_attribution-link">https://firebase.google.com/docs/rules/rules-and-auth</a>
+  </p>
+</div>

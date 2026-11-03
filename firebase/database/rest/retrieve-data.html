@@ -1,0 +1,146 @@
+<h1>Retrieving Data</h1>  <div class="docs-section"> <h2 id="section-rest-reading-data-get">Reading Data with GET</h2> <p> We can read data from our Firebase database by issuing a <code translate="no" dir="ltr">GET</code> request to its URL endpoint. Let's continue with our blog example from the previous section and read all of our blog post data: </p> 
+<pre>
+curl 'https://docs-examples.firebaseio.com/fireblog/posts.json?print=pretty'
+</pre> <p> A successful request will be indicated by a <code translate="no" dir="ltr">200 OK</code> HTTP status code, and the response will contain the data we're retrieving. </p> </div>  <div class="docs-section"> <h2 id="section-rest-uri-params">Adding URI Parameters</h2> <p> The REST API accepts several query parameters when reading data from our Firebase database. Listed below are the most commonly used parameters. For a full list, refer to the <a href="https://firebase.google.com/docs/reference/rest/database#section-query-parameters">REST API Reference</a>. </p> <h3 id="auth">auth</h3> <p> The <code translate="no" dir="ltr">auth</code> request parameter allows access to data protected by <a href="../security/rules-conditions">Firebase Realtime Database Security Rules</a>, and is supported by all request types. The argument can either be your Firebase app's secret or an authentication token, as described in the <a href="../../auth/users">Users in Firebase Projects</a>. In the following example we send a <code translate="no" dir="ltr">GET</code> request with an <code translate="no" dir="ltr">auth</code> parameter, where <code translate="no" dir="ltr">CREDENTIAL</code> is either your Firebase app's secret or an authentication token: </p> 
+<pre>
+curl 'https://docs-examples.firebaseio.com/auth-example.json?auth=CREDENTIAL'
+</pre> <aside class="special"> If the token's <code translate="no" dir="ltr">debug</code> flag is set, debug information can be found in the <strong>X-Firebase-Auth-Debug</strong> header of the response. </aside> <h3 id="print">print</h3> <p> Specifying <code translate="no" dir="ltr">print=pretty</code> returns the data in a human-readable format. </p> 
+<pre>
+curl 'https://docs-examples.firebaseio.com/fireblog/posts.json?print=pretty'
+</pre> <p> Specifying <code translate="no" dir="ltr">print=silent</code> returns a <code translate="no" dir="ltr">204 No Content</code> on success. </p> 
+<pre>
+curl 'https://docs-examples.firebaseio.com/fireblog/posts.json?print=silent'
+</pre> <h3 id="callback">callback</h3> <p> To make REST calls from a web browser across domains you can use <a href="https://en.wikipedia.org/wiki/JSONP">JSONP</a> to wrap the response in a JavaScript callback function. Add <code translate="no" dir="ltr">callback=</code> to have the REST API wrap the returned data in the callback function you specify. For example: </p> 
+<pre>&lt;script&gt;
+  function gotData(data) {
+    console.log(data);
+  }
+&lt;/script&gt;
+&lt;script src="https://docs-examples.firebaseio.com/fireblog/posts.json?callback=gotData"&gt;</pre> <h3 id="shallow">shallow</h3> <p> This is an advanced feature, designed to help you work with large datasets without needing to download everything. To use it, add <code translate="no" dir="ltr">shallow=true</code> as a parameter. This will limit the depth of the data returned. If the data at the location is a JSON primitive (string, number, or boolean) its value will simply be returned. If the data snapshot at the location is a JSON object, the values for each key will be truncated to <strong>true</strong>. For example, using the data below: </p> 
+<pre>{
+  "message": {
+    "user": {
+      "name": "Chris"
+    },
+    "body": "Hello!"
+  }
+}
+
+// A request to /message.json?shallow=true
+// would return the following:
+{
+  "user": true,
+  "body": true
+}
+
+// A request to /message/body.json?shallow=true
+// would simply return:
+"Hello!"</pre> <p> Try it out with this <code translate="no" dir="ltr">curl</code> request: </p> 
+<pre>
+curl 'https://docs-examples.firebaseio.com/rest/retrieving-data.json?shallow=true&amp;print=pretty'
+</pre> <aside class="warning"><code translate="no" dir="ltr">shallow</code> cannot be used with any of the "filtering data" query parameters.</aside> <h3 id="timeout">timeout</h3> <p> Use this to limit how long the read takes on the server side. If a read request doesn't finish within the allotted time, it terminates with an HTTP 400 error. This is particularly useful when you expect a small data transfer and don't want to wait too long to fetch a potentially huge subtree. Actual read time might vary based on data size and caching. </p> <p> Specify <code translate="no" dir="ltr">timeouts</code> using the following format: <code translate="no" dir="ltr">3ms</code>, <code translate="no" dir="ltr">3s</code>, or <code translate="no" dir="ltr">3min</code>, with a number and a unit. If not specified, the maximum <code translate="no" dir="ltr">timeout</code> of <code translate="no" dir="ltr">15min</code> will be applied. If the <code translate="no" dir="ltr">timeout</code> is not positive, or exceeds the maximum, the request will be rejected with an HTTP 400 error. In the following example, the <code translate="no" dir="ltr">GET</code> request includes a <code translate="no" dir="ltr">timeout</code> of 10 seconds. </p> 
+<pre>
+curl 'https://docs-examples.firebaseio.com/rest/retrieving-data.json?timeout=10s'
+</pre> </div>  <div class="docs-section"> <h2 id="section-rest-filtering">Filtering Data</h2> <p> We can construct queries to filter data based on various factors. To start, you specify how you want your data to be filtered using the <code translate="no" dir="ltr">orderBy</code> parameter. Then, you combine <code translate="no" dir="ltr">orderBy</code> with any of the other five parameters: <code translate="no" dir="ltr">limitToFirst</code>, <code translate="no" dir="ltr">limitToLast</code>, <code translate="no" dir="ltr">startAt</code>, <code translate="no" dir="ltr">endAt</code>, and <code translate="no" dir="ltr">equalTo</code>. </p> <aside class="warning"> <strong>Filtered data is returned unordered</strong>: When using the REST API, the filtered results are returned in an undefined order since JSON interpreters don't enforce any ordering. If the order of your data is important you should sort the results in your application after they are returned from Firebase. </aside> <p> Since all of us at Firebase think dinosaurs are pretty cool, we'll use a snippet from a sample database of dinosaur facts to demonstrate how you can filter data: </p> 
+<pre>{
+  "lambeosaurus": {
+    "height": 2.1,
+    "length": 12.5,
+    "weight": 5000
+  },
+  "stegosaurus": {
+    "height": 4,
+    "length": 9,
+    "weight": 2500
+  }
+}</pre> <p> We can filter data in one of three ways: by <strong>child key</strong>, by <strong>key</strong>, or by <strong>value</strong>. A query starts with one of these parameters, and then must be combined with one or more of the following parameters: <code translate="no" dir="ltr">startAt</code>, <code translate="no" dir="ltr">endAt</code>, <code translate="no" dir="ltr">limitToFirst</code>, <code translate="no" dir="ltr">limitToLast</code>, or <code translate="no" dir="ltr">equalTo</code>. </p> <h3 id="filtering-by-a-specified-child-key">Filtering by a specified child key</h3> <p> We can filter nodes by a common child key by passing that key to the <code translate="no" dir="ltr">orderBy</code> parameter. For example, to retrieve all dinosaurs with a height greater than 3, we can do the following: </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/dinosaurs.json?orderBy="height"&amp;startAt=3&amp;print=pretty'
+</pre> <p> Any node that does not have the child key we're filtering on will be sorted with a value of <code translate="no" dir="ltr">null</code>. For details on how data is ordered, see <a href="#section-rest-ordered-data">How Data is Ordered</a>. </p> <p> Firebase also supports queries ordered by deeply nested children, rather than only children one level down. This is useful if you have deeply nested data like this: </p> 
+<pre>{
+  "lambeosaurus": {
+    "dimensions": {
+      "height" : 2.1,
+      "length" : 12.5,
+      "weight": 5000
+    }
+  },
+  "stegosaurus": {
+    "dimensions": {
+      "height" : 4,
+      "length" : 9,
+      "weight" : 2500
+    }
+  }
+}</pre> <p> To query the height now, we use the full path to the object rather than a single key: </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/dinosaurs.json?orderBy="dimensions/height"&amp;startAt=3&amp;print=pretty'
+</pre> <p> Queries can only filter by one key at a time. Using the <code translate="no" dir="ltr">orderBy</code> parameter multiple times on the same request throws an error. </p> <aside class="warning"> <strong>Add Indexing to your Firebase Realtime Database Security Rules</strong>: If you're using <code translate="no" dir="ltr">orderBy</code> in your app, you need to define the keys you will be indexing on via the <code translate="no" dir="ltr">.indexOn</code> rule in your Firebase Realtime Database Security Rules. <a href="../security/indexing-data">Read the documentation</a> on the <code translate="no" dir="ltr">.indexOn</code> rule for more information. </aside> <h3 id="filtering-by-key">Filtering by key</h3> <p> We can also filter nodes by their keys using the <code translate="no" dir="ltr">orderBy="$key"</code> parameter. The following example retrieves all dinosaurs with a name starting with the letter <code translate="no" dir="ltr">a</code> through <code translate="no" dir="ltr">m</code>: </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/dinosaurs.json?orderBy="$key"&amp;startAt="a"&amp;endAt="m"&amp;print=pretty'
+</pre> <h3 id="filtering-by-value">Filtering by value</h3> <p> We can filter nodes by the value of their child keys using the <code translate="no" dir="ltr">orderBy="$value"</code> parameter. Let's say the dinosaurs are having a dino sports competition and we're keeping track of their scores in the following format: </p> 
+<pre>{
+  "scores": {
+    "bruhathkayosaurus": 55,
+    "lambeosaurus": 21,
+    "linhenykus": 80,
+    "pterodactyl": 93,
+    "stegosaurus": 5,
+    "triceratops": 22
+  }
+}</pre> <p> To retrieve all dinosaurs with a score higher than 50, we could make the following request: </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/scores.json?orderBy="$value"&amp;startAt=50&amp;print=pretty'
+</pre> <p> See <a href="#section-rest-ordered-data">How Data is Ordered</a> for an explanation on how <code translate="no" dir="ltr">null</code>, boolean, string, and object values are sorted when using <code translate="no" dir="ltr">orderBy="$value"</code>. </p> <aside class="warning"> <strong>Add Indexing to your Firebase Realtime Database Security Rules</strong>: If you're using <code translate="no" dir="ltr">orderBy="$value"</code> in your app, you need to add <code translate="no" dir="ltr">.value</code> to your rules at the appropriate index. <a href="../security/indexing-data">Read the documentation</a> on the <code translate="no" dir="ltr">.indexOn</code> rule for more information. </aside> </div>  <div class="docs-section"> <h2 id="section-complex-queries">Complex Filtering</h2> <p> We can combine multiple parameters to construct more complex queries. </p> <h3 id="limit-queries">Limit Queries</h3> <p> The <code translate="no" dir="ltr">limitToFirst</code> and <code translate="no" dir="ltr">limitToLast</code> parameters are used to set a maximum number of children for which to receive data. If we set a limit of 100, we will only receive up to 100 matching children. If we have less than 100 messages stored in our database, we will receive every child. However, if we have over 100 messages, we will only receive data for 100 of those messages. These will be the first 100 ordered messages if we are using <code translate="no" dir="ltr">limitToFirst</code> or the last 100 ordered messages if we are using <code translate="no" dir="ltr">limitToLast</code>. </p> <p> Using our dinosaur facts database and <code translate="no" dir="ltr">orderBy</code>, we can find the two heaviest dinosaurs: </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/dinosaurs.json?orderBy="weight"&amp;limitToLast=2&amp;print=pretty'
+</pre> <p> Similarly, we can find the two shortest dinosaurs by using <code translate="no" dir="ltr">limitToFirst</code>: </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/dinosaurs.json?orderBy="height"&amp;limitToFirst=2&amp;print=pretty'
+</pre> <p> We can also conduct limit queries with <code translate="no" dir="ltr">orderBy="$value"</code>. If we want to create a leaderboard with the top three highest scoring dino sports competitors, we could do the following: </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/scores.json?orderBy="$value"&amp;limitToLast=3&amp;print=pretty'
+</pre> <h3 id="range-queries">Range Queries</h3> <p> Using <code translate="no" dir="ltr">startAt</code>, <code translate="no" dir="ltr">endAt</code>, and <code translate="no" dir="ltr">equalTo</code> allows us to choose arbitrary starting and ending points for our queries. For example, if we wanted to find all dinosaurs that are at least three meters tall, we can combine <code translate="no" dir="ltr">orderBy</code> and <code translate="no" dir="ltr">startAt</code>: </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/dinosaurs.json?orderBy="height"&amp;startAt=3&amp;print=pretty'
+</pre> <p> We can use <code translate="no" dir="ltr">endAt</code> to find all dinosaurs whose names come before Pterodactyl lexicographically: </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/dinosaurs.json?orderBy="$key"&amp;endAt="pterodactyl"&amp;print=pretty'
+</pre> <aside class="note"> <code translate="no" dir="ltr">startAt</code> and <code translate="no" dir="ltr">endAt</code> are inclusive, meaning "pterodactyl" will match the query above. </aside> <p> We can combine <code translate="no" dir="ltr">startAt</code> and <code translate="no" dir="ltr">endAt</code> to limit both ends of our query. The following example finds all dinosaurs whose name starts with the letter "b": </p> 
+<pre>
+curl 'https://dinosaur-facts.firebaseio.com/dinosaurs.json?orderBy="$key"&amp;startAt="b"&amp;endAt="b\uf8ff"&amp;print=pretty'
+</pre> <aside class="note"> The <code translate="no" dir="ltr">\uf8ff</code> character used in the query above is a very high code point in the Unicode range. Because it is after most regular characters in Unicode, the query matches all values that start with a b. </aside> <p> Range queries are also useful when you need to paginate your data. </p> <h3 id="putting-it-all-together">Putting it all together</h3> <p> We can combine all of these techniques to create complex queries. For example, maybe you want to find the name of all dinosaurs that are shorter than or equal in height to our favorite kind, Stegosaurus: </p> 
+<pre>
+MY_FAV_DINO_HEIGHT=`curl "https://dinosaur-facts.firebaseio.com/dinosaurs/stegosaurus/height.json"`
+curl "https://dinosaur-facts.firebaseio.com/dinosaurs.json?orderBy=\"height\"&amp;endAt=${MY_FAV_DINO_HEIGHT}&amp;print=pretty"
+</pre> </div>  <div class="docs-section"> <h2 id="section-rest-ordered-data">How Data is Ordered</h2> <p> This section explains how your data is ordered when using each of the three filtering parameters. </p> <aside class="warning"> <strong>The REST API Returns Unsorted Results</strong>: JSON interpreters do not enforce any ordering on the result set. While <code translate="no" dir="ltr">orderBy</code> can be used in combination with <code translate="no" dir="ltr">startAt</code>, <code translate="no" dir="ltr">endAt</code>, <code translate="no" dir="ltr">limitToFirst</code>, or <code translate="no" dir="ltr">limitToLast</code> to return a subset of the data, the returned results will not be sorted. Therefore, it may be necessary to manually sort the results if ordering is important. </aside> <h3 id="orderby">orderBy</h3> <p> When using <code translate="no" dir="ltr">orderBy</code> with the name of a child key, data that contains the specified child key will be ordered as follows: </p> <ol> <li> Children with a <code translate="no" dir="ltr">null</code> value for the specified child key come first. </li> <li> Children with a value of <code translate="no" dir="ltr">false</code> for the specified child key come next. If multiple children have a value of <code translate="no" dir="ltr">false</code>, they are sorted <a href="http://en.wikipedia.org/wiki/Lexicographical_order">lexicographically</a> by key. </li> <li> Children with a value of <code translate="no" dir="ltr">true</code> for the specified child key come next. If multiple children have a value of <code translate="no" dir="ltr">true</code>, they are sorted lexicographically by key. </li> <li> Children with a numeric value come next, sorted in ascending order. If multiple children have the same numerical value for the specified child node, they are sorted by key. </li> <li> Strings come after numbers, and are sorted lexicographically in ascending order. If multiple children have the same value for the specified child node, they are ordered lexicographically by key. </li> <li> Objects come last, and sorted lexicographically by key in ascending order. </li> </ol> <div class="alert alert-warning full-width">The filtered results are returned unordered. If the order of your data is important you should sort the results in your application after they are returned from Firebase.</div> <h3 id="orderby=key">orderBy="$key"</h3> <p> When using the <code translate="no" dir="ltr">orderBy="$key"</code> parameter to sort your data, data will be returned in ascending order by key as follows. Keep in mind that keys can only be strings. </p> <ol> <li> Children with a key that can be parsed as a 32-bit integer come first, sorted in ascending order. </li> <li> Children with a string value as their key come next, sorted lexicographically in ascending order. </li> </ol> <h3 id="orderby=value">orderBy="$value"</h3> <p> When using the <code translate="no" dir="ltr">orderBy="$value"</code> parameter to sort your data, children will be ordered by their value. The ordering criteria is the same as data ordered by a child key, except the value of the node is used instead of the value of a specified child key. </p> <h3 id="orderby=priority">orderBy="$priority"</h3> <p> When using the <code translate="no" dir="ltr">orderBy="$priority"</code> parameter to sort your data, the ordering of children is determined by their priority and key as follows. Keep in mind that priority values can only be numbers or strings. </p> <aside class="special"> Numeric priorities are stored and ordered as IEEE 754 double-precision floating-point numbers. Keys are always stored as strings and are treated as numeric only when they can be parsed as a 32-bit integer. </aside> <ol> <li> Children with no priority (the default) come first. </li> <li> Children with a number as their priority come next. They are sorted numerically by priority, small to large. </li> <li> Children with a string as their priority come last. They are sorted lexicographically by priority. </li> <li> Whenever two children have the same priority (including no priority), they are sorted by key. Numeric keys come first (sorted numerically), followed by the remaining keys (sorted lexicographically). </li> </ol> <p> For more information on priorities, see the <a href="https://firebase.google.com/docs/reference/rest#section-priorities">API reference</a>. </p> </div>  <div class="docs-section"> <h2 id="section-rest-streaming" data-nav="Streaming with REST">Streaming from the REST API</h2> <p> Firebase REST endpoints support the <a href="http://www.w3.org/TR/eventsource/">EventSource / Server-Sent Events</a> protocol, making it easy to stream changes to a single location in our Firebase database. </p> 
+<p> To get started with streaming, we will need to do the following: </p> 
+<ol> <li> Set the client's Accept header to <code translate="no" dir="ltr">text/event-stream</code> </li> <li> Respect HTTP Redirects, in particular HTTP status code 307 </li> <li> Include the <code translate="no" dir="ltr">auth</code> query parameter if the Firebase database location requires permission to read </li> </ol> 
+<p> In return, the server will send named events as the state of the data at the requested URL changes. The structure of these messages conforms to the EventSource protocol: </p> 
+<pre>
+event: event name
+data: JSON encoded data payload
+</pre> 
+<p> The server may send the following events: </p> <table class="responsive"> <tr> <td>put</td> <td>The JSON-encoded data will be an object with two keys: path and data<br>The path points to a location relative to the request URL<br> The client should replace all of the data at that location in its cache with the data given in the message</td> </tr> <tr> <td>patch</td> <td>The JSON-encoded data will be an object with two keys: path and data<br>The path points to a location relative to the request URL<br> For each key in the data, the client should replace the corresponding key in its cache with the data for that key in the message</td> </tr> <tr> <td>keep-alive</td> <td>The data for this event is null, no action is required</td> </tr> <tr> <td>cancel</td> <td>The data for this event is null<br> This event will be sent if the Firebase Realtime Database Security Rules cause a read at the requested location to no longer be allowed</td> </tr> <tr> <td>auth_revoked</td> <td>The data for this event is a string indicating that a the credential has expired<br>This event will be sent when the supplied auth parameter is no longer valid</td> </tr> </table> 
+<p> Below is an example of a set of events that the server may send: </p> 
+<pre>// Set your entire cache to {"a": 1, "b": 2}
+event: put
+data: {"path": "/", "data": {"a": 1, "b": 2}}
+
+
+// Put the new data in your cache under the key 'c', so that the complete cache now looks like:
+// {"a": 1, "b": 2, "c": {"foo": true, "bar": false}}
+event: put
+data: {"path": "/c", "data": {"foo": true, "bar": false}}
+
+
+// For each key in the data, update (or add) the corresponding key in your cache at path /c,
+// for a final cache of: {"a": 1, "b": 2, "c": {"foo": 3, "bar": false, "baz": 4}}
+event: patch
+data: {"path": "/c", "data": {"foo": 3, "baz": 4}}</pre> 
+<p> If you're using Go, check out <a href="https://github.com/CloudCom/firego">Firego</a>, a third-party wrapper around the Firebase REST and Streaming APIs. </p> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/rest/retrieve-data" class="_attribution-link">https://firebase.google.com/docs/database/rest/retrieve-data</a>
+  </p>
+</div>

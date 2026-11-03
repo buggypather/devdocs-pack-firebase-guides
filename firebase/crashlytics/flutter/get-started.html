@@ -1,0 +1,67 @@
+<h1>Get started with Crashlytics for Flutter</h1>   <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/get-started">iOS+</a> <a class="button" href="../android/get-started">Android</a> <a class="button" href="../android/get-started-ndk">Android NDK</a> <a class="button button-primary" href="get-started">Flutter</a> <a class="button" href="../unity/get-started">Unity</a> </td> </tr> </table> <p><br></p> <p>This guide describes how to get started with Firebase Crashlytics in your Flutter app.</p> <p>After you've set up the Crashlytics Flutter plugin in your app, you can get comprehensive crash reports in the Firebase console.</p> <p>Setting up Crashlytics involves using both a command-line tool and your IDE. To finish setup, you'll need to force a test exception to be thrown to send your first crash report to Firebase.</p> <h2 id="before-you-begin">Before you begin</h2> <ol> <li><p>If you haven't already, <a href="../../flutter/setup">configure and initialize Firebase</a> in your Flutter project.</p></li> <li>
+<p><strong>Recommended</strong>: To automatically get <a href="customize-crash-reports#get-breadcrumb-logs">breadcrumb logs</a> to understand user actions leading up to a crash, non-fatal, or ANR event, you need to enable Google Analytics in your Firebase project.</p> <ul> <li><p>If you're creating a new Firebase project, enable Google Analytics during the project creation workflow.</p></li> <li><p>If you're using an existing Firebase project that doesn't have Google Analytics enabled, you can enable it in the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/integrations" class="external"><strong>Integrations</strong> page</a> of the Firebase console.</p></li> </ul> <p>Note that breadcrumb logs are available for all Android and Apple platforms supported by Crashlytics (except watchOS).</p>
+</li> </ol> <h2 id="add-sdk">
+<strong>Step 1</strong>: Add Crashlytics to your Flutter project</h2> <ol> <li>
+<p>From the root of your Flutter project, run the following command to install the Flutter plugin for Crashlytics.</p> <p>To take advantage of <a href="customize-crash-reports#get-breadcrumb-logs">breadcrumb logs</a>, also add the Flutter plugin for Google Analytics to your app. Make sure that <a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">Google Analytics is enabled</a> in your Firebase project.</p> 
+<pre>flutter pub add firebase_crashlytics &amp;&amp; flutter pub add firebase_analytics
+</pre>
+</li> <li>
+<p>From the root directory of your Flutter project, run the following command:</p> 
+<pre>flutterfire configure
+</pre> <p>Running this command ensures that your Flutter app's Firebase configuration is up-to-date and, for Android, adds the required Crashlytics Gradle plugin to your app.</p>
+</li> <li>
+<p>Once complete, rebuild your Flutter project:</p> 
+<pre>flutter run
+</pre>
+</li> <li>
+<p><em>(Optional)</em> If your Flutter project uses the <code translate="no" dir="ltr">--split-debug-info</code> flag (and, optionally, also the <code translate="no" dir="ltr">--obfuscate</code> flag), additional steps are required to show readable stack traces for your apps.</p> <ul> <li><p><strong>Apple platforms:</strong> Make sure that your project is using the recommended version configuration (Flutter 3.12.0+ and Crashlytics Flutter plugin 3.3.4+) so that your project can automatically generate and upload Flutter symbols (dSYM files) to Crashlytics.</p></li> <li>
+<p><strong>Android:</strong> Use the <a href="../../cli">Firebase CLI</a> (v.11.9.0+) to upload Flutter debug symbols. You need to upload the debug symbols <em>before</em> reporting a crash from an obfuscated code build.</p> <p>From the root directory of your Flutter project, run the following command:</p> 
+<pre>firebase crashlytics:symbols:upload --app=FIREBASE_APP_ID PATH/TO/symbols</pre> <ul> <li>
+<p><var translate="no">FIREBASE_APP_ID</var>: Your Firebase Android App ID (not your package name)<br> Example Firebase Android App ID: <code translate="no" dir="ltr">1:567383003300:android:17104a2ced0c9b9b</code></p> <p><section class="expandable"> <p class="showalways">Need to find your Firebase App ID?</p></section></p> <blockquote> <p>Here are two ways to find your Firebase App ID:</p> <ul> <li><p>In your <code translate="no" dir="ltr">google-services.json</code> file, your App ID is the <code translate="no" dir="ltr">mobilesdk_app_id</code> value; or</p></li> <li><p>In the Firebase console, go to your <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><em>Project settings</em></a>. Go to the <em>Your apps</em> card, then click the intended Firebase App to find its App ID.</p></li> </ul> </blockquote> 
+</li> <li><p><code translate="no" dir="ltr"><var translate="no">PATH/TO</var>/symbols</code>: The same directory that you pass to the <code translate="no" dir="ltr">--split-debug-info</code> flag when building the application</p></li> </ul>
+</li> </ul>
+</li> </ol> <h2 id="configure-crash-handlers">
+<strong>Step 2</strong>: Configure crash handlers</h2> <p>You can automatically catch all errors that are thrown within the Flutter framework by overriding <code translate="no" dir="ltr">FlutterError.onError</code> with <code translate="no" dir="ltr">FirebaseCrashlytics.instance.recordFlutterFatalError</code>:</p> 
+<pre>void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+
+  // Pass all uncaught "fatal" errors from the framework to Crashlytics
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+  runApp(MyApp());
+}
+</pre> <p>To catch asynchronous errors that aren't handled by the Flutter framework, use <code translate="no" dir="ltr">PlatformDispatcher.instance.onError</code>:</p> 
+<pre>Future&lt;void&gt; main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp();
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
+    // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+    runApp(MyApp());
+
+}
+</pre> <p>For examples of how to handle other types of errors, see <a href="customize-crash-reports">Customize crash reports</a>.</p> <h2 id="force-test-crash">
+<strong>Step 3</strong>: Force a test crash to finish setup</h2> <p>To finish setting up Crashlytics and see initial data in the Crashlytics dashboard of the Firebase console, you need to force a test exception to be thrown.</p> <ol> <li>
+<p>Add code to your app that you can use to force a test exception to be thrown.</p> <p>If you've added an error handler that calls <code translate="no" dir="ltr">FirebaseCrashlytics.instance.recordError(error, stack, fatal: true)</code> to the top-level <code translate="no" dir="ltr">Zone</code>, you can use the following code to add a button to your app that, when pressed, throws a test exception:</p> 
+<pre>TextButton(
+    onPressed: () =&gt; throw Exception(),
+    child: const Text("Throw Test Exception"),
+),
+</pre>
+</li> <li><p>Build and run your app.</p></li> <li>
+<p>Force the test exception to be thrown in order to send your app's first report:</p> <ol> <li><p>Open your app from your test device or emulator.</p></li> <li><p>In your app, press the test exception button that you added using the code above.</p></li> </ol>
+</li> <li>
+<p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> to check for your test crash report.</p> <p>If you've refreshed the console and you're still not seeing the test crash after five minutes, <a href="test-implementation#enable-debug-logging">enable debug logging</a> to see if your app is sending crash reports.</p>
+</li> </ol> <p><br></p> <p>And that's it! Crashlytics is now monitoring your app for crashes and, on Android, non-fatal errors and ANRs. Visit the <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> to view and investigate all your reports and statistics.</p> <h2 id="next-steps">Next steps</h2> <ul> <li><p><a href="customize-crash-reports">Customize your crash report setup</a> by adding opt-in reporting, logs, keys, and tracking of additional non-fatal errors.</p></li> <li><p><a href="../integrate-with-google-play">Integrate with Google Play</a> so that you can filter your Android app's crash reports by Google Play track directly in the Crashlytics dashboard. This lets you better focus your dashboard on specific builds.</p></li> <li><p><a href="https://developer.android.com/studio/preview/features#aqi" class="external">View stack traces and crash statistics alongside your code</a> with the <em>App Quality Insights</em> window in Android Studio (available starting with Electric Eel 2022.1.1).</p></li> <li><p><a href="../export-data-to-cloud">Export your data to BigQuery or Cloud Logging</a> for advanced analysis and features, like querying your data, building custom dashboards, and setting up custom alerts.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/crashlytics/flutter/get-started" class="_attribution-link">https://firebase.google.com/docs/crashlytics/flutter/get-started</a>
+  </p>
+</div>

@@ -1,0 +1,244 @@
+<h1>Use server-side Remote Config with Cloud Functions and Agent Platform</h1> <aside class="preview"> <p> <b>Preview</b>: Using Remote Config in server environments is a feature that's in Preview, which means that it isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways. </p> <p> As you use server-side Remote Config, we encourage you to <a href="survey">share your feedback with us</a>. </p> </aside> <p>This guide describes how to get started using <a href="../functions/version-comparison#new-in-2nd-gen">2nd gen Cloud Functions</a> with <a href="server">server-side Remote Config</a> to make server-side calls to the <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/start" class="external"><span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span></a>.</p> <p>In this tutorial, you'll add Remote Config to a chatbot-like function that uses a <span class='\"notranslate\"'>Gemini</span> model to answer user questions. Remote Config will manage <span class='\"notranslate\"'>Gemini API</span> inputs (including a prompt that you'll prepend to incoming user queries), and you can update these inputs on-demand from the Firebase console. You'll also use the Firebase Local Emulator Suite to test and debug the function, and then, after verifying that it works, you'll deploy and test it on Google Cloud.</p> <aside class="special"><strong>Important:</strong><span> <span class='\"notranslate\"'>Agent Platform</span> and Cloud Functions require a billing account. Review <a href="https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing" class="external"><span class='\"notranslate\"'>Agent Platform</span> pricing</a> and <a href="https://firebase.google.com/pricing">Cloud Functions pricing</a> before proceeding. If you're new to Firebase and Google Cloud, check to see if you're eligible for a <a href="https://firebase.google.com/support/faq#pricing-free-trial">$300 credit</a> and a Free Trial Cloud Billing account.</span></aside> <h2 id="prerequisites">Prerequisites</h2> <p>This guide assumes that you're familiar with using JavaScript to develop applications.</p> <h3 id="prereq-project-setup">Set up a Firebase project</h3> <p><strong>If you do not already have a Firebase project:</strong></p> <ol> <li><p>Sign into the <a href="https://console.firebase.google.com/">Firebase console</a>.</p></li> <li>
+<p>Click <strong>Create project</strong>, and then use either of the following options:</p> <ul> <li>
+<strong>Option 1</strong>: Create a new Firebase project (and its underlying Google Cloud project automatically) by entering a new project name in the first step of the "Create project" workflow.</li> <li>
+<strong>Option 2</strong>: "Add Firebase" to an existing Google Cloud project by selecting your Google Cloud project name from the drop-down menu in the first step of the "Create project" workflow.</li> </ul>
+</li> <li><p>When prompted, you do <strong><em>not</em></strong> need to set up Google Analytics to use this solution.</p></li> <li><p>Continue to follow the on-screen instructions to create your project.</p></li> </ol> <p><strong>If you already have a Firebase project:</strong></p> <p>Proceed to <a href="#prereq-setup-env">Configure your development environment</a>.</p> <h3 id="prereq-setup-env">Configure your development environment</h3> <p>You'll need a <a href="https://nodejs.org/">Node.js</a> environment to write functions, and you'll need the Firebase CLI to deploy functions to the Cloud Functions runtime.</p> <ol> <li>
+<p>Install <a href="https://nodejs.org/">Node.js</a> and <a href="https://www.npmjs.org/">npm</a>.</p> <p>For installing Node.js and <a href="https://www.npmjs.org/">npm</a>, we recommend using <a href="https://github.com/creationix/nvm/blob/master/README.md">Node Version Manager</a>.</p> <aside class="special"><strong>Important:</strong><span> We recommend using Node.js v20 or later. See <a href="../functions/manage-functions#set_nodejs_version">Set runtime options</a> for important information about ongoing support for Node.js versions.</span></aside>
+</li> <li>
+<p><a href="../cli#setup_update_cli">Install the Firebase CLI</a> using your preferred method. For example, to install the CLI using npm, run this command:</p> 
+<pre>npm install -g firebase-tools@latest
+</pre> <p>This command installs the globally-available <code translate="no" dir="ltr">firebase</code> command. If this command fails, you may need to <a href="https://docs.npmjs.com/getting-started/fixing-npm-permissions">change npm permissions</a>.</p> <p>To update to the latest version of <code translate="no" dir="ltr">firebase-tools</code>, rerun the same command.</p> <aside class="note"><b>Note:</b> You can also run Firebase CLI commands in Cloud Shell. <a href="../cloud-shell">Cloud Shell</a> is a browser-based, pre-authenticated command-line environment, accessible from the Firebase console, and comes with the Firebase CLI pre-installed. This makes it a convenient option for getting started quickly, provided you add your project files to the Cloud Shell environment.</aside>
+</li> <li>
+<p>Install <code translate="no" dir="ltr">firebase-functions</code> and <code translate="no" dir="ltr">firebase-admin</code> and use <code translate="no" dir="ltr">--save</code> to save them to your <code translate="no" dir="ltr">package.json</code>:</p> 
+<pre>npm install firebase-functions@latest firebase-admin@latest --save
+</pre>
+</li> </ol> <aside class="tip"><strong>Tip:</strong><span> In many cases, new features and bug fixes are available only with the latest version of the Firebase CLI and the <code translate="no" dir="ltr">firebase-functions</code> SDK. It's a good practice to frequently update both the Firebase CLI and the SDK with these commands inside the <code translate="no" dir="ltr">functions</code> folder of your codebase.</span></aside> <p>You're now ready to proceed to <a href="#implementation">implementation</a> of this solution.</p> <h2 id="implementation">Implementation</h2> <p>Follow these steps to create, test, and deploy your 2nd gen Cloud Functions with Remote Config and <span class='\"notranslate\"'>Agent Platform</span>:</p> <ol> <li>
+<a href="#implementation-enable-apis">Enable <span class='\"notranslate\"'>Agent Platform</span> recommended APIs in the Google Cloud console</a>.</li> <li>
+<a href="#implementation-initialize-and-install">Initialize your project and install Node dependencies</a>.</li> <li>
+<a href="#implementation-configure-permissions-and-save-key">Configure IAM permissions for your Admin SDK service account and save your key</a>.</li> <li>
+<a href="#implementation-create-function">Create the function</a>.</li> <li>
+<a href="#implementation-create-template">Create a server-specific Remote Config template</a>.</li> <li>
+<a href="#implementation-deploy-and-test-in-emulator">Deploy your function and test it in the Firebase Local Emulator Suite</a>.</li> <li>
+<a href="#implementation-deploy-function-to-cloud">Deploy your function to Google Cloud</a>.</li> </ol> <h3 id="implementation-enable-apis">Step 1: Enable <span class='\"notranslate\"'>Agent Platform</span> recommended APIs in the Google Cloud console</h3> <ol> <li>Open the <a href="https://console.cloud.google.com">Google Cloud console</a>, and when prompted, select your project.</li> <li>In the <strong>Search</strong> field at the top of the console, enter <strong><span class='\"notranslate\"'>Agent Platform</span></strong> and wait for <strong><span class='\"notranslate\"'>Agent Platform</span></strong> to appear as a result.</li> <li>Select <strong><span class='\"notranslate\"'>Agent Platform</span></strong>. The <span class='\"notranslate\"'>Agent Platform</span> dashboard appears.</li> <li>
+<p>Click <strong>Enable All Recommended APIs</strong>.</p> <p>It might take a few moments for API enablement to complete. Keep the page active and open until enablement finishes.</p>
+</li> <li><p>If billing isn't enabled, you'll be prompted to add or link a Cloud Billing account. After enabling a billing account, return to the <span class='\"notranslate\"'>Agent Platform</span> dashboard and verify that all recommended APIs are enabled.</p></li> </ol> <aside class="special"><strong>Important:</strong><span> <span class='\"notranslate\"'>Agent Platform</span> and Cloud Functions require a billing account. Review <a href="https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing" class="external"><span class='\"notranslate\"'>Agent Platform</span> pricing</a> and <a href="https://firebase.google.com/pricing">Cloud Functions pricing</a> for pricing information.</span></aside> <h3 id="implementation-initialize-and-install">Step 2: Initialize your project and install Node dependencies</h3> <ol> <li>Open a terminal on your computer and navigate to the directory where you plan to create your function.</li> <li>
+<p>Log into Firebase:</p> 
+<pre>firebase login
+</pre>
+</li> <li>
+<p>Run the following command to initialize Cloud Functions for Firebase:</p> 
+<pre>firebase init functions
+</pre>
+</li> <li><p>Select <strong>Use an existing project</strong> and specify your project ID.</p></li> <li><p>When prompted to select the language to use, choose <strong>Javascript</strong> and press Enter.</p></li> <li>
+<p>For all other options, select the defaults.</p> <p>A <code translate="no" dir="ltr">functions</code> directory is created in the current directory. Inside, you'll find an <code translate="no" dir="ltr">index.js</code> file that you'll use to build out your function, a <code translate="no" dir="ltr">node_modules</code> directory that contains the dependencies for your function, and a <code translate="no" dir="ltr">package.json</code> file that contains the package dependencies.</p>
+</li> <li>
+<p>Add the Admin SDK and <span class='\"notranslate\"'>Agent Platform</span> packages by running the following commands, using <code translate="no" dir="ltr">--save</code> to ensure that it's saved to your <code translate="no" dir="ltr">package.json</code> file:</p> 
+<pre>cd functions
+npm install firebase-admin@latest @google-cloud/vertexai --save
+</pre>
+</li> </ol> <p>Your <code translate="no" dir="ltr">functions/package.json</code> file should now look like the following, with the latest versions specified:</p> 
+<pre>  {
+    "name": "functions",
+    "description": "Cloud Functions for Firebase",
+    "scripts": {
+      "serve": "firebase emulators:start --only functions",
+      "shell": "firebase functions:shell",
+      "start": "npm run shell",
+      "deploy": "firebase deploy --only functions",
+      "logs": "firebase functions:log"
+    },
+    "engines": {
+      "node": "20"
+    },
+    "main": "index.js",
+    "dependencies": {
+      "@google-cloud/vertexai": "^1.1.0",
+      "firebase-admin": "^12.1.0",
+      "firebase-functions": "^5.0.0"
+    },
+    "devDependencies": {
+      "firebase-functions-test": "^3.1.0"
+    },
+    "private": true
+  }
+</pre> <p>Note that if you're using ESLint, you'll see a stanza that includes it. In addition, make sure that the node engine version matches your installed version of Node.js and the version you ultimately run on Google Cloud. For example, if the <code translate="no" dir="ltr">engines</code> stanza in your <code translate="no" dir="ltr">package.json</code> is configured as Node version 18 and you're using Node.js 20, update the file to use 20:</p> 
+<pre>  "engines": {
+    "node": "20"
+  },
+</pre> <h3 id="implementation-configure-permissions-and-save-key">Step 3: Configure IAM permissions for your Admin SDK service account and save your key</h3> <p>In this solution, you'll use the Firebase Admin SDK service account to run your function.</p> <ol> <li>In the Google Cloud console, open the <a href="https://console.cloud.google.com/iam-admin/iam"><em>IAM &amp; Admin</em> page</a>, and locate the Admin SDK service account (named <code translate="no" dir="ltr">firebase-adminsdk</code>).</li> <li>Select the account and click <strong>Edit principal</strong>. The Edit access page appears.</li> <li>Click <strong>Add another role</strong>, select <strong>Remote Config Viewer</strong>.</li> <li>Click <strong>Add another role</strong>, select <strong>AI platform developer</strong>.</li> <li>Click <strong>Add another role</strong>, select <strong><span class='\"notranslate\"'>Agent Platform</span> user</strong>.</li> <li>Click <strong>Add another role</strong>, select <strong>Cloud Run Invoker</strong>.</li> <li>Click <strong>Save</strong>.</li> </ol> <p>Next, export the credentials for the Admin SDK service account and save them in your <code translate="no" dir="ltr">GOOGLE_APPLICATION_CREDENTIALS</code> environment variable.</p> <ol> <li>In the Google Cloud console, open the <a href="https://console.cloud.google.com/apis/credentials"><em>Credentials</em> page</a>.</li> <li>Click the <strong>Admin SDK</strong> service account to open the <em>Details</em> page.</li> <li>Click <strong>Keys</strong>.</li> <li>Click <strong>Add key</strong> &gt; <strong>Create new key</strong>.</li> <li>Ensure that <strong>JSON</strong> is selected as the <strong>Key type</strong>, then click <strong>Create</strong>.</li> <li>Download the key to a safe place on your computer.</li> <li>
+<p>From your terminal, export the key as an environment variable:</p> 
+<pre>export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/service-account-key.json"
+</pre>
+</li> </ol> <aside class="tip"><strong>Tip:</strong><span> If you plan to use multiple terminal windows for this session, consider adding <code translate="no" dir="ltr">GOOGLE_APPLICATION_CREDENTIALS</code> as a system variable.</span></aside> <h3 id="implementation-create-function">Step 4: Create the function</h3> <p>In this step, you'll construct a function that handles user input and generates AI-powered responses. You'll combine multiple code snippets to build a comprehensive function that initializes the Admin SDK and <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>, configures default parameters using Remote Config, fetches the latest Remote Config parameters, processes user input, and streams a response back to the user.</p> <aside class="special"><strong>Important:</strong><span> The code for this function is provided in multiple snippets. You must combine them all into a single <code translate="no" dir="ltr">index.js</code> file before running the function.</span></aside> <ol> <li>In your codebase, open <code translate="no" dir="ltr">functions/index.js</code> in a text editor or IDE.</li> <li>
+<p>Delete the existing content and then add the Admin SDK, Remote Config, and the <span class='\"notranslate\"'>Agent Platform</span> SDK and initialize the app by pasting the following code into the file:</p> 
+<pre>const { onRequest } = require("firebase-functions/https");
+const { requiresRole, requiresAPI } = require("firebase-functions");
+const logger = require("firebase-functions/logger");
+
+const { initializeApp } = require("firebase-admin/app");
+const { VertexAI } = require('@google-cloud/vertexai');
+const { getRemoteConfig } = require("firebase-admin/remote-config");
+
+requiresRole("roles/aiplatform.user");
+requiresRole("roles/cloudconfig.viewer");
+requiresAPI("aiplatform.googleapis.com", "Needed to query Vertex AI Gemini models");
+requiresAPI("firebaseremoteconfig.googleapis.com", "Needed to fetch server-side Remote Config templates");
+
+// Set and check environment variables.
+const project = process.env.GCLOUD_PROJECT;
+
+// Initialize Firebase.
+const app = initializeApp();
+</pre>
+</li> <li>
+<p>Configure default values that your function will use if it can't connect to the Remote Config server. This solution configures <code translate="no" dir="ltr">textModel</code>, <code translate="no" dir="ltr">generationConfig</code>, <code translate="no" dir="ltr">safetySettings</code>, <code translate="no" dir="ltr">textPrompt</code>, and <code translate="no" dir="ltr">location</code> as Remote Config parameters that correspond with Remote Config parameters that you'll configure further on in this guide. For more information about these parameters, see <a href="https://cloud.google.com/nodejs/docs/reference/aiplatform/latest">Vertex AI Node.js client</a>.</p> <p>Optionally, you can also configure a parameter to control whether or not you access the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> (in this example, a parameter called <code translate="no" dir="ltr">vertex_enabled</code>). This setup can be useful when testing your function. In the following code snippets, this value is set to <code translate="no" dir="ltr">false</code>, which will skip using <span class='\"notranslate\"'>Agent Platform</span> while you test basic function deployment. Setting it to <code translate="no" dir="ltr">true</code> will invoke the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>.</p> 
+<pre>// Define default (fallback) parameter values for Remote Config.
+const defaultConfig = {
+
+  // Default values for Vertex AI.
+  model_name: "gemini-1.5-flash-002",
+  generation_config: [{
+    "stopSequences": [], "temperature": 0.7,
+    "maxOutputTokens": 64, "topP": 0.1, "topK": 20
+  }],
+  prompt: "I'm a developer who wants to learn about Firebase and you are a \
+    helpful assistant who knows everything there is to know about Firebase!",
+  safety_settings: [{
+    "category":
+      "HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT",
+    "threshold": "HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE"
+  }],
+  location: 'us-central1',
+
+  // Disable Vertex AI Gemini API access for testing.
+  vertex_enabled: false
+};
+</pre>
+</li> <li>
+<p>Create the function and set up <a href="server">server-side Remote Config</a>:</p> 
+<pre>// Export the function.
+exports.generateWithVertex = onRequest(async (request, response) =&gt; {
+
+  try {
+
+    // Set up Remote Config.
+    const rc = getRemoteConfig(app);
+
+    // Get the Remote Config template and assign default values.
+    const template = await rc.getServerTemplate({
+      defaultConfig: defaultConfig
+    });
+
+    // Add the template evaluation to a constant.
+    const config = template.evaluate();
+
+    // Obtain values from Remote Config.
+    const textModel = config.getString("model_name") ||
+        defaultConfig.model_name;
+    const textPrompt = config.getString("prompt") || defaultConfig.prompt;
+    const generationConfig = config.getString("generation_config") ||
+        defaultConfig.generation_config;
+    const safetySettings = config.getString("safety_settings") ||
+        defaultConfig.safety_settings;
+    const location = config.getString("location") ||
+        defaultConfig.location;
+    const vertexEnabled = config.getBoolean("is_vertex_enabled") ||
+        defaultConfig.vertex_enabled;
+</pre>
+</li> <li>
+<p>Set up <span class='\"notranslate\"'>Agent Platform</span> and add the chat and response logic:</p> 
+<pre>  // Allow user input.
+  const userInput = request.query.prompt || '';
+
+  // Instantiate Vertex AI.
+    const vertex_ai = new VertexAI({ project: project, location: location });
+    const generativeModel = vertex_ai.getGenerativeModel({
+      model: textModel,
+      safety_settings: safetySettings,
+      generation_config: generationConfig,
+    });
+
+    // Combine prompt from Remote Config with optional user input.
+    const chatInput = textPrompt + " " + userInput;
+
+    if (!chatInput) {
+      return res.status(400).send('Missing text prompt');
+    }
+    // If vertexEnabled isn't true, do not send queries to Vertex AI.
+    if (vertexEnabled !== true) {
+      response.status(200).send({
+        message: "Vertex AI call skipped. Vertex is not enabled."
+      });
+      return;
+    }
+
+    logger.log("\nRunning with model ", textModel, ", prompt: ", textPrompt,
+      ", generationConfig: ", generationConfig, ", safetySettings: ",
+      safetySettings, " in ", location, "\n");
+
+    const result = await generativeModel.generateContentStream(chatInput); 
+    response.writeHead(200, { 'Content-Type': 'text/plain' });
+
+    for await (const item of result.stream) {
+      const chunk = item.candidates[0].content.parts[0].text;
+      logger.log("Received chunk:", chunk);
+      response.write(chunk);
+    }
+
+    response.end();
+
+  } catch (error) {
+    logger.error(error);
+    response.status(500).send('Internal server error');
+  }
+});
+</pre>
+</li> <li><p>Save and close the file.</p></li> </ol> <aside class="tip"><strong>Tip:</strong><span> Learn more about using <span class='\"notranslate\"'>Agent Platform</span> with Node.js to generate multi-modal and streamed responses at <a href="https://cloud.google.com/nodejs/docs/reference/vertexai/latest">Vertex AI for Node.js quickstart</a>.</span></aside> <h3 id="implementation-create-template">Step 5: Create a server-specific Remote Config template</h3> <p>Next, create a server-side Remote Config template and configure parameters and values to use in your function. To create a server-specific Remote Config template:</p> <ol> <li><p>In the Firebase console, go to <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/config" class="external"><strong>Remote Config</strong></a>.</p></li> <li>
+<p>From the <strong>Client/Server</strong> selector at the top of the page, select <strong>Server</strong>.</p> <ul> <li>If this is your first time using Remote Config or server templates, click <strong>Create Configuration</strong>. The <strong>Create your first server-side parameter</strong> pane appears.</li> <li>If this is not your first time using Remote Config server templates, click <strong>Add parameter</strong>.</li> </ul>
+</li> <li>
+<p>Define the following Remote Config parameters:</p> <table> <tr> <th><strong>Parameter name</strong></th> <th><strong>Description</strong></th> <th><strong>Type</strong></th> <th><strong>Default value</strong></th> </tr> <tr> <td><code translate="no" dir="ltr">model_name</code></td> <td>Model name<br> For up-to-date lists of model names to use in your code, see <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions" class="external">Model versions and lifecycles</a> or <a href="../ai-logic/models#available-model-names">Available model names</a>. </td> <td>String</td> <td><code translate="no" dir="ltr">gemini-3.8-flash</code></td> </tr> <tr> <td><code translate="no" dir="ltr">prompt</code></td> <td>Prompt to prepend to the user's query.</td> <td>String</td> <td>
+<code translate="no" dir="ltr">I'm a developer who wants to learn about Firebase and you are
+      a helpful assistant who knows everything there is to know about
+      Firebase!</code> </td> </tr> <tr> <td><code translate="no" dir="ltr">generation_config</code></td> <td> <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/models/inference#generationconfig" class="external">Parameters to send to the model</a> </td> <td>JSON</td> <td>
+<code translate="no" dir="ltr">[{"stopSequences": ["I hope this helps"], "maxOutputTokens": 512}]</code> </td> </tr> <tr> <td><code translate="no" dir="ltr">safety_settings</code></td> <td> <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/configure-safety-filters" class="external">Safety settings for <span class='\"notranslate\"'>Agent Platform</span></a> </td> <td>JSON</td> <td>
+<code translate="no" dir="ltr">[{"category": "HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "HarmBlockThreshold.BLOCK_LOW_AND_ABOVE"}]</code> </td> </tr> <tr> <td><code translate="no" dir="ltr">location</code></td> <td> <a href="https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing" class="external">Location to run the <span class='\"notranslate\"'>Agent Platform</span> service and model</a> </td> <td>String</td> <td><code translate="no" dir="ltr">global</code></td> </tr> <tr> <td><code translate="no" dir="ltr">is_vertex_enabled</code></td> <td>Optional parameter that controls whether queries are sent to <span class='\"notranslate\"'>Agent Platform</span>. </td> <td>Boolean</td> <td><code translate="no" dir="ltr">true</code></td> </tr> </table> <aside class="special"><strong>Important:</strong><span> Models are updated frequently. For a current list of models that <span class='\"notranslate\"'>Agent Platform</span> supports, see <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/model-versions" class="external">Model versions and lifecycle</a>.</span></aside>
+</li> <li><p>When you've finished adding parameters, double-check your parameters and that their data types are correct, then click <strong>Publish changes</strong>.</p></li> </ol> <h3 id="implementation-deploy-and-test-in-emulator">Step 6: Deploy your function and test it in the Firebase Local Emulator Suite</h3> <p>Now you're ready to deploy and test your function locally with the Firebase Local Emulator Suite.</p> <ol> <li>
+<p>Make sure that you've set <code translate="no" dir="ltr">GOOGLE_APPLICATION_CREDENTIALS</code> as an environment variable as described in <a href="#implementation-configure-permissions-and-save-key">Step 3: Configure IAM permissions for your Admin SDK service account and save your key</a>. Then, from the parent directory of your <code translate="no" dir="ltr">functions</code> directory, deploy your function to the Firebase emulator:</p> 
+<pre>firebase emulators:start --project PROJECT_ID --only functions
+</pre>
+<aside class="tip"><strong>Tip:</strong><span> You can also run functions in the emulator by running <code translate="no" dir="ltr">npm run serve</code> from the <code translate="no" dir="ltr">functions</code> directory.</span></aside>
+</li> <li><p>Open <a href="http://localhost:4000/logs" class="external">the emulator's logs page</a>. This should show that your function has loaded.</p></li> <li>
+<p>Access your function by running the following command, where <var label="project_id" translate="no">PROJECT_ID</var> is your project ID and <var label="location" translate="no">LOCATION</var> is the region that you deployed the function to (for example, <code translate="no" dir="ltr">us-central1</code>):</p> 
+<pre>curl http://localhost:5001/PROJECT_ID/LOCATION/generateWithVertex
+</pre>
+<aside class="tip"><strong>Tip:</strong><span> This link will also appear in your console output after starting the emulator. You can also cut and paste it into a browser.</span></aside>
+</li> <li><p>Wait for a response, then return to the Firebase Emulator logs page or your console and check for any errors or warnings.</p></li> <li>
+<p>Try sending some user input, noting that because <code translate="no" dir="ltr">is_vertex_enabled</code> is configured in your Remote Config server template, this should access the <span class='\"notranslate\"'>Gemini</span> model through the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> and that this may incur charges:</p> 
+<pre>curl http://localhost:5001/PROJECT_ID/LOCATION/generateWithVertex?prompt=Tell%20me%20everything%20you%20know%20about%20cats
+</pre>
+</li> <li><p>Make changes to your Remote Config server template in the Firebase console, then re-access your function to observe changes.</p></li> </ol> <aside class="tip"><strong>Tip:</strong><span> For more information about testing Cloud Functions with Firebase, see <a href="../functions/local-shell">Test functions interactively</a>.</span></aside> <h3 id="implementation-deploy-function-to-cloud">Step 7: Deploy your function to Google Cloud</h3> <p>After you've tested and verified your function, you're ready to deploy to Google Cloud and test the live function.</p> <aside class="special"><strong>Important:</strong><span> While testing functions in the Firebase emulator is a no-cost action, any calls to <span class='\"notranslate\"'>Agent Platform</span> when using the emulator are still charged. Also, after you deploy the functions, any invocation of those functions can incur costs. Review <a href="https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing" class="external"><span class='\"notranslate\"'>Agent Platform</span> pricing</a> and <a href="https://firebase.google.com/pricing">Cloud Functions pricing</a> before proceeding.</span></aside> <h4 id="deploy-function">Deploy your function</h4> <p>Deploy your function using the Firebase CLI:</p> 
+<pre>firebase deploy --only functions
+</pre> <h4 id="configure-auth">Block unauthenticated access to the function</h4> <p>When functions are deployed using Firebase, unauthenticated invocations are allowed by default if your organization's policy doesn't restrict it. During testing and before securing with <a href="../app-check">App Check</a>, we recommend blocking unauthenticated access.</p> <p>To block unauthenticated access to the function:</p> <ol> <li><p>In the Google Cloud console, open <a href="https://console.cloud.google.com/run">Cloud Run</a>.</p></li> <li><p>Click <code translate="no" dir="ltr">generateWithVertex</code>, then click the <strong>Security</strong> tab.</p></li> <li><p>Enable <strong>Require authentication</strong> and then click <strong>Save</strong>.</p></li> </ol> <h4 id="configure-impersonation">Configure your user account to use the Admin SDK service account credentials</h4> <p>Because the Admin SDK service account has all the necessary roles and permissions to run the function and interact with the Remote Config and the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>, you'll want to use it to run your function. To do this, you must be able to create tokens for the account from your user account.</p> <p>The following steps describe how to configure your user account and the function to run with the Admin SDK service account privileges.</p> <ol> <li>In the Google Cloud console, enable the <a href="https://console.cloud.google.com/apis/enableflow"><strong>IAM Service Account Credentials API</strong></a>.</li> <li>Give your user account the <strong>Service Account Token Creator</strong> role: From the Google Cloud console, open <strong>IAM &amp; Admin</strong> &gt; <strong>IAM</strong>, select your user account, and then click <strong>Edit principal</strong> &gt; <strong>Add another role</strong>.</li> <li>
+<p>Select <strong>Service Account Token Creator</strong>, then click <strong>Save</strong>.</p> <p>For more detailed information about service account impersonation, refer to <a href="https://cloud.google.com/iam/docs/service-account-impersonation">Service account impersonation</a> in the Google Cloud documentation.</p>
+</li> <li><p>Open the <a href="https://console.cloud.google.com/functions/list">Google Cloud console Cloud Functions page</a> and click the <strong>generateWithVertex</strong> function in the <strong>Functions</strong> list.</p></li> <li><p>Select <strong>Trigger</strong> &gt; <strong>Edit</strong> and expand <strong>Runtime, build, connections and security settings</strong>.</p></li> <li><p>From the <strong>Runtime</strong> tab, change the <strong>Runtime service account</strong> to the <strong>Admin SDK account</strong>.</p></li> <li><p>Click <strong>Next</strong>, then click <strong>Deploy</strong>.</p></li> </ol> <h4 id="set-up-gcloud">Set up the gcloud CLI</h4> <p>To securely run and test your function from the command line, you'll need to authenticate with the Cloud Functions service and obtain a valid authentication token.</p> <p>To enable token generation, install and configure the gcloud CLI:</p> <ol> <li><p>If not already installed on your computer, install the gcloud CLI as described in <a href="https://cloud.google.com/sdk/docs/install">Install the gcloud CLI</a>.</p></li> <li>
+<p>Obtain access credentials for your Google Cloud account:</p> 
+<pre>gcloud auth login
+</pre>
+</li> <li>
+<p>Set your project ID in gcloud:</p> 
+<pre>gcloud config set project PROJECT_ID
+</pre>
+</li> </ol> <h4 id="test-function">Test your function</h4> <p>You're now ready to test your function in Google Cloud. To test the function, run the following command:</p> 
+<pre>curl -X POST https://LOCATION-PROJECT_ID.cloudfunctions.net/generateWithVertex \
+  -H "Authorization: bearer $(gcloud auth print-identity-token)" \
+  -H "Content-Type: application/json"
+</pre> <p>Try again with user-supplied data:</p> 
+<pre>curl -X POST https://LOCATION-PROJECT_ID.cloudfunctions.net/generateWithVertex?prompt=Tell%20me%20everything%20you%20know%20about%20dogs \
+ -H "Authorization: bearer $(gcloud auth print-identity-token)" \
+ -H "Content-Type: application/json"
+</pre> <p>You can now make changes to your Remote Config server template, publish those changes, and test different options.</p> <h2 id="next-steps">Next steps</h2> <ul> <li>Firebase recommends using <a href="../app-check">App Check</a> to secure Cloud Functions. See <a href="../app-check/cloud-functions">Enable App Check enforcement for Cloud Functions</a> for more information about securing your function with App Check</li> <li>Try out a sample callable function with server-side Remote Config and App Check at <a href="https://github.com/firebase/functions-samples/tree/main/Node/call-vertex-remote-config-server">Call the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> with Remote Config and App Check</a>.</li> <li>Learn more about <a href="../functions">Cloud Functions for Firebase</a>.</li> <li>Learn more about <a href="server">using Remote Config in server environments</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/remote-config/solution-server" class="_attribution-link">https://firebase.google.com/docs/remote-config/solution-server</a>
+  </p>
+</div>

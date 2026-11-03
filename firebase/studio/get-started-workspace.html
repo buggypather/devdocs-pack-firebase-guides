@@ -1,0 +1,55 @@
+<h1>About Firebase Studio workspaces</h1> <p>Firebase Studio provides a collaborative, cloud-based development environment that simplifies the process of building applications with an extensive combination of <a href="https://studio.firebase.google.com/templates" class="external">frameworks and libraries</a>.</p> <p>After you set up a Firebase Studio workspace, you can access and share a fully-functional, flexible development environment: Firebase Studio workspaces are accessible from any device and provide integrated tools to streamline you and your team's development process.</p> <h2 id="create-workspace">Create a workspace</h2> <aside class="warning"> <p><strong>Important:</strong> Creating new workspaces is disabled as of June 22, 2026. The instructions on this page are preserved only for reference regarding existing workspaces.</p> </aside> <p>A workspace in Firebase Studio is a development environment that contains everything you need to develop your application. It contains your code, a code editor (with plugins relevant to your project), and toolchains that support app development. It's just like creating a new project in your local desktop development environment, except you have an entire computer and operating system pre-configured and dedicated <em>exclusively</em> to building your application, running on your browser in the cloud, accessible wherever you are.</p> <p>Firebase Studio workspaces are optimized to contain a single codebase, so you can keep the environments and system-level dependencies of different applications isolated from each other. You can create multiple workspaces to use with different applications and frameworks.</p> <aside class="key-point"><strong>Key Point:</strong><span> There's a limit to the number of workspaces you can create. If you have a <a href="https://developers.google.com/profile/help/overview" class="external">Google Developer Profile</a>, you can create more workspaces. Learn more at <a href="pricing">Firebase Studio pricing, quotas and limits</a>.</span></aside> <p>To create a new workspace:</p> <ul> <li>
+<a href="get-started-template">Opening a template or sample app</a>.</li> <li>
+<a href="get-started-import">Importing a project</a>. </li> <li>
+<a href="get-started-ai">Prototype with AI</a>, then switch to Code view (<strong><code translate="no" dir="ltr">&lt;/&gt;</code></strong>). </li> </ul> <h2 id="duplicate-workspace">Duplicate a workspace</h2> <aside class="warning"> <p><strong>Warning:</strong> Duplicating workspaces is disabled as of June 22, 2026, as it creates a new workspace environment.</p> </aside> <p>Duplicating a Firebase Studio workspace creates a copy of your project that contains everything within the <code translate="no" dir="ltr">home/user</code> directory. This is useful when you want to experiment with a project without affecting the original, or when you want to use an existing project as a starting point for a new one.</p> <p>To duplicate a workspace:</p> <ol> <li>From the <a href="https://studio.firebase.google.com/">Firebase Studio homepage</a>, click the <span class="material-icons" aria-hidden="true" translate="no">more_horiz</span> menu next to the workspace you want to copy &gt; <strong>Duplicate</strong>.</li> <li><p>Enter the name of your new workspace and click <strong>Duplicate</strong>. The new workspace is created and added to your list of workspaces. ß Note: Duplicating larger workspaces can take several minutes. If your new workspace doesn't load, wait 5 minutes, then refresh the page.</p></li> <li>
+<p><em>(Optional)</em> If the original workspace has a linked Firebase project, consider creating a separate Firebase project for your new workspace. This prevents your new workspace from making changes to the Firebase project linked to your original workspace. To create a Firebase project:</p> <ol> <li>Open the new workspace and ask Gemini to create a Firebase project for you.</li> <li>Update any files that reference the Firebase project, such as <code translate="no" dir="ltr">.env</code> or <code translate="no" dir="ltr">.firebaserc</code>.</li> </ol>
+</li> </ol> <h2 id="configure-nix-file">Configure your workspace</h2> <p>Firebase Studio uses <a href="https://nixos.org/manual/nix/stable/introduction" class="external">Nix</a> to define the environment configuration for each workspace. Nix is a purely functional package manager and assigns unique identifiers to each dependency, which ultimately means your environment can contain multiple versions of the same dependency, seamlessly. It is also reproducible and declarative. In the context of Firebase Studio, this means you can share your Nix configuration file across workspaces to load the same environment configuration. Learn more about <a href="customize-workspace#nix+fs">Nix + Firebase Studio</a>.</p> <h3 id="create-nix-file">Create or edit the <code translate="no" dir="ltr">.idx/dev.nix</code> file</h3> <p>Environment configuration is defined in the <code translate="no" dir="ltr">.idx/dev.nix</code> file in your code repository. This file specifies all of the components to be added to your workspace including:</p> <ul> <li><p><a href="customize-workspace#system-tools">System tools</a> available from the <a href="https://search.nixos.org/packages" class="external">Nix package registry</a>, including compilers, packages (like <code translate="no" dir="ltr">go</code> or <code translate="no" dir="ltr">angular</code>), and command line utilities, like extra <a href="customize-workspace#gcloud">gcloud CLI components</a>.</p></li> <li><p><a href="customize-workspace#extensions">IDE extensions</a> from the <a href="https://open-vsx.org/" class="external">OpenVSX registry</a>, like language-specific debuggers, code formatters, official extensions for cloud services, and more.</p></li> <li><p><a href="customize-workspace#common-services">Common services</a>, like docker, Pub/Sub messaging, databases like Postgres and Redis, and <a href="devnix-reference">more</a>.</p></li> </ul> <p>See the following example <code translate="no" dir="ltr">.idx/dev.nix</code> file for a basic workspace environment configuration that enables app previews in Firebase Studio:</p> 
+<pre>{ pkgs, ... }: {
+
+  # Which nixpkgs channel to use.
+  channel = "stable-24.11"; # or "unstable"
+
+  # Use https://search.nixos.org/packages to find packages
+  packages = [
+    pkgs.nodejs_20
+  ];
+
+  # Sets environment variables in the workspace
+  env = {
+    SOME_ENV_VAR = "hello";
+  };
+
+  # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
+  idx.extensions = [
+    "angular.ng-template"
+  ];
+
+  # Enable previews and customize configuration
+  idx.previews = {
+    enable = true;
+    previews = {
+      web = {
+        command = [
+          "npm"
+          "run"
+          "start"
+          "--"
+          "--port"
+          "$PORT"
+          "--host"
+          "0.0.0.0"
+          "--disable-host-check"
+        ];
+        manager = "web";
+        # Optionally, specify a directory that contains your web app
+        # cwd = "app/client";
+      };
+    };
+  };
+}
+</pre> <h3 id="apply-new-configuration">Apply new configuration</h3> <p>Any time you add or update the <code translate="no" dir="ltr">dev.nix</code> configuration file, Firebase Studio shows a prompt in the bottom-right corner to <strong>Rebuild the environment</strong>. The time it takes to rebuild the environment depends on the number of packages your configuration needs.</p> <h3 id="debug-environment-build-failures">Debug environment build failures</h3> <p>Because configuration files are machine-readable code, they can have errors. If this happens, the environment may fail to build and not start. Firebase Studio displays an option to start a <em>Recovery</em> environment. This workspace doesn't include any of the configuration you've defined and just runs basic Code OSS. This gives you the chance to fix errors in your <code translate="no" dir="ltr">dev.nix</code> configuration file and rebuild the environment.</p> <h2 id="next-steps">Next steps</h2> <ul> <li><p><a href="customize-workspace">Customize your Firebase Studio workspace</a>.</p></li> <li><p><a href="custom-templates">Create custom templates to use and share</a>.</p></li> <li><p><a href="share-your-workspace">Share your workspace</a>.</p></li> <li><p><a href="open-in-firebase-studio">Use an "Open in Firebase Studio" button to share your workspace configuration or custom template</a>.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/studio/get-started-workspace" class="_attribution-link">https://firebase.google.com/docs/studio/get-started-workspace</a>
+  </p>
+</div>

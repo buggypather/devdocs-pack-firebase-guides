@@ -1,0 +1,179 @@
+<h1>Migrate Firebase Extensions to a self-created function kit</h1> <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select migration path:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="migrate">Migrate to function kits on npm</a> <a class="button button-primary" href="migrate-self-created">Migrate to self-created function kit</a> </td> </tr> </table> <p>If a publisher hasn't created an official replacement kit distributed on npm, this guide walks you through the steps to fork their extension and set it up as a local function kit.</p> <h2 id="migration-limitations">Check for known migration limitations</h2> <p>Before you start migrating an extension instance, check whether your setup uses any of the following features that require a workaround or aren't yet supported in function kits:</p> <ul> <li>
+<strong>Custom Docker repositories and KMS keys require a manual workaround</strong> Cloud Functions for Firebase doesn't support replacement system parameters for configuring a custom Docker repository or Customer-Managed Encryption Key (KMS key). If your extension configures either of these parameters, refer to the <a href="../faq-and-troubleshooting#docker-or-kms-workaround">FAQ workaround</a>.</li> </ul> <h2 id="before-you-begin">Before you begin</h2> <p>You need to <a href="../../cli#setup_update_cli">set up the Firebase CLI</a> and <a href="../../cli#initialize_a_firebase_project">initialize a Firebase project</a>. When using the CLI, make sure you're using <code translate="no" dir="ltr">firebase-tools</code> version <code translate="no" dir="ltr">&gt;= 15.32.0</code>, which has the new migration and function kit commands.</p> <aside class="note"><strong>Note:</strong><span> All CLI commands throughout this guide include the <code translate="no" dir="ltr">--project
+  &lt;project-id&gt;</code> flag to explicitly specify your target project. If you are working in your default project configured in <code translate="no" dir="ltr">.firebaserc</code>, you can omit the <code translate="no" dir="ltr">--project</code> flag.</span></aside> <h3 id="account-permissions">Required account permissions and roles</h3> <p>Depending on what needs to be created and configured by the Firebase CLI during migration, the account you're using to authenticate with Firebase and Google Cloud must have the following roles:</p> <ul> <li><code translate="no" dir="ltr">roles/firebaseextensions.editor</code></li> <li><code translate="no" dir="ltr">roles/cloudbuild.builds.editor</code></li> <li><code translate="no" dir="ltr">roles/artifactregistry.writer</code></li> <li><code translate="no" dir="ltr">roles/run.developer</code></li> <li><code translate="no" dir="ltr">roles/iam.serviceAccountUser</code></li> <li><code translate="no" dir="ltr">roles/iam.serviceAccountCreator</code></li> <li>
+<code translate="no" dir="ltr">roles/cloudfunctions.admin</code> (if you need to do <code translate="no" dir="ltr">setIamPermissions</code> for public endpoints)</li> <li>
+<code translate="no" dir="ltr">roles/secretmanager.admin</code> (if using secrets)</li> <li>
+<code translate="no" dir="ltr">roles/serviceusage.serviceUsageAdmin</code> (if you need to enable new APIs)</li> </ul> <p>We recommend using an account that has installed extensions and deployed functions before, since most of these permissions will already have been granted. If your migrating account needs more roles, follow the <a href="https://cloud.google.com/iam/docs/grant-role-console">Google Cloud IAM instructions</a> to add them.</p> <h3 id="upgrade-extension">Upgrade your extension instance to the latest version</h3> <p>You <strong>must</strong> update your extension to the latest version to minimize the difference between your extension instance and its replacement kit. If your extension isn't upgraded, there may be significant, breaking changes between your extension instance and its kit replacement. The exported configuration may not match what the kit expects because of parameter changes across versions.</p> <p>Use one of the following options to update your extension, depending on where it was installed:</p> <ul> <li>From the <a href="https://console.firebase.google.com/project/_/extensions">Firebase console</a>
+</li> <li>From the Firebase CLI using: <ul> <li><code translate="no" dir="ltr">firebase ext:update &lt;extension-instance-id&gt; --project &lt;project-id&gt; firebase deploy --only extensions --project &lt;project-id&gt;</code></li> </ul>
+</li> </ul> <p>If you skip this step, the CLI prompts you to upgrade when exporting configuration if your extension isn't on the latest version.</p> <h2 id="fork-source">Fork the extension into a local function kit</h2> <p>Before you start converting an extension to a local function kit, make sure that the extension source code is inside your Firebase project. To do this, clone the extension repository from GitHub, create a directory inside your Firebase project root, and copy the extension's <code translate="no" dir="ltr">functions/</code> folder and <code translate="no" dir="ltr">extension.yaml</code> into it:</p> 
+<pre>mkdir -p path/to/kit
+cp -r /path/to/extension-source/functions/* path/to/kit/
+cp /path/to/extension-source/extension.yaml path/to/kit/.
+</pre> <p>Follow Steps 1 through 8 from the <a href="../publishers/migrate#inventory-the-extension">publisher migration guide</a> to migrate your extension source code to a 2nd gen function. Then continue with the following steps.</p> <h3 id="support-advanced">Make your local kit support exported function region and advanced parameters</h3> <p>In a local function kit, the Firebase CLI doesn't generate an <code translate="no" dir="ltr">index.ts</code> file to set up the package and configure it to use migrated system parameters. To use function region and advanced parameters that were configured for your extension, set up your <code translate="no" dir="ltr">index.ts</code> file to read the format exported by <code translate="no" dir="ltr">firebase
+ext:export --mode functions</code> into an environment variable file.</p> <p>Specifically, in the top-level <code translate="no" dir="ltr">index.ts</code> file that exports your functions, define a parameter for <code translate="no" dir="ltr">FUNCTION_DEFAULT_REGION</code> and call <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.globaloptions"><code translate="no" dir="ltr">setGlobalOptions</code></a> with environment variables of the form <code translate="no" dir="ltr">EXT_MIGRATED_SYSTEM_&lt;GLOBAL_OPTION&gt;</code>, similar to the <a href="https://github.com/firebase/firebase-tools/blob/main/templates/init/functions/typescript/index-kit-migration.ts"><code translate="no" dir="ltr">index-kit-migration.ts</code></a> template used by the CLI:</p> 
+<pre>import { setGlobalOptions } from "firebase-functions";
+import { MemoryOption, VpcEgressSetting, IngressSetting } from "firebase-functions/v2/options";
+import { defineString } from "firebase-functions/params";
+
+export const regionParam = defineString("FUNCTION_DEFAULT_REGION", {
+  input: { text: { nonEmpty: true } },
+  description: "Global default region where functions should be deployed. Can be overridden per-function.",
+});
+
+setGlobalOptions({
+  region: regionParam,
+  memory: (process.env.EXT_MIGRATED_SYSTEM_MEMORY as MemoryOption) ?? undefined,
+  timeoutSeconds: process.env.EXT_MIGRATED_SYSTEM_TIMEOUTSECONDS
+    ? Number(process.env.EXT_MIGRATED_SYSTEM_TIMEOUTSECONDS)
+    : undefined,
+  vpcConnectorEgressSettings:
+    process.env.EXT_MIGRATED_SYSTEM_VPCCONNECTOREGRESSSETTINGS &amp;&amp;
+    process.env.EXT_MIGRATED_SYSTEM_VPCCONNECTOREGRESSSETTINGS !== "VPC_CONNECTOR_EGRESS_SETTINGS_UNSPECIFIED"
+      ? (process.env.EXT_MIGRATED_SYSTEM_VPCCONNECTOREGRESSSETTINGS as VpcEgressSetting)
+      : undefined,
+  vpcConnector: process.env.EXT_MIGRATED_SYSTEM_VPCCONNECTOR ?? undefined,
+  maxInstances: process.env.EXT_MIGRATED_SYSTEM_MAXINSTANCES
+    ? Number(process.env.EXT_MIGRATED_SYSTEM_MAXINSTANCES)
+    : undefined,
+  minInstances: process.env.EXT_MIGRATED_SYSTEM_MININSTANCES
+    ? Number(process.env.EXT_MIGRATED_SYSTEM_MININSTANCES)
+    : undefined,
+  ingressSettings: (process.env.EXT_MIGRATED_SYSTEM_INGRESSSETTINGS as IngressSetting) ?? undefined,
+  // Parses a comma-separated string of key:value pairs into a key-value object
+  // (for example, "key1:value1,key2:value2" -&gt; { key1: "value1", key2: "value2" }).
+  labels: process.env.EXT_MIGRATED_SYSTEM_LABELS
+    ? process.env.EXT_MIGRATED_SYSTEM_LABELS.split(",").reduce&lt;Record&lt;string, string&gt; | undefined&gt;(
+        (acc, curr) =&gt; {
+          const [key, value] = curr.split(":");
+          const trimmedKey = key?.trim();
+          const trimmedValue = value?.trim();
+          if (!trimmedKey || !trimmedValue) {
+            return acc;
+          }
+          acc = acc ?? {};
+          acc[trimmedKey] = trimmedValue;
+          return acc;
+        },
+        undefined,
+      )
+    : undefined,
+});
+
+// Re-export all functions so the Firebase CLI can deploy them
+export * from "./your-functions";
+</pre> <h3 id="test-kit">Test your kit prior to migration</h3> <p>You now have a local function kit that, when deployed, behaves identically to a new installation of your extension. The next step is to verify and fix any issues accidentally introduced along the way before migrating your production extension instances to it.</p> <p>First, add your fork as a local kit, configure it, and deploy it to a test project. Local function kits must live inside your Firebase project, so if the cloned extension repository is outside your Firebase project, move it inside the project directory. Then run the following kit installation command to install it as a local kit:</p> 
+<pre>firebase functions:kits:install --directory &lt;path-to-your-fork&gt; --project &lt;test-project-id&gt;
+</pre> <p>This command guides you through picking a kit ID, an instance ID, and a configuration for your first test instance. It then modifies your <code translate="no" dir="ltr">firebase.json</code> file to register a local kit pointing to your forked directory, with configurations for each instance stored in a <code translate="no" dir="ltr">.env</code> file at <code translate="no" dir="ltr">function-kits/&lt;kit-id&gt;/config-&lt;instance-id&gt;</code>.</p> <p>Deploy your local kit into a test project with the appropriate resources to test its behavior. If you already have a test project set up from testing your extension, run the following command:</p> 
+<pre>firebase deploy --only functions:&lt;kit-instance-id&gt; --project &lt;test-project-id&gt;
+</pre> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery (<code translate="no" dir="ltr">firestore-bigquery-export</code>)</p> <p>Verify the Cloud Firestore to BigQuery sync end-to-end:</p> <ol> <li>In the Cloud Firestore page of the Firebase console, create the collection you set as <code translate="no" dir="ltr">COLLECTION_PATH</code> (<code translate="no" dir="ltr">users</code>) if it doesn't already exist.</li> <li>Create a document named <code translate="no" dir="ltr">bigquery-mirror-test</code> containing any fields with any values.</li> <li>
+<p>In the BigQuery page of the Google Cloud console, query the raw changelog table. It should contain a single row logging the document creation:</p> 
+<pre>SELECT * FROM `PROJECT_ID.analytics.users_raw_changelog`
+</pre>
+</li> <li>
+<p>Query the <strong>latest view</strong>, which should return the latest change event for the only document present (<code translate="no" dir="ltr">bigquery-mirror-test</code>):</p> 
+<pre>SELECT * FROM `PROJECT_ID.analytics.users_raw_latest`
+</pre>
+</li> <li>
+<p>Delete the <code translate="no" dir="ltr">bigquery-mirror-test</code> document in Cloud Firestore. It disappears from the latest view, and a <code translate="no" dir="ltr">DELETE</code> event is appended to the raw changelog table.</p> <p>You can inspect the full history of a single document with:</p> 
+<pre>SELECT *
+   FROM `PROJECT_ID.analytics.users_raw_changelog`
+   WHERE document_name = "bigquery-mirror-test"
+   ORDER BY timestamp ASC
+</pre>
+</li> </ol> <p><strong>Differences from testing the extension:</strong></p> <ul> <li>The trigger deploys as <code translate="no" dir="ltr">kit-&lt;kit-instance-id&gt;-fsexportbigquery</code>, not <code translate="no" dir="ltr">ext-&lt;instanceId&gt;-fsexportbigquery</code>. Look for that name in the Cloud Functions dashboard and logs.</li> <li>Your code runs in the Firebase Local Emulator Suite as standard functions. You can set parameter values to use in the emulator with <code translate="no" dir="ltr">.env.local</code>. You can also unit test your code using the <code translate="no" dir="ltr">firebase-functions-test</code> SDK as described in <a href="../../functions/unit-testing">Unit testing of Cloud Functions</a>.</li> <li>Provisioning is no longer driven by the Extensions runtime. If the changelog table is missing after deploy, rerun the setup task manually: <code translate="no" dir="ltr">firebase functions:lifecycle:run afterFirstDeploy &lt;kit-instance-id&gt;</code>. The task is idempotent, so rerunning it reconciles the dataset, table, and views.</li> <li>Param values come from <code translate="no" dir="ltr">.env</code> rather than the installation form, so reruns of <code translate="no" dir="ltr">firebase deploy</code> are non-interactive once <code translate="no" dir="ltr">.env</code> is complete.</li> </ul> <h3 id="clean-up-testing">(Optional) Clean up from testing</h3> <p>If you want to remove this test instance after testing, uninstall it:</p> 
+<pre>firebase functions:kits:uninstall --instance &lt;kit-instance-id&gt; --project &lt;test-project-id&gt;
+</pre> <p>This deletes all cloud resources created by deploying the kit and removes its instance configuration. If you only have one instance of the kit, this also removes the kit entry from <code translate="no" dir="ltr">firebase.json</code>. It does not delete your local source code directory. When you install the kit for your production migration, you can pick a kit ID again.</p> <h2 id="migrate-to-local-kit">Migrate from extensions to your local kit</h2> <p>Now that your local kit is tested, you can migrate your live deployed extension instance.</p> <h3 id="install-local-kit-instance">1. Install the replacement function kit instance</h3> <p>Install your local function kit, passing <code translate="no" dir="ltr">--no-configure</code> to skip manual configuration so that the next step can export your existing extension configuration directly into this kit instance:</p> 
+<pre>firebase functions:kits:install --no-configure --directory &lt;path-to-your-fork&gt; --project &lt;project-id&gt;
+</pre> <h3 id="configure-function-kit">2. Configure the function kit instance identically to the extension</h3> <p>You need to customize this kit instance with a configuration identical to the extension it's replacing. You can export your extension instance configuration into a <code translate="no" dir="ltr">.env</code> file, which stores parameter, environment variable, and secret reference configuration data for all Cloud Functions, including kits. To export it directly into the configuration file of your kit, run:</p> 
+<pre>firebase ext:export --mode functions --instance &lt;extension-instance-id&gt; --kit-instance &lt;kit-instance-id&gt; --project &lt;project-id&gt;
+</pre> <p>At the end of this step, the configuration information for this instance is stored in a project-specific <code translate="no" dir="ltr">.env</code> file in your instance config directory, such as: <code translate="no" dir="ltr">function-kits/&lt;kit-name&gt;/config-&lt;instance-id&gt;/.env.&lt;project-id&gt;</code></p> <aside class="note"><strong>Note:</strong><span> If you haven't upgraded your extension to the latest version before exporting, the export command prompts you to do so.</span></aside> <h3 id="deploy-kit-replacement">3. Deploy and verify the kit replacement</h3> <p>Now that the kit is installed and available as a set of functions, you can deploy the kit replacement. Function kits work like standard functions, where each kit instance acts as a separate <a href="../../functions/organize-functions#organize_functions_in_codebases">codebase</a> for organizing your functions. You can choose to deploy all of your functions or just a specific kit instance. While migrating a single extension instance, deploy only that kit instance.</p> <p>If your kit uses any new parameters that weren't present in the extension instance you migrated from, the Firebase CLI prompts you for them at the beginning of the deployment process. This isn't expected in this worked example from an up-to-date <code translate="no" dir="ltr">firestore-bigquery-export</code> extension, but many kits prompt for a new parameter for any event trigger source used by the kit. As part of this migration, updated kits use 2nd gen functions where extensions previously used 1st gen functions. In 2nd gen, functions are located near their event sources and added as an additional parameter. In future updates, if new parameters are added, the CLI prompts you on the next deployment.</p> <p><strong>Worked example:</strong></p> 
+<pre>firebase deploy --only functions:firestore-bigquery-export --project my-project
+</pre> <p><strong>Output:</strong></p> 
+<pre>=== Deploying to 'my-project'...
+i  deploying functions
+i  functions: Loaded environment variables from function-kits/firestore-bigquery-export/config-firestore-bigquery-export/.env.my-project
+i  functions: ensuring required API bigquery.googleapis.com is enabled...
+i  functions: ensuring required API cloudtasks.googleapis.com is enabled...
+✔  functions: required APIs are enabled
+i  functions: granting declarative IAM roles to managed service account:
+   - BigQuery Data Editor
+   - BigQuery User
+   - Cloud Datastore User
+   - Eventarc Event Receiver
+   - roles/run.invoker
+✔  functions: successfully granted IAM roles
+i  functions: creating Node.js 22 (2nd Gen) function kit-firestore-bigquery-export-fsexportbigquery(us-central1)...
+i  functions: creating Node.js 22 (2nd Gen) function kit-firestore-bigquery-export-initBigQuerySync(us-central1)...
+i  functions: creating Node.js 22 (2nd Gen) function kit-firestore-bigquery-export-setupBigQuerySync(us-central1)...
+✔  functions[kit-firestore-bigquery-export-fsexportbigquery(us-central1)] Successful create operation.
+✔  functions[kit-firestore-bigquery-export-initBigQuerySync(us-central1)] Successful create operation.
+✔  functions[kit-firestore-bigquery-export-setupBigQuerySync(us-central1)] Successful create operation.
+i  functions: Executing afterFirstDeploy lifecycle hook targeting: kit-firestore-bigquery-export-initBigQuerySync...
+✔  functions: Successfully queued task for lifecycle hook kit-firestore-bigquery-export-initBigQuerySync in queue projects/my-project/locations/us-central1/queues/kit-firestore-bigquery-export-initBigQuerySync.
+✔  Deploy complete!
+</pre>
+<aside class="note"><strong>Note:</strong><span> It can take a few minutes for Eventarc to fully provision and start accepting events. We recommend waiting a few minutes before verifying your kit if it's event triggered. If you delete your extension immediately without verification, you might have a brief period of downtime while provisioning finishes.</span></aside> <p>To verify that the <code translate="no" dir="ltr">firebase deploy</code> of the kit had no errors, check the deployment logs to see if any lifecycle hooks were triggered. Popular extensions, such as Stream Cloud Firestore to BigQuery, use lifecycle hooks. The following is an example of how a lifecycle hook looks when triggered:</p> 
+<pre>i  functions: Executing afterFirstDeploy lifecycle hook targeting: kit-firestore-bigquery-export-initBigQuerySync...
+✔  functions: Successfully queued task for lifecycle hook kit-firestore-bigquery-export-initBigQuerySync in queue projects/my-project/locations/europe-west1/queues/kit-firestore-bigquery-export-initBigQuerySync.
+i  functions: View logs for afterFirstDeploy at: https://console.cloud.google.com/logs/query;query=resource.type%3D%22cloud_run_revision%22%0Aresource.labels.service_name%3D%22kit-firestore-bigquery-export--initbigquerysync%22%0Aresource.labels.location%3D%22europe-west1%22;project=my-project
+</pre> <p>These log messages confirm the following:</p> <ul> <li>A lifecycle hook was found and executed.</li> <li>A task was queued in the lifecycle hook's associated task queue.</li> <li>A link to Cloud Logging was provided so you can validate that the task completed without errors.</li> </ul> <p>Follow the logs link to the Google Cloud console to validate that there are no errors in the logs and your task queue event was successfully processed. If the lifecycle event didn't execute successfully, you can retrigger it by running:</p> 
+<pre>firebase functions:lifecycle:run &lt;hook-name&gt; &lt;codebase&gt;
+</pre> <p>If you're deploying a function kit instance for the first time, run:</p> 
+<pre>firebase functions:lifecycle:run afterFirstDeploy &lt;kit-instance-id&gt;
+</pre> <p>If at any time during validation you decide you want to stop or undo this migration, you can uninstall the kit using the instructions in <a href="../migration-best-practices#undoing-migration">Uninstall the extension</a>.</p> <p>Once you've verified that the initial deployment of your function kit has completed successfully, you need to validate that the functionality of the kit is actually working as expected. Because the extension itself is still running, you need to be careful that what you're checking is not just that one of the two has worked, since the extension has been and will continue to work.</p> <p>In the case where the processing isn't changed and you don't see duplicate results from the extension and kit, the best option is to directly examine the logs for the kit after triggering the kit's functionality.</p> <p><strong>Worked Example:</strong> Stream Cloud Firestore to BigQuery</p> <p>With the Stream Cloud Firestore to BigQuery Extension writes to both the Raw Changelog Table (<code translate="no" dir="ltr">*_raw_changelog</code>) and latest view table (<code translate="no" dir="ltr">*_raw_latest</code>) will deduplicate if the same event is delivered to the kit and the extension. So you can't use the presence of any rows or duplicate rows in BigQuery to validate the kit is working.</p> <p>You can view functions logs shortly after writing to your Firestore collection using <code translate="no" dir="ltr">firebase functions:logs</code> and look for a log entry that indicates it successfully processed a write. For this kit with the default instance ID of <code translate="no" dir="ltr">firestore-bigquery-export</code> would look like:</p> 
+<pre>2026-09-25T19:52:46.328612Z I kit-firestore-bigquery-export-fsexportbigquery: Started execution of extension
+2026-09-25T19:52:46.328644Z I kit-firestore-bigquery-export-fsexportbigquery: {"message":"Firestore event received by onDocumentWritten trigger","document_name":"projects/extensions-eventarc-testing/databases/(default)/documents/exported-messages/cmGP6XLyksqGdw2OgTOq","operation":0,"event_id":"9f59a2a4-1a5e-4c41-a32d-561e3c734502"}
+2026-09-25T19:52:46.616064Z I kit-firestore-bigquery-export-fsexportbigquery: Completed execution of extension
+2026-09-2
+</pre>
+<aside class="note"><strong>Note:</strong><span> The specific Firestore event received log <code translate="no" dir="ltr">document_name</code> will vary based on your configuration.</span></aside> <p>If you have a lot of logs, you can filter down to a specific kit function using the following command:</p> 
+<pre>firebase functions:log --only &lt;function name&gt;
+</pre> <p>To find the specific function names for a kit instance, you can use the following command:</p> 
+<pre>firebase functions:list | grep kit-&lt;kit instance id&gt;
+</pre> <p>For this example:</p> 
+<pre>firebase functions:list | grep kit-firestore-bigquery-export
+│ kit-firestore-bigquery-export-fsexportbigquery  │ v2      │ google.cloud.firestore.document.v1.written                    │
+│ kit-firestore-bigquery-export-initBigQuerySync  │ v2      │ taskQueue                                                     │
+│ kit-firestore-bigquery-export-setupBigQuerySync │ v2      │ taskQueue                                                     │
+│ kit-firestore-bigquery-export-syncBigQuery      │ v2      │ taskQueue                                                     │
+</pre> <h3 id="uninstall-extension">4. Uninstall the extension</h3> <p>When you've verified your deployed function kit, you can uninstall your extension so that you're not duplicating its behavior once for the kit and once for the extension. You can uninstall all extensions from the Firebase CLI regardless of how you installed them if you pass the <code translate="no" dir="ltr">--immediate</code> flag:</p> 
+<pre>firebase ext:uninstall &lt;extension-instance-id&gt; --project &lt;project-id&gt; --immediate
+</pre> <p><strong>Worked example:</strong></p> 
+<pre>firebase ext:uninstall firestore-bigquery-export --project my-project --immediate
+</pre> <p><strong>Output:</strong></p> 
+<pre>i  extensions: uninstalling firestore-bigquery-export...
+i  extensions: deleting extension instance resources in project my-project...
+✔  extensions: successfully uninstalled firestore-bigquery-export
+</pre> <h2 id="advanced-migrations">Advanced migrations</h2> <p>You can have extensions in multiple Firebase projects that you want to manage with a single codebase. For example, if you deploy the same infrastructure to a <code translate="no" dir="ltr">testing</code> environment and a <code translate="no" dir="ltr">production</code> environment, each of which has a <code translate="no" dir="ltr">documents</code> Cloud Firestore instance that you export to BigQuery, you might have two instances of the <code translate="no" dir="ltr">firestore-bigquery-export</code> extension installed:</p> <ul> <li><code translate="no" dir="ltr">export-documents-testing</code></li> <li><code translate="no" dir="ltr">export-documents-production</code></li> </ul> <p>If you migrated these two extension instances to two function kit instances in a single codebase when working with the Firebase CLI and deployed using <code translate="no" dir="ltr">firebase deploy --project testing</code> and <code translate="no" dir="ltr">firebase deploy --project production</code>, each deploy would create two instances in both the <code translate="no" dir="ltr">testing</code> and <code translate="no" dir="ltr">production</code> environments.</p> <p>Instead, replace the two extension instances with one function kit instance of <code translate="no" dir="ltr">firestore-bigquery-export</code> deployed to multiple projects, where each project has its own configuration. Your configuration directory for the instance should look like the following:</p> <ul> <li>
+<code translate="no" dir="ltr">config-export-documents/</code> <ul> <li><code translate="no" dir="ltr">.env.testing</code></li> <li><code translate="no" dir="ltr">.env.production</code></li> </ul>
+</li> </ul> <p>Each deployment to <code translate="no" dir="ltr">testing</code> and <code translate="no" dir="ltr">production</code> creates one instance of your kit with the corresponding configuration. The existing CLI commands create this setup as long as you pass the <code translate="no" dir="ltr">--project</code> flag in each invocation of <code translate="no" dir="ltr">ext:migrate</code> or <code translate="no" dir="ltr">functions:kits:install</code>.</p> <p><strong>Worked example:</strong></p> 
+<pre>firebase functions:kits:install --package @firebase-function-kits/firestore-bigquery-export --project testing --no-configure --template migration
+</pre>
+
+<pre>✔ What would you like to name this kit? firestore-bigquery-export
+✔ What would you like to name this instance? export-documents
+✔  Wrote function-kits/firestore-bigquery-export/source/package.json
+✔  Wrote function-kits/firestore-bigquery-export/source/tsconfig.json
+✔  Wrote function-kits/firestore-bigquery-export/source/.gitignore
+✔  Wrote function-kits/firestore-bigquery-export/source/src/index.ts
+i  functions: Running npm install
+✔  Wrote configuration info to firebase.json
+✔  functions: Function kit firestore-bigquery-export successfully installed.
+</pre>
+
+<pre># This creates the export-documents instance with an empty .env.testing file
+# for the testing project. Now populate it via export:
+firebase ext:export --mode functions --instance export-documents-testing \
+  --kit-instance export-documents --project testing
+
+# Repeat the export for production into the same kit instance to create
+# .env.production from the export-documents-prod instance:
+firebase ext:export --mode functions --instance export-documents-prod \
+  --kit-instance export-documents --project production
+</pre>
+<aside class="note"><strong>Note:</strong><span> Some console output has been omitted for brevity.</span></aside> <p>You now have a single kit instance configured to deploy to your <code translate="no" dir="ltr">testing</code> and <code translate="no" dir="ltr">production</code> projects with their respective configurations. If you create an instance in the <code translate="no" dir="ltr">testing</code> project and run the <code translate="no" dir="ltr">functions:kits:install</code> command for the same package in the <code translate="no" dir="ltr">production</code> project, you're prompted with the option to reuse the instance configured for <code translate="no" dir="ltr">testing</code> or install a second instance.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/users/migrate-self-created" class="_attribution-link">https://firebase.google.com/docs/extensions/users/migrate-self-created</a>
+  </p>
+</div>

@@ -1,0 +1,152 @@
+<h1>Manage Multi-factor Users</h1> <p>This document shows you how to use the Firebase Authentication Admin SDK to manage your multi-factor users programmatically. When managing multi-factor users, you have access to an increased range of user properties compared to <a href="manage-users">single-factor users</a>.</p> <h2 id="before_you_begin">Before you begin</h2> <p><a href="../../admin/setup">Install the Node.js Admin SDK</a>. Other Admin SDK languages are not currently supported.</p> <h2 id="getting_users">Getting users</h2> <p>You can retrieve user multi-factor related data, such as a list of enrolled second factors, from the <code translate="no" dir="ltr">UserRecord</code> object. To get a user record, call <code translate="no" dir="ltr">getUser()</code> or <code translate="no" dir="ltr">getUserByEmail()</code>.</p> <p>The example below shows a multi-factor enrolled user:</p> 
+<pre>// console.log(userRecord.toJSON());
+{
+  uid: 'some-uid',
+  displayName: 'John Doe',
+  email: 'johndoe@gmail.com',
+  photoURL: 'http://www.example.com/12345678/photo.png',
+  emailVerified: true,
+  phoneNumber: '+11234567890',
+  // Set this user as admin.
+  customClaims: {admin: true},
+  // User with Google provider.
+  providerData: [{
+    uid: 'google-uid',
+    email: 'johndoe@gmail.com',
+    displayName: 'John Doe',
+    photoURL: 'http://www.example.com/12345678/photo.png',
+    providerId: 'google.com'
+  }],
+  multiFactor: {
+    enrolledFactors: [
+      // 2FA with SMS as 2nd factor.
+      {
+        uid: '53HG4HG45HG8G04GJ40J4G3J',
+        phoneNumber: '+16505551234',
+        displayName: 'Work phone',
+        enrollmentTime: 'Fri, 22 Sep 2017 01:49:58 GMT',
+        factorId: 'phone',
+      },
+    ],
+  },
+};
+</pre> <h2 id="listing_users">Listing users</h2> <p>The code below shows how to list all users and check if they have a secondary factor enrolled:</p> 
+<pre>admin.auth().listUsers(1000, nextPageToken)
+  .then((listUsersResult) =&gt; {
+    listUsersResult.users.forEach((userRecord) =&gt; {
+      // Multi-factor enrolled users second factors can be retrieved via:
+      if (userRecord.multiFactor) {
+        userRecord.multiFactor.enrolledFactors.forEach((enrolledFactor) =&gt; {
+          console.log(userRecord.uid, enrolledFactor.toJSON());
+        });
+      }
+    });
+  })
+  .catch((error) =&gt; {
+    console.log('Error listing users:', error);
+  });
+</pre> <p>Users are returned in batches, ordered by their <code translate="no" dir="ltr">uid</code>. Each batch of results contains a list of users, and a next page token used to fetch the next batch. When all users have been listed, no <code translate="no" dir="ltr">pageToken</code> is returned.</p> <p>The <code translate="no" dir="ltr">maxResult</code> field specifies the maximum batch size. The default and maximum value is 1000.</p> <h2 id="creating_a_user">Creating a user</h2> <p>Call <code translate="no" dir="ltr">createUser()</code> to create a new user. New users with secondary factors must have a verified email address (set <code translate="no" dir="ltr">emailVerified</code> to <code translate="no" dir="ltr">true</code>) and use a supported first factor to sign in. Up to 5 secondary factors are allowed per user.</p> <p>The example shows how to create a new user with 2 secondary factors:</p> 
+<pre>admin.auth().createUser({
+  uid: '123456789',
+  email: 'user@example.com',
+  emailVerified: true,
+  password: 'password',
+  multiFactor: {
+    enrolledFactors: [
+      // When creating users with phone second factors, the uid and
+      // enrollmentTime should not be specified. These will be provisioned by
+      // the Auth server.
+      // Primary second factor.
+      {
+        phoneNumber: '+16505550001',
+        displayName: 'Corp phone',
+        factorId: 'phone',
+      },
+      // Backup second factor.
+      {
+        phoneNumber: '+16505550002',
+        displayName: 'Personal phone',
+        factorId: 'phone'
+      },
+    ],
+  },
+})
+.then((userRecord) =&gt; {
+  console.log(userRecord.multiFactor.enrolledFactors);
+})
+.catch((error) =&gt; {
+  console.log(error);
+});
+</pre> <h2 id="updating_a_user">Updating a user</h2> <p>To update an existing user, call <code translate="no" dir="ltr">updateUser()</code>:</p> 
+<pre>admin.auth().updateUser(uid: '123456789', {
+  multiFactor: {
+    enrolledFactors: [
+      {
+        // uid will be auto-generated.
+        phoneNumber: '+16505550003',
+        displayName: 'Spouse\'s phone',
+        factorId: 'phone',
+      },
+      {
+        // uid can also be specified. This is useful if a new second factor is added and an
+        // existing enrolled second factor is kept unmodified.
+        uid: 'existing-enrolled-mfa-uid',
+        phoneNumber: '+16505550004',
+        displayName: 'Personal phone',
+        factorId: 'phone',
+      },
+      {
+        phoneNumber: '+16505550005',
+        displayName: 'Backup phone',
+        factorId: 'phone',
+        // Enrollment time can also be explicitly specified.
+        enrollmentTime: new Date().toUTCString(),
+      },
+    ],
+  },
+})
+.then((userRecord) =&gt; {
+  console.log(userRecord.multiFactor.enrolledFactors);
+})
+.catch((error) =&gt; {
+  console.log(error);
+});
+</pre> <h3 id="adding_a_new_secondary_factor">Adding a new secondary factor</h3> <p>Calling <code translate="no" dir="ltr">updateUser()</code> with a list of <code translate="no" dir="ltr">enrolledFactors</code> will erase any of the user's current secondary factors. To add a new secondary factor while preserving the existing ones, look up the user first, then add the new factor to the list:</p> 
+<pre>function enrollSecondFactor(userId, secondFactorPhoneNumber, secondFactorDisplayName) {
+  return admin.auth().getUser(userId)
+    .then((userRecord) =&gt; {
+      const updatedList = (userRecord.multiFactor &amp;&amp;
+        userRecord.multiFactor.toJSON().enrolledFactors) || [];
+      updatedList.push({
+        phoneNumber: secondFactorPhoneNumber,
+        displayName: secondFactorDisplayName,
+        factorId: 'phone',
+      });
+      return admin.auth().updateUser(userRecord.uid, {
+        multiFactor: {
+          enrolledFactors: updatedList,
+        },
+      });
+    })
+    .catch((error) =&gt; {
+      console.log(error);
+    });
+}
+</pre> <h3 id="removing_a_secondary_factor">Removing a secondary factor</h3> <p>To completely unenroll a user from multi-factor authentication, set <code translate="no" dir="ltr">enrolledFactors</code> to <code translate="no" dir="ltr">null</code> or an empty array:</p> 
+<pre>admin.auth().updateUser(uid: '123456789', {
+  multiFactor: {
+    enrolledFactors: null,
+  },
+})
+.then((userRecord) =&gt; {
+  console.log(userRecord.multiFactor);
+})
+.catch((error) =&gt; {
+  console.log(error);
+});
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/admin/manage-mfa-users" class="_attribution-link">https://firebase.google.com/docs/auth/admin/manage-mfa-users</a>
+  </p>
+</div>

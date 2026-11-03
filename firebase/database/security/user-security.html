@@ -1,0 +1,291 @@
+<h1>Use conditions in Realtime Database Security Rules</h1> <p>This guide builds on the <a href="core-syntax">learn the core Firebase Security Rules language</a> guide to show how to add conditions to your Firebase Realtime Database Security Rules.</p> <p>The primary building block of Realtime Database Security Rules is the <strong>condition</strong>. A condition is a Boolean expression that determines whether a particular operation should be allowed or denied. For basic rules, using <code translate="no" dir="ltr">true</code> and <code translate="no" dir="ltr">false</code> literals as conditions works prefectly well. But the Realtime Database Security Rules language gives you ways to write more complex conditions that can:</p> <ul> <li>Check user authentication</li> <li>Evaluate existing data against newly-submitted data</li> <li>Access and compare different parts of your database</li> <li>Validate incoming data</li> <li>Use the structure of incoming queries for security logic</li> </ul> <h2 id="using_variables_to_capture_path_segments">Using $ Variables to Capture Path Segments</h2> <p>You can capture portions of the path for a read or write by declaring capture variables with the <code translate="no" dir="ltr">$</code> prefix. This serves as a wild card, and stores the value of that key for use inside rules conditions:</p> 
+<pre>{
+  "rules": {
+    "rooms": {
+      // this rule applies to any child of /rooms/, the key for each room id
+      // is stored inside $room_id variable for reference
+      "$room_id": {
+        "topic": {
+          // the room's topic can be changed if the room id has "public" in it
+          ".write": "$room_id.contains('public')"
+        }
+      }
+    }
+  }
+}</pre> <p>The dynamic <code translate="no" dir="ltr">$</code> variables can also be used in parallel with constant path names. In this example, we're using the <code translate="no" dir="ltr">$other</code> variable to declare a <a href="#validaterules"><code translate="no" dir="ltr">.validate</code> rule</a> that ensures that <code translate="no" dir="ltr">widget</code> has no children other than <code translate="no" dir="ltr">title</code> and <code translate="no" dir="ltr">color</code>. Any write that would result in additional children being created would fail.</p> 
+<pre>{
+  "rules": {
+    "widget": {
+      // a widget can have a title or color attribute
+      "title": { ".validate": true },
+      "color": { ".validate": true },
+
+      // but no other child paths are allowed
+      // in this case, $other means any key excluding "title" and "color"
+      "$other": { ".validate": false }
+    }
+  }
+}</pre> <aside class="note"><strong>Note:</strong><span> Path keys are always strings. For this reason, it's important to keep in mind that when we attempt to compare a <code translate="no" dir="ltr">$</code> variable to a number, this will always fail. This can be corrected by converting the number to a string (e.g. <code translate="no" dir="ltr">$key === newData.val()+''</code>).</span></aside> <h2 id="authentication">Authentication</h2> <p>One of the most common security rule patterns is controlling access based on the user's authentication state. For example, your app may want to allow only signed-in users to write data.</p> <p>If your app uses Firebase Authentication, the <code translate="no" dir="ltr">request.auth</code> variable contains the authentication information for the client requesting data. For more information about <code translate="no" dir="ltr">request.auth</code>, see <a href="https://firebase.google.com/docs/reference/rules/rules.firestore.Request#auth">the reference documentation</a>.</p> <p>Firebase Authentication integrates with the Firebase Realtime Database to allow you to control data access on a per-user basis using conditions. Once a user authenticates, the <code translate="no" dir="ltr">auth</code> variable in your Realtime Database Security Rules rules will be populated with the user's information. This information includes their unique identifier (<code translate="no" dir="ltr">uid</code>) as well as linked account data, such as a Facebook id or an email address, and other info. If you implement a custom auth provider, you can add your own fields to your user's auth payload.</p> <p>This section explains how to combine the Firebase Realtime Database Security Rules language with authentication information about your users. By combining these two concepts, you can control access to data based on user identity.</p> <h3 id="the_auth_variable">The <code translate="no" dir="ltr">auth</code> Variable</h3> <p>The predefined <code translate="no" dir="ltr">auth</code> variable in the rules is null before authentication takes place.</p> <p>Once a user is authenticated with <a href="../../auth">Firebase Authentication</a> it will contain the following attributes:</p> 
+<table class="responsive"> <tr> <td>provider</td> <td> The authentication method used ("password", "anonymous", "facebook", "github", "google", or "twitter"). </td> </tr> <tr> <td>uid</td> <td> A unique user id, guaranteed to be unique across all providers. </td> </tr> <tr> <td>token</td> <td> The contents of the Firebase Auth ID token. See the reference documentation for <a href="https://firebase.google.com/docs/reference/security/database#authtoken"> <code translate="no" dir="ltr">auth.token</code></a> for more details. </td> </tr> </table> <p>Here is an example rule that uses the <code translate="no" dir="ltr">auth</code> variable to ensure that each user can only write to a user-specific path:</p> 
+<pre>{
+  "rules": {
+    "users": {
+      "$user_id": {
+        // grants write access to the owner of this user account
+        // whose uid must exactly match the key ($user_id)
+        ".write": "$user_id === auth.uid"
+      }
+    }
+  }
+}</pre> <h3 id="structuring_your_database_to_support_authentication_conditions">Structuring Your Database to Support Authentication Conditions</h3> <p>It is usually helpful to structure your database in a way that makes writing Security Rules easier. One common pattern for storing user data in the Realtime Database is to store all of your users in a single <code translate="no" dir="ltr">users</code> node whose children are the <code translate="no" dir="ltr">uid</code> values for every user. If you wanted to restrict access to this data such that only the logged-in user can see their own data, your rules would look something like this.</p> 
+<pre>{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth !== null &amp;&amp; auth.uid === $uid"
+      }
+    }
+  }
+}</pre> <h3 id="working_with_authentication_custom_claims">Working with Authentication Custom Claims</h3> <p>For apps that require custom access control for different users, Firebase Authentication allows developers to <a href="../../auth/admin/custom-claims">set claims on a Firebase user</a>. These claims are accessible in the<code translate="no" dir="ltr">auth.token</code> variable in your rules. Here is an example of rules that make use of the <code translate="no" dir="ltr">hasEmergencyTowel</code> custom claim:</p> 
+<pre>{
+  "rules": {
+    "frood": {
+      // A towel is about the most massively useful thing an interstellar
+      // hitchhiker can have
+      ".read": "auth.token.hasEmergencyTowel === true"
+    }
+  }
+}</pre> <p>Developers creating <a href="../../auth/admin/create-custom-tokens"> their own custom authentication tokens</a> can optionally add claims to these tokens. These claims are available on the <code translate="no" dir="ltr">auth.token</code> variable in your rules.</p> <h2 id="existing_data_vs_new_data">Existing Data vs. New Data</h2> <p>The predefined <code translate="no" dir="ltr">data</code> variable is used to refer to the data before a write operation takes place. Conversely, the <code translate="no" dir="ltr">newData</code> variable contains the new data that will exist if the write operation is successful. <code translate="no" dir="ltr">newData</code> represents the merged result of the new data being written and existing data.</p> <p>To illustrate, this rule would allow us to create new records or delete existing ones, but not to make changes to existing non-null data:</p> 
+<pre>// we can write as long as old data or new data does not exist
+// in other words, if this is a delete or a create, but not an update
+".write": "!data.exists() || !newData.exists()"</pre> <aside class="caution"> Make sure to check for null or invalid data. Errors in rules lead to rejected operations.</aside> <h2 id="referencing_data_in_other_paths">Referencing Data in other Paths</h2> <p>Any data can be used as criterion for rules. Using the predefined variables <code translate="no" dir="ltr">root</code>, <code translate="no" dir="ltr">data</code>, and <code translate="no" dir="ltr">newData</code>, we can access any path as it would exist before or after a write event.</p> <p>Consider this example, which allows write operations as long as the value of the <code translate="no" dir="ltr">/allow_writes/</code> node is <code translate="no" dir="ltr">true</code>, the parent node does not have a <code translate="no" dir="ltr">readOnly</code> flag set, and there is a child named <code translate="no" dir="ltr">foo</code> in the newly written data:</p> 
+<pre>".write": "root.child('allow_writes').val() === true &amp;&amp;
+          !data.parent().child('readOnly').exists() &amp;&amp;
+          newData.child('foo').exists()"</pre> <h2 id="validaterules">Validating Data</h2> <p>Enforcing data structures and validating the format and content of data should be done using <code translate="no" dir="ltr">.validate</code> rules, which are run only after a <code translate="no" dir="ltr">.write</code> rule succeeds to grant access. Below is a sample <code translate="no" dir="ltr">.validate</code> rule definition which only allows dates in the format YYYY-MM-DD between the years 1900-2099, which is checked using a regular expression.</p> 
+<pre>".validate": "newData.isString() &amp;&amp;
+              newData.val().matches(/^(19|20)[0-9][0-9][-\\/. ](0[1-9]|1[012])[-\\/. ](0[1-9]|[12][0-9]|3[01])$/)"</pre> <aside class="special"> <strong>Try it on JSFiddle</strong>: <a href="http://jsfiddle.net/firebase/43fyg/embedded/result,js/">Click here to see this in action</a>. Try writing different values to the input field. </aside> <p>The <code translate="no" dir="ltr">.validate</code> rules are the only type of security rule which do not cascade. If any validation rule fails on any child record, the entire write operation will be rejected. Additionally, the validate definitions are ignored when data is deleted (that is, when the new value being written is <code translate="no" dir="ltr">null</code>).</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">.validate</code> rules are only evaluated for non-null values and do not cascade.</span></aside> <p>These might seem like trivial points, but are in fact significant features for writing powerful Firebase Realtime Database Security Rules. Consider the following rules:</p> 
+<pre>{
+  "rules": {
+    // write is allowed for all paths
+    ".write": true,
+    "widget": {
+      // a valid widget must have attributes "color" and "size"
+      // allows deleting widgets (since .validate is not applied to delete rules)
+      ".validate": "newData.hasChildren(['color', 'size'])",
+      "size": {
+        // the value of "size" must be a number between 0 and 99
+        ".validate": "newData.isNumber() &amp;&amp;
+                      newData.val() &gt;= 0 &amp;&amp;
+                      newData.val() &lt;= 99"
+      },
+      "color": {
+        // the value of "color" must exist as a key in our mythical
+        // /valid_colors/ index
+        ".validate": "root.child('valid_colors/' + newData.val()).exists()"
+      }
+    }
+  }
+}</pre> <p>With this variant in mind, look at the results for the following write operations:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+<pre data-language="">var ref = db.ref("/widget");
+
+// PERMISSION_DENIED: does not have children color and size
+ref.set('foo');
+
+// PERMISSION DENIED: does not have child color
+ref.set({size: 22});
+
+// PERMISSION_DENIED: size is not a number
+ref.set({ size: 'foo', color: 'red' });
+
+// SUCCESS (assuming 'blue' appears in our colors list)
+ref.set({ size: 21, color: 'blue'});
+
+// If the record already exists and has a color, this will
+// succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
+// will fail to validate
+ref.child('size').set(99);</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">FIRDatabaseReference *ref = [[[FIRDatabase database] reference] child: @"widget"];
+
+// PERMISSION_DENIED: does not have children color and size
+[ref setValue: @"foo"];
+
+// PERMISSION DENIED: does not have child color
+[ref setValue: @{ @"size": @"foo" }];
+
+// PERMISSION_DENIED: size is not a number
+[ref setValue: @{ @"size": @"foo", @"color": @"red" }];
+
+// SUCCESS (assuming 'blue' appears in our colors list)
+[ref setValue: @{ @"size": @21, @"color": @"blue" }];
+
+// If the record already exists and has a color, this will
+// succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
+// will fail to validate
+[[ref child:@"size"] setValue: @99];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">var ref = FIRDatabase.database().reference().child("widget")
+
+// PERMISSION_DENIED: does not have children color and size
+ref.setValue("foo")
+
+// PERMISSION DENIED: does not have child color
+ref.setValue(["size": "foo"])
+
+// PERMISSION_DENIED: size is not a number
+ref.setValue(["size": "foo", "color": "red"])
+
+// SUCCESS (assuming 'blue' appears in our colors list)
+ref.setValue(["size": 21, "color": "blue"])
+
+// If the record already exists and has a color, this will
+// succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
+// will fail to validate
+ref.child("size").setValue(99);</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
+DatabaseReference ref = database.getReference("widget");
+
+// PERMISSION_DENIED: does not have children color and size
+ref.setValue("foo");
+
+// PERMISSION DENIED: does not have child color
+ref.child("size").setValue(22);
+
+// PERMISSION_DENIED: size is not a number
+Map&lt;String,Object&gt; map = new HashMap&lt;String, Object&gt;();
+map.put("size","foo");
+map.put("color","red");
+ref.setValue(map);
+
+// SUCCESS (assuming 'blue' appears in our colors list)
+map = new HashMap&lt;String, Object&gt;();
+map.put("size", 21);
+map.put("color","blue");
+ref.setValue(map);
+
+// If the record already exists and has a color, this will
+// succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
+// will fail to validate
+ref.child("size").setValue(99);</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+<pre data-language=""># PERMISSION_DENIED: does not have children color and size
+curl -X PUT -d 'foo' \
+https://docs-examples.firebaseio.com/rest/securing-data/example.json
+
+# PERMISSION DENIED: does not have child color
+curl -X PUT -d '{"size": 22}' \
+https://docs-examples.firebaseio.com/rest/securing-data/example.json
+
+# PERMISSION_DENIED: size is not a number
+curl -X PUT -d '{"size": "foo", "color": "red"}' \
+https://docs-examples.firebaseio.com/rest/securing-data/example.json
+
+# SUCCESS (assuming 'blue' appears in our colors list)
+curl -X PUT -d '{"size": 21, "color": "blue"}' \
+https://docs-examples.firebaseio.com/rest/securing-data/example.json
+
+# If the record already exists and has a color, this will
+# succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
+# will fail to validate
+curl -X PUT -d '99' \
+https://docs-examples.firebaseio.com/rest/securing-data/example/size.json</pre> </section> </div> <p>Now let's look at the same structure, but using <code translate="no" dir="ltr">.write</code> rules instead of <code translate="no" dir="ltr">.validate</code>:</p> 
+<pre>{
+  "rules": {
+    // this variant will NOT allow deleting records (since .write would be disallowed)
+    "widget": {
+      // a widget must have 'color' and 'size' in order to be written to this path
+      ".write": "newData.hasChildren(['color', 'size'])",
+      "size": {
+        // the value of "size" must be a number between 0 and 99, ONLY IF WE WRITE DIRECTLY TO SIZE
+        ".write": "newData.isNumber() &amp;&amp; newData.val() &gt;= 0 &amp;&amp; newData.val() &lt;= 99"
+      },
+      "color": {
+        // the value of "color" must exist as a key in our mythical valid_colors/ index
+        // BUT ONLY IF WE WRITE DIRECTLY TO COLOR
+        ".write": "root.child('valid_colors/'+newData.val()).exists()"
+      }
+    }
+  }
+}</pre> <p>In this variant, any of the following operations would succeed:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+<pre data-language="">var ref = new Firebase(URL + "/widget");
+
+// ALLOWED? Even though size is invalid, widget has children color and size,
+// so write is allowed and the .write rule under color is ignored
+ref.set({size: 99999, color: 'red'});
+
+// ALLOWED? Works even if widget does not exist, allowing us to create a widget
+// which is invalid and does not have a valid color.
+// (allowed by the write rule under "color")
+ref.child('size').set(99);</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">Firebase *ref = [[Firebase alloc] initWithUrl:URL];
+
+// ALLOWED? Even though size is invalid, widget has children color and size,
+// so write is allowed and the .write rule under color is ignored
+[ref setValue: @{ @"size": @9999, @"color": @"red" }];
+
+// ALLOWED? Works even if widget does not exist, allowing us to create a widget
+// which is invalid and does not have a valid color.
+// (allowed by the write rule under "color")
+[[ref childByAppendingPath:@"size"] setValue: @99];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">var ref = Firebase(url:URL)
+
+// ALLOWED? Even though size is invalid, widget has children color and size,
+// so write is allowed and the .write rule under color is ignored
+ref.setValue(["size": 9999, "color": "red"])
+
+// ALLOWED? Works even if widget does not exist, allowing us to create a widget
+// which is invalid and does not have a valid color.
+// (allowed by the write rule under "color")
+ref.childByAppendingPath("size").setValue(99)</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">Firebase ref = new Firebase(URL + "/widget");
+
+// ALLOWED? Even though size is invalid, widget has children color and size,
+// so write is allowed and the .write rule under color is ignored
+Map&lt;String,Object&gt; map = new HashMap&lt;String, Object&gt;();
+map.put("size", 99999);
+map.put("color", "red");
+ref.setValue(map);
+
+// ALLOWED? Works even if widget does not exist, allowing us to create a widget
+// which is invalid and does not have a valid color.
+// (allowed by the write rule under "color")
+ref.child("size").setValue(99);</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+<pre data-language="">
+# ALLOWED? Even though size is invalid, widget has children color and size,
+# so write is allowed and the .write rule under color is ignored
+curl -X PUT -d '{size: 99999, color: "red"}' \
+https://docs-examples.firebaseio.com/rest/securing-data/example.json
+
+# ALLOWED? Works even if widget does not exist, allowing us to create a widget
+# which is invalid and does not have a valid color.
+# (allowed by the write rule under "color")
+curl -X PUT -d '99' \
+https://docs-examples.firebaseio.com/rest/securing-data/example/size.json
+</pre> </section> </div> <p>This illustrates the differences between <code translate="no" dir="ltr">.write</code> and <code translate="no" dir="ltr">.validate</code> rules. As demonstrated, all of these rules should be written using <code translate="no" dir="ltr">.validate</code>, with the possible exception of the <code translate="no" dir="ltr">newData.hasChildren()</code> rule, which would depend on whether deletions should be allowed.</p> <aside class="note"><strong>Note:</strong><span> Validation rules are not meant to completely replace data validation code in your app. We recommend that you also perform input validation client-side for best performance and best user experience when your app is offline.</span></aside> <h2 id="query-based_rules">Query-based Rules</h2> <p>Although you <a href="core-syntax#rules-not-filters">can't use rules as filters</a>, you can limit access to subsets of data by using query parameters in your rules. Use <code translate="no" dir="ltr">query.</code> expressions in your rules to grant read or write access based on query parameters.</p> <p>For example, the following query-based rule uses <a href="#authentication">user-based security rules</a> and query-based rules to restrict access to data in the <code translate="no" dir="ltr">baskets</code> collection to only the shopping baskets the active user owns:</p> 
+<pre>"baskets": {
+  ".read": "auth.uid !== null &amp;&amp;
+            query.orderByChild === 'owner' &amp;&amp;
+            query.equalTo === auth.uid" // restrict basket access to owner of basket
+}
+</pre> <p>The following query, which includes the query parameters in the rule, would succeed:</p> 
+<pre>db.ref("baskets").orderByChild("owner")
+                 .equalTo(auth.currentUser.uid)
+                 .on("value", cb)                 // Would succeed
+</pre> <p>However, queries that do not include the parameters in the rule would fail with a <code translate="no" dir="ltr">PermissionDenied</code> error:</p> 
+<pre>db.ref("baskets").on("value", cb)                 // Would fail with PermissionDenied
+</pre> <p>You can also use query-based rules to limit how much data a client downloads through read operations.</p> <p>For example, the following rule limits read access to only the first 1000 results of a query, as ordered by priority:</p> 
+<pre>messages: {
+  ".read": "query.orderByKey &amp;&amp;
+            query.limitToFirst &lt;= 1000"
+}
+
+// Example queries:
+
+db.ref("messages").on("value", cb)                // Would fail with PermissionDenied
+
+db.ref("messages").limitToFirst(1000)
+                  .on("value", cb)                // Would succeed (default order by key)
+
+</pre> <p>The following <code translate="no" dir="ltr">query.</code> expressions are available in Realtime Database Security Rules.</p> <table class="responsive"> <thead> <tr> <th colspan="3">Query-based rule expressions</th> </tr> </thead> <tbody> <tr class="alt"> <td><strong>Expression</strong></td> <td><strong>Type</strong></td> <td><strong>Description</strong></td> </tr> <tr> <td><strong>query.orderByKey<br> query.orderByPriority<br> query.orderByValue</strong></td> <td>boolean</td> <td>True for queries ordered by key, priority, or value. False otherwise. </td> </tr> <tr> <td><strong>query.orderByChild</strong></td> <td>string<br> null</td> <td> Use a string to represent the relative path to a child node. For example, <code translate="no" dir="ltr">query.orderByChild === "address/zip"</code>. If the query isn't ordered by a child node, this value is null. </td> </tr> <tr> <td><strong>query.startAt<br> query.endAt<br> query.equalTo</strong></td> <td>string<br> number<br> boolean<br> null</td> <td>Retrieves the bounds of the executing query, or returns null if there is no bound set.</td> </tr> <tr> <td><strong>query.limitToFirst<br> query.limitToLast</strong></td> <td>number<br> null</td> <td>Retrieves the limit on the executing query, or returns null if there is no limit set.</td> </tr> </tbody> </table> <h2 id="next_steps">Next steps</h2> <p>After this discussion of conditions, you've got a more sophisticated understanding of Security Rules and are ready to:</p> <p><strong>Learn how to handle core use cases, and learn the workflow for developing, testing and deploying Security Rules:</strong></p> <ul> <li>Learn about the full set of predefined Security Rules <a href="../../rules/rules-language#building_conditions">variables you can use to build conditions</a>.</li> <li>Write rules that address <a href="../../rules/basics">common scenarios</a>.</li> <li>Build on your knowledge by reviewing situations where you must <a href="../../rules/insecure-rules">spot and avoid insecure Rules</a>.</li> <li>Learn about the Firebase Local Emulator Suite and how you can use it to <a href="../../rules/emulator-setup">test Security Rules</a>.</li> <li>Review the methods available for <a href="../../rules/manage-deploy">deploying Security Rules</a>.</li> </ul> <p><strong>Learn Security Rules features that are specific to Realtime Database:</strong></p> <ul> <li>Learn how to <a href="indexing-data">index your Realtime Database</a>.</li> <li>Review the <a href="../rest/app-management">REST API for deploying Security Rules</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/security/user-security" class="_attribution-link">https://firebase.google.com/docs/database/security/user-security</a>
+  </p>
+</div>

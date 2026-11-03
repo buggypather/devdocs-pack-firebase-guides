@@ -1,0 +1,156 @@
+<h1>Manage Users in Firebase</h1> <h2 id="create_a_user">Create a user</h2> <p>You have the following options for creating a new user:</p> <ul> <li><p><strong>From your app</strong>: Create a new user in your Firebase project by calling the <a href="password-auth#create_a_password-based_account"><code translate="no" dir="ltr">CreateUserWithEmailAndPassword</code></a> method or by signing in a user for the first time using a federated identity provider, such as <a href="google-signin">Google Sign-In</a> or <a href="facebook-login">Facebook Login</a>.</p></li> <li><p><strong>In the Firebase console</strong>: Create a new password-authenticated user in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/users" class="external"><strong>Users</strong> tab</a>.</p></li> </ul> <h2 id="get_the_currently_signed-in_user">Get the currently signed-in user</h2> <p>The recommended way to get the current user is by setting a listener on the Auth object:</p> 
+<pre>class MyAuthStateListener : public firebase::auth::AuthStateListener {
+ public:
+  void OnAuthStateChanged(firebase::auth::Auth* auth) override {
+    firebase::auth::User user = auth-&gt;current_user();
+    if (user.is_valid()) {
+      // User is signed in
+      printf("OnAuthStateChanged: signed_in %s\n", user.uid().c_str());
+    } else {
+      // User is signed out
+      printf("OnAuthStateChanged: signed_out\n");
+    }
+    // ...
+  }
+};
+// ... initialization code
+// Test notification on registration.
+MyAuthStateListener state_change_listener;
+auth-&gt;AddAuthStateListener(&amp;state_change_listener);</pre> <p>By using a listener, you ensure that the Auth object isn't in an intermediate state—such as initialization—when you get the current user.</p> <p>You can also get the currently signed-in user by calling <code translate="no" dir="ltr">current_user</code>. If a user isn't signed in, the user's <code translate="no" dir="ltr">is_valid</code> method will return false.</p> <aside class="note"><strong>Note:</strong><span> <code translate="no" dir="ltr">current_user</code> might be invalid because the <code translate="no" dir="ltr">Auth</code> object has not finished initializing. If you use a listener to keep track of the user's sign-in status, you don't need to handle this case.</span></aside> <h3 id="persist_a_users_credential">Persist a user's credential</h3> <p>The user's credentials will be stored in the local keystore after a user is signed in. The local cache of user credentials can be deleted by signing the user out. The keystore is platform specific:</p> <ul> <li>Apple platforms: <a href="https://developer.apple.com/documentation/security/keychain_services">Keychain Services</a>.</li> <li>Android: <a href="https://developer.android.com/training/articles/keystore">Android Keystore</a>.</li> <li>Windows: <a href="https://docs.microsoft.com/en-us/windows/desktop/secauthn/authentication-functions#low-level-credentials-management-functions">Credential Management API</a>.</li> <li>OS X: <a href="https://developer.apple.com/documentation/security/keychain_services">Keychain Services</a>.</li> <li>Linux: <a href="https://developer.gnome.org/libsecret/">libsecret</a>, which the user must have installed.</li> </ul> <h2 id="get_a_users_profile">Get a user's profile</h2> <p>To get a user's profile information, use the accessor methods of an instance of <code translate="no" dir="ltr">firebase::auth::User</code>. For example:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  std::string name = user.display_name();
+  std::string email = user.email();
+  std::string photo_url = user.photo_url();
+  // The user's ID, unique to the Firebase project.
+  // Do NOT use this value to authenticate with your backend server,
+  // if you have one. Use firebase::auth::User::Token() instead.
+  std::string uid = user.uid();
+}</pre> <h2 id="get_a_users_provider-specific_profile_information">Get a user's provider-specific profile information</h2> <p>To get the profile information retrieved from the sign-in providers linked to a user, use the <code translate="no" dir="ltr">ProviderData</code> method. For example:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  for (auto it = user.provider_data().begin();
+       it != user.provider_data().end(); ++it) {
+    firebase::auth::UserInfoInterface profile = *it;
+    // Id of the provider (ex: google.com)
+    std::string providerId = profile.provider_id();
+
+    // UID specific to the provider
+    std::string uid = profile.uid();
+
+    // Name, email address, and profile photo Url
+    std::string name = profile.display_name();
+    std::string email = profile.email();
+    std::string photoUrl = profile.photo_url();
+  }
+}</pre> <h2 id="update_a_users_profile">Update a user's profile</h2> <p>You can update a user's basic profile information—the user's display name and profile photo URL—with the <code translate="no" dir="ltr">UpdateUserProfile</code> method. For example:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  firebase::auth::User::UserProfile profile;
+  profile.display_name = "Jane Q. User";
+  profile.photo_url = "https://example.com/jane-q-user/profile.jpg";
+  user.UpdateUserProfile(profile).OnCompletion(
+      [](const firebase::Future&lt;void&gt;&amp; completed_future, void* user_data) {
+        // We are probably in a different thread right now.
+        if (completed_future.error() == 0) {
+          printf("User profile updated.");
+        }
+      },
+      nullptr);  // pass user_data here.
+}</pre> <h2 id="set_a_users_email_address">Set a user's email address</h2> <p>You can set a user's email address with the <code translate="no" dir="ltr">UpdateEmail</code> method. For example:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  user.UpdateEmail("user@example.com")
+      .OnCompletion(
+          [](const firebase::Future&lt;void&gt;&amp; completed_future,
+             void* user_data) {
+            // We are probably in a different thread right now.
+            if (completed_future.error() == 0) {
+              printf("User email address updated.");
+            }
+          },
+          nullptr);
+}</pre> <aside class="special"><strong>Important:</strong><span> To set a user's email address, the user must have signed in recently. See <a href="#re-authenticate_a_user">Re-authenticate a user</a>.</span></aside> <h2 id="send_a_user_a_verification_email">Send a user a verification email</h2> <p>You can send an address verification email to a user with the <code translate="no" dir="ltr">SendEmailVerification</code> method. For example:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  user.SendEmailVerification().OnCompletion(
+      [](const firebase::Future&lt;void&gt;&amp; completed_future, void* user_data) {
+        // We are probably in a different thread right now.
+        if (completed_future.error() == 0) {
+          printf("Email sent.");
+        }
+      },
+      nullptr);
+}</pre> <p>You can customize the email template that is used in Authentication section of the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, on the Email Templates page. See <a href="https://support.google.com/firebase/answer/7000714">Email Templates</a> in Firebase Help Center.</p> <h2 id="set_a_users_password">Set a user's password</h2> <p>You can set a user's password with the <code translate="no" dir="ltr">UpdatePassword</code> method. For example:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+std::string newPassword = "SOME-SECURE-PASSWORD";
+
+if (user.is_valid()) {
+  user.UpdatePassword(newPassword.c_str())
+      .OnCompletion(
+          [](const firebase::Future&lt;void&gt;&amp; completed_future,
+             void* user_data) {
+            // We are probably in a different thread right now.
+            if (completed_future.error() == 0) {
+              printf("password updated.");
+            }
+          },
+          nullptr);
+}</pre> <aside class="special"><strong>Important:</strong><span> To set a user's password, the user must have signed in recently. See <a href="#re-authenticate_a_user">Re-authenticate a user</a>.</span></aside> <h2 id="send_a_password_reset_email">Send a password reset email</h2> <p>You can send a password reset email to a user with the <code translate="no" dir="ltr">SendPasswordResetEmail</code> method. For example:</p> 
+<pre>std::string emailAddress = "user@example.com";
+
+auth-&gt;SendPasswordResetEmail(emailAddress.c_str())
+    .OnCompletion(
+        [](const firebase::Future&lt;void&gt;&amp; completed_future,
+           void* user_data) {
+          // We are probably in a different thread right now.
+          if (completed_future.error() == 0) {
+            // Email sent.
+          } else {
+            // An error happened.
+            printf("Error %d: %s", completed_future.error(),
+                   completed_future.error_message());
+          }
+        },
+        nullptr);</pre> <p>You can customize which email template is used in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/emails" class="external"><strong>Templates</strong> tab</a> of the Firebase console. See <a href="https://support.google.com/firebase/answer/7000714">Email Templates</a> in Firebase Help Center.</p> <p>You can also send password reset emails from the Firebase console.</p> <h2 id="delete_a_user">Delete a user</h2> <p>You can delete a user account with the <code translate="no" dir="ltr">Delete</code> method. For example:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  user.Delete().OnCompletion(
+      [](const firebase::Future&lt;void&gt;&amp; completed_future, void* user_data) {
+        if (completed_future.error() == 0) {
+          // User deleted.
+        } else {
+          // An error happened.
+          printf("Error %d: %s", completed_future.error(),
+                 completed_future.error_message());
+        }
+      },
+      nullptr);
+}</pre> <aside class="special"><strong>Important:</strong><span> To delete a user, the user must have signed in recently. See <a href="#re-authenticate_a_user">Re-authenticate a user</a>.</span></aside> <p>You can also delete users in the Firebase console in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/users" class="external"><strong>Users</strong> tab</a>.</p> <h2 id="re-authenticate_a_user">Re-authenticate a user</h2> <p>Some security-sensitive actions—such as <a href="#delete_a_user">deleting an account</a>, <a href="#set_a_users_email_address">setting a primary email address</a>, and <a href="#set_a_users_password">changing a password</a>—require that the user has recently signed in. If you perform one of these actions, and the user signed in too long ago, the action fails.</p> <p>When this happens, re-authenticate the user by getting new sign-in credentials from the user and passing the credentials to <code translate="no" dir="ltr">Reauthenticate</code>. For example:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+
+// Get auth credentials from the user for re-authentication. The example
+// below shows email and password credentials but there are multiple
+// possible providers, such as GoogleAuthProvider or FacebookAuthProvider.
+firebase::auth::Credential credential =
+    firebase::auth::EmailAuthProvider::GetCredential("user@example.com",
+                                                     "password1234");
+
+if (user.is_valid()) {
+  user.Reauthenticate(credential)
+      .OnCompletion(
+          [](const firebase::Future&lt;void&gt;&amp; completed_future,
+             void* user_data) {
+            if (completed_future.error() == 0) {
+              printf("User re-authenticated.");
+            }
+          },
+          nullptr);
+}</pre> <h2 id="import_user_accounts">Import user accounts</h2> <p>You can import user accounts from a file into your Firebase project by using the Firebase CLI's <a href="../../cli/auth-import"><code translate="no" dir="ltr">auth:import</code></a> command. For example:</p> 
+<pre>firebase auth:import users.json --hash-algo=scrypt --rounds=8 --mem-cost=14
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/cpp/manage-users" class="_attribution-link">https://firebase.google.com/docs/auth/cpp/manage-users</a>
+  </p>
+</div>

@@ -1,0 +1,46 @@
+<h1>Authenticate with Firebase Anonymously Using C++</h1> <p>You can use Firebase Authentication to create and use temporary anonymous accounts to authenticate with Firebase. These temporary anonymous accounts can be used to allow users who haven't yet signed up to your app to work with data protected by security rules. If an anonymous user decides to sign up to your app, you can <a href="account-linking">link their sign-in credentials to the anonymous account</a> so that they can continue to work with their protected data in future sessions.</p> <h2 id="before-you-begin">Before you begin</h2> <ol> <li>
+<a href="../../cpp/setup#note_select_platform">Add Firebase to your C++ project</a>.</li> <li> If you haven't yet connected your app to your Firebase project, do so from the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. </li> <li> Enable anonymous authentication: <ol> <li> In the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Anonymous</b> sign-in provider. </li> <li> <b>Optional</b>: If you've upgraded your project to <a href="../../auth#identity-platform">Firebase Authentication with Identity Platform</a>, you can enable automatic clean-up. When you enable this setting, anonymous accounts older than 30 days will be automatically deleted. In projects with automatic clean-up enabled, anonymous authentication will no longer count toward usage limits or billing quotas. See <a href="#auto-cleanup">Automatic clean-up</a>. </li> </ol> </li> </ol> <h2 id="authenticate-with-firebase-anonymously">Authenticate with Firebase anonymously</h2> <p>When a signed-out user uses an app feature that requires authentication with Firebase, sign in the user anonymously by completing the following steps:</p> The <code translate="no" dir="ltr">Auth</code> class is the gateway for all API calls. <ol> <li>Add the Auth and App header files: 
+<pre>#include &lt;cassert&gt;
+#include &lt;cinttypes&gt;
+#include &lt;cstdint&gt;
+
+#include "firebase/app.h"
+#include "firebase/auth.h"</pre> </li> <li>In your initialization code, create a <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/app"><code translate="no" dir="ltr">firebase::App</code></a> class. 
+<pre>#if defined(__ANDROID__)
+  firebase::App* app =
+      firebase::App::Create(firebase::AppOptions(), my_jni_env, my_activity);
+#else
+  firebase::App* app = firebase::App::Create(firebase::AppOptions());
+#endif  // defined(__ANDROID__)</pre> </li> <li>Acquire the <code translate="no" dir="ltr">firebase::auth::Auth</code> class for your <code translate="no" dir="ltr">firebase::App</code>. There is a one-to-one mapping between <code translate="no" dir="ltr">App</code> and <code translate="no" dir="ltr">Auth</code>. 
+<pre>firebase::auth::Auth* auth = firebase::auth::Auth::GetAuth(app);</pre> </li> </ol> <li>Call <code translate="no" dir="ltr">Auth::SignInAnonymously</code>. 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;SignInAnonymously();</pre> </li> <li>If your program has an update loop that runs regularly (say at 30 or 60 times per second), you can check the results once per update with <code translate="no" dir="ltr">Auth::SignInAnonymouslyLastResult</code>: 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;SignInAnonymouslyLastResult();
+if (result.status() == firebase::kFutureStatusComplete) {
+  if (result.error() == firebase::auth::kAuthErrorNone) {
+    firebase::auth::AuthResult auth_result = *result.result();
+    printf("Sign in succeeded for `%s`\n",
+           auth_result.user.display_name().c_str());
+  } else {
+    printf("Sign in failed with error '%s'\n", result.error_message());
+  }
+}</pre> Or, if your program is event driven, you may prefer to <a href="#register_callback_on_future">register a callback on the Future</a>. </li> <aside>To protect your project from abuse, Firebase limits the number of new email/password and anonymous sign-ups that your application can have from the same IP address in a short period of time. You can request and schedule temporary changes to this quota from the Firebase console (go to the <b>Security</b> &gt; <b>Authentication</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><b>Sign-in method</b> tab</a>). </aside> <h2 id="convert-an-anonymous-account-to-a-permanent-account">Convert an anonymous account to a permanent account</h2> <p>When an anonymous user signs up to your app, you might want to allow them to continue their work with their new account—for example, you might want to make the items the user added to their shopping cart before they signed up available in their new account's shopping cart. To do so, complete the following steps:</p> <ol> <li>When the user signs up, complete the sign-in flow for the user's authentication provider up to, but not including, calling one of the <code translate="no" dir="ltr">Auth::SignInWith</code> methods. For example, get the user's Google ID token, Facebook access token, or email address and password. </li> <li>
+<p>Get an <code translate="no" dir="ltr">auth::Credential</code> for the new authentication provider:</p> <strong>Google Sign-In</strong> 
+<pre>firebase::auth::Credential credential =
+    firebase::auth::GoogleAuthProvider::GetCredential(google_id_token,
+                                                      nullptr);</pre> <strong>Facebook Login</strong> 
+<pre>firebase::auth::Credential credential =
+    firebase::auth::FacebookAuthProvider::GetCredential(access_token);</pre> <strong>Email-password sign-in</strong> 
+<pre>firebase::auth::Credential credential =
+    firebase::auth::EmailAuthProvider::GetCredential(email, password);</pre> </li> <li>
+<p>Pass the <code translate="no" dir="ltr">auth::Credential</code> object to the sign-in user's <code translate="no" dir="ltr">LinkWithCredential</code> method:</p> 
+<pre>// Link the new credential to the currently active user.
+firebase::auth::User current_user = auth-&gt;current_user();
+firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    current_user.LinkWithCredential(credential);</pre> </li> </ol> <p>If the call to <code translate="no" dir="ltr">LinkWithCredential</code> succeeds, the user's new account can access the anonymous account's Firebase data.</p> <aside class="note">This technique can also be used to <a href="account-linking">link any two accounts</a>. </aside> <h2 id="auto-cleanup">Automatic clean-up</h2> <p>If you've upgraded your project to <a href="../../auth#identity-platform">Firebase Authentication with Identity Platform</a>, you can enable automatic clean-up in the Firebase console. When you enable this feature you allow Firebase to automatically delete anonymous accounts older than 30 days. In projects with automatic clean-up enabled, anonymous authentication will not count toward usage limits or billing quotas. </p> <ul> <li>Any anonymous accounts created after enabling automatic clean-up might be automatically deleted any time after 30 days post-creation.</li> <li>Existing anonymous accounts will be eligible for automatic deletion 30 days after enabling automatic clean-up.</li> <li>If you turn automatic clean-up off, any anonymous accounts scheduled to be deleted will remain scheduled to be deleted. </li> <li>If you "upgrade" an anonymous account by linking it to any sign-in method, the account will not get automatically deleted.</li> </ul> <p>If you want to see how many users will be affected before you enable this feature, and you've upgraded your project to <a href="../../auth#identity-platform">Firebase Authentication with Identity Platform</a>, you can filter by <code translate="no" dir="ltr">is_anon</code> in <a href="https://cloud.google.com/logging/docs" class="external">Cloud Logging</a>.</p> <h2 id="next-steps">Next steps</h2> <p>Now that users can authenticate with Firebase, you can control their access to data in your Firebase database using <a href="../../database/security#section-authorization"> Firebase rules</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/cpp/anonymous-auth" class="_attribution-link">https://firebase.google.com/docs/auth/cpp/anonymous-auth</a>
+  </p>
+</div>

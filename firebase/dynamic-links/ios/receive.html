@@ -1,0 +1,125 @@
+<h1>Receive Dynamic Links on iOS</h1> <aside class="note"> <b>Note:</b> Firebase Dynamic Links is <i>deprecated</i> and should not be used in new projects. The service will be shutting down soon. Follow the <a href="https://firebase.google.com/support/dynamic-links-faq#how_should_i_migrate_from_the_service"> migration guide</a> and see the <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ</a> for more information. </aside> <p>To receive the Firebase Dynamic Links that <a href="../create-links"> you created</a>, you must include the Dynamic Links SDK in your app and call the <code translate="no" dir="ltr">handleUniversalLink:</code> and <code translate="no" dir="ltr">dynamicLinkFromCustomSchemeURL:</code> methods when your app loads to get the data passed in the Dynamic Link.</p> <h2 id="prerequisites">Prerequisites</h2> <p>Before you begin, make sure to <a href="../../ios/setup">add Firebase to your iOS project</a>.</p> <h2 id="set-up-firebase-and-the-dynamic-links-sdk">Set up Firebase and the Dynamic Links SDK</h2> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+<pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Dynamic Links library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> For an optimal experience with Dynamic Links, we recommend <a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">enabling Google Analytics</a> in your Firebase project and adding the Firebase SDK for Google Analytics to your app. You can select either the library without IDFA collection or with IDFA collection. See our FAQ on the <a href="../../analytics/faq-and-troubleshooting#analytics-odm2-sdk-refactor-ios">latest organization of modules in the Google Analytics for Firebase SDK</a>. </li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> <p>Now, perform some configuration steps:</p> <ol> <li id="find_domain">In the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, open the <b>Dynamic Links</b> section. Accept the terms of service if you are prompted to do so.</li> <li> <p>Ensure that your app's App Store ID and your App ID prefix is specified in your app's settings. To view and edit your app's settings, go to your Firebase project's <a href="https://console.firebase.google.com/project/_/settings/general/"> Settings page</a> and select your iOS app.</p> <p>You can confirm that your Firebase project is properly configured to use Dynamic Links in your iOS app by opening the following URL:</p> 
+<pre>https://your_dynamic_links_domain/apple-app-site-association</pre> <p>If your app is connected, the <code translate="no" dir="ltr">apple-app-site-association</code> file contains a reference to your app's App ID prefix and bundle ID. For example:</p> 
+<pre>{"applinks":{"apps":[],"details":[{"appID":"1234567890.com.example.ios","paths":["NOT /_/*","/*"]}]}}</pre> <p>If the <code translate="no" dir="ltr">details</code> field is empty, double-check that you specified your App ID prefix. Note that your App ID prefix may not be the same as your Team ID.</p> </li> <li> <p><b>Optional</b>: Disable the Dynamic Links SDK's use of the iOS pasteboard.</p> <p>By default, the Dynamic Links SDK uses the pasteboard to improve the reliability of post-install deep links. By using the pasteboard, Dynamic Links can make sure that when a user opens a Dynamic Link but needs to install your app first, the user can go immediately to the original linked content when opening the app for the first time after installation.</p> <p>The downside of this is that use of the pasteboard triggers a notification on iOS 14 and later. So, the first time users open your app, if the pasteboard contains a URL, they will see a notification that your app accessed the pasteboard, which can cause confusion. </p> <p>To disable this behavior, edit your Xcode project's <code translate="no" dir="ltr">Info.plist</code> file and set the <code translate="no" dir="ltr">FirebaseDeepLinkPasteboardRetrievalEnabled</code> key to <code translate="no" dir="ltr">NO</code>.</p> <aside class="caution">When you disable this feature, the Dynamic Links you receive will have a <code translate="no" dir="ltr"><a href="https://firebase.google.com/docs/reference/swift/firebasedynamiclinks/api/reference/Classes/DynamicLink#matchtype">matchType</a></code> of <code translate="no" dir="ltr">weak</code> at best. Adjust your app's logic accordingly. </aside> </li> </ol> <h2 id="open-dynamic-links-in-your-app">Open Dynamic Links in your app</h2> <ol> <li>In the <strong>Info</strong> tab of your app's Xcode project, create a new URL type to be used for Dynamic Links. Set the <b>Identifier</b> field to a unique value and the <b>URL scheme</b> field to be your bundle identifier, which is the default URL scheme used by Dynamic Links.</li> <li>In the <strong>Capabilities</strong> tab of your app's Xcode project, enable Associated Domains and add the following to the <strong>Associated Domains</strong> list: 
+<pre>applinks:your_dynamic_links_domain</pre> </li> <li>If you want to receive Dynamic Links with a <a href="../custom-domains">fully-custom domain</a>, in your Xcode project's <code translate="no" dir="ltr">Info.plist</code> file, create a key called <code translate="no" dir="ltr">FirebaseDynamicLinksCustomDomains</code> and set it to your app's Dynamic Links URL prefixes. For example: 
+<pre>FirebaseDynamicLinksCustomDomains
+
+  https://example.com/promos
+  https://example.com/links/share
+</pre> </li> <li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">import SwiftUI
+import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">import FirebaseCore
+import FirebaseFirestore
+import FirebaseAuth
+// ...
+      </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">@import FirebaseCore;
+@import FirebaseFirestore;
+@import FirebaseAuth;
+// ...
+      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Use Firebase library to configure APIs
+[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<pre data-language="">@main
+struct YourApp: App {
+  // register app delegate for Firebase setup
+  @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
+  var body: some Scene {
+    WindowGroup {
+      NavigationView {
+        ContentView()
+      }
+    }
+  }
+}
+      </pre> </section> </div> </li> <li>Next, in the <code translate="no" dir="ltr">application:continueUserActivity:restorationHandler:
+    </code> method, handle links received as <a href="https://developer.apple.com/library/ios/documentation/General/Conceptual/AppSearch/UniversalLinks.html"> Universal Links</a> when the app is already installed: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="swift">func application(_ application: UIApplication, continue userActivity: NSUserActivity,
+                 restorationHandler: @escaping ([UIUserActivityRestoring]?) -&gt; Void) -&gt; Bool {
+  let handled = DynamicLinks.dynamicLinks()
+    .handleUniversalLink(userActivity.webpageURL!) { dynamiclink, error in
+      // ...
+    }
+
+  return handled
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="objectivec">- (BOOL)application:(UIApplication *)application
+continueUserActivity:(nonnull NSUserActivity *)userActivity
+ restorationHandler:
+#if defined(__IPHONE_12_0) &amp;&amp; (__IPHONE_OS_VERSION_MAX_ALLOWED &gt;= __IPHONE_12_0)
+(nonnull void (^)(NSArray&lt;id&gt; *_Nullable))restorationHandler {
+#else
+    (nonnull void (^)(NSArray *_Nullable))restorationHandler {
+#endif  // __IPHONE_12_0
+  BOOL handled = [[FIRDynamicLinks dynamicLinks] handleUniversalLink:userActivity.webpageURL
+                                                          completion:^(FIRDynamicLink * _Nullable dynamicLink,
+                                                                       NSError * _Nullable error) {
+                                                            // ...
+                                                          }];
+  return handled;
+}</pre> </section> </div> </li> <li>Finally, in <code translate="no" dir="ltr">application:openURL:options:</code> handle links received through your app's custom URL scheme. This method is called when your app is opened for the first time after installation. <p>If the Dynamic Link isn't found on your app's first launch, this method will be called with the <code translate="no" dir="ltr">DynamicLink</code>'s <code translate="no" dir="ltr">url</code> set to <code translate="no" dir="ltr">nil</code>, indicating that the SDK failed to find a matching pending Dynamic Link.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="swift">@available(iOS 9.0, *)
+func application(_ app: UIApplication, open url: URL,
+                 options: [UIApplication.OpenURLOptionsKey: Any]) -&gt; Bool {
+  return application(app, open: url,
+                     sourceApplication: options[UIApplication.OpenURLOptionsKey
+                       .sourceApplication] as? String,
+                     annotation: "")
+}
+
+func application(_ application: UIApplication, open url: URL, sourceApplication: String?,
+                 annotation: Any) -&gt; Bool {
+  if let dynamicLink = DynamicLinks.dynamicLinks().dynamicLink(fromCustomSchemeURL: url) {
+    // Handle the deep link. For example, show the deep-linked content or
+    // apply a promotional offer to the user's account.
+    // ...
+    return true
+  }
+  return false
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on macOS, Mac Catalyst, tvOS, or watchOS targets. </div> 
+<pre data-language="objectivec">- (BOOL)application:(UIApplication *)app
+            openURL:(NSURL *)url
+            options:(NSDictionary *)options {
+  return [self application:app
+                   openURL:url
+         sourceApplication:options[UIApplicationOpenURLOptionsSourceApplicationKey]
+                annotation:options[UIApplicationOpenURLOptionsAnnotationKey]];
+}
+
+- (BOOL)application:(UIApplication *)application
+            openURL:(NSURL *)url
+  sourceApplication:(NSString *)sourceApplication
+         annotation:(id)annotation {
+  FIRDynamicLink *dynamicLink = [[FIRDynamicLinks dynamicLinks] dynamicLinkFromCustomSchemeURL:url];
+
+  if (dynamicLink) {
+    if (dynamicLink.url) {
+      // Handle the deep link. For example, show the deep-linked content,
+      // apply a promotional offer to the user's account or show customized onboarding view.
+      // ...
+    } else {
+      // Dynamic link has empty deep link. This situation will happens if
+      // Firebase Dynamic Links iOS SDK tried to retrieve pending dynamic link,
+      // but pending link is not available for this device/App combination.
+      // At this point you may display default onboarding view.
+    }
+    return YES;
+  }
+  return NO;
+}</pre> </section> </div> <aside>This step is particularly important when you've configured the Dynamic Links SDK to use the pasteboard for more reliable link matching. If you skip this step, users will see a pasteboard access notification every time they open your app, rather than only the first open. </aside> </li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/dynamic-links/ios/receive" class="_attribution-link">https://firebase.google.com/docs/dynamic-links/ios/receive</a>
+  </p>
+</div>

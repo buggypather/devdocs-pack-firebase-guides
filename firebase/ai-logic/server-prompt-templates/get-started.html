@@ -1,0 +1,424 @@
+<h1>Get started with server prompt templates</h1> <aside class="preview"><b>Preview</b>: Using server prompt templates is a feature that's in Preview, which means that it isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways. </aside> <p><br></p>  <p>In each request to a model, you send a prompt and optionally schema and configurations to control the model's response. When using <span class='\"notranslate\"'>Firebase AI Logic</span>, you can send all this information directly from your client code, or you can specify this information server-side using <em><strong>server prompt templates</strong></em>.</p> <p>When using server prompt templates, you store your prompt, schema, and configurations server-side, and your app's codebase passes from the client to the server only a key (the template ID) referencing a specific template as well as the required inputs for that template. Here are some benefits of this approach:</p> <ul> <li><p>Protect against exposing your prompt client-side</p></li> <li><p>Update your prompt and configuration without releasing a new app version</p></li> </ul> <p>This guide describes how to get started using server prompt templates.</p> <p><a href="#high-level" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to high-level overview</a> <a href="#detailed-instructions" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to detailed instructions</a> </p> <h4 id="supported-models-and-capabilities">Supported models and capabilities</h4> <ul> <li><p>Use server prompt templates with any of the <a href="../models"><span class='\"notranslate\"'>Gemini</span> models</a> that <span class='\"notranslate\"'>Firebase AI Logic</span> supports, <em>with the exception of Gemini Live API models</em>.</p></li> <li><p>Review the <a href="best-practices-and-considerations">list of not-yet-supported features</a>.</p></li> </ul> <aside class="note"><strong>Note:</strong><span> To use server prompt templates with <strong>multi-turn interactions (like chat and function calling)</strong>, go through this get started guide so that you're familiar with how server prompt templates work in a "Hello World" scenario. Then, learn the <a href="multi-turn-interactions">specific guidance for multi-turn interactions</a>.</span></aside> <p><br></p> <hr> <h2 id="high-level">High-level overview</h2> <p>Here's the basic workflow for using server prompt templates:</p> <ol> <li><p>Create the template using the guided UI in the <a href="https://console.firebase.google.com/project/_/ailogic/templates" class="external">Firebase console</a>.</p></li> <li><p>Test the template in a real request using the testing experience in the Firebase console.</p></li> <li><p>Access the template from your app's code using <code translate="no" dir="ltr">templateGenerativeModel</code>.</p></li> </ol> <h3 id="basic-format">Basic format of a server prompt template</h3> <p>For <span class='\"notranslate\"'>Firebase AI Logic</span>, the <a href="https://console.firebase.google.com/project/_/ailogic/templates" class="external">Firebase console</a> provides a guided UI for you to specify the template's frontmatter and contents.</p> <p>Server prompt templates use a Dotprompt-based syntax and format. For more details, see <a href="syntax-and-examples">Template format, syntax, and examples</a>.</p> <p>The example template below shows the most important components of a template for an example request to a <span class='\"notranslate\"'>Gemini</span> model:</p> 
+<pre>---
+model: 'gemini-3.8-flash'
+---
+
+{{role "system"}}
+All output must be a clearly structured invoice document.
+Use a tabular or clearly delineated list format for line items.
+
+{{role "user"}}
+Create an example customer invoice for a customer named {{customerName}}.
+</pre> <ul> <li><p>The top section within the triple-dashes contains the model name as well as optionally any model configuration, input validation, or schema you want to send in the request. It's written as key-value pairs and is commonly called YAML <em>frontmatter</em>.</p></li> <li><p>The body of the template contains the prompt. It can also optionally include system instructions and input values (using <a href="https://handlebarsjs.com/guide/" class="external">Handlebars</a> syntax).</p></li> </ul> <h3 id="high-level-use-template-in-code">Use your template in code</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>The example client code below shows how to use the template in your code:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+let model = FirebaseAI.firebaseAI(backend: .googleAI()).templateGenerativeModel()
+
+let customerName = "Jane"
+
+do {
+    let response = try await model.generateContent(
+        // Specify your template ID
+        templateID: "my-first-template-v1-0-0",
+        // Provide the values for any input variables required by your template.
+        inputs: [
+            "customerName": customerName
+        ]
+    )
+    if let text = response.text {
+        print("Response Text: \(text)")
+    }
+} catch {
+    print("An error occurred: \(error)")
+}
+print("\n")
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).templateGenerativeModel()
+
+val customerName = "Jane"
+
+val response = model.generateContent(
+    // Specify your template ID.
+    "my-first-template-v1-0-0",
+    // Provide the values for any input variables required by your template.
+    mapOf(
+        "customerName" to customerName
+    )
+)
+
+val text = response.text
+println(text)
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+TemplateGenerativeModel generativeModel = FirebaseAI.getInstance().templateGenerativeModel();
+
+TemplateGenerativeModelFutures model = TemplateGenerativeModelFutures.from(generativeModel);
+
+String customerName = "Jane";
+
+Future response = model.generateContent(
+    // Specify your template ID
+    "my-first-template-v1-0-0",
+    // Provide the values for any input variables required by your template.
+    mapOf("customerName", customerName)
+);
+addCallback(response,
+       new FutureCallback() {
+           public void onSuccess(GenerateContentResponse result) {
+             System.out.println(result.getText());
+           }
+           public void onFailure(Throwable t) {
+             reportError(t);
+           }
+    }
+executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+
+// Create a `TemplateGenerativeModel` instance.
+const model = getTemplateGenerativeModel(ai);
+
+const customerName = 'Jane';
+
+const result = await model.generateContent({
+  // Specify your template ID.
+  templateId: 'my-first-template-v1-0-0',
+  // Provide the values for any input variables required by your template.
+  templateVariables: {
+    customerName: customerName,
+  },
+});
+
+const response = result.response;
+const text = response.text();
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+var _model = FirebaseAI.googleAI().templateGenerativeModel();
+
+var customerName = 'Jane';
+
+var response = await _model.generateContent(
+        // Specify your template ID
+        'my-first-template-v1-0-0',
+        // Provide the values for any input variables required by your template.
+        inputs: {
+           'customerName': customerName,
+        },
+      );
+
+var text = response?.text;
+print(text);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+var firebaseAI = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `TemplateGenerativeModel` instance.
+var model = firebaseAI.GetTemplateGenerativeModel();
+
+var customerName = "Jane";
+
+try
+{
+   var response = await model.GenerateContentAsync(
+      // Specify your template ID.
+      "my-first-template-v1-0-0",
+      // Provide the values for any input variables required by your template.
+      new Dictionary&lt;string, object&gt; {
+         { "customerName", customerName },
+      }
+   );
+   Debug.Log($"Response Text: {response.Text}");
+}
+catch (Exception e) {
+  Debug.LogError($"An error occurred: {e.Message}");
+}
+
+</pre></section> </div>
+<aside class="special"><strong>Important:</strong><span> We strongly recommend <a href="versioning-with-remote-config">using Firebase Remote Config with server prompt templates</a> so that you can more easily change the template ID and other values in your request.</span></aside> <p><br></p> <hr> <h2 id="detailed-instructions">Detailed instructions</h2> <p>This section provides detailed instructions for creating, testing, and using server prompt templates.</p> <h3 id="before-you-begin">Before you begin</h3> <ul> <li><p>If you haven't already, <strong>complete the <a href="../get-started">getting started guide</a></strong>, which describes how to set up your Firebase project, connect your app to Firebase, add the SDK, initialize the backend service for your chosen <span class='\"notranslate\"'>Gemini API</span> provider, and create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p></li> <li>
+<p>Make sure you have the <strong>required permissions</strong> to create and manage server prompt templates. By default, all these permissions are included in the Owner role.</p> <p><section class="expandable" id="required-permissions"> <p class="showalways" id="required-permissions">View required permissions</p></section></p> <ul> <li><code translate="no" dir="ltr">firebasevertexai.googleapis.com/promptTemplates.create</code></li> <li><code translate="no" dir="ltr">firebasevertexai.googleapis.com/promptTemplates.get</code></li> <li><code translate="no" dir="ltr">firebasevertexai.googleapis.com/promptTemplates.update</code></li> <li><code translate="no" dir="ltr">firebasevertexai.googleapis.com/promptTemplates.delete</code></li> <li><code translate="no" dir="ltr">firebasevertexai.googleapis.com/promptTemplates.list</code></li> <li><code translate="no" dir="ltr">firebasevertexai.googleapis.com/promptTemplates.updateLock</code></li> </ul> 
+</li> <li><p>If you use the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> and <em><strong>if your use case requires location-based restrictions</strong></em>, we support <a href="advanced-workflows">advanced workflows for templates</a>.</p></li> </ul> <h3 id="create-template">
+<strong>Step 1</strong>: Create a server prompt template</h3> <p>For most use cases, you create and manage server prompt templates in the Firebase console.</p> <ol> <li><p>In the Firebase console, go to the <strong>AI Services</strong> &gt; <strong>AI Logic</strong> &gt; <a href="https://console.firebase.google.com/project/_/ailogic/templates" class="external"><strong>Prompt templates</strong> tab</a>.</p></li> <li>
+<p>Click <strong>Create new template</strong>, and select a starter template option.</p> <ul> <li><p>These starter templates provide the format and syntax for some common use cases. No matter which option you select, though, you can completely change the template to meet your needs.</p></li> <li><p>This getting started guide assumes you've selected the <code translate="no" dir="ltr">Input + System Instructions</code> option.</p></li> </ul>
+</li> <li>
+<p>Enter the template's identifiers:</p> <ul> <li><p><strong>Template name</strong>: This is a display name for the template (for example, <code translate="no" dir="ltr">My First Template</code>). It's only visible within Firebase interfaces, like the Firebase console.</p></li> <li>
+<p><strong>Template ID</strong>: This must be a unique ID for the template within your Firebase project (for example, <nobr><code translate="no" dir="ltr">my-first-template-v1-0-0</code></nobr>). You'll reference this ID in the request from your app.</p> <ul> <li><p>We recommend <a href="manage-templates#version-template">using a versioning system</a> for your template IDs.</p></li> <li><p>Template IDs can be max 63 characters and can contain lowercase letters, numbers, and hyphens.</p></li> </ul>
+</li> </ul>
+</li> <li>
+<p>Modify the <strong>Configuration (frontmatter)</strong> section of the template, as needed.</p> <ul> <li>
+<p>This section must include at minimum a model name, like this:</p> 
+<pre>---
+model: 'gemini-3.8-flash'
+---
+</pre>
+</li> <li><p>You can also optionally specify the model's configuration and any input &amp; output controls, etc. For more details and options, see <a href="syntax-and-examples">Template format, syntax, and examples</a>.</p></li> </ul>
+</li> <li>
+<p>Modify the <strong>Prompt and (as applicable) system instructions</strong> section of the template, as needed.</p> <ul> <li>
+<p>This section must include at minimum the text prompt to send to the model.</p> 
+<pre>Write a story about a magic backpack.
+</pre>
+</li> <li>
+<p>You can also create more complex prompts, like the following options. For more details and options, see <a href="syntax-and-examples">Template format, syntax, and examples</a>.</p> <ul> <li><p><em>(Optional and as applicable)</em> Specify system instructions using the <code translate="no" dir="ltr">{{role "system"}}</code> syntax, and the text prompt using the <code translate="no" dir="ltr">{{role "user"}}</code> syntax.</p></li> <li><p><em>(Optional)</em> Specify input variables using <a href="https://handlebarsjs.com/guide/" class="external">Handlebars</a> syntax (like <code translate="no" dir="ltr">{{customerName}}</code>). You can provide a default value in the template, but the value of this input variable is usually passed in the request.</p></li> </ul> 
+<pre>{{role "system"}}
+All output must be a clearly structured invoice document.
+Use a tabular or clearly delineated list format for line items.
+
+{{role "user"}}
+Create an example customer invoice for a customer named {{customerName}}.
+</pre>
+</li> </ul>
+</li> </ol> <h3 id="test-template">
+<strong>Step 2</strong>: Test your template in the Firebase console</h3> <p>The Firebase console provides a testing experience for your template. This experience lets you see what will happen when your template is used – both the format of the request as well as the output of an actual request.</p> <ol> <li>
+<p>Click <strong>Save template</strong> so that you can test your template.</p> <p>You can always edit or even delete the template later. The only value you can't change later is the template ID.</p>
+</li> <li>
+<p>If your prompt uses input variables, include test values in the <strong>Test input</strong> field. For this example:</p> 
+<pre>  {
+    "customerName": "Jane"
+  }
+</pre>
+</li> <li>
+<p>If you have multiple <span class='\"notranslate\"'>Gemini API</span> providers enabled in your Firebase project, you can choose which one to use for the test request. If this option is displayed in the console, select either <code translate="no" dir="ltr">Gemini Developer API</code> or <code translate="no" dir="ltr">Agent Platform Gemini API</code> (formerly Vertex AI).</p> <p>Note that this selection only applies to requests submitted through the Firebase console testing experience. In the actual request from your app, you specify your chosen <span class='\"notranslate\"'>Gemini API</span> provider just like you would for any request.</p>
+</li> <li>
+<p>Click the <strong>Create formatted test request</strong> button.</p> <p>Review the resulting <em>Formatted test request</em> in the right-side of the screen, and iterate on any of your template's fields.</p> <p><section class="expandable" id="formatted-test-request"> <p class="showalways" id="formatted-test-request">Expand to view example formatted test request</p></section></p> 
+<pre>{
+  "model": "projects/YOUR_PROJECT_ID/models/gemini-3.8-flash",
+  "contents": [{
+    "parts": [{
+      "text": "Create an example customer invoice for a customer named Jane"
+    }],
+    "role": "user"
+  }],
+  "systemInstruction": {
+    "parts": [{
+      "text": "All output must be a clearly structured invoice document.\nUse a tabular or clearly delineated list format for line items."
+    }]
+  }
+}
+</pre> 
+</li> <li>
+<p>When you're satisfied with the formatted test request, click the <strong>Run prompt test</strong> button.</p> <p>Review the resulting <em>Test response</em> in the right-side of the screen, and iterate on any of your template's fields.</p> <aside class="special"><strong>Important:</strong><span> Each time you click <strong>Run prompt test</strong>, it might incur costs depending on your chosen <span class='\"notranslate\"'>Gemini API</span> provider and pricing plan.</span></aside> <p><section class="expandable" id="test-response"> <p class="showalways" id="test-response">Expand to view example test response</p></section></p> 
+<pre>{
+  "candidates": [{
+    "content": {
+      "parts": [{
+        "text": "```\n--------------------------------------------------------------------------------\n                         **INVOICE**\n--------------------------------------------------------------------------------\n\n**Creative Solutions Inc.**\n123 Business Lane, Suite 100\nAnytown, USA 12345\nPhone: (555) 123-4567\nEmail: info@creativesolutions.com\n\n**INVOICE NO:** INV-2023-001\n**INVOICE DATE:** October 26, 2023\n**DUE DATE:** November 25, 2023\n\n**BILL TO:**\nJane\n456 Client Street, Apt 2B\nAnytown, USA 12346\nPhone: (555) 987-6543\nEmail: jane@example.com\n\n--------------------------------------------------------------------------------\n**ITEM DESCRIPTION**               **QTY**   **UNIT PRICE**   **AMOUNT**\n--------------------------------------------------------------------------------\nWebsite Design Services            1         $800.00          $800.00\nContent Creation (Blog Posts)      4         $120.00          $480.00\nMonthly Hosting \u0026 Maintenance      1         $50.00           $50.00\nConsultation Fee                   2         $75.00           $150.00\n--------------------------------------------------------------------------------\n\n**SUMMARY:**\nSubtotal:                                                     $1,480.00\nSales Tax (8%):                                               $118.40\n--------------------------------------------------------------------------------\n**TOTAL DUE:**                                                **$1,598.40**\n--------------------------------------------------------------------------------\n\n**PAYMENT TERMS:**\nPayment is due within 30 days of the invoice date. Please make checks payable to Creative Solutions Inc. For electronic payments, please contact us for details.\n\nThank you for your business!\n```"
+      }],
+      "role": "model"
+    },
+    "finishReason": "STOP",
+    "index": 0
+  }],
+  "usageMetadata": {
+    "promptTokenCount": 34,
+    "candidatesTokenCount": 418,
+    "totalTokenCount": 890,
+    "promptTokensDetails": [{
+      "modality": "TEXT",
+      "tokenCount": 34
+    }],
+    "thoughtsTokenCount": 438
+  },
+  "modelVersion": "gemini-3.8-flash",
+  "responseId": "3w4Vad6yF-y1vdIP_q_zgAw",
+  "turnToken": "v1:ChczdzRWYWQ2eUYteTF2ZElQX3FfemdBdxIXM3c0VmFkNnlGLXkxdmRJUF9xX3pnQXc"
+}
+</pre> 
+</li> <li><p>If you're ready to access the template from your app's code, <a href="manage-templates#lock-template">lock the template</a> by clicking the <nobr><span class="material-icons" aria-hidden="true" translate="no">lock</span> lock</nobr> icon in the top-right corner of the template.</p></li> <li><p>Click <strong>Close</strong> to exit the editing experience.</p></li> </ol> <h3 id="access-template-from-code">
+<strong>Step 3</strong>: Access your template from your code</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>A request using a server prompt template looks similar to other requests, with the following adjustments:</p> <ul> <li>Use a <code translate="no" dir="ltr">templateGenerativeModel</code>.</li> <li>Provide the template ID.</li> <li>Provide the values of any variable inputs required by your template.</li> </ul> <p>Note that after creating or updating your template, you may need to wait a couple minutes for the template to propagate across Firebase servers before accessing it from your code.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Create a <code translate="no" dir="ltr">templateGenerativeModel</code> instance to use a template in your request.</p> 
+<pre data-language="swift">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+let model = FirebaseAI.firebaseAI(backend: .googleAI()).templateGenerativeModel()
+
+let customerName = "Jane"
+
+do {
+    let response = try await model.generateContent(
+        // Specify your template ID
+        templateID: "my-first-template-v1-0-0",
+        // Provide the values for any input variables required by your template.
+        inputs: [
+            "customerName": customerName
+        ]
+    )
+    if let text = response.text {
+        print("Response Text: \(text)")
+    }
+} catch {
+    print("An error occurred: \(error)")
+}
+print("\n")
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Create a <code translate="no" dir="ltr">templateGenerativeModel</code> instance to use a template in your request.</p> 
+<pre data-language="kotlin">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).templateGenerativeModel()
+
+val customerName = "Jane"
+
+val response = model.generateContent(
+    // Specify your template ID.
+    "my-first-template-v1-0-0",
+    // Provide the values for any input variables required by your template.
+    mapOf(
+        "customerName" to customerName
+    )
+)
+
+val text = response.text
+println(text)
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>Create a <code translate="no" dir="ltr">templateGenerativeModel</code> instance to use a template in your request.</p> 
+<pre data-language="java">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+TemplateGenerativeModel generativeModel = FirebaseAI.getInstance().templateGenerativeModel();
+
+TemplateGenerativeModelFutures model = TemplateGenerativeModelFutures.from(generativeModel);
+
+String customerName = "Jane";
+
+Future response = model.generateContent(
+    // Specify your template ID
+    "my-first-template-v1-0-0",
+    // Provide the values for any input variables required by your template.
+    mapOf("customerName", customerName)
+);
+addCallback(response,
+       new FutureCallback() {
+           public void onSuccess(GenerateContentResponse result) {
+             System.out.println(result.getText());
+           }
+           public void onFailure(Throwable t) {
+             reportError(t);
+           }
+    }
+executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Create a <code translate="no" dir="ltr">templateGenerativeModel</code> instance to use a template in your request.</p> 
+<pre data-language="javascript">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+
+// Create a `TemplateGenerativeModel` instance.
+const model = getTemplateGenerativeModel(ai);
+
+const customerName = 'Jane';
+
+const result = await model.generateContent({
+  // Specify your template ID.
+  templateId: 'my-first-template-v1-0-0',
+  // Provide the values for any input variables required by your template.
+  templateVariables: {
+    customerName: customerName,
+  },
+});
+
+const response = result.response;
+const text = response.text();
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>Create a <code translate="no" dir="ltr">templateGenerativeModel</code> instance to use a template in your request.</p> 
+<pre data-language="dart">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+var _model = FirebaseAI.googleAI().templateGenerativeModel();
+
+var customerName = 'Jane';
+
+var response = await _model.generateContent(
+        // Specify your template ID
+        'my-first-template-v1-0-0',
+        // Provide the values for any input variables required by your template.
+        inputs: {
+           'customerName': customerName,
+        },
+      );
+
+var text = response?.text;
+print(text);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Create a <code translate="no" dir="ltr">templateGenerativeModel</code> instance to use a template in your request.</p> 
+<pre data-language="csharp">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+var firebaseAI = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `TemplateGenerativeModel` instance.
+var model = firebaseAI.GetTemplateGenerativeModel();
+
+var customerName = "Jane";
+
+try
+{
+   var response = await model.GenerateContentAsync(
+      // Specify your template ID.
+      "my-first-template-v1-0-0",
+      // Provide the values for any input variables required by your template.
+      new Dictionary&lt;string, object&gt; {
+         { "customerName", customerName },
+      }
+   );
+   Debug.Log($"Response Text: {response.Text}");
+}
+catch (Exception e) {
+  Debug.LogError($"An error occurred: {e.Message}");
+}
+
+</pre></section> </div>
+<aside class="special"><strong>Important:</strong><span> We strongly recommend <a href="versioning-with-remote-config">using Firebase Remote Config with server prompt templates</a> so that you can more easily change the template and other values in your request.</span></aside> <p><br></p> <hr> <h2 id="what-next">What's next?</h2> <ul> <li><p>Learn about <a href="best-practices-and-considerations">best practices and considerations</a> for using server prompt templates.</p></li> <li><p>Learn details about the <a href="syntax-and-examples">template format and syntax, along with examples</a>.</p></li> <li><p>Learn about <a href="manage-templates">managing templates</a>, including editing, locking, and version control.</p></li> <li><p>Learn about <a href="advanced-workflows">advanced workflows</a>, like working with templates programmatically using our REST API or deploying your templates to specific locations.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/server-prompt-templates/get-started" class="_attribution-link">https://firebase.google.com/docs/ai-logic/server-prompt-templates/get-started</a>
+  </p>
+</div>

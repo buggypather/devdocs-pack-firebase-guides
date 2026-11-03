@@ -1,0 +1,53 @@
+<h1>Use the SQL Connect emulator for CI/CD</h1> <p>Firebase SQL Connect provides you with a local emulator for end-to-end prototyping as well as continuous integration and continuous deployment (CI/CD) flows:</p> <ul> <li>The SQL Connect emulator interacts with a local integrated PGLite database instance to let you prototype queries and mutations and test client code in a fully local environment.</li> <li>The SQL Connect emulator can also be used for non-interactive work. It lets you run automated tests and is suitable for use with CI/CD workflows. This is useful when your schemas are stable and you want to prototype and test client-side code.</li> </ul> <p>This guide covers installation and usage of the emulator in more detail than the quickstart.</p> <h2 id="install-emulator">Install the SQL Connect emulator</h2> <p>Before installing the Local Emulator Suite to use the SQL Connect emulator, you will need:</p> <ul> <li>Node.js version 18.0 or higher.</li> </ul> <h3 id="install-cli-and-setup">Install the Firebase CLI and set up project directory</h3> <aside class="note"><strong>Note:</strong><span> If you've followed the <a href="quickstart">Get started with Firebase SQL Connect</a> guide, you can skip this section.</span></aside> <ol> <li>
+<p>Install the Firebase CLI, <a href="../cli">following the installation guide</a>. Be sure to <a href="../cli#update-cli">update regularly</a>, since the SQL Connect emulator is under active development with bug fixes and new features.</p> <aside class="note"><b>Note:</b> You can also run Firebase CLI commands in Cloud Shell. <a href="../cloud-shell">Cloud Shell</a> is a browser-based, pre-authenticated command-line environment, accessible from the Firebase console, and comes with the Firebase CLI pre-installed. This makes it a convenient option for getting started quickly, provided you add your project files to the Cloud Shell environment.</aside>
+</li> <li>
+<p>If you haven't already done so, initialize the current working directory as a Firebase project, following prompts to specify which products to use:</p> 
+<pre>firebase init</pre>
+</li> </ol> <h3 id="set-configuration">Set or modify the Local Emulator Suite configuration</h3> <p>If you started the SQL Connect emulator from the SQL Connect VS Code extension, the emulator was installed for you, if needed.</p> <p>You can use the Firebase CLI to manually install the emulator along with other selected components of the Local Emulator Suite. This command starts a configuration wizard that lets you select emulators of interest, download the corresponding emulator binary files, and set emulator ports if the defaults are not appropriate.</p> 
+<pre>  firebase init emulators</pre> <p>Once an emulator is installed, no update checks are performed and no additional automatic downloads will occur until you update your Firebase CLI version.</p> <h3 id="choose-firebase-project">Choose a Firebase project</h3> <p>In the setup flow, the Firebase CLI prompts you to choose or create a Firebase project. If you choose an existing project that you've already set up with SQL Connect, the configuration you chose during project setup will be suggested.</p> <h2 id="set-up-emulator">Set up the emulator</h2> <aside class="note"><strong>Note:</strong><span> Usage of the emulator in the SQL Connect VS Code extension is covered in <a href="quickstart">Get started with Firebase SQL Connect</a>.</span></aside> <h3 id="configure-emulator">Configure the emulator</h3> <p>Running the <code translate="no" dir="ltr">firebase init</code> flow will guide you through emulator setup options. Like other emulators in the Local Emulator Suite, configuration parameters are stored in local project files.</p> <ul> <li>Your <code translate="no" dir="ltr">firebase.json</code> file contains emulator port assignments. <ul> <li>The <code translate="no" dir="ltr">emulators:ui</code> key does not apply to the SQL Connect emulator.</li> </ul>
+</li> </ul> <h3 id="work-local">Work with local and production SQL Connect resources</h3> <p>If you want to be sure not to impact production resources, set a <code translate="no" dir="ltr">demo-</code> projectID or make sure your client code is instrumented to connect to the emulator, as discussed in a later section.</p> <h2 id="start-emulator">Start the emulator</h2> <p>If you're running the emulator non-interactively, for example for CI/CD workflows, start it with the <code translate="no" dir="ltr">exec</code> option.</p> 
+<pre>firebase emulators:exec ./path/to/test-script.sh</pre> <p>If you're integrating predefined queries and mutations in client code and are using the emulator specifically for testing clients, you can use the <code translate="no" dir="ltr">start</code> option for interactive work. You can also start the emulator from the SQL Connect VS Code extension.</p> 
+<pre>firebase emulators:start</pre>
+<aside class="note"><strong>Note:</strong><span> When you start the emulator with <code translate="no" dir="ltr">firebase emulators:start</code>, SDK code will be automatically generated just as if you had run <code translate="no" dir="ltr">firebase sdk:generate</code>.</span></aside> <h2 id="instrument-client">Instrument your client code to talk to the emulator</h2> <p>Set up your in-app configuration or test classes to interact with the SQL Connect emulator as follows.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+<pre data-language="">import { initializeApp } from "firebase/app";
+import { connectorConfig } from "@name-of-package";
+import { connectDataConnectEmulator, getDataConnect } from 'firebase/data-connect';
+
+// TODO: Replace the following with your app's Firebase project configuration
+const firebaseConfig = {
+  //...
+};
+
+const app = initializeApp(firebaseConfig);
+
+const dataConnect = getDataConnect(app, connectorConfig);
+connectDataConnectEmulator(dataConnect, "localhost", 9399);
+
+// Make calls from your app
+  </pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin Android</strong></p> 
+<pre data-language="">val connector = MoviesConnector.instance
+
+// Connect to the emulator on "10.0.2.2:9399"
+connector.dataConnect.useEmulator()
+
+// (Alternatively) if you're running your emulator on non-default port:
+connector.dataConnect.useEmulator(port = 9999)
+
+// Make calls from your app
+  </pre> </section> <section> <p class="_firebase-tab"><strong>iOS</strong></p> 
+<pre data-language="">let connector = DataConnect.dataConnect(DefaultConnectorClient.connectorConfig)
+
+// Connect to the emulator on "127.0.0.1:9399"
+connector.useEmulator()
+
+// (alternatively) if you're running your emulator on non-default port:
+connector.useEmulator(port: 9999)
+
+// Make calls from your app
+  </pre> </section> </div> <h2 id="data-connect-emulator-in-ci">Use the emulator for testing and continuous integration</h2> <h3 id="running-containerized">Run containerized Local Emulator Suite images</h3> <p>Installation and configuration of the Local Emulator Suite with containers in a typical CI setup is straightforward.</p> <p>There are a few issues to note:</p> <ul> <li>Emulator binaries are installed and cached at <code translate="no" dir="ltr">~/.cache/firebase/emulators/</code>. You may want to add this path to your CI cache configuration to avoid repeated downloads.</li> <li>If you don't have a <code translate="no" dir="ltr">firebase.json</code> file in your repository, you must add a command line argument to the <code translate="no" dir="ltr">emulators:start</code> or <code translate="no" dir="ltr">emulators:exec</code> command to specify which emulators should be started. For example, <code translate="no" dir="ltr">--only dataconnect</code>.</li> </ul> <h3 id="clearing-database">Clear your database between tests</h3> <p>To reset your test environments between runs, Firebase recommends:</p> <ul> <li>Writing dedicated mutations to handle the following: <ul> <li>In setup, populate a local database instance with starting data.</li> <li>In teardown, delete modified data from post-test database instance.</li> </ul>
+</li> </ul> <h2 id="differences-from-production">How the SQL Connect emulator differs from production</h2> <p>The SQL Connect emulator simulates many features of the server-side product. However, there are some exceptions to be aware of:</p> <ul> <li>The version and detailed configuration of PGLite may differ from the version of your production Cloud SQL instance.</li> <li>If you're using the emulator to develop with SQL Connect's pgvector and Vertex API integration, calls to the Cloud Vertex API are made directly, rather than through Cloud SQL's Vertex integration. However, calls to the production API are still made, meaning you must use a real Firebase project, cannot use a <code translate="no" dir="ltr">demo-</code> project, and costs of the Vertex API will be incurred.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/data-connect-emulator-suite" class="_attribution-link">https://firebase.google.com/docs/sql-connect/data-connect-emulator-suite</a>
+  </p>
+</div>

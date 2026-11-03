@@ -1,0 +1,239 @@
+<h1>Manage User Sessions</h1> <p>Firebase Authentication sessions are long lived. Every time a user signs in, the user credentials are sent to the Firebase Authentication backend and exchanged for a Firebase ID token (a JWT) and refresh token. Firebase ID tokens are short lived and last for an hour; the refresh token can be used to retrieve new ID tokens. Refresh tokens expire only when one of the following occurs:</p> <ul> <li>The user is deleted</li> <li>The user is disabled</li> <li>A major account change is detected for the user. This includes events like password or email address updates.</li> </ul> <p>The Firebase Admin SDK provides the ability to revoke refresh tokens for a specified user. In addition, an API to check for ID token revocation is also made available. With these capabilities, you have more control over user sessions. The SDK provides the ability to add restrictions to prevent sessions from being used in suspicious circumstances, as well as a mechanism for recovery from potential token theft.</p> <h2 id="revoke_refresh_tokens">Revoke refresh tokens</h2> <p>You might revoke a user's existing refresh token when a user reports a lost or stolen device. Similarly, if you discover a general vulnerability or suspect a wide-scale leak of active tokens, you can use the <a href="manage-users#list_all_users"><code translate="no" dir="ltr">listUsers</code></a> API to look up all users and revoke their tokens for the specified project.</p> <p>Password resets also revoke a user's existing tokens; however, the Firebase Authentication backend handles the revocation automatically in that case. On revocation, the user is signed out and prompted to reauthenticate.</p> <p>Here is an example implementation that uses the Admin SDK to revoke the refresh token of a given user. To initialize the Admin SDK follow the instructions on the <a href="../../admin/setup#initialize-sdk">setup page</a>.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Revoke all refresh tokens for a specified user for whatever reason.
+// Retrieve the timestamp of the revocation, in seconds since the epoch.
+getAuth()
+  .revokeRefreshTokens(uid)
+  .then(() =&gt; {
+    return getAuth().getUser(uid);
+  })
+  .then((userRecord) =&gt; {
+    return new Date(userRecord.tokensValidAfterTime).getTime() / 1000;
+  })
+  .then((timestamp) =&gt; {
+    console.log(`Tokens revoked at: ${timestamp}`);
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">FirebaseAuth.getInstance().revokeRefreshTokens(uid);
+UserRecord user = FirebaseAuth.getInstance().getUser(uid);
+// Convert to seconds as the auth_time in the token claims is in seconds too.
+long revocationSecond = user.getTokensValidAfterTimestamp() / 1000;
+System.out.println("Tokens revoked at: " + revocationSecond);
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"># Revoke tokens on the backend.
+auth.revoke_refresh_tokens(uid)
+user = auth.get_user(uid)
+# Convert to seconds as the auth_time in the token claims is in seconds.
+revocation_second = user.tokens_valid_after_timestamp / 1000
+print(f'Tokens revoked at: {revocation_second}')
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">client, err := app.Auth(ctx)
+if err != nil {
+	log.Fatalf("error getting Auth client: %v\n", err)
+}
+if err := client.RevokeRefreshTokens(ctx, uid); err != nil {
+	log.Fatalf("error revoking tokens for user: %v, %v\n", uid, err)
+}
+// accessing the user's TokenValidAfter
+u, err := client.GetUser(ctx, uid)
+if err != nil {
+	log.Fatalf("error getting user %s: %v\n", uid, err)
+}
+timestamp := u.TokensValidAfterMillis / 1000
+log.Printf("the refresh tokens were revoked at: %d (UTC seconds) ", timestamp)
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">await FirebaseAuth.DefaultInstance.RevokeRefreshTokensAsync(uid);
+var user = await FirebaseAuth.DefaultInstance.GetUserAsync(uid);
+Console.WriteLine("Tokens revoked at: " + user.TokensValidAfterTimestamp);
+</pre></section> </div> <h2 id="detect_id_token_revocation">Detect ID token revocation</h2> <p>Because Firebase ID tokens are stateless JWTs, you can determine a token has been revoked only by requesting the token's status from the Firebase Authentication backend. For this reason, performing this check on your server is an expensive operation, requiring an extra network round trip. You can avoid making this network request by setting up Firebase Security Rules that check for revocation rather than using the Admin SDK to make the check.</p> <h3 id="detect_id_token_revocation_in">Detect ID token revocation in Firebase Security Rules</h3> <p>To be able to detect the ID token revocation using Security Rules, we must first store some user-specific metadata.</p> <h4 id="update_user-specific_metadata_in">Update user-specific metadata in Firebase Realtime Database.</h4> <p>Save the refresh token revocation timestamp. This is needed to track ID token revocation via Firebase Security Rules. This allows for efficient checks within the database. In the code samples below, use the uid and the revocation time obtained in the <a href="#revoke_refresh_tokens">previous section</a>.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const metadataRef = getDatabase().ref('metadata/' + uid);
+metadataRef.set({ revokeTime: utcRevocationTimeSecs }).then(() =&gt; {
+  console.log('Database updated successfully.');
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">DatabaseReference ref = FirebaseDatabase.getInstance().getReference("metadata/" + uid);
+Map&lt;String, Object&gt; userData = new HashMap&lt;&gt;();
+userData.put("revokeTime", revocationSecond);
+ref.setValueAsync(userData);
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">metadata_ref = firebase_admin.db.reference("metadata/" + uid)
+metadata_ref.set({'revokeTime': revocation_second})
+</pre></section> </div> <h4 id="add_a_check_to">Add a check to Firebase Security Rules</h4> <p>To enforce this check, set up a rule with no client write access to store the revocation time per user. This can be updated with the UTC timestamp of the last revocation time as shown in the previous examples:</p> 
+<pre>{
+  "rules": {
+    "metadata": {
+      "$user_id": {
+        // this could be false as it is only accessed from backend or rules.
+        ".read": "$user_id === auth.uid",
+        ".write": "false",
+      }
+    }
+  }
+}
+</pre> <p>Any data that requires authenticated access must have the following rule configured. This logic only allows authenticated users with unrevoked ID tokens to access the protected data:</p> 
+<pre>{
+  "rules": {
+    "users": {
+      "$user_id": {
+        ".read": "auth != null &amp;&amp; $user_id === auth.uid &amp;&amp; (
+            !root.child('metadata').child(auth.uid).child('revokeTime').exists()
+          || auth.token.auth_time &gt; root.child('metadata').child(auth.uid).child('revokeTime').val()
+        )",
+        ".write": "auth != null &amp;&amp; $user_id === auth.uid &amp;&amp; (
+            !root.child('metadata').child(auth.uid).child('revokeTime').exists()
+          || auth.token.auth_time &gt; root.child('metadata').child(auth.uid).child('revokeTime').val()
+        )",
+      }
+    }
+  }
+}
+</pre> <h3 id="detect_id_token_revocation_in_the_sdk">Detect ID token revocation in the SDK.</h3> <p>In your server, implement the following logic for refresh token revocation and ID token validation:</p> <p>When a user's ID token is to be verified, the additional <code translate="no" dir="ltr">checkRevoked</code> boolean flag has to be passed to <code translate="no" dir="ltr">verifyIdToken</code>. If the user's token is revoked, the user should be signed out on the client or asked to reauthenticate using reauthentication APIs provided by the Firebase Authentication client SDKs.</p> <p>To initialize the Admin SDK for your platform, follow the instructions on the <a href="../../admin/setup#initialize-sdk">setup page</a>. Examples of retrieving the ID token are in the <a href="verify-id-tokens#retrieve_id_tokens_on_clients"><code translate="no" dir="ltr">verifyIdToken</code></a> section.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Verify the ID token while checking if the token is revoked by passing
+// checkRevoked true.
+let checkRevoked = true;
+getAuth()
+  .verifyIdToken(idToken, checkRevoked)
+  .then((payload) =&gt; {
+    // Token is valid.
+  })
+  .catch((error) =&gt; {
+    if (error.code == 'auth/id-token-revoked') {
+      // Token has been revoked. Inform the user to reauthenticate or signOut() the user.
+    } else {
+      // Token is invalid.
+    }
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">try {
+  // Verify the ID token while checking if the token is revoked by passing checkRevoked
+  // as true.
+  boolean checkRevoked = true;
+  FirebaseToken decodedToken = FirebaseAuth.getInstance()
+      .verifyIdToken(idToken, checkRevoked);
+  // Token is valid and not revoked.
+  String uid = decodedToken.getUid();
+} catch (FirebaseAuthException e) {
+  if (e.getAuthErrorCode() == AuthErrorCode.REVOKED_ID_TOKEN) {
+    // Token has been revoked. Inform the user to re-authenticate or signOut() the user.
+  } else {
+    // Token is invalid.
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">try:
+    # Verify the ID token while checking if the token is revoked by
+    # passing check_revoked=True.
+    decoded_token = auth.verify_id_token(id_token, check_revoked=True)
+    # Token is valid and not revoked.
+    uid = decoded_token['uid']
+except auth.RevokedIdTokenError:
+    # Token revoked, inform the user to reauthenticate or signOut().
+    pass
+except auth.UserDisabledError:
+    # Token belongs to a disabled user record.
+    pass
+except auth.InvalidIdTokenError:
+    # Token is invalid
+    pass
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">client, err := app.Auth(ctx)
+if err != nil {
+	log.Fatalf("error getting Auth client: %v\n", err)
+}
+token, err := client.VerifyIDTokenAndCheckRevoked(ctx, idToken)
+if err != nil {
+	if err.Error() == "ID token has been revoked" {
+		// Token is revoked. Inform the user to reauthenticate or signOut() the user.
+	} else {
+		// Token is invalid
+	}
+}
+log.Printf("Verified ID token: %v\n", token)
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">try
+{
+    // Verify the ID token while checking if the token is revoked by passing checkRevoked
+    // as true.
+    bool checkRevoked = true;
+    var decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(
+        idToken, checkRevoked);
+    // Token is valid and not revoked.
+    string uid = decodedToken.Uid;
+}
+catch (FirebaseAuthException ex)
+{
+    if (ex.AuthErrorCode == AuthErrorCode.RevokedIdToken)
+    {
+        // Token has been revoked. Inform the user to re-authenticate or signOut() the user.
+    }
+    else
+    {
+        // Token is invalid.
+    }
+}
+
+</pre></section> </div> <h2 id="respond_to_token_revocation_on_the_client">Respond to token revocation on the client</h2> <p>If the token is revoked via the Admin SDK, the client is informed of the revocation and the user is expected to reauthenticate or is signed out:</p> 
+<pre>function onIdTokenRevocation() {
+  // For an email/password user. Prompt the user for the password again.
+  let password = prompt('Please provide your password for reauthentication');
+  let credential = firebase.auth.EmailAuthProvider.credential(
+      firebase.auth().currentUser.email, password);
+  firebase.auth().currentUser.reauthenticateWithCredential(credential)
+    .then(result =&gt; {
+      // User successfully reauthenticated. New ID tokens should be valid.
+    })
+    .catch(error =&gt; {
+      // An error occurred.
+    });
+}
+</pre> <h2 id="advanced_security_enforce_ip_address_restrictions">Advanced Security: Enforce IP address restrictions</h2> <p>A common security mechanism for detecting token theft is to keep track of request IP address origins. For example, if requests are always coming from the same IP address (server making the call), single IP address sessions can be enforced. Or, you might revoke a user's token if you detect that the user's IP address suddenly changed geolocation or you receive a request from a suspicious origin.</p> <p>To perform security checks based on IP address, for every authenticated request inspect the ID token and check if the request's IP address matches previous trusted IP addresses or is within a trusted range before allowing access to restricted data. For example:</p> 
+<pre>app.post('/getRestrictedData', (req, res) =&gt; {
+  // Get the ID token passed.
+  const idToken = req.body.idToken;
+  // Verify the ID token, check if revoked and decode its payload.
+  admin.auth().verifyIdToken(idToken, true).then((claims) =&gt; {
+    // Get the user's previous IP addresses, previously saved.
+    return getPreviousUserIpAddresses(claims.sub);
+  }).then(previousIpAddresses =&gt; {
+    // Get the request IP address.
+    const requestIpAddress = req.connection.remoteAddress;
+    // Check if the request IP address origin is suspicious relative to previous
+    // IP addresses. The current request timestamp and the auth_time of the ID
+    // token can provide additional signals of abuse especially if the IP address
+    // suddenly changed. If there was a sudden location change in a
+    // short period of time, then it will give stronger signals of possible abuse.
+    if (!isValidIpAddress(previousIpAddresses, requestIpAddress)) {
+      // Invalid IP address, take action quickly and revoke all user's refresh tokens.
+      revokeUserTokens(claims.uid).then(() =&gt; {
+        res.status(401).send({error: 'Unauthorized access. Please login again!'});
+      }, error =&gt; {
+        res.status(401).send({error: 'Unauthorized access. Please login again!'});
+      });
+    } else {
+      // Access is valid. Try to return data.
+      getData(claims).then(data =&gt; {
+        res.end(JSON.stringify(data);
+      }, error =&gt; {
+        res.status(500).send({ error: 'Server error!' })
+      });
+    }
+  });
+});
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/admin/manage-sessions" class="_attribution-link">https://firebase.google.com/docs/auth/admin/manage-sessions</a>
+  </p>
+</div>

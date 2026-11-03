@@ -1,0 +1,181 @@
+<h1>Authenticate Using Apple and C++</h1> <p>You can let your users authenticate with Firebase using their Apple ID by using the Firebase SDK to carry out the end-to-end OAuth 2.0 sign-in flow.</p> <aside> <p><b>Important</b>: To sign in with an Apple account, users must:</p> <ul> <li>Have an Apple ID with two-factor authentication (2FA) enabled.</li> <li>Be signed in to iCloud on an Apple device.</li> </ul> <p>See <a class="external" href="https://support.apple.com/en-us/HT210318">How to use Sign in with Apple</a>. You will also need to meet these requirements to test your integration with Sign In with Apple.</p> </aside> <h2 id="before-you-begin">Before you begin</h2>  <p>To sign in users using Apple, first configure Sign In with Apple on Apple's developer site, then enable Apple as a sign-in provider for your Firebase project.</p> <h3 id="join-the-apple-developer-program">Join the Apple Developer Program</h3> <p>Sign In with Apple can only be configured by members of the <a href="https://developer.apple.com/programs/">Apple Developer Program</a>.</p> <h3 id="configure-sign-in-with-apple">Configure Sign In with Apple</h3> Apple Sign In must be enabled and properly configured in your Firebase project. The configuration varies across Android and Apple platforms. Please follow the "Configure Sign In With Apple" section of the <a href="../ios/apple#configure-sign-in-with-apple">Apple platforms</a> and/or <a href="../android/apple#configure-sign-in-with-apple">Android</a> guides before proceeding. <h3 id="enable-apple-as-a-sign-in-provider">Enable Apple as a sign-in provider</h3> <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Apple</b> sign-in provider. </li>
+<li>Configure the Apple Sign-in provider settings: <ul> <li> <strong>Apple</strong>: If you're deploying your app only on Apple platforms, you can leave the Service ID, Apple Team ID, private key and key ID fields empty. </li> <li> <strong>Android</strong>: Complete the following to support Android devices: <ol> <li> <a href="../../android/setup">Add Firebase to your Android project</a>. </li> <li> Specify your app's SHA-1 fingerprint if you haven't already. <ol> <li> In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><b>General</b> tab</a>. </li> <li> Scroll down to the <b>Your apps</b> card, select your Android app, and add your SHA-1 fingerprint in the <b>SHA certificate fingerprints</b> field. </li> </ol> <p> See <a href="https://developers.google.com/android/guides/client-auth" class="external">Authenticating Your Client</a> for details on how to get your app's SHA fingerprint. </p> </li> <li> Configure the Apple Sign-in provider settings: <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, click the <b>Apple</b> sign-in provider. </li> <li> Specify the Service ID you created in the previous section. Also, in the OAuth code flow configuration section, specify your Apple Team ID and the private key and key ID you created in the previous section. </li> </ol> </li> </ol> </li> </ul> </li> </ol> <h2 id="comply-with-apple-anonymized-data-requirements">Comply with Apple anonymized data requirements</h2> <p>Sign In with Apple gives users the option of anonymizing their data, including their email address, when signing in. Users who choose this option have email addresses with the domain <code translate="no" dir="ltr">privaterelay.appleid.com</code>. When you use Sign In with Apple in your app, you must comply with any applicable developer policies or terms from Apple regarding these anonymized Apple IDs.</p> <p>This includes obtaining any required user consent before you associate any directly identifying personal information with an anonymized Apple ID. When using Firebase Authentication, this may include the following actions:</p> <ul> <li>Link an email address to an anonymized Apple ID or vice versa.</li> <li>Link a phone number to an anonymized Apple ID or vice versa</li> <li>Link a non-anonymous social credential (Facebook, Google, etc) to an anonymized Apple ID or vice versa.</li> </ul> <p>The above list is not exhaustive. Refer to the Apple Developer Program License Agreement in the Membership section of your developer account to make sure your app meets Apple's requirements.</p> <h2 id="access_the_firebaseauthauth_class">Access the <code translate="no" dir="ltr">firebase::auth::Auth</code> class</h2> The <code translate="no" dir="ltr">Auth</code> class is the gateway for all API calls. <ol> <li>Add the Auth and App header files: 
+<pre>#include &lt;cassert&gt;
+#include &lt;cinttypes&gt;
+#include &lt;cstdint&gt;
+
+#include "firebase/app.h"
+#include "firebase/auth.h"</pre> </li> <li>In your initialization code, create a <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/app"><code translate="no" dir="ltr">firebase::App</code></a> class. 
+<pre>#if defined(__ANDROID__)
+  firebase::App* app =
+      firebase::App::Create(firebase::AppOptions(), my_jni_env, my_activity);
+#else
+  firebase::App* app = firebase::App::Create(firebase::AppOptions());
+#endif  // defined(__ANDROID__)</pre> </li> <li>Acquire the <code translate="no" dir="ltr">firebase::auth::Auth</code> class for your <code translate="no" dir="ltr">firebase::App</code>. There is a one-to-one mapping between <code translate="no" dir="ltr">App</code> and <code translate="no" dir="ltr">Auth</code>. 
+<pre>firebase::auth::Auth* auth = firebase::auth::Auth::GetAuth(app);</pre> </li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>The process to Sign-in With Apple varies across Apple and Android platforms.</p> <h3 id="on-apple-platforms">On Apple platforms</h3> <p>Authenticate your users with Firebase via the Apple Sign In Objective-C SDK invoked from your C++ code.</p> <ol> <li>
+<p>For every sign-in request, generate a random string—a "nonce"—which you will use to make sure the ID token you get was granted specifically in response to your app's authentication request. This step is important to prevent replay attacks.</p> 
+<pre>  - (NSString *)randomNonce:(NSInteger)length {
+    NSAssert(length &gt; 0, @"Expected nonce to have positive length");
+    NSString *characterSet = @"0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._";
+    NSMutableString *result = [NSMutableString string];
+    NSInteger remainingLength = length;
+
+    while (remainingLength &gt; 0) {
+      NSMutableArray *randoms = [NSMutableArray arrayWithCapacity:16];
+      for (NSInteger i = 0; i &lt; 16; i++) {
+        uint8_t random = 0;
+        int errorCode = SecRandomCopyBytes(kSecRandomDefault, 1, &amp;random);
+        NSAssert(errorCode == errSecSuccess, @"Unable to generate nonce: OSStatus %i", errorCode);
+
+        [randoms addObject:@(random)];
+      }
+
+      for (NSNumber *random in randoms) {
+        if (remainingLength == 0) {
+          break;
+        }
+
+        if (random.unsignedIntValue &lt; characterSet.length) {
+          unichar character = [characterSet characterAtIndex:random.unsignedIntValue];
+          [result appendFormat:@"%C", character];
+          remainingLength--;
+        }
+      }
+    }
+  }
+
+</pre> <p>You will send the SHA256 hash of the nonce with your sign-in request, which Apple will pass unchanged in the response. Firebase validates the response by hashing the original nonce and comparing it to the value passed by Apple.</p>
+</li> <li>
+<p>Start Apple's sign-in flow, including in your request the SHA256 hash of the nonce and the delegate class that will handle Apple's response (see the next step):</p> 
+<pre>  - (void)startSignInWithAppleFlow {
+    NSString *nonce = [self randomNonce:32];
+    self.currentNonce = nonce;
+    ASAuthorizationAppleIDProvider *appleIDProvider = [[ASAuthorizationAppleIDProvider alloc] init];
+    ASAuthorizationAppleIDRequest *request = [appleIDProvider createRequest];
+    request.requestedScopes = @[ASAuthorizationScopeFullName, ASAuthorizationScopeEmail];
+    request.nonce = [self stringBySha256HashingString:nonce];
+
+    ASAuthorizationController *authorizationController =
+        [[ASAuthorizationController alloc] initWithAuthorizationRequests:@[request]];
+    authorizationController.delegate = self;
+    authorizationController.presentationContextProvider = self;
+    [authorizationController performRequests];
+  }
+
+  - (NSString *)stringBySha256HashingString:(NSString *)input {
+    const char *string = [input UTF8String];
+    unsigned char result[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256(string, (CC_LONG)strlen(string), result);
+
+    NSMutableString *hashed = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH * 2];
+    for (NSInteger i = 0; i &lt; CC_SHA256_DIGEST_LENGTH; i++) {
+      [hashed appendFormat:@"%02x", result[i]];
+    }
+    return hashed;
+  }
+</pre>
+</li> <li>
+<p>Handle Apple's response in your implementation of ASAuthorizationControllerDelegate`. If sign-in was successful, use the ID token from Apple's response with the unhashed nonce to authenticate with Firebase:</p> 
+<pre>  - (void)authorizationController:(ASAuthorizationController *)controller
+     didCompleteWithAuthorization:(ASAuthorization *)authorization API_AVAILABLE(ios(13.0)) {
+    if ([authorization.credential isKindOfClass:[ASAuthorizationAppleIDCredential class]]) {
+      ASAuthorizationAppleIDCredential *appleIDCredential = authorization.credential;
+      NSString *rawNonce = self.currentNonce;
+      NSAssert(rawNonce != nil, @"Invalid state: A login callback was received, but no login request was sent.");
+
+      if (appleIDCredential.identityToken == nil) {
+        NSLog(@"Unable to fetch identity token.");
+        return;
+      }
+
+      NSString *idToken = [[NSString alloc] initWithData:appleIDCredential.identityToken
+                                                encoding:NSUTF8StringEncoding];
+      if (idToken == nil) {
+        NSLog(@"Unable to serialize id token from data: %@", appleIDCredential.identityToken);
+      }
+    }
+</pre>
+</li> <li>
+<p>Use the resulting token string and original nonce to construct a Firebase Credential and sign into Firebase.</p> 
+<pre>firebase::auth::OAuthProvider::GetCredential(
+        /*provider_id=*/"apple.com", token, nonce,
+        /*access_token=*/nullptr);
+
+firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;SignInAndRetrieveDataWithCredential(credential);
+</pre>
+</li> <li>
+<p>The same pattern can be used with <code translate="no" dir="ltr">Reauthenticate</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    user-&gt;Reauthenticate(credential);
+</pre>
+</li> <li>
+<p>The same pattern can be used to link an account with Apple Sign In. However, you may encounter an error when an existing Firebase account has already been linked to the Apple account you're attempting to link against. When this occurs the future will return a status of <code translate="no" dir="ltr">kAuthErrorCredentialAlreadyInUse</code> and the <code translate="no" dir="ltr">AuthResult</code> may contain a valid <code translate="no" dir="ltr">credential</code>. This credential can be used to sign in the Apple-linked account via <code translate="no" dir="ltr">SignInAndRetrieveDataWithCredential</code> without the need to generate another Apple Sign In token and nonce.</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; link_result =
+    auth-&gt;current_user().LinkWithCredential(credential);
+
+// To keep example simple, wait on the current thread until call completes.
+while (link_result.status() == firebase::kFutureStatusPending) {
+  Wait(100);
+}
+
+// Determine the result of the link attempt
+if (link_result.error() == firebase::auth::kAuthErrorNone) {
+  // user linked correctly.
+} else if (link_result.error() ==
+               firebase::auth::kAuthErrorCredentialAlreadyInUse &amp;&amp;
+           link_result.result()
+               -&gt;additional_user_info.updated_credential.is_valid()) {
+  // Sign In with the new credential
+  firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+      auth-&gt;SignInAndRetrieveDataWithCredential(
+          link_result.result()-&gt;additional_user_info.updated_credential);
+} else {
+  // Another link error occurred.
+}</pre>
+</li> </ol> <h3 id="on-android">On Android</h3> <p>On Android, authenticate your users with Firebase by integrating web-based generic OAuth Login into your app using the Firebase SDK to carry out the end to end sign-in flow.</p> <p>To handle the sign-in flow with the Firebase SDK, follow these steps:</p> <ol> <li>
+<p>Construct an instance of a <code translate="no" dir="ltr">FederatedOAuthProviderData</code> configured with the provider ID appropriate for Apple.</p> 
+<pre>firebase::auth::FederatedOAuthProviderData provider_data("apple.com");
+</pre>
+</li> <li>
+<p><strong>Optional:</strong> Specify additional OAuth 2.0 scopes beyond the default that you want to request from the authentication provider.</p> 
+<pre>provider_data.scopes.push_back("email");
+provider_data.scopes.push_back("name");
+</pre>
+</li> <li>
+<p><strong>Optional:</strong> If you want to display Apple's sign-in screen in a language other than English, set the <code translate="no" dir="ltr">locale</code> parameter. See the <a href="https://developer.apple.com/documentation/signinwithapplejs/incorporating_sign_in_with_apple_into_other_platforms#3332112" class="external">Sign In with Apple docs</a> for the supported locales.</p> 
+<pre>// Localize to French.
+provider_data.custom_parameters["language"] = "fr";
+```
+</pre>
+</li> <li>
+<p>Once your provider data has been configured, use it to create a FederatedOAuthProvider.</p> 
+<pre>// Construct a FederatedOAuthProvider for use in Auth methods.
+firebase::auth::FederatedOAuthProvider provider(provider_data);
+</pre>
+</li> <li>
+<p>Authenticate with Firebase using the Auth provider object. Note that unlike other FirebaseAuth operations, this will take control of your UI by popping up a web view in which the user can enter their credentials.</p> <p>To start the sign in flow, call <code translate="no" dir="ltr">signInWithProvider</code>:</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+  auth-&gt;SignInWithProvider(provider_data);
+</pre> <p>Your application may then wait or <a href="#register_callback_on_future"> register a callback on the Future</a>.</p>
+</li> <li>
+<p>The same pattern can be used with <code translate="no" dir="ltr">ReauthenticateWithProvider</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+  user.ReauthenticateWithProvider(provider_data);
+</pre> <p>Your application may then wait or <a href="#register_callback_on_future">register a callback on the Future</a>.</p>
+</li> <li>
+<p>And, you can use <code translate="no" dir="ltr">LinkWithCredential()</code> to link different identity providers to existing accounts.</p> <p>Note that Apple requires you to get explicit consent from users before you link their Apple accounts to other data.</p> <p>For example, to link a Facebook account to the current Firebase account, use the access token you got from signing the user in to Facebook:</p> 
+<pre>// Initialize a Facebook credential with a Facebook access token.
+AuthCredential credential =
+    firebase::auth::FacebookAuthProvider.getCredential(token);
+
+// Assuming the current user is an Apple user linking a Facebook provider.
+firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth.current_user().LinkWithCredential(credential);
+</pre>
+</li> </ol> <h3 id="sign-in-with-apple-notes">Sign in with Apple Notes</h3> <p>Unlike other providers supported by Firebase Auth, Apple does not provide a photo URL.</p> <p>Also, when the user chooses not to share their email with the app, Apple provisions a unique email address for that user (of the form <code translate="no" dir="ltr">xyz@privaterelay.appleid.com</code>), which it shares with your app. If you configured the private email relay service, Apple forwards emails sent to the anonymized address to the user's real email address.</p> <p>Apple only shares user information such as the display name with apps the first time a user signs in. Usually, Firebase stores the display name the first time a user signs in with Apple, which you can get with <code translate="no" dir="ltr">current_user().display_name()</code>. However, if you previously used Apple to sign a user in to the app without using Firebase, Apple will not provide Firebase with the user's display name.</p> <h2 id="next-steps">Next steps</h2> After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. <p>In your apps, you can get the user's basic profile information from the <code translate="no" dir="ltr">firebase::auth::User</code> object. See <a href="manage-users">Manage Users</a>.</p> <p>In your Firebase Realtime Database and Cloud Storage Security Rules, you can get the signed-in user's unique user ID from the auth variable, and use it to control what data a user can access. </p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/cpp/apple" class="_attribution-link">https://firebase.google.com/docs/auth/cpp/apple</a>
+  </p>
+</div>

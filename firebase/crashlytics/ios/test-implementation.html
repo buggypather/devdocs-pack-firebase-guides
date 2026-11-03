@@ -1,0 +1,67 @@
+<h1>Test your Crashlytics implementation (Apple platforms)</h1>   <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button button-primary" href="test-implementation">iOS+</a> <a class="button" href="../android/test-implementation">Android</a> <a class="button" href="../flutter/test-implementation">Flutter</a> <a class="button" href="../unity/test-implementation">Unity</a> </td> </tr> </table> <p><br></p> <p>Use this guide if you've followed the <a href="get-started">getting started guide</a>, and you're still not seeing crashes in the Crashlytics dashboard.</p> <h2 id="force-test-crash">Force a crash to test your implementation</h2> <aside class="note"><strong>Note:</strong><span> Before forcing a crash, make sure that your app is configured to <a href="get-started#set-up-dsym-uploading">automatically upload dSYM files</a>.</span></aside><ol> <li>
+<p>Add code to your app that you can use to force a test crash.</p> <p>You can use the following code to add a button to your app that, when pressed, causes a crash. The button is labeled "Test Crash".</p>  <div> <section><p class="_firebase-tab"><strong>SwiftUI</strong></p>
+
+<pre data-language="">Button("Crash") {
+  fatalError("Crash was triggered")
+}</pre></section> <section><p class="_firebase-tab"><strong>UIKit</strong></p>
+<div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">import UIKit
+
+class ViewController: UIViewController {
+  override func viewDidLoad() {
+      super.viewDidLoad()
+
+      // Do any additional setup after loading the view, typically from a nib.
+
+      let button = UIButton(type: .roundedRect)
+      button.frame = CGRect(x: 20, y: 50, width: 100, height: 30)
+      button.setTitle("Test Crash", for: [])
+      button.addTarget(self, action: #selector(self.crashButtonTapped(_:)), for: .touchUpInside)
+      view.addSubview(button)
+  }
+
+  @IBAction func crashButtonTapped(_ sender: AnyObject) {
+      let numbers = [0]
+      let _ = numbers[1]
+  }
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">&amp;num;import "ViewController.h"
+
+@implementation ViewController
+&amp;hyphen; (void)viewDidLoad {
+    [super viewDidLoad];
+
+    // Do any additional setup after loading the view, typically from a nib.
+
+    UIButton* button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    button.frame = CGRectMake(20, 50, 100, 30);
+    [button setTitle:@"Test Crash" forState:UIControlStateNormal];
+    [button addTarget:self action:@selector(crashButtonTapped:)
+        forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:button];
+}
+
+&amp;hyphen; (IBAction)crashButtonTapped:(id)sender {
+    @[][1];
+}
+
+@end</pre></section> </div></section> </div>
+</li> <li>
+<p>Build and run your app in Xcode with the Xcode debugger disconnected.</p> <aside class="caution"><strong>The Xcode debugger prevents crash reports from being sent to Crashlytics.</strong> Complete the following steps to disconnect your test device or simulator from the Xcode debugger <strong><i>before</i></strong> forcing a crash. </aside> <ol> <li><p>Click <span class="material-icons" aria-hidden="true" translate="no">play_arrow</span><strong>Build and then run the current scheme</strong> to build your app on a test device or simulator.</p></li> <li><p>Wait until your app is running, then click <span class="material-icons" aria-hidden="true" translate="no">stop</span><strong>Stop running the scheme or action</strong> to close the initial instance of your app. This initial instance included the debugger that interferes with Crashlytics.</p></li> </ol>
+</li> <li>
+<p>Force the test crash in order to send your app's first crash report:</p> <ol> <li><p>Open your app from the home screen of your test device or simulator.</p></li> <li><p>In your app, press the "Test Crash" button that you added using the code above.</p></li> <li><p>After your app crashes, run it again from Xcode so that your app can send the crash report to Firebase.</p></li> </ol>
+</li> <li>
+<p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> to check for your test crash report.</p> <p>If you've refreshed the console and you're still not seeing the test crash after five minutes, try enabling debug logging (next section).</p>
+</li> </ol> <h2 id="enable-debug-logging">Enable debug logging for Crashlytics</h2> <p>If you don't see your test crash in the Crashlytics dashboard, you can use debug logging for Crashlytics to help track down the problem.</p> <ol> <li>
+<p>Enable debug logging:</p> <ol> <li><p>In Xcode, select <strong>Product &gt; Scheme &gt; Edit scheme</strong>.</p></li> <li><p>Select <strong>Run</strong> from the left menu, then select the <strong>Arguments</strong> tab.</p></li> <li><p>In the <em>Arguments Passed on Launch</em> section, add <code translate="no" dir="ltr">-FIRDebugEnabled</code>.</p></li> </ol>
+</li> <li><p>Force a test crash. The first section on this page describes how to do this.</p></li> <li>
+<p>Within your logs, search for a log message from Crashlytics that contains the following string, which verifies that your app is sending crashes to Firebase.</p> 
+<pre>Completed report submission</pre> <aside class="note">After confirming that your app is sending crashes, you can optionally disable debug logging by removing the <nobr><code translate="no" dir="ltr">-FIRDebugEnabled</code></nobr> from the arguments passed on launch. </aside>
+</li> </ol> <p>After five minutes, if you still don't see this log or your test crash in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console, reach out to <a href="https://firebase.google.com/support/troubleshooter/crashlytics/missing">Firebase Support</a> with a copy of your log output so that we can help you troubleshoot further.</p> <h2 id="next-steps">Next steps</h2> <ul> <li> <a href="customize-crash-reports">Customize your crash report setup</a> by adding opt-in reporting, logs, keys, and tracking of non-fatal errors. </li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/crashlytics/ios/test-implementation" class="_attribution-link">https://firebase.google.com/docs/crashlytics/ios/test-implementation</a>
+  </p>
+</div>

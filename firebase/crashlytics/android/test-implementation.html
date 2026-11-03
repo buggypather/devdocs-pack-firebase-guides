@@ -1,0 +1,46 @@
+<h1>Test your Crashlytics implementation (Android)</h1>   <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/test-implementation">iOS+</a> <a class="button button-primary" href="test-implementation">Android</a> <a class="button" href="../flutter/test-implementation">Flutter</a> <a class="button" href="../unity/test-implementation">Unity</a> </td> </tr> </table> <p><br></p> <p>Use this guide if you've followed the <a href="get-started">getting started guide</a>, and you're still not seeing crashes in the Crashlytics dashboard.</p> <h2 id="force-test-crash">Force a crash to test your implementation</h2> <ol> <li>
+<p>Add code to your app that you can use to force a test crash.</p> <p>You can use the following code in your app's <code translate="no" dir="ltr">MainActivity</code> to add a button to your app that, when pressed, causes a crash. The button is labeled "Test Crash".</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val crashButton = Button(this)
+crashButton.text = "Test Crash"
+crashButton.setOnClickListener {
+   throw RuntimeException("Test Crash") // Force a crash
+}
+
+addContentView(crashButton, ViewGroup.LayoutParams(
+       ViewGroup.LayoutParams.MATCH_PARENT,
+       ViewGroup.LayoutParams.WRAP_CONTENT))</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">Button crashButton = new Button(this);
+crashButton.setText("Test Crash");
+crashButton.setOnClickListener(new View.OnClickListener() {
+   public void onClick(View view) {
+       throw new RuntimeException("Test Crash"); // Force a crash
+   }
+});
+
+addContentView(crashButton, new ViewGroup.LayoutParams(
+       ViewGroup.LayoutParams.MATCH_PARENT,
+       ViewGroup.LayoutParams.WRAP_CONTENT));</pre></section> </div>
+</li> <li><p>Build and run your app.</p></li> <li>
+<p>Force the test crash in order to send your app's first crash report:</p> <ol> <li><p>Open your app from your test device or emulator.</p></li> <li><p>In your app, press the "Test Crash" button that you added using the code above.</p></li> <li><p>After your app crashes, restart it so that your app can send the crash report to Firebase.</p></li> </ol>
+</li> <li>
+<p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> to check for your test crash report.</p> <p>If you've refreshed the console and you're still not seeing the test crash after five minutes, try enabling debug logging (next section).</p>
+</li> </ol> <h2 id="enable-debug-logging">Enable debug logging for Crashlytics</h2> <p>If you don't see your test crash in the Crashlytics dashboard, you can use debug logging for Crashlytics to help track down the problem.</p> <ol> <li>
+<p>Enable and view debug logging for Crashlytics:</p> <ol> <li>
+<p>Before running your app, set the following <code translate="no" dir="ltr">adb</code> shell flag to <code translate="no" dir="ltr">DEBUG</code>:</p> 
+<pre>adb shell setprop log.tag.FirebaseCrashlytics DEBUG</pre>
+</li> <li>
+<p>View the logs in your device logs by running the following command:</p> 
+<pre>adb logcat -s FirebaseCrashlytics</pre>
+</li> </ol>
+</li> <li><p>Force a test crash. The first section on this page describes how to do this.</p></li> <li>
+<p>Look for the following message or code <code translate="no" dir="ltr">204</code> in your logcat output, either of which verifies that your app is sending crashes to Firebase.</p> 
+<pre>Crashlytics report upload complete</pre> <aside class="note">After confirming that your app is sending crashes, you can optionally disable debug logging by setting the <code translate="no" dir="ltr">adb</code> shell flag back to <code translate="no" dir="ltr">INFO</code>: 
+<pre>adb shell setprop log.tag.FirebaseCrashlytics INFO</pre> </aside>
+</li> </ol> <p>After five minutes, if you still don't see this log or your test crash in the <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/crashlytics" class="link external gc-analytics-event" data-category="console" data-action="linkClick"><b>Crashlytics</b> dashboard</a> of the Firebase console, reach out to <a href="https://firebase.google.com/support/troubleshooter/crashlytics/missing">Firebase Support</a> with a copy of your log output so that we can help you troubleshoot further.</p> <h2 id="next-steps">Next steps</h2> <ul> <li> <a href="customize-crash-reports">Customize your crash report setup</a> by adding opt-in reporting, logs, keys, and tracking of non-fatal errors. </li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/crashlytics/android/test-implementation" class="_attribution-link">https://firebase.google.com/docs/crashlytics/android/test-implementation</a>
+  </p>
+</div>

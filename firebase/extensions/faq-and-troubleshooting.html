@@ -1,0 +1,131 @@
+<h1>Firebase Extensions Deprecation FAQ</h1> <p>The Firebase Extensions service is deprecated and will shut down on March 31, 2027. While already-installed extensions will execute indefinitely, key management features will no longer be available after this date. Additional migration guidance and tools will be released in September 2026.</p> <h2 id="deprecation-overview">Deprecation overview</h2> 
+<div class="expandable" id="why-deprecating"> <h4 class="showalways" id="why-deprecating"> Why are we deprecating Firebase Extensions? </h4> <p>Due to upcoming changes and deprecations within our underlying Google Cloud infrastructure, we will be sunsetting the managed Firebase Extensions service.</p> 
+</div> 
+<div class="expandable" id="will-extensions-stop"> <h4 class="showalways" id="will-extensions-stop"> Will existing deployed extensions stop working after March 31, 2027? </h4> <p>No. Already deployed extensions run directly on standard Google Cloud infrastructure (such as Cloud Functions, Eventarc, Cloud Run, and Cloud Tasks) and will continue to execute indefinitely.</p> <p>However, after March 31, 2027, you will lose all ability to update, reconfigure, or uninstall these extensions through the Firebase console or CLI. You will also lose the ability to download your existing extension configurations to aid in migrating to a function kit. We strongly recommend migrating or exporting extension configuration by March 31, 2027.</p> 
+</div> 
+<div class="expandable" id="what-if-do-nothing"> <h4 class="showalways" id="what-if-do-nothing"> What happens if a user does nothing? </h4> <p>If a user takes no action, their existing deployed functions will continue to run as standard assets. However after March 31, 2027:</p> <ol> <li>They cannot change configuration parameters or update environment variables.</li> <li>They cannot apply bug fixes, security patches, or dependency upgrades.</li> <li>They cannot download extension configuration to help identically configure a replacement function kit.</li> <li>Most extensions are currently built on the legacy Cloud Functions v1 SDK, which is tied to older Node.js runtimes. Once these legacy runtimes are fully decommissioned by Google Cloud, the functions may stop running or be disabled. See <a href="https://docs.cloud.google.com/functions/docs/runtime-support">Runtime support</a>.</li> </ol> 
+</div> 
+<div class="expandable" id="is-anything-replacing"> <h4 class="showalways" id="is-anything-replacing"> Is anything replacing Firebase Extensions? </h4> <p>We have added many features to Cloud Functions to make them capable of replacing extensions. Most notably function kits which can be distributed using npm and lets you deploy multiple instances of functions, similar to how you could install extensions multiple times in a single project.</p> <p>However, it is up to each extension publisher to determine if they want to publish an official function kit replacement on npm. Since extensions are open source, if the publisher doesn't want to make an official replacement, any developer can fork it to make an unofficial replacement with Cloud Functions using our 2nd gen APIs in the Node SDK.</p> <p>Publishers wishing to make a replacement should follow the instructions in the <a href="publishers/migrate">migration guide for publishers</a>.</p> <p>Users wanting to take advantage of official replacement packages or create their own replacements can follow the instructions in the <a href="users/migrate">migration guide for users</a>.</p> 
+</div> 
+<div class="expandable" id="users-todo"> <h4 class="showalways" id="users-todo"> What should I do as an extension user? </h4> <p>If you're an extension user and no longer use your installed extensions, <a href="manage-installed-extensions#uninstall">uninstall</a> them before March 31, 2027.</p> <p>Post-decommissioning, the "Uninstall" button in the Firebase console and corresponding CLI commands will be removed. You must manually delete all associated Google Cloud resources, including the individual Cloud Functions, Secret Manager secrets, Cloud Tasks queues, and custom IAM service accounts, using the Google Cloud console.</p> <p>However, if you actively use your installed extensions, we strongly recommend migrating to function kits. To move to function kits, use the instructions in our <a href="users/migrate">migration guide for users</a>.</p> <p>You can choose to not migrate to function kits, and in that case we highly recommend that you <a href="manage-installed-extensions#update-version">update</a> all of your extensions to their latest versions, keep them updated, and export your <a href="migration-best-practices#saving-config-for-future-migration">existing extension configurations</a> in case you want to migrate later.</p> 
+</div> 
+<div class="expandable" id="publishers-todo"> <h4 class="showalways" id="publishers-todo"> What should I do as an extension publisher? </h4> <p>We encourage you to migrate your published extensions to function kits published on npm. You can start by migrating your extension to 2nd gen functions, which is a prerequisite for creating a function kit. This involves packaging your extension logic using the Cloud Functions v2 SDK. We've updated the Cloud Functions v2 SDK with support for features like declarative security and lifecycle events. You can now migrate your existing extension code to a 2nd gen function with minimal changes to your core business logic. These functions can be published using an npm package. For details, see our <a href="publishers/migrate">migration guide for publishers</a>.</p> 
+</div> 
+<div class="expandable" id="other-questions"> <h4 class="showalways" id="other-questions"> What if I have other questions? </h4> <p>Users who have questions can use our <a href="users/migrate">user migration guide</a>. If you still have questions after using the guide, you can reach out to <a href="https://firebase.google.com/support/troubleshooter/contact">Firebase Support</a>.</p> <p>Publishers who have questions on how to migrate Firebase Extensions can use our <a href="publishers/migrate">migration guide for publishers</a>. This guide includes instructions on how you can stay informed on updates and get help with providing an alternative to your published extensions.</p> 
+</div> <h2 id="migration-execution">Migration options and technical execution</h2> 
+<div class="expandable" id="primary-migration-paths"> <h4 class="showalways" id="primary-migration-paths"> What are the primary migration paths available? </h4> <p>Starting in September 2026, Firebase officially supports two primary migration pathways:</p> <ol> <li>
+<strong>Migrate to an NPM-Shared Function ("function kit")</strong>: Recommended for Stream Firestore to BigQuery and any other function kits that become available on npm. The core logic is packaged as a standard NPM library using the Cloud Functions v2 SDK. Users initialize a standard Cloud Functions codebase, install the package, re-export the functions, and deploy them independently using the CLI.</li> <li>
+<strong>Fork and Self-Manage</strong>: Recommended for all extensions that don't have a function kit available on npm. Users copy or fork the open-source extension source code, refactor the triggers into standard Firebase v2 Functions using best-effort AI migration skills or manual guides, and take full ownership of the codebase and its ongoing maintenance.</li> </ol> 
+</div> 
+<div class="expandable" id="first-party-npm-migrations"> <h4 class="showalways" id="first-party-npm-migrations"> Which extensions are being migrated to function kits? </h4> <p>The <a href="https://extensions.dev/extensions/firebase/firestore-bigquery-export">Stream Firestore to BigQuery</a> extension has been migrated to a function kit available as the npm package <code translate="no" dir="ltr">@firebase-function-kits/firestore-bigquery-export</code>.</p> 
+</div> 
+<div class="expandable" id="v1-to-v2-upgrade-requirement"> <h4 class="showalways" id="v1-to-v2-upgrade-requirement"> Why does the migration require upgrading from Cloud Functions v1 to v2? </h4> <p>Cloud Functions v1 standard support ends with the Node.js 22 runtime. To prevent a "double migration" where developers migrate off Firebase Extensions only to be forced into a second manual refactoring when legacy runtimes sunset, Firebase strongly recommends upgrading all migrated functions to the v2 SDK immediately during this transition, and it is required for function kits.</p> <p>As an Extensions user, you can also create your own function kits using the <a href="users/migrate-self-created">user migration guide</a>.</p> 
+</div> <h2 id="billing-pricing">Billing and pricing</h2> 
+<div class="expandable" id="billing-changes"> <h4 class="showalways" id="billing-changes"> Will migrating to self-managed Cloud Functions change a customer's billing? </h4> <p>Generally, no. Deployed extensions already charge customers for the underlying Google Cloud resources they consume, such as Cloud Functions invocations, Cloud Storage, or BigQuery storage and queries. However, during the migration window, customers may incur a small, temporary additional cost if they run both the legacy Firebase Extensions and their newly deployed replacement function in parallel to ensure a safe cutover.</p> 
+</div> 
+<div class="expandable" id="enterprise-mandiant-billing"> <h4 class="showalways" id="enterprise-mandiant-billing"> How is billing handled for Mandiant or other specialized enterprise accounts? </h4> <p>This deprecation is a platform-wide change affecting all Firebase and Google Cloud projects. Standard billing and subscription arrangements are unaffected. If customers request SLA credits due to deprecation downtime or run into complex billing exceptions, escalate the case directly through normal billing support channels.</p> 
+</div> <h2 id="troubleshooting-mitigation">Troubleshooting and risk mitigation</h2> 
+<div class="expandable" id="data-loss-downtime-risks"> <h4 class="showalways" id="data-loss-downtime-risks"> What is the risk of data loss or service downtime during migration? </h4> <p>Transitioning managed resources to self-managed codebases runs a minor risk of service interruption or event loss.</p> <ul> <li>
+<strong>Trigger Disruption</strong>: If old triggers are deleted before new ones are active, a gap is created where events (e.g., Cloud Firestore document writes) are missed and permanently lost. We recommend deploying the replacement kit and validating it before removing the extension to avoid any data loss.</li> <li>
+<strong>Permission Gaps</strong>: If the newly deployed codebase lacks necessary IAM permissions, operations, like writing to BigQuery, will fail silently or crash at runtime. We've added declarative security for functions, so the first kit deploy done by an account that can query and set roles and generate a service account should mitigate this problem.</li> </ul> 
+</div> 
+<div class="expandable" id="prevent-bigquery-data-loss"> <h4 class="showalways" id="prevent-bigquery-data-loss"> How do we prevent data loss for the critical Cloud Firestore-to-BigQuery Export extension? </h4> <p>To achieve a safe, zero-data-loss transition, support must advise users to follow an <strong>overlap-based cutover</strong> rather than a gap-based one. This is the default with the migration to kits:</p> <ol> <li>Deploy the replacement function kit while the extension is still installed and running. Wait a few minutes for Eventarc to fully provision.</li> <li>Write a test document to the watched Cloud Firestore collection and verify that the new self-managed function successfully writes a corresponding row to the BigQuery changelog table (carrying a new event ID).</li> <li>Once the new deployment is confirmed working, immediately uninstall or disable the legacy extension to terminate the double-writing behavior.</li> <li>Keep the overlap window as short as possible to minimize the cost of duplicate processing of each write and the possibility of duplicate rows in the raw BigQuery changelog.</li> <li>In most cases the Raw Changelog Table (<code translate="no" dir="ltr">*_raw_changelog</code>) will deduplicate by <code translate="no" dir="ltr">insertID</code> and even in the cases where you get duplicate rows in the changelog the latest view of the table (<code translate="no" dir="ltr">*_raw_latest</code>) will be correct.</li> </ol> <p>More information on migrating this extension in particular and on how to recover from any data loss is detailed in the <a href="https://github.com/firebase/extensions/tree/kits/kits/firestore-bigquery-export#migrating-from-the-extension">kit's README.md</a>.</p> 
+</div> 
+<div class="expandable" id="lifecycle-provisioning-failure"> <h4 class="showalways" id="lifecycle-provisioning-failure"> What should I do if the lifecycle provisioning step fails? </h4> <p>Under the managed service, setup tasks (such as creating BigQuery datasets, tables, and views) were handled automatically. Under the self-managed NPM model, these are triggered using a lifecycle task queue function; for example, in <code translate="no" dir="ltr">firestore-bigquery-export</code> this is called <code translate="no" dir="ltr">initBigQuerySync</code>.</p> <p>If this step fails or doesn't run automatically:</p> <ol> <li>
+<p>Verify that the Cloud Functions runtime service account has been granted the required IAM roles. For example, for <code translate="no" dir="ltr">firestore-bigquery-export</code> this includes:</p> <ul> <li>To create resources and insert rows: <code translate="no" dir="ltr">roles/bigquery.dataEditor</code>
+</li> <li>To run jobs and build views: <code translate="no" dir="ltr">roles/bigquery.user</code>
+</li> <li>To enqueue the provisioning task: <code translate="no" dir="ltr">roles/cloudtasks.enqueuer</code>
+</li> </ul>
+</li> <li><p>Confirm that the caller has <code translate="no" dir="ltr">roles/cloudtasks.enqueuer</code> permissions.</p></li> <li>
+<p>Manually rerun the lifecycle initialization command using the CLI:</p> 
+<pre>firebase functions:lifecycle:run afterInstall KIT_INSTANCE_ID
+</pre>
+</li> <li><p>Check the Cloud Logging logs for both the trigger function and the task queue execution to diagnose any permission or configuration errors.</p></li> </ol> 
+</div> 
+<div class="expandable" id="secret-manager-migration"> <h4 class="showalways" id="secret-manager-migration"> How are Secret Manager credentials migrated? </h4> <p>Under the managed model, Secret Manager resources were automatically bound to the extension instances. When you use the <code translate="no" dir="ltr">ext:migrate</code> or <code translate="no" dir="ltr">ext:export
+--mode functions</code> commands to export your extensions configuration to a function kit, we stop extensions from managing these secrets so they stay in your project after the extension is uninstalled. If you want to remove these secrets in the future, you must do so manually in the Google Cloud console.</p> 
+</div> 
+<div class="expandable" id="multiple-instances-migration"> <h4 class="showalways" id="multiple-instances-migration"> What if a user wants to run multiple instances of a migrated extension? </h4> <p>We introduced function kits as a way to support multiple instances of a function similar to how you could have multiple versions of an extension. Each kit will get a unique kit instance ID, which is similar to a codebase and can be used interchangeably with codebases in CLI commands. When deployed, all functions in a kit instance will be prefixed with <code translate="no" dir="ltr">kit-&lt;instance-id&gt;-</code> to ensure every function has a unique name, similar to the <code translate="no" dir="ltr">ext-&lt;extension-instance-id&gt;-</code> prefix in extensions. To learn more about how to use function kits as part of migrating, see our <a href="users/migrate">user migration guide</a>.</p> 
+</div> 
+<div class="expandable" id="using-other-package-managers"> <h4 class="showalways" id="using-other-package-managers"> Kit install uses npm; what if I want to use Yarn or another Node-compatible package manager? </h4> <p>We don't currently have plans to support Yarn or other package managers. The kit install works by directly executing npm commands when setting up the kit source code on first install.</p> <p>As an alternative, you can create a source directory, install the kit npm package yourself, and set it up with appropriate builds and exports. Refer to our TypeScript <a href="https://github.com/firebase/firebase-tools/tree/main/templates/init/functions/typescript"><code translate="no" dir="ltr">index-kit</code> templates in <code translate="no" dir="ltr">firebase-tools</code></a> or look at an npm-installed kit as an example. Once you do this, you can install it like a local kit using <code translate="no" dir="ltr">--directory</code> rather than <code translate="no" dir="ltr">--package</code>. Going forward, you'll need to identify the kit by directory or ID, but you can use the kit commands to add and remove instances.</p> 
+</div> 
+<div class="expandable" id="docker-or-kms-workaround"> <h4 class="showalways" id="docker-or-kms-workaround"> My extension uses the Docker repository or KMS key advanced system parameters; how can I configure this in function kits? </h4> <p>Currently, we don't support configuring a Docker repository or KMS key in Cloud Functions for Firebase. If you're migrating from an extension with these system parameters configured and want to preserve this functionality, you can apply the parameters to your new kit's functions using the gcloud CLI.</p> <p><strong>Prerequisites</strong></p> <ol> <li>Deploy your function kit initially following the migration guides so that the functions exist in Google Cloud.</li> <li>
+<p>Define your environment variables in your terminal:</p> 
+<pre>export PROJECT_ID="YOUR_PROJECT_ID"
+export FUNCTION_REGION="YOUR_REGION"          # e.g. us-east1
+export KIT_NAME="YOUR_KIT_NAME"                # e.g. firestore-bigquery-export
+export SOURCE_DIR="YOUR_KIT_SOURCE_DIR"       # e.g. "./function-kits/${KIT_NAME}/source"
+export REPO_NAME="YOUR_DOCKER_REPO_NAME"
+export KEY_RING="YOUR_KMS_KEY_RING"
+export KEY_NAME="YOUR_KMS_KEY_NAME"
+
+# Retrieve Project Number automatically
+export PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+</pre>
+</li> <li>
+<p>Pre-create <code translate="no" dir="ltr">.gcloudignore</code> in the kit's source root so compiled build files aren't ignored by <code translate="no" dir="ltr">.gitignore</code>:</p> 
+<pre>cat &lt;&lt; 'EOF' &gt; "${SOURCE_DIR}/.gcloudignore"
+.gcloudignore
+.git
+.gitignore
+
+node_modules
+#!include:.gitignore
+!lib/**
+EOF
+</pre>
+</li> <li>
+<p>Grant required IAM permissions:</p> <ul> <li>
+<p>For KMS keys (grants decryption access to the service agents):</p> 
+<pre>for SERVICE_ACCOUNT in \
+  "service-${PROJECT_NUMBER}@serverless-robot-prod.iam.gserviceaccount.com" \
+  "service-${PROJECT_NUMBER}@gcf-admin-robot.iam.gserviceaccount.com" \
+  "service-${PROJECT_NUMBER}@gcp-sa-artifactregistry.iam.gserviceaccount.com"
+do
+  gcloud kms keys add-iam-policy-binding "$KEY_NAME" \
+    --keyring="$KEY_RING" \
+    --location="$FUNCTION_REGION" \
+    --project="$PROJECT_ID" \
+    --member="serviceAccount:${SERVICE_ACCOUNT}" \
+    --role="roles/cloudkms.cryptoKeyEncrypterDecrypter"
+done
+</pre>
+</li> <li>
+<p>For Artifact Registry (grants write access to Cloud Build and read access to Cloud Run):</p> 
+<pre># Grant the Cloud Build / Compute Service Account permission to write images to the repository
+gcloud artifacts repositories add-iam-policy-binding "$REPO_NAME" \
+  --location="$FUNCTION_REGION" \
+  --project="$PROJECT_ID" \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/artifactregistry.writer"
+
+# Grant Cloud Run permission to pull images from the repository
+gcloud artifacts repositories add-iam-policy-binding "$REPO_NAME" \
+  --location="$FUNCTION_REGION" \
+  --project="$PROJECT_ID" \
+  --member="serviceAccount:service-${PROJECT_NUMBER}@serverless-robot-prod.iam.gserviceaccount.com" \
+  --role="roles/artifactregistry.reader"
+</pre>
+</li> </ul>
+</li> </ol> <p><strong>Applying the settings using the gcloud CLI</strong></p> <p>Run <code translate="no" dir="ltr">gcloud functions deploy</code> for each function in your kit:</p> 
+<pre>gcloud functions deploy FUNCTION_NAME \
+  --project="$PROJECT_ID" \
+  --region="$FUNCTION_REGION" \
+  --source="./function-kits/${KIT_NAME}/source" \
+  --docker-repository="projects/${PROJECT_ID}/locations/${FUNCTION_REGION}/repositories/${REPO_NAME}" \
+  --kms-key="projects/${PROJECT_ID}/locations/${FUNCTION_REGION}/keyRings/${KEY_RING}/cryptoKeys/${KEY_NAME}"
+</pre> <p>Note that this workaround breaks under the following conditions:</p> <ol> <li>
+<strong>New kit instances</strong>: Adding an instance in <code translate="no" dir="ltr">firebase.json</code> creates a new Cloud Functions v2 resource that defaults to Google-managed keys and <code translate="no" dir="ltr">gcf-artifacts</code>. You must run <code translate="no" dir="ltr">gcloud</code> for each new instance.</li> <li>
+<strong>Function recreation</strong>: Changing a trigger type (for example, from HTTPS to a Cloud Firestore trigger), altering the entry point, or renaming causes the Firebase CLI to delete the old function and create a new one. The new function loses these settings until you run <code translate="no" dir="ltr">gcloud</code> again.</li> <li>
+<strong>Configuration drift</strong>: The Firebase CLI doesn't display KMS or Docker repository status in <code translate="no" dir="ltr">firebase functions:list</code> or diff logs, which makes infrastructure auditing difficult.</li> </ol> <p><strong>Verifying success</strong></p> <p>To confirm the repository and encryption key were applied, run the following command:</p> 
+<pre>gcloud functions describe FUNCTION_NAME \
+  --region="$FUNCTION_REGION" \
+  --project="$PROJECT_ID" \
+  --format="yaml(state, buildConfig.dockerRepository, kmsKeyName)"
+</pre> 
+</div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/faq-and-troubleshooting" class="_attribution-link">https://firebase.google.com/docs/extensions/faq-and-troubleshooting</a>
+  </p>
+</div>

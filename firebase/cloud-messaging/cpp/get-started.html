@@ -1,0 +1,143 @@
+<h1>Get started with Firebase Cloud Messaging in C++ apps</h1>     <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/get-started">iOS+</a> <a class="button" href="../android/get-started">Android</a> <a class="button" href="../web/get-started">Web</a> <a class="button" href="../flutter/get-started">Flutter</a> <a class="button" href="../unity/get-started">Unity</a> <a class="button button-primary" href="get-started">C++</a> </td> </tr> </table> <p><br></p> <p>This guide describes how to get started with Firebase Cloud Messaging in your C++ client apps so that you can reliably send messages.</p> <p>To write your cross-platform Firebase Cloud Messaging client app with C++, use the <a href="https://firebase.google.com/docs/reference/cpp/namespace/firebase/messaging">Firebase Cloud Messaging</a> API. The C++ SDK works for both Android and Apple platforms, with some additional setup required for each platform. To learn more about how the C++ SDK for iOS and Android works with FCM, see <a href="../../cpp/learn-more">Understand Firebase for C++</a>.</p> <h2 id="setup-firebase-and-fcm-sdk">Set up Firebase and the FCM SDK</h2> <div> <section><p class="_firebase-tab"><strong>Android</strong></p>
+<ol> <li>
+<p>If you haven't already, <a href="../../cpp/setup">add Firebase to your C++ project</a>.</p> <ul> <li><p>In the linked setup instructions, review the device and app requirements for using the Firebase C++ SDK, including the recommendation to use CMake to build your app.</p></li> <li><p>In your project-level <code translate="no" dir="ltr">build.gradle</code> file, make sure to include Google's Maven repository in both your <code translate="no" dir="ltr">buildscript</code> and <code translate="no" dir="ltr">allprojects</code> sections.</p></li> </ul> <aside class="special"><strong>Important:</strong><span> Make sure to add the <strong><code translate="no" dir="ltr">firebase_messaging</code></strong> library to your <code translate="no" dir="ltr">CMakeLists.txt</code> file.</span></aside>
+</li> <li>
+<p>Create a Firebase App object, passing in the JNI environment and Activity: </p>
+
+<pre data-language="java">app = ::firebase::App::Create(::firebase::AppOptions(), jni_env, activity);</pre>
+</li> <li><p>Define a class that implements the <code translate="no" dir="ltr">firebase::messaging::Listener</code> interface.</p></li> <li>
+<p>Initialize FCM, passing in the App and a constructed Listener: </p>
+
+<pre data-language="java">::firebase::messaging::Initialize(app, listener);</pre>
+</li> <li><p>Apps that rely on the Google Play services SDK should check the device for a compatible Google Play services APK before accessing the features. To learn more, refer to <a href="../android/get-started#check-google-play-services">Check for Google Play services APK</a>.</p></li> </ol></section> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+<ol> <li>If you haven't already, <a href="../../cpp/setup">add Firebase to your C++ project</a>. Then, to set up your project for FCM: <ol> <li>Use Swift Package Manager to add the <code translate="no" dir="ltr">FirebaseMessaging</code> library (version <code translate="no" dir="ltr">13.1.1</code>) from the <code translate="no" dir="ltr">https://github.com/firebase/firebase-ios-sdk.git</code> repository to your Xcode project.</li> <li>Drag <code translate="no" dir="ltr">firebase.xcframework</code> and <code translate="no" dir="ltr">firebase_messaging.xcframework</code> into your Xcode project from the <code translate="no" dir="ltr">xcframeworks</code> directory of the <a href="https://firebase.google.com/download/cpp">Firebase C++ SDK</a>.</li> </ol>
+</li> <li>
+<p> Upload your APNs authentication key to Firebase. If you don't already have an APNs authentication key, make sure to create one in the <a href="https://developer.apple.com/membercenter/index.action" class="external">Apple Developer Member Center</a>. </p> <ol> <li> In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <b>General</b>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><b>Cloud Messaging</b> tab</a>. </li> <li> In <b>APNs authentication key</b> under <b>iOS app configuration</b>, click <b>Upload</b> to upload your development authentication key, or production authentication key, or both. At least one is required. </li> <li> Browse to the location where you saved your key, select it, and click <b>Open</b>. Add the key ID for the key (available in the <a href="https://developer.apple.com/membercenter/index.action" class="external">Apple Developer Member Center</a>) and click <b>Upload</b>. </li> </ol>
+</li> <li>
+<p>Configure your Xcode project to enable Push Notifications:</p> <ol> <li>Select the project from the <strong>Navigator area</strong>.</li> <li>Select the project target from the <strong>Editor area</strong>.</li> <li>
+<p>Select the <strong>General</strong> tab from the <strong>Editor area</strong>.</p> <ol> <li>Scroll to <strong>Linked Frameworks and Libraries</strong>, then click the <strong>+</strong> button to add frameworks.</li> <li>
+<p>In the window that appears, scroll to <strong>UserNotifications.framework</strong>, click the entry, then click <strong>Add</strong>.</p> <p>This framework only appears in Xcode v8 and later and is required by this library.</p>
+</li> </ol>
+</li> <li>
+<p>Select the <strong>Capabilities</strong> tab from the <strong>Editor area</strong>.</p> <ol> <li>Switch <strong>Push Notifications</strong> to <strong>On</strong>.</li> <li>Scroll to <strong>Background Modes</strong>, then switch it to <strong>On</strong>.</li> <li>Select <strong>Remote notifications</strong> under <strong>Background Modes</strong>.</li> </ol>
+</li> </ol>
+</li> <li>
+<p>Create a Firebase App object: </p>
+
+<pre data-language="">app = ::firebase::App::Create(::firebase::AppOptions());</pre>
+</li> <li><p>Define a class that implements the <code translate="no" dir="ltr">firebase::messaging::Listener</code> interface.</p></li> <li>
+<p>Initialize Firebase Cloud Messaging, passing in the App and a constructed Listener: </p>
+
+<pre data-language="">::firebase::messaging::Initialize(app, listener);</pre>
+</li> </ol></section> </div> <h2 id="access-firebase-installation-id">Access the Firebase Installation ID</h2> <aside class="note"><strong>Note:</strong><span> Firebase Cloud Messaging is transitioning from FCM registration tokens to <a href="../../projects/manage-installations">Firebase Installation IDs (FIDs)</a> for targeting individual app instances.</span></aside> <h3 id="enable-fid-registration">Enable registration using Firebase Installation ID</h3> <p>To enable registering your app instance with FCM using the <a href="../../projects/manage-installations">Firebase Installation ID (FID)</a>, you must first enable FIDs in your app's configuration for both Android and Apple platforms:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Android</strong></p> <p>Add the following <code translate="no" dir="ltr">&lt;meta-data&gt;</code> element inside the <code translate="no" dir="ltr">&lt;application&gt;</code> element of your <code translate="no" dir="ltr">AndroidManifest.xml</code>:</p> 
+<pre data-language="java">&lt;meta-data android:name="firebase_messaging_installation_id_enabled"
+           android:value="true" /&gt;</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <p>Add the <code translate="no" dir="ltr">FirebaseMessagingInstallationIdEnabled</code> key to your <code translate="no" dir="ltr">Info.plist</code> and set it to <code translate="no" dir="ltr">YES</code>:</p> 
+<pre data-language="swift">FirebaseMessagingInstallationIdEnabled = YES</pre> </section> </div> <h3 id="implement-listener">Implement the <code translate="no" dir="ltr">onRegistrationReceived</code> Listener</h3> <p>When initializing the Firebase Cloud Messaging library, it registers the client app instance for receiving messages using a <a href="../../projects/manage-installations">Firebase Installation ID (FID)</a>. The app will receive the FID with the <code translate="no" dir="ltr">OnRegistrationReceived</code> callback, which should be defined in your <code translate="no" dir="ltr">firebase::messaging::Listener</code> implementation:</p> 
+<pre>class MyListener : public firebase::messaging::Listener {
+ public:
+  void OnRegistrationReceived(const char* installation_id) override {
+    LogMessage("Received Firebase Installation ID: %s", installation_id);
+    // TODO: Send the Firebase Installation ID (FID) to your app server to
+    // target this device for messages.
+  }
+};</pre> <p>If you want to target that specific app instance, send the FID to your app server and store it using your preferred method.</p> <h3 id="manually-register-when-auto-initialization-is-disabled">Manually register when auto initialization is disabled</h3> <p>You can also manually trigger registration with FCM at runtime using <code translate="no" dir="ltr">Register()</code>:</p> 
+<pre>// Manually register with FCM
+firebase::Future&lt;void&gt; register_future = firebase::messaging::Register();
+register_future.OnCompletion([](const firebase::Future&lt;void&gt;&amp; future) {
+  if (future.status() == firebase::kFutureStatusComplete &amp;&amp;
+      future.error() == 0) {
+    // Note: The registered Firebase Installation ID is delivered to the
+    // OnRegistrationReceived callback.
+    LogMessage("Registered with FCM");
+  }
+});</pre> <h2 id="access-fcm-registration-token">Access the FCM registration token (deprecated)</h2> <aside class="caution"><strong>Caution:</strong><span> This feature is deprecated. Use <a href="#access-firebase-installation-id">Firebase Installation IDs</a>, as this method will be removed in a future release.</span></aside> <p>Upon initializing the Firebase Cloud Messaging library, a registration token is requested for the client app instance. The app will receive the token with the <code translate="no" dir="ltr">OnTokenReceived</code> callback, which should be defined in the class that implements <code translate="no" dir="ltr">firebase::messaging::Listener</code>.</p> <p>If you want to target that specific app instance, you'll need access to this token.</p> <h2 id="message-delivery-on-android">Note about message delivery on Android</h2> <p>When the app is not running at all and a user taps on a notification, the message is not, by default, routed through FCM's built in callbacks. In this case, message payloads are received through an <code translate="no" dir="ltr">Intent</code> used to start the application. To have FCM forward these incoming messages to the C++ library callback, you need to override the method <code translate="no" dir="ltr">onNewIntent</code> in your Activity and pass the <code translate="no" dir="ltr">Intent</code> to the <code translate="no" dir="ltr">MessageForwardingService</code>.</p> 
+<pre>import com.google.firebase.messaging.MessageForwardingService;
+
+class MyActivity extends Activity {
+  private static final String TAG = "MyActvity";
+
+  @Override
+  protected void onNewIntent(Intent intent) {
+    Log.d(TAG, "A message was sent to this app while it was in the background.");
+    Intent message = new Intent(this, MessageForwardingService.class);
+    message.setAction(MessageForwardingService.ACTION_REMOTE_INTENT);
+    message.putExtras(intent);
+    message.setData(intent.getData());
+    // For older versions of Firebase C++ SDK (&lt; 7.1.0), use `startService`.
+    // startService(message);
+    MessageForwardingService.enqueueWork(this, message);
+  }
+}</pre> <p>Messages received while the app is in the background have the content of their notification field used to populate the system tray notification, but that notification content won't be communicated to FCM. That is, <code translate="no" dir="ltr">Message::notification</code> will be a null.</p> <p>In summary:</p> <table> <tr> <th>App state</th> <th>Notification</th> <th>Data</th> <th>Both</th> </tr> <tr> <td>Foreground</td> <td><code translate="no" dir="ltr">OnMessageReceived</code></td> <td><code translate="no" dir="ltr">OnMessageReceived</code></td> <td><code translate="no" dir="ltr">OnMessageReceived</code></td> </tr> <tr> <td>Background</td> <td>System tray </td> <td><code translate="no" dir="ltr">OnMessageReceived</code></td> <td>Notification: system tray<br> Data: in extras of the intent.</td> </tr> </table> <h2 id="custom-message-handling">Custom message handling on Android</h2> <p>By default, notifications sent to the app are passed to <code translate="no" dir="ltr">::firebase::messaging::Listener::OnMessageReceived</code>, but in some cases you may want to override the default behavior. To do this on Android you will need to write custom classes that extend <code translate="no" dir="ltr">com.google.firebase.messaging.cpp.ListenerService</code> as well as update your project's <code translate="no" dir="ltr">AndroidManifest.xml</code>.</p> <h3 id="override-methods">Override <code translate="no" dir="ltr">ListenerService</code> methods</h3> <p>The <code translate="no" dir="ltr">ListenerService</code> is the Java class that intercepts incoming messages sent to the app and routes them to the C++ library. When the app is in the foreground (or when the app is in the background and it receives a data-only payload), messages will pass through one of the callbacks provided on this class. To add custom behavior to the message handling, you will need to extend FCM's default <code translate="no" dir="ltr">ListenerService</code>:</p> 
+<pre>import com.google.firebase.messaging.cpp.ListenerService;
+
+class MyListenerService extends ListenerService {</pre> <p>By overriding the method <code translate="no" dir="ltr">ListenerService.onMessageReceived</code>, you can perform actions based on the received <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/RemoteMessage">RemoteMessage</a> object and get the message data:</p> 
+<pre>@Override
+public void onMessageReceived(RemoteMessage message) {
+  Log.d(TAG, "A message has been received.");
+  // Do additional logic...
+  super.onMessageReceived(message);
+}</pre> <p><code translate="no" dir="ltr">ListenerService</code> also has a few other methods that are used less frequently. These can be overridden as well, for more information see the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessagingService">FirebaseMessagingService</a> reference.</p> 
+<pre>@Override
+public void onDeletedMessages() {
+  Log.d(TAG, "Messages have been deleted on the server.");
+  // Do additional logic...
+  super.onDeletedMessages();
+}
+
+@Override
+public void onMessageSent(String messageId) {
+  Log.d(TAG, "An outgoing message has been sent.");
+  // Do additional logic...
+  super.onMessageSent(messageId);
+}
+
+@Override
+public void onSendError(String messageId, Exception exception) {
+  Log.d(TAG, "An outgoing message encountered an error.");
+  // Do additional logic...
+  super.onSendError(messageId, exception);
+}</pre> <h3 id="update-manifest">Update <code translate="no" dir="ltr">AndroidManifest.xml</code>
+</h3> <p>Once your custom classes have been written, they must be included in the <code translate="no" dir="ltr">AndroidManifest.xml</code> to take effect. Make sure that the manifest includes the merge tools by declaring the appropriate attribute inside the <code translate="no" dir="ltr">&lt;manifest&gt;</code> tag, like so:</p> 
+<pre>&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.google.firebase.messaging.cpp.samples"
+    xmlns:tools="http://schemas.android.com/tools"&gt;</pre> <p>In the <code translate="no" dir="ltr">firebase_messaging_cpp.aar</code> archive there is an <code translate="no" dir="ltr">AndroidManifest.xml</code> file which declares FCM's default <code translate="no" dir="ltr">ListenerService</code>. This manifest is normally merged with the project specific manifest which is how the <code translate="no" dir="ltr">ListenerService</code> is able to run. This <code translate="no" dir="ltr">ListenerService</code> needs to replaced with the custom listener service. That is accomplished by removing the default <code translate="no" dir="ltr">ListenerService</code> and adding the custom Service, which can be done with the following lines your projects <code translate="no" dir="ltr">AndroidManifest.xml</code> file:</p> 
+<pre>&lt;service android:name="com.google.firebase.messaging.cpp.ListenerService"
+         tools:node="remove" /&gt;</pre> 
+<pre>&lt;service android:name="com.google.firebase.messaging.cpp.samples.MyListenerService"
+         android:exported="false"&gt;
+  &lt;intent-filter&gt;
+    &lt;action android:name="com.google.firebase.MESSAGING_EVENT"/&gt;
+  &lt;/intent-filter&gt;
+&lt;/service&gt;</pre> <p>New versions of Firebase C++ SDK (7.1.0 onwards) use <code translate="no" dir="ltr">JobIntentService</code> which requires additional modifications in <code translate="no" dir="ltr">AndroidManifest.xml</code> file.</p> 
+<pre>&lt;service android:name="com.google.firebase.messaging.MessageForwardingService"
+     android:permission="android.permission.BIND_JOB_SERVICE"
+     android:exported="false" &gt;
+&lt;/service&gt;</pre> <h2 id="prevent-auto-initialization">Prevent auto initialization</h2> <p>FCM generates a registration token for app instance targeting. When a token is generated, the library uploads the identifier and configuration data to Firebase. If you want to get an explicit opt-in before using the token, you can prevent generation at configure time by disabling FCM (and on Android, Analytics). To do this, add a metadata value to your <code translate="no" dir="ltr">Info.plist</code> (not your <code translate="no" dir="ltr">GoogleService-Info.plist</code>) on Apple platforms, or your <code translate="no" dir="ltr">AndroidManifest.xml</code> on Android:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Android</strong></p> 
+<pre data-language="java">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;application&gt;
+  &lt;meta-data android:name="firebase_messaging_auto_init_enabled"
+             android:value="false" /&gt;
+  &lt;meta-data android:name="firebase_analytics_collection_enabled"
+             android:value="false" /&gt;
+&lt;/application&gt;</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">FirebaseMessagingAutoInitEnabled = NO</pre> </section> </div> <p>To re-enable FCM, you can make a runtime call:</p> 
+<pre>::firebase::messaging::SetRegistrationOnInitEnabled(true);</pre> <aside class="note"><strong>Note:</strong><span> <code translate="no" dir="ltr">SetTokenRegistrationOnInitEnabled</code> is deprecated; use <code translate="no" dir="ltr">SetRegistrationOnInitEnabled</code> instead.</span></aside> <p>This value persists across app restarts once set.</p> <h2 id="handle-messages-with-deep-links">Messages with deep links on Android</h2> <p>FCM allows messages to be sent containing a deep link into your app. To receive messages that contain a deep link, you must add a new intent filter to the activity that handles deep links for your app. The intent filter should catch deep links of your domain. If your messages don't contain a deep link, this configuration is not necessary. In AndroidManifest.xml:</p> 
+<pre>&lt;intent-filter&gt;
+  &lt;action android:name="android.intent.action.VIEW"/&gt;
+  &lt;category android:name="android.intent.category.DEFAULT"/&gt;
+  &lt;category android:name="android.intent.category.BROWSABLE"/&gt;
+  &lt;data android:host="CHANGE_THIS_DOMAIN.example.com" android:scheme="http"/&gt;
+  &lt;data android:host="CHANGE_THIS_DOMAIN.example.com" android:scheme="https"/&gt;
+&lt;/intent-filter&gt;</pre> <p>It is also possible to specify a wildcard to make the intent filter more flexible. For example:</p> 
+<pre>&lt;intent-filter&gt;
+  &lt;action android:name="android.intent.action.VIEW"/&gt;
+  &lt;category android:name="android.intent.category.DEFAULT"/&gt;
+  &lt;category android:name="android.intent.category.BROWSABLE"/&gt;
+  &lt;data android:host="*.example.com" android:scheme="http"/&gt;
+  &lt;data android:host="*.example.com" android:scheme="https"/&gt;
+&lt;/intent-filter&gt;</pre> <p>When users tap a notification containing a link to the scheme and host you specify, your app will start the activity with this intent filter to handle the link.</p> <h2 id="next-steps">Next steps</h2> <p>After you have completed the setup steps, here are a few options for moving forward with FCM for C++:</p> <ul> <li><a href="../server-environment">Send messages to devices</a></li> <li><a href="../receive-messages">Receive messages in a C++ app</a></li> <li><a href="../topic-messaging">Send messages to topics</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/cpp/get-started" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/cpp/get-started</a>
+  </p>
+</div>

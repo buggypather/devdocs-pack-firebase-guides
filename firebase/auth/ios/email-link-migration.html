@@ -1,0 +1,35 @@
+<h1>Migrate email link sign in away from Firebase Dynamic Links (iOS)</h1> <p>Email link authentication previously relied on Firebase Dynamic Links, which will be <a href="https://firebase.google.com/support/dynamic-links-faq">shut down on August 25, 2025</a>. We've published an alternative solution in the Firebase Authentication iOS SDK version 11.8.0+. If your app uses Firebase Dynamic Links, you should migrate your app to the new Firebase Hosting based system.</p> <h2 id="migrate-associated-domain">Migrate your associated Firebase Dynamic Links domain to a Firebase Hosting domain</h2> <p>Moving forward, rather than using a Firebase Dynamic Links domain, Firebase Authentication will use the Firebase Hosting default domain for your project to create links for email link and other out-of-band link actions in mobile apps. This means that your app will also need to be updated to use this default domain as the associated domain for email authentication links to your mobile app.</p> <p>You can follow the instructions in <a href="email-link-auth">Authenticate with Firebase Using Email Link on Apple Platforms</a> to update your app to use the new automatically provisioned Firebase Hosting default domain.</p> <p>Use the following instructions to handle links from the new domain and to instruct Firebase Authentication to start using the Firebase Hosting domain to generate mobile app links going forward.</p> <p>If you'd like to continue using any of your custom Firebase Hosting domains or even your custom Firebase Dynamic Links domain to be your new associated domain, using the instructions in the <a href="#customize-mobile-links">Customize Mobile Links</a> section, adapt the steps to match the intended domain you'd like to use.</p> <ol> <li>
+<p><strong>Link Firebase Hosting domain to your app associated domain.</strong></p> <p>You'll need to configure the selected domain as an Associated Domain for app links. To set up the entitlement in your app, open the target's <strong>Signing &amp; Capabilities</strong> tab in Xcode and add Firebase Hosting domains from the previous step to the Associated Domains capability. If using the default Firebase Hosting domain, this will be <nobr><code translate="no" dir="ltr">applinks:<var translate="no">PROJECT_ID</var>.firebaseapp.com</code></nobr>.</p> <p>See <a href="https://developer.apple.com/documentation/xcode/supporting-associated-domains">Supporting associated domains</a> on Apple's documentation site for more information.</p> <p>An associated domain file has been deployed under all your Firebase Hosting domains. To access it, navigate to <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebaseapp.com/.well-known/apple-app-site-association</code>. This AASA file can be overwritten; see <a href="https://firebase.google.com/support/guides/app-links-universal-links#create_and_host_your_universal_links_configuration_files_on_your_new_hosting_domain">Create and host your Universal Links configuration files</a> for more information.</p> <aside class="special"><strong>Important:</strong><span> To ensure a seamless rollback, we recommend keeping your existing intent filter that handles Firebase Dynamic Links while trying out the Firebase Hosting link solution. The Firebase Dynamic Links solution will be available until August 25, 2025.</span></aside>
+</li> <li>
+<p><strong>Configure your project to use the new links.</strong></p> <p>When you're ready to handle the new domain links, you can use the <a href="../../admin/setup">Firebase Admin SDK</a> to update how you want email links to be generated and instruct our backend to start generating links using the new Firebase Hosting domain.</p> 
+<pre>import { getAuth } from 'firebase-admin/auth';
+
+const updateEmailAuthDomain = async () =&gt; {
+    const updateRequest = {
+        mobileLinksConfig: {
+            domain: 'HOSTING_DOMAIN',
+        },
+    };
+
+    const projectConfigManager = getAuth().projectConfigManager();
+
+    try {
+        const response = await projectConfigManager.updateProjectConfig(updateRequest);
+        // Updated project config
+        console.log('Project configuration updated successfully:', response);
+    } catch (error) {
+        console.error('Error updating the project:', error);
+    }
+};
+</pre>
+<aside class="special"><strong>Important:</strong><span> To rollback to the Firebase Dynamic Links while implementing and testing the backup solution, you should set the domain back to <code translate="no" dir="ltr">FIREBASE_DYNAMIC_LINK</code>. The Firebase Dynamic Links solution will be available until August 25, 2025.</span></aside>
+</li> <li>
+<p><strong>Send and redeem the email link.</strong></p> <p>Send the email sign-in link as before. When an end user clicks on the link, they will be redirected to the app if installed to finish the sign in.</p>
+</li> </ol> <h2 id="customize-mobile-links">Customize your mobile links</h2> <p>You can use a custom Firebase Hosting domain or reuse your custom Firebase Dynamic Links domain to be your new mobile links domain.</p> <h3 id="using-custom-hosting-domain">Use a custom Firebase Hosting domain</h3> <ol> <li>Follow the <a href="../../hosting/custom-domain">Firebase Hosting guide</a> to set up a custom domain.</li> <li>Link the custom domain to your app associated domain.</li> <li>
+<a href="email-link-auth#send_an_authentication_link_to_the_users_email_address">Send an authentication link to the user's email address</a> with an updated <code translate="no" dir="ltr">ActionCodeSettings</code> object with a custom domain as <code translate="no" dir="ltr">linkDomain</code>.</li> </ol> <h3 id="reuse-custom-dynamic-links-domain">Re-use your custom Firebase Dynamic Links domain</h3> <ol> <li>You can re-use any of your Firebase Dynamic Links domains as your custom domain. However, any Firebase Dynamic Links functionality will no longer be supported (for example, users cannot be redirected to the app store if app isn't installed on their device).</li> <li>
+<a href="email-link-auth#send_an_authentication_link_to_the_users_email_address">Send an authentication link to the user's email address</a> with an updated <code translate="no" dir="ltr">ActionCodeSettings</code> object with a custom domain as <code translate="no" dir="ltr">linkDomain</code>.</li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/ios/email-link-migration" class="_attribution-link">https://firebase.google.com/docs/auth/ios/email-link-migration</a>
+  </p>
+</div>

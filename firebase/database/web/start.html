@@ -1,0 +1,54 @@
+<h1>Installation &amp; Setup in JavaScript</h1> <p>The Firebase Realtime Database is a cloud-hosted database. Data is stored as JSON and synchronized in realtime to every connected client. When you build cross-platform apps with our Android, Apple platforms, and JavaScript SDKs, all of your clients share one Realtime Database instance and automatically receive updates with the newest data.</p> <h2 id="prerequisites">Prerequisites</h2> <p>If you haven't already, <a href="../../web/setup#add-sdk-and-initialize">install the Firebase JS SDK and initialize Firebase</a>.</p> <h2 id="create_a_database">Create a Database</h2> <ol> <li><p>In the Firebase console, navigate to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/database/" class="external gc-analytics-event" data-category="firebasedb_test_0220" data-label="console_rtdb_creation_event_test_0220"><strong>Realtime Database</strong></a>.</p></li> <li><p>Click <strong>Create database</strong>.</p></li> <li>
+<p>Select a starting mode for your Firebase Security Rules:</p> <dl> <dt>Test mode</dt> <dd><p>Good for getting started with the mobile and web client libraries, but allows anyone to read and overwrite your data. After testing, <strong>make sure to review the <a href="../security">Understand Firebase Realtime Database Rules</a> section.</strong></p></dd> <dd><aside class="note"><strong>Note:</strong><span> If you create a database in Test mode and make no changes to the default world-readable and world-writeable Security Rules within a trial period, you will be alerted by email, then your database rules will deny all requests. Note the expiration date during the Firebase console setup flow.</span></aside></dd> <dd><p>To get started with the web, Apple, or Android SDK, select testmode.</p></dd> <dt>Locked mode</dt> <dd><p>Denies all reads and writes from mobile and web clients. Your authenticated application servers can still access your database.</p></dd> </dl>
+</li> <li>
+<p>Choose a location for the database.</p> <p>Depending on the <a href="../../projects/locations#rtdb-locations">location of the database</a>, the URL for the new database will be in one of the following forms:</p> <ul> <li><p><nobr><code translate="no" dir="ltr"><var translate="no">DATABASE_NAME</var>.firebaseio.com</code></nobr> (for databases in <code translate="no" dir="ltr">us-central1</code>)</p></li> <li><p><nobr><code translate="no" dir="ltr"><var translate="no">DATABASE_NAME</var>.<var translate="no">REGION</var>.firebasedatabase.app</code></nobr> (for databases in all other locations)</p></li> </ul>
+</li> <li><p>Click <strong>Done</strong>.</p></li> </ol> <p>When you enable Realtime Database, it also enables the API in the <a href="https://console.cloud.google.com/projectselector/apis/api/firebasedatabase.googleapis.com/overview">Cloud API Manager</a>.</p> <h2 id="configure">Configure Realtime Database Security Rules</h2> <p>The Realtime Database provides a declarative rules language that allows you to define how your data should be structured, how it should be indexed, and when your data can be read from and written to.</p> <aside class="note"><strong>Note:</strong><span> By default, read and write access to your database is restricted so only authenticated users can read or write data. To get started without setting up <a href="../../auth">Authentication</a>, you can <a href="../../rules/basics#default_rules_locked_mode" target="_blank">configure your rules for public access</a>. This does make your database open to anyone, even people not using your app, so be sure to restrict your database again when you set up authentication.</span></aside> <h2 id="add_the_js_sdk_and_initialize">Add the Realtime Database JS SDK and initialize Realtime Database</h2> <p>You must specify your Realtime Database URL when initializing the JavaScript SDK.</p> <p>You can find your Realtime Database URL in the <i>Realtime Database</i> section of the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. Depending on the <a href="../../projects/locations#rtdb-locations">location of the database</a>, the database URL will be in one of the following forms:</p> <ul> <li>
+<nobr><code translate="no" dir="ltr">https://<var translate="no">DATABASE_NAME</var>.firebaseio.com</code></nobr> (for databases in <code translate="no" dir="ltr">us-central1</code>) </li>
+<li>
+<nobr><code translate="no" dir="ltr">https://<var translate="no">DATABASE_NAME</var>.<var translate="no">REGION</var>.firebasedatabase.app</code></nobr> (for databases in all other locations) </li>
+</ul> <p>Initialize the SDK using the following code snippet:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular web API and <a href="../../web/modular-upgrade">upgrade</a> from the namespaced API. </aside></p> 
+<pre data-language="javascript">import { initializeApp } from "firebase/app";
+import { getDatabase } from "firebase/database";
+
+// TODO: Replace the following with your app's Firebase project configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+  // The value of `databaseURL` depends on the location of the database
+  databaseURL: "https://DATABASE_NAME.firebaseio.com",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+
+// Initialize Realtime Database and get a reference to the service
+const database = getDatabase(app);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+<p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular web API and <a href="../../web/modular-upgrade">upgrade</a> from the namespaced API. </aside></p> 
+<pre data-language="javascript">import firebase from "firebase/app";
+import "firebase/compat/database";
+
+// TODO: Replace the following with your app's Firebase project configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+  // The value of `databaseURL` depends on the location of the database
+  databaseURL: "https://DATABASE_NAME.firebaseio.com",
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+
+// Initialize Realtime Database and get a reference to the service
+const database = firebase.database();
+</pre></section> </div> <p>You're ready to start using the Firebase Realtime Database!</p> <h2 id="next_steps">Next Steps</h2> <ul> <li><p>Learn how to <a href="structure-data">structure data</a> for Realtime Database.</p></li> <li><p><a href="../usage/sharding">Scale your data across multiple database instances</a>.</p></li> <li><p><a href="read-and-write">Read and write data.</a></p></li> <li><p><a href="https://console.firebase.google.com/project/_/database/data">View your database in the Firebase console.</a></p></li> <li>
+<p>Prepare to launch your app:</p> <ul> <li><p>Enable <a href="../../app-check/web">App Check</a> to help ensure that only your apps can access your databases. </p></li> <li><p>Set up <a href="../../projects/billing/budget-alerts">budget alerts</a> for your project in the Google Cloud console.</p></li> <li><p>Monitor the <a href="https://console.firebase.google.com/project/_/usage" class="external"><em>Usage and billing</em> dashboard</a> in the Firebase console to get an overall picture of your project's usage across multiple Firebase services. You can also visit the <a href="https://console.firebase.google.com/project/_/database/usage">Realtime Database <em>Usage</em> dashboard</a> for more detailed usage information. </p></li> <li><p>Review the <a href="https://firebase.google.com/support/guides/launch-checklist">Firebase launch checklist</a>.</p></li> </ul>
+</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/web/start" class="_attribution-link">https://firebase.google.com/docs/database/web/start</a>
+  </p>
+</div>

@@ -1,0 +1,180 @@
+<h1>Handle your extension's lifecycle events</h1> <p>Your extension can include <a href="../../functions/task-functions">Cloud Tasks functions</a> that trigger when an extension instance goes through any of the following lifecycle events:</p> <ul> <li>An instance of the extension is installed</li> <li>An instance of the extension is updated to a new version</li> <li>An extension instance's configuration is changed</li> </ul> <p>One of the most important use cases of this feature is <strong>backfilling data</strong>. For example, suppose you're building an extension that generates thumbnail previews of images uploaded to a Cloud Storage bucket. The main work of your extension would be done in a function triggered by the <code translate="no" dir="ltr">onFinalize</code> Cloud Storage event. However, only images uploaded <em>after</em> the extension is installed would be processed. By including in your extension a function triggered by the <code translate="no" dir="ltr">onInstall</code> lifecycle event, you could also generate thumbnail previews of any <em>existing</em> images when the extension is installed.</p> <p>Some other use cases of lifecycle event triggers include:</p> <ul> <li>Automate post-install setup (creating database records, indexing, etc.)</li> <li>If you have to publish backwards-incompatible changes, automatically migrate data on update</li> </ul> <h2 id="short-running">Short-running lifecycle event handlers</h2> <p>If your task can run completely within the <a href="../../functions/quotas#time_limits">maximum Cloud Functions duration</a> (9 minutes using the first-generation API), you can write your lifecycle event handler as a single function that triggers on the task queue <code translate="no" dir="ltr">onDispatch</code> event:</p> 
+<pre>export const myTaskFunction = functions.tasks.taskQueue()
+  .onDispatch(async () =&gt; {
+    // Complete your lifecycle event handling task.
+    // ...
+
+    // When processing is complete, report status to the user (see below).
+  });
+</pre> <p>Then, in your extension's <code translate="no" dir="ltr">extension.yaml</code> file, do the following:</p> <ol> <li>
+<p>Register your function as an extension resource with the <code translate="no" dir="ltr">taskQueueTrigger</code> property set. If you set <code translate="no" dir="ltr">taskQueueTrigger</code> to the empty map (<code translate="no" dir="ltr">{}</code>), your extension will provision a Cloud Tasks queue using the default settings; you can optionally <a href="#task-queue-properties">tune these settings</a>.</p> 
+<pre>resources:
+  - name: myTaskFunction
+    type: firebaseextensions.v1beta.function
+    description: &gt;-
+      Describe the task performed when the function is triggered by a lifecycle
+      event
+    properties:
+      location: ${LOCATION}
+      taskQueueTrigger: {}
+</pre>
+</li> <li>
+<p>Register your function as a handler for one or more lifecycle events:</p> 
+<pre>resources:
+  - ...
+lifecycleEvents:
+  onInstall:
+    function: myTaskFunction
+    processingMessage: Resizing your existing images
+  onUpdate:
+    function: myOtherTaskFunction
+    processingMessage: Setting up your extension
+  onConfigure:
+    function: myOtherTaskFunction
+    processingMessage: Setting up your extension
+
+</pre> <p>You can register functions for any of the following events: <code translate="no" dir="ltr">onInstall</code>, <code translate="no" dir="ltr">onUpdate</code>, and <code translate="no" dir="ltr">onConfigure</code>. All of these events are optional.</p> <aside class="note"><strong>Note:</strong><span> The message you specify here is automatically set as your extension's processing status in the Firebase console when triggering your function. To update or clear the processing status when your function finishes its work, call <code translate="no" dir="ltr">setProcessingState()</code> as described in the <a href="#reporting-status">Reporting status</a> section.</span></aside>
+</li> <li>
+<p><strong>Recommended</strong>: If the processing task isn't required for your extension to work, add a <a href="parameters#user-configured-parameters">user-configured parameter</a> that lets users choose whether to enable it.</p> <p>For example, add a parameter like the following:</p> 
+<pre>params:
+  - param: DO_BACKFILL
+    label: Backfill existing images
+    description: &gt;
+      Should existing, unresized images in the Storage bucket be resized as well?
+    type: select
+    options:
+      - label: Yes
+        value: true
+      - label: No
+        value: false
+</pre> <p>And in your function, if the parameter is set to <code translate="no" dir="ltr">false</code>, exit early:</p> 
+<pre>export const myTaskFunction = functions.tasks.taskQueue()
+  .onDispatch(async () =&gt; {
+    if (!process.env.DO_BACKFILL) {
+      await runtime.setProcessingState(
+        "PROCESSING_COMPLETE",
+        "Existing images were not resized."
+      );
+      return;
+    }
+    // Complete your lifecycle event handling task.
+    // ...
+  });
+</pre>
+</li> </ol> <h2 id="long-running">Performing long-running tasks</h2> <p>If your task can't complete within the maximum Cloud Functions duration, break the task into subtasks and perform each subtask in sequence by enqueueing jobs with the Admin SDK's <a href="https://firebase.google.com/docs/reference/admin/node/firebase-admin.functions.taskqueue#taskqueueenqueue"><code translate="no" dir="ltr">TaskQueue.enqueue()</code></a> method.</p> <aside class="note"><strong>Note:</strong><span> Do not try to enqueue all of your subtasks at once to process them in parallel. Because authorization happens at enqueue time, tasks towards the end of the queue will fail if authorization has expired by the time they start. Instead, perform your subtasks serially as described in this section.</span></aside> <p>For example, suppose you want to backfill Cloud Firestore data. You can split the document collection into chunks using <a href="../../firestore/query-data/query-cursors">query cursors</a>. After processing a chunk, advance the starting offset and enqueue another function invocation as shown below:</p> 
+<pre>import { getFirestore } from "firebase-admin/firestore";
+import { getFunctions } from "firebase-admin/functions";
+
+exports.backfilldata = functions.tasks.taskQueue().onDispatch(async (data) =&gt; {
+  // When a lifecycle event triggers this function, it doesn't pass any data,
+  // so an undefined offset indicates we're on our first invocation and should
+  // start at offset 0. On subsequent invocations, we'll pass an explicit
+  // offset.
+  const offset = data["offset"] ?? 0;
+
+  // Get a batch of documents, beginning at the offset.
+  const snapshot = await getFirestore()
+    .collection(process.env.COLLECTION_PATH)
+    .startAt(offset)
+    .limit(DOCS_PER_BACKFILL)
+    .get();
+  // Process each document in the batch.
+  const processed = await Promise.allSettled(
+    snapshot.docs.map(async (documentSnapshot) =&gt; {
+      // Perform the processing.
+    })
+  );
+
+  // If we processed a full batch, there are probably more documents to
+  // process, so enqueue another invocation of this function, specifying
+  // the offset to start with.
+  //
+  // If we processed less than a full batch, we're done.
+  if (processed.length == DOCS_PER_BACKFILL) {
+    const queue = getFunctions().taskQueue(
+      "backfilldata",
+      process.env.EXT_INSTANCE_ID
+    );
+    await queue.enqueue({
+      offset: offset + DOCS_PER_BACKFILL,
+    });
+  } else {
+      // Processing is complete. Report status to the user (see below).
+  }
+});
+</pre> <p>Add the function to your <code translate="no" dir="ltr">extension.yaml</code> as described in the <a href="#short-running">previous section</a>.</p> <h2 id="reporting-status">Reporting status</h2> <p>When all of your processing functions finish, either successfully or with an error, report the status of the task using the Admin SDK's extension runtime methods. Users can see this status on the extension details page in the Firebase console.</p> <aside class="note"><strong>Note:</strong><span> Report status only once each time you handle a lifecycle event trigger. In particular, if you break your processing task into multiple function invocations, don't report status every invocation.</span></aside> <h3 id="set-processing-state">Successful completion and non-fatal errors</h3> <p>To report successful completion and non-fatal errors (errors that don't put the extension into a nonfunctional state), use the Admin SDK's <code translate="no" dir="ltr">setProcessingState()</code> extension runtime method:</p> 
+<pre>import { getExtensions } from "firebase-admin/extensions";
+
+// ...
+
+getExtensions().runtime().setProcessingState(processingState, message);
+</pre> <p>You can set the following states:</p> <table class="responsive"> <tbody> <tr> <th colspan="2">Non-fatal states</th> </tr> <tr> <td><code translate="no" dir="ltr">PROCESSING_COMPLETE</code></td> <td> <p>Use to report successful task completion. Example:</p> 
+<pre>getExtensions().runtime().setProcessingState(
+  "PROCESSING_COMPLETE",
+  `Backfill complete. Successfully processed ${numSuccess} documents.`
+);</pre> </td> </tr> <tr> <td><code translate="no" dir="ltr">PROCESSING_WARNING</code></td> <td> <p>Use to report partial success. Example:</p> 
+<pre>getExtensions().runtime().setProcessingState(
+  "PROCESSING_WARNING",
+  `Backfill complete. ${numSuccess} documents processed successfully.`
+    + ` ${numFailed} documents failed to process. ${listOfErrors}.`
+    + ` ${instructionsToFixTheProblem}`
+);</pre> </td> </tr> <tr> <td><code translate="no" dir="ltr">PROCESSING_FAILED</code></td> <td> <p>Use to report errors that prevent the task from completing, but don't leave the extension unusable. Example:</p> 
+<pre>getExtensions().runtime().setProcessingState(
+  "PROCESSING_FAILED",
+  `Backfill failed. ${errorMsg} ${optionalInstructionsToFixTheProblem}.`
+);</pre> <p>To report errors that <i>do</i> leave the extension unusable, call <a href="#set-fatal-error"><code translate="no" dir="ltr">setFatalError()</code></a>.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">NONE</code></td> <td> <p>Use to clear the task's status. You can optionally use this to clear the status message from the console (for example, after some amount of time has passed since setting <code translate="no" dir="ltr">PROCESSING_COMPLETE</code>). Example:</p> 
+<pre>getExtensions().runtime().setProcessingState("NONE");</pre> </td> </tr> </tbody> </table> <h3 id="set-fatal-error">Fatal errors</h3> <p>If an error occurs that prevents the extension from functioning—for example, a required setup task failing—report the fatal error with <code translate="no" dir="ltr">setFatalError()</code>:</p> 
+<pre>import { getExtensions } from "firebase-admin/extensions";
+
+// ...
+
+getExtensions().runtime().setFatalError(`Post-installation setup failed. ${errorMessage}`);
+</pre> <h2 id="task-queue-properties">Tuning the task queue</h2> <p>If you set the <code translate="no" dir="ltr">taskQueueTrigger</code> property to <code translate="no" dir="ltr">{}</code>, your extension will provision a Cloud Tasks queue with the default settings when an extension instance is installed. Alternatively, you can tune the task queue's concurrency limits and retry behavior by providing specific values:</p> 
+<pre>resources:
+  - name: myTaskFunction
+    type: firebaseextensions.v1beta.function
+    description: &gt;-
+      Perform a task when triggered by a lifecycle event
+    properties:
+      location: ${LOCATION}
+      taskQueueTrigger:
+        rateLimits:
+          maxConcurrentDispatches: 1000
+          maxDispatchesPerSecond: 500
+        retryConfig:
+          maxAttempts: 100  # Warning: setting this too low can prevent the function from running
+          minBackoffSeconds: 0.1
+          maxBackoffSeconds: 3600
+          maxDoublings: 16
+lifecycleEvents:
+  onInstall: 
+    function: myTaskFunction
+    processingMessage: Resizing your existing images
+  onUpdate:
+    function: myTaskFunction
+    processingMessage: Setting up your extension
+  onConfigure:
+    function: myOtherTaskFunction
+    processingMessage: Setting up your extension
+</pre> <p>See <a href="https://cloud.google.com/tasks/docs/configuring-queues" class="external">Configure Cloud Tasks queues</a> in the Google Cloud docs for details on these parameters.</p> <p>Don't try to specify task queue parameters by passing them to <code translate="no" dir="ltr">taskQueue()</code>. These settings are ignored in favor of the configuration in <code translate="no" dir="ltr">extension.yaml</code> and the configuration defaults.</p> <p>For example, this won't work:</p> 
+<pre>export const myBrokenTaskFunction = functions.tasks
+  // DON'T DO THIS IN AN EXTENSION! THESE SETTINGS ARE IGNORED.
+  .taskQueue({
+    retryConfig: {
+      maxAttempts: 5,
+      minBackoffSeconds: 60,
+    },
+    rateLimits: {
+      maxConcurrentDispatches: 1000,
+      maxDispatchesPerSecond: 10,
+    },
+  })
+  .onDispatch(
+    // ...
+  );
+</pre> <p>The <code translate="no" dir="ltr">taskQueueTrigger</code> property in <code translate="no" dir="ltr">extension.yaml</code> is the only way to configure an extension's task queues.</p> <h2 id="examples">Examples</h2> <p>The official <a href="https://github.com/Firebase/extensions/blob/master/storage-resize-images/functions/src/index.ts"><code translate="no" dir="ltr">storage-resize-images</code></a>, <a href="https://github.com/Firebase/extensions/blob/master/firestore-bigquery-export/functions/src/index.ts"><code translate="no" dir="ltr">firestore-bigquery-export</code></a>, and <a href="https://github.com/Firebase/extensions/blob/master/firestore-translate-text/functions/src/index.ts"><code translate="no" dir="ltr">firestore-translate-text</code></a> extensions all use lifecycle event handlers to backfill data.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/publishers/lifecycle-events" class="_attribution-link">https://firebase.google.com/docs/extensions/publishers/lifecycle-events</a>
+  </p>
+</div>

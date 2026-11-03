@@ -1,0 +1,336 @@
+<h1>Secure SQL Connect with authorization and attestation</h1> <p>Firebase SQL Connect provides robust client-side security with:</p> <ul> <li>Mobile and web client authorization</li> <li>Individual query- and mutation-level authorization controls</li> <li>App attestation with Firebase App Check.</li> </ul> <p>SQL Connect extends this security with:</p> <ul> <li>Server-side authorization</li> <li>Firebase project and Cloud SQL user security with IAM.</li> </ul> <h2 id="authorize-queries-mutations">Authorize client queries and mutations</h2> <p>SQL Connect is fully integrated with Firebase Authentication, so you can use rich data about users who are accessing your data (authentication) in your design for what data those users can access (authorization).</p> <p>SQL Connect provides an <code translate="no" dir="ltr">@auth</code> directive for queries and mutations that lets you set the level of authentication required to authorize the operation. This guide <a href="#auth-directive">introduces the <code translate="no" dir="ltr">@auth</code> directive, with examples</a>.</p> <p>In addition, SQL Connect supports execution of queries embedded in mutations, so you can retrieve additional authorization criteria you've stored in your database, and use those criteria in <code translate="no" dir="ltr">@check</code> directives to decide if enclosing mutations are authorized. For this authorization case, the <code translate="no" dir="ltr">@redact</code> directive allows you control whether query results are returned to clients in the wire protocol and the embedded query omitted in generated SDKs. Find the <a href="#check-redact-directives">introduction to these directives, with examples</a>.</p> <h3 id="auth-directive">Understand the <code translate="no" dir="ltr">@auth</code> directive</h3> <p>You can parameterize the <code translate="no" dir="ltr">@auth</code> directive to follow one of several preset access levels that cover many common access scenarios. These levels range from <code translate="no" dir="ltr">PUBLIC</code> (which allows queries and mutations from all clients without authentication of any kind) to <code translate="no" dir="ltr">NO_ACCESS</code> (which disallows queries and mutations outside of <a href="admin-sdk">privileged server environments using the Firebase Admin SDK</a>). Each of these levels is correlated with authentication flows provided by Firebase Authentication.</p> <table> <thead> <tr> <th>Level</th> <th>Definition</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">PUBLIC</code></td> <td>The operation can be executed by anyone with or without authentication. </td> </tr> <tr> <td><code translate="no" dir="ltr">USER_ANON</code></td> <td>Any identified user, including those who have logged in anonymously with Firebase Authentication, is authorized to perform the query or mutation. </td> </tr> <tr> <td><code translate="no" dir="ltr">USER</code></td> <td>Any user who has logged in with Firebase Authentication is authorized to perform the query or mutation except anonymous sign-in users. </td> </tr> <tr> <td><code translate="no" dir="ltr">USER_EMAIL_VERIFIED</code></td> <td>Any user who has logged in with Firebase Authentication with a verified email address is authorized to perform the query or mutation. </td> </tr> <tr> <td><code translate="no" dir="ltr">NO_ACCESS</code></td> <td>This operation cannot be executed outside an Admin SDK context. </td> </tr> </tbody> </table> <p>Using these preset access levels as a starting point, you can define complex and robust authorization checks in the <code translate="no" dir="ltr">@auth</code> directive using <code translate="no" dir="ltr">where</code> filters and Common Expression Language (CEL) expressions evaluated on the server.</p> <aside class="note"><strong>Note:</strong><span> All queries and mutations in your connector must have an <code translate="no" dir="ltr">@auth</code> directive to be accessible by client applications. Queries and mutations default to <code translate="no" dir="ltr">NO_ACCESS</code> if the <code translate="no" dir="ltr">@auth</code> directive is not specified.</span></aside><aside class="tip"><strong>Tip:</strong><span> See the <a href="https://firebase.google.com/docs/reference/data-connect/gql/directive#auth">directives reference for the <code translate="no" dir="ltr">@auth</code> directive</a> and the <a href="#preset-authz-levels">complete reference for access levels</a>.</span></aside> <h3 id="auth-best-practices">Use the <code translate="no" dir="ltr">@auth</code> directive to implement common authorization scenarios</h3> <p>The preset access levels are the <em>starting point</em> for authorization.</p> <p>The <code translate="no" dir="ltr">USER</code> access level is the most widely useful basic level to start with.</p> <p>Fully secure access will build on the <code translate="no" dir="ltr">USER</code> level plus filters and expressions that check user attributes, resource attributes, roles and other checks. The <code translate="no" dir="ltr">USER_ANON</code> and <code translate="no" dir="ltr">USER_EMAIL_VERIFIED</code> levels are variations on the <code translate="no" dir="ltr">USER</code> case.</p> <p>Expression syntax lets you evaluate data using an <code translate="no" dir="ltr">auth</code> object representing authentication data passed with operations, both standard data in auth tokens and custom data in tokens. For the list of fields available in the <code translate="no" dir="ltr">auth</code> object, see the <a href="#auth-cel-reference">reference section</a>.</p> <aside class="note"><strong>Note:</strong><span> You can augment authorization with <code translate="no" dir="ltr">@auth</code> by looking up authorization roles and other data stored in your database, as described in the <a href="#check-redact-directives">section on adding <code translate="no" dir="ltr">@check</code> and <code translate="no" dir="ltr">@redact</code> for lookups</a>.</span></aside> <p>There are of course use cases where <code translate="no" dir="ltr">PUBLIC</code> is the correct access level to start with. Again, an access level is always a starting point, and additional filters and expressions are needed for robust security.</p> <p>This guide now gives examples of how to build on <code translate="no" dir="ltr">USER</code> and <code translate="no" dir="ltr">PUBLIC</code>.</p> <h4 id="a_motivating_example">A motivating example</h4> <p>The following best practice examples refer to the following schema for a blogging platform with certain content locked behind a payment plan.</p> <p>Such a platform would likely model <code translate="no" dir="ltr">Users</code> and<code translate="no" dir="ltr">Posts</code>.</p> 
+<pre>type User @table(key: "uid") {
+  uid: String!
+  name: String
+  birthday: Date
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type Post @table {
+  author: User!
+  text: String!
+  # "one of 'draft', 'public', or 'pro'"
+  visibility: String! @default(value: "draft")
+  # "the time at which the post should be considered published. defaults to
+  # immediately"
+  publishedAt: Timestamp! @default(expr: "request.time")
+  createdAt: Timestamp! @default(expr: "request.time")
+  updatedAt: Timestamp! @default(expr: "request.time")
+}
+</pre> <h4 id="user-owned_resources">User-owned resources</h4> <p>Firebase recommends that you write filters and expressions that test user ownership of a resource, in the following cases, ownership of <code translate="no" dir="ltr">Posts</code>.</p> <p>In the following examples, data from auth tokens is read and compared using expressions. The typical pattern is to use expressions like <code translate="no" dir="ltr">where: {authorUid:
+{eq_expr: "auth.uid"}}</code> to compare a stored <code translate="no" dir="ltr">authorUid</code> to the <code translate="no" dir="ltr">auth.uid</code> (user ID) passed in the authentication token.</p> <h5 id="create">Create</h5> <p>This authorization practice starts by adding the <code translate="no" dir="ltr">auth.uid</code> from the auth token to each new <code translate="no" dir="ltr">Post</code> as an <code translate="no" dir="ltr">authorUid</code> field to allow comparison in subsequence authorization tests.</p> 
+<pre># Create a new post as the current user
+mutation CreatePost($text: String!, $visibility: String) @auth(level: USER) {
+  post_insert(data: {
+    # set the author's uid to the current user uid
+    authorUid_expr: "auth.uid"
+    text: $text
+    visibility: $visibility
+  })
+}
+</pre> <h5 id="update">Update</h5> <p>When a client attempts to update a <code translate="no" dir="ltr">Post</code>, you can test the passed <code translate="no" dir="ltr">auth.uid</code> against the stored <code translate="no" dir="ltr">authorUid</code>.</p> 
+<pre># Update one of the current user's posts
+mutation UpdatePost($id: UUID!, $text: String, $visibility: String) @auth(level:USER) {
+  post_update(
+    # only update posts whose author is the current user
+    first: { where: {
+      id: {eq: $id}
+      authorUid: {eq_expr: "auth.uid"}
+    }}
+    data: {
+      text: $text
+      visibility: $visibility
+      # insert the current server time for updatedAt
+      updatedAt_expr: "request.time"
+    }
+  )
+}
+</pre> <h5 id="delete">Delete</h5> <p>The same technique is used to authorize delete operations.</p> 
+<pre># Delete one of the current user's posts
+mutation DeletePost($id: UUID!) @auth(level: USER) {
+  post_delete(
+    # only delete posts whose author is the current user
+    first: { where: {
+      id: {eq: $id}
+      authorUid: {eq_expr: "auth.uid"}
+    }}
+  )
+}
+</pre>
+<aside class="note"><strong>Note:</strong><span> For these query examples, the following fragment is used to select common fields on <code translate="no" dir="ltr">Post</code>.</span></aside>
+<pre># Common display information for a post
+fragment DisplayPost on Post {
+  id, text, createdAt, updatedAt
+  author { uid, name }
+}
+</pre> <h5 id="list">List</h5> 
+<pre># List all posts belonging to the current user
+query ListMyPosts @auth(level: USER) {
+  posts(where: {
+    userUid: {eq_expr: "auth.uid"}
+  }) {
+    # See the fragment above
+    ...DisplayPost
+    # also show visibility since it is user-controlled
+    visibility
+  }
+}
+</pre> <h5 id="get">Get</h5> 
+<pre># Get a post only if it belongs to the current user
+query GetMyPost($id: UUID!) @auth(level: USER) {
+  post(key: {id: $id},
+    first: {where: {
+      id: {eq: $id}
+      authorUid: {eq_expr: "auth.uid"}}
+      }}, {
+      # See the fragment above
+      ...DisplayPost
+      # also show visibility since it is user-controlled
+      visibility
+  }
+}
+</pre> <h4 id="filter_data">Filter Data</h4> <p>SQL Connect's authorization system lets you write sophisticated filters combined with preset access levels like <code translate="no" dir="ltr">PUBLIC</code> as well as by using data from auth tokens.</p> <p>The authorization system also lets you use expressions only, without a base access level, as shown in some of the following examples.</p> <h5 id="filter_by_resource_attributes">Filter by resource attributes</h5> <p>Here, authorization is not based on auth tokens since the base security level is set to <code translate="no" dir="ltr">PUBLIC</code>. But, we can explicitly set records in our database as suitable for public access; assume we have <code translate="no" dir="ltr">Post</code> records in our database with <code translate="no" dir="ltr">visibility</code> set to "public".</p> 
+<pre># List all posts marked as 'public' visibility
+query ListPublicPosts @auth(level: PUBLIC) {
+  posts(where: {
+    # Test that visibility is "public"
+    visibility: {eq: "public"}
+    # Only display articles that are already published
+    publishedAt: {lt_expr: "request.time"}
+  }) {
+    # see the fragment above
+    ...DisplayPost
+  }
+}
+</pre> <h5 id="filter_by_user_claims">Filter by user claims</h5> <p>Here, assume you've set up custom user claims that pass in auth tokens to identify users in a "pro" plan for your app, flagged with an <code translate="no" dir="ltr">auth.token.plan</code> field in the auth token. Your expressions can test against this field.</p> 
+<pre># List all public or pro posts, only permitted if user has "pro" plan claim
+query ProListPosts @auth(expr: "auth.token.plan == 'pro'") {
+  posts(where: {
+    # display both public posts and "pro" posts
+    visibility: {in: ['public', 'pro']},
+    # only display articles that are already published
+    publishedAt: {lt_expr: "request.time"},
+  }) {
+    # see the fragment above
+    ...DisplayPost
+    # show visibility so pro users can see which posts are pro\
+    visibility
+  }
+}
+</pre> <h5 id="filter_by_order_limit">Filter by order + limit</h5> <p>Or again, you may have set <code translate="no" dir="ltr">visibility</code> in <code translate="no" dir="ltr">Post</code> records to identify they are content available for "pro" users, but for a preview or teaser listing of data, further limit the number of records returned.</p> 
+<pre># Show 2 oldest Pro post as a preview
+query ProTeaser @auth(level: USER) {
+  posts(
+    where: {
+      # show only pro posts
+      visibility: {eq: "pro"}
+      # that have already been published more than 30 days ago
+      publishedAt: {lt_time: {now: true, sub: {days: 30}}}
+    },
+    # order by publish time
+    orderBy: [{publishedAt: DESC}],
+    # only return two posts
+    limit: 2
+  ) {
+    # See the fragment above
+    ...DisplayPost
+  }
+}
+</pre> <h5 id="filter_by_role">Filter by role</h5> <p>If your custom claim defines an <code translate="no" dir="ltr">admin</code> role, you can test and authorize operations accordingly.</p> 
+<pre># List all posts unconditionally iff the current user has an admin claim
+query AdminListPosts @auth(expr: "auth.token.admin == true") {
+  posts { ...DisplayPost }
+}
+</pre> <h3 id="authz-data-lookup">Add the <code translate="no" dir="ltr">@check</code> and <code translate="no" dir="ltr">@redact</code> directives to look up authorization data</h3> <p>A common authorization use case involves storing custom authorization roles in your database, for example in a special permissions table, and using those roles to authorize mutations to create, update, or delete data.</p> <p>Using authorization data lookups, you can query for roles based on a userID and use CEL expressions to decide if the mutation is authorized. For example, you might want to write an <code translate="no" dir="ltr">UpdateMovieTitle</code> mutation that lets an authorized client update movie titles.</p> <p>For the rest of this discussion, assume the movie review app database stores an authorization role in a <code translate="no" dir="ltr">MoviePermission</code> table.</p> 
+<pre># MoviePermission
+# Suppose a user has an authorization role with respect to records in the Movie table
+type MoviePermission @table(key: ["movie", "user"]) {
+  movie: Movie! # implies another field: movieId: UUID!
+  user: User!
+  role: String!
+}
+</pre> <h4 id="use_in_mutations">Use in mutations</h4> <p>In the following example implementation, the <code translate="no" dir="ltr">UpdateMovieTitle</code> mutation includes a <code translate="no" dir="ltr">query</code> field to retrieve data from <code translate="no" dir="ltr">MoviePermission</code>, and the following directives to ensure the operation is secure and robust:</p> <ul> <li>A <code translate="no" dir="ltr">@transaction</code> directive to ensure all authorization queries and checks are completed or fail atomically.</li> <li>The <code translate="no" dir="ltr">@redact</code> directive to omit query results from the response, meaning our authorization check is performed on the SQL Connect server but sensitive data is not exposed to the client.</li> <li>
+<p>A pair of <code translate="no" dir="ltr">@check</code> directives to evaluate authorization logic on query results, such as testing that a given userID has an appropriate role to make modifications.</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">message</code> argument for <code translate="no" dir="ltr">@check</code> is optional, but it's useful in combination with the <code translate="no" dir="ltr">@redact</code> directive, so you can define messages to return to client code even though specific fields are redacted from the response.</span></aside>
+</li> </ul> 
+<pre>mutation UpdateMovieTitle($movieId: UUID!, $newTitle: String!) @auth(level: USER) @transaction {
+  # Step 1: Query and check
+  query @redact {
+    moviePermission( # Look up a join table called MoviePermission with a compound key.
+      key: {movieId: $movieId, userId_expr: "auth.uid"}
+    # Step 1a: Use @check to test if the user has any role associated with the movie
+    # Here the `this` binding refers the lookup result, i.e. a MoviePermission object or null
+    # The `this != null` expression could be omitted since rejecting on null is default behavior
+    ) @check(expr: "this != null", message: "You do not have access to this movie") {
+      # Step 1b: Check if the user has the editor role for the movie
+      # Next we execute another @check; now `this` refers to the contents of the `role` field
+      role @check(expr: "this == 'editor'", message: "You must be an editor of this movie to update title")
+    }
+  }
+  # Step 2: Act
+  movie_update(id: $movieId, data: {
+    title: $newTitle
+  })
+}
+</pre>
+<aside class="tip"><strong>Tip:</strong><span> Refer to the <a href="https://firebase.google.com/docs/reference/data-connect/gql/directive">directives reference guide</a> and <a href="#cel-this-binding">CEL reference for the <code translate="no" dir="ltr">this</code> binding</a>.</span></aside> <h4 id="use_in_queries">Use in queries</h4> <p>Authorization data lookups are also useful to restrict queries based on roles or other restrictions.</p> <p>In the following example, which also uses the <code translate="no" dir="ltr">MoviePermission</code> schema, the query checks whether a requestor has an appropriate "admin" role to view users who can edit a movie.</p> 
+<pre>query GetMovieEditors($movieId: UUID!) @auth(level: PUBLIC) {
+  moviePermission(key: { movieId: $movieId, userId_expr: "auth.uid" }) @redact {
+    role @check(expr: "this == 'admin'", message: "You must be an admin to view all editors of a movie.")
+  }
+  moviePermissions(where: { movieId: { eq: $movieId }, role: { eq: "editor" } }) {
+    user {
+      id
+      username
+    }
+  }
+}
+</pre>
+<aside class="tip"><strong>Tip:</strong><span> Refer to the <a href="https://firebase.google.com/docs/reference/data-connect/gql/directive">directives reference guide</a> and <a href="#cel-this-binding">CEL reference for the <code translate="no" dir="ltr">this</code> binding</a>.</span></aside> <h3 id="antipatterns_to_avoid_in_authorization">Antipatterns to avoid in authorization</h3> <p>The previous section covers patterns to follow when using the <code translate="no" dir="ltr">@auth</code> directive.</p> <p>You should also be aware of important antipatterns to avoid.</p> <p><span class="compare-worse">Avoid passing user attributes IDs and auth token parameters in query and mutation arguments</span></p> <p>Firebase Authentication is a powerful tool for presenting authentication flows and securely capturing authentication data such as registered user IDs and numerous fields stored in auth tokens.</p> <p>It's not a recommended practice to pass user IDs and auth token data in query and mutation arguments.</p> <aside class="tip"><strong>Tip:</strong><span> Instead, in the filters and expressions you use to augment basic access levels, test against <code translate="no" dir="ltr">auth.uid</code> and the fields in <code translate="no" dir="ltr">auth.token</code> to enhance security. For more information about <code translate="no" dir="ltr">auth</code> data, see the <a href="#auth-cel-reference">expression reference</a>.</span></aside>
+<pre># Antipattern!
+# This incorrectly allows any user to view any other user's posts
+query AllMyPosts($userId: String!) @auth(level: USER) {
+  posts(where: {authorUid: {eq: $userId}}) {
+    id, text, createdAt
+  }
+}
+</pre> <p><span class="compare-worse">Avoid using the <code translate="no" dir="ltr">USER</code> access level without any filters</span></p> <p>As discussed several times in the guide, the core access levels like <code translate="no" dir="ltr">USER</code>, <code translate="no" dir="ltr">USER_ANON</code>, <code translate="no" dir="ltr">USER_EMAIL_VERIFIED</code> are baselines and starting points for authorization checks, to be enhanced with filters and expressions. Using these levels without a corresponding filter or expression that checks <em>which</em> user is performing the request is essentially equivalent to using the <code translate="no" dir="ltr">PUBLIC</code> level.</p> <aside class="tip"><strong>Tip:</strong><span> Firebase recommends that you <em>always</em> augment basic access levels with expressions.</span></aside>
+<pre># Antipattern!
+# This incorrectly allows any user to view all documents
+query ListDocuments @auth(level: USER) {
+  documents {
+    id
+    title
+    text
+  }
+}
+</pre> <p><span class="compare-worse">Avoid using <code translate="no" dir="ltr">PUBLIC</code> or <code translate="no" dir="ltr">USER</code> access level for prototyping</span></p> <p>To speed up development, it can be tempting to set all operations to the <code translate="no" dir="ltr">PUBLIC</code> access level or to <code translate="no" dir="ltr">USER</code> access level without further enhancements to authorize all operations and let you quickly test your code.</p> <aside class="tip"><strong>Tip:</strong><span> Before you deploy your operations to production, when you prototype in the console and with the tooling in the SQL Connect VS Code extension, set your queries and mutations to the <code translate="no" dir="ltr">NO_ACCESS</code> access level. You'll be able to execute these operations in the safe console and VS Code prototyping environments before they are deployed. Following this practice means that even if you deploy such operations to production, they cannot be executed.</span></aside> <p>When you've done very initial prototyping this way, begin to switch from <code translate="no" dir="ltr">NO_ACCESS</code> to production-ready authorization with <code translate="no" dir="ltr">PUBLIC</code> and <code translate="no" dir="ltr">USER</code> levels. However, don't deploy them as <code translate="no" dir="ltr">PUBLIC</code> or <code translate="no" dir="ltr">USER</code> without adding additional logic as shown in this guide.</p> 
+<pre># Antipattern!
+# This incorrectly allows anyone to delete any post
+mutation DeletePost($id: UUID!) @auth(level: PUBLIC) {
+  post: post_delete(
+    id: $id,
+  )
+}
+</pre> <p><span class="compare-worse">Avoid basing authorization on unverified email addresses</span></p> <p>Granting access to users on a particular domain is a great way to limit access. However, anyone can claim to own an email during sign-in. Ensure you only grant access to email addresses that have been verified through Firebase Authentication.</p> 
+<pre># Antipattern!
+# Anyone can claim an email address during sign-in
+mutation CreatePost($text: String!, $visibility: String) @auth(expr: "auth.token.email.endsWith('@example.com')") {
+  post_insert(data: {
+    # set the author's uid to the current user uid
+    authorUid_expr: "auth.uid"
+    text: $text
+    visibility: $visibility
+  })
+}
+</pre> <p><span class="compare-better">Also check <code translate="no" dir="ltr">auth.token.email_verified</code></span></p> 
+<pre>mutation CreatePost($text: String!, $visibility: String) @auth(expr: "auth.token.email_verified &amp;&amp; auth.token.email.endsWith('@example.com')") {
+  post_insert(data: {
+    # set the author's uid to the current user uid
+    authorUid_expr: "auth.uid"
+    text: $text
+    visibility: $visibility
+  })
+}
+</pre> <h3 id="audit_authorization_with_the_firebase_cli">Audit authorization with the Firebase CLI</h3> <p>As indicated earlier, preset access levels such as <code translate="no" dir="ltr">PUBLIC</code> and <code translate="no" dir="ltr">USER</code> are the starting point for robust authorization, and should be used with additional filter and expression-based authorization checks. They shouldn't be used on their own without careful consideration of the use case.</p> <p>SQL Connect helps you audit your authorization strategy by analyzing your connector code when you deploy to the server using <code translate="no" dir="ltr">firebase deploy</code> from the Firebase CLI. You can use this audit to help you review your codebase.</p> <p>When you deploy your connectors, the CLI will output assessments for existing, modified and new operation code in your connector.</p> <p>For modified and new operations, the CLI issues warnings and prompts you for confirmation when you use certain access levels in your new operations, or when you modify existing operations to use those access levels.</p> <aside class="note"><strong>Note:</strong><span> Insecure operation warnings are suppressed if you annotate the <code translate="no" dir="ltr">@auth</code> directive in the operation with the <a href="authorization-and-security#insecureReasons"><code translate="no" dir="ltr">insecureReason</code> argument</a>.</span></aside> <p>Warnings and prompts always occur for:</p> <ul> <li><code translate="no" dir="ltr">PUBLIC</code></li> </ul> <p>And, warnings and prompts occur on the following access levels when you <em>don't augment them</em> with filters using <code translate="no" dir="ltr">auth.uid</code>:</p> <ul> <li><code translate="no" dir="ltr">USER</code></li> <li><code translate="no" dir="ltr">USER_ANON</code></li> <li><code translate="no" dir="ltr">USER_EMAIL_VERIFIED</code></li> </ul> <h4 id="insecureReasons">Suppress insecure operation warnings with the <code translate="no" dir="ltr">@auth(insecureReason:)</code> argument</h4> <p>In many cases, you will conclude that using the <code translate="no" dir="ltr">PUBLIC</code> and <code translate="no" dir="ltr">USER*</code> access levels is perfectly appropriate.</p> <p>When your connector contains many operations, you may want clearer, more relevant security audit output that omits operations that would normally trigger a warning, but you know have the correct access level.</p> <p>You can suppress warnings for such operations with <code translate="no" dir="ltr">@auth(insecureReason:)</code>. For example:</p> 
+<pre>query listItem @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public.")
+  {
+    items {
+      id name
+    }
+  }
+</pre> <h2 id="use-app-check-with-fdc">Use Firebase App Check for app attestation</h2> <p>Authentication and authorization are critical components of SQL Connect security. Authentication and authorization combined with app attestation makes for a very robust security solution.</p> <p>With attestation through Firebase App Check, devices running your app will use an app or device attestation provider that attests that SQL Connect operations originate from your authentic app and requests originate from an authentic, untampered device. This attestation is attached to every request your app makes to SQL Connect.</p> <p>To learn how to enable App Check for SQL Connect and include its client SDK in your app, have a <a href="../app-check">look at the App Check overview</a>.</p> <h2 id="preset-authz-levels">Authentication levels for the <code translate="no" dir="ltr">@auth(level)</code> directive</h2> <p>The following table lists all standard access levels and their CEL equivalents. Authentication levels are listed from broad to narrow -- each level encompasses all users who match following levels.</p> <aside class="warning"><strong>Warning:</strong><span> These access levels are only the starting point for security, upon which you implement additional filter and expression-based authorization checks like those <a href="#auth-best-practices">discussed above</a>.</span></aside> <table> <thead> <tr> <th>Level</th> <th>Definition</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">PUBLIC</code></td> <td>The operation can be executed by anyone with or without authentication. <br> <br> <strong>Considerations:</strong> Data can be read or modified by any user. Firebase recommends this level of authorization for publicly-browsable data like product or media listings. See the <a href="#auth-best-practices">best practice examples and alternatives</a>. <br> <br> Equivalent to <code translate="no" dir="ltr">@auth(expr: "true")</code> <br> <br> <code translate="no" dir="ltr">@auth</code> filters and expressions cannot be used in combination with this access level. Any such expressions will fail with a 400 bad request error. </td> </tr> <tr> <td><code translate="no" dir="ltr">USER_ANON</code></td> <td>Any identified user, including those who have logged in anonymously with Firebase Authentication, is authorized to perform the query or mutation. <br> <br> Note: <code translate="no" dir="ltr">USER_ANON</code> is a superset of <code translate="no" dir="ltr">USER</code>. <br> <br> <strong>Considerations:</strong> Note that you must carefully design your queries and mutations for this level of authorization. This level allows user to be logged in <strong>anonymously</strong> (automatic sign-in tied only to a user device) with Authentication, and does not on its own perform other checks on, for example, whether data belongs to the user. See the <a href="#auth-best-practices">best practice examples and alternatives</a>. <br> <br> Since Authentication anonymous login flows issue a <code translate="no" dir="ltr">uid</code>, the <code translate="no" dir="ltr">USER_ANON</code> level is equivalent to <br> <code translate="no" dir="ltr">@auth(expr: "auth.uid != nil")</code> </td> </tr> <tr> <td><code translate="no" dir="ltr">USER</code></td> <td>Any user who has logged in with Firebase Authentication is authorized to perform the query or mutation except anonymous sign-in users. <br> <br> <strong>Considerations:</strong> Note that you must carefully design your queries and mutations for this level of authorization. This level only checks that the user is logged in with Authentication, and does not on its own perform other checks on, for example, whether data belongs to the user. See the <a href="#auth-best-practices">best practice examples and alternatives</a>. <br> <br> Equivalent to <code translate="no" dir="ltr">@auth(expr: "auth.uid != nil &amp;&amp;
+      auth.token.firebase.sign_in_provider != 'anonymous'")"</code> </td> </tr> <tr> <td><code translate="no" dir="ltr">USER_EMAIL_VERIFIED</code></td> <td>Any user who has logged in with Firebase Authentication with a verified email address is authorized to perform the query or mutation. <br> <br> <strong>Considerations:</strong> Since email verification is performed using Authentication, it's based on a more robust Authentication method, thus this level provides additional security compared to <code translate="no" dir="ltr">USER</code> or <code translate="no" dir="ltr">USER_ANON</code>. This level only checks that the user is logged in with Authentication with a verified email, and does not on its own perform other checks on, for example, whether data belongs to the user. See the <a href="#auth-best-practices">best practice examples and alternatives</a>. <br> <br> Equivalent to <code translate="no" dir="ltr">@auth(expr: "auth.uid != nil &amp;&amp;
+      auth.token.email_verified")"</code>
+</td> </tr> <tr> <td><code translate="no" dir="ltr">NO_ACCESS</code></td> <td>This operation cannot be executed outside an Admin SDK context. <br> <br> Equivalent to <code translate="no" dir="ltr">@auth(expr: "false")</code>
+</td> </tr> </tbody> </table> <h2 id="auth-cel-reference">CEL Reference for <code translate="no" dir="ltr">@auth(expr)</code>
+</h2> <p>As shown in examples elsewhere in this guide, you can and should use expressions defined in Common Expression Language (CEL) to control authorization for SQL Connect using <code translate="no" dir="ltr">@auth(expr:)</code> and <code translate="no" dir="ltr">@check</code> directives.</p> <p>This section covers CEL syntax relevant to creating expressions for these directives.</p> <p>Complete reference information for CEL is provided in the <a href="https://github.com/google/cel-spec">CEL specification</a>.</p> <h3 id="test_variables_passed_in_queries_and_mutations">Test variables passed in queries and mutations</h3> <p><code translate="no" dir="ltr">@auth(expr)</code> syntax allows you access and test variables from queries and mutations.</p> <p>For example, you can include an operation variable, such as <code translate="no" dir="ltr">$status</code>, using <code translate="no" dir="ltr">vars.status</code>.</p> 
+<pre>mutation Update($id: UUID!, $status: Any) @auth(expr: "has(vars.status)")
+</pre> <h3 id="data_available_to_expressions_request_response_this">Data available to expressions: request, response, this</h3> <p>You use data for:</p> <ul> <li>Evaluation with CEL expressions in <code translate="no" dir="ltr">@auth(expr:)</code> and <code translate="no" dir="ltr">@check(expr:)</code> directives</li> <li>Assignment using server expressions, <code translate="no" dir="ltr">&lt;field&gt;_expr</code>.</li> </ul> <p>The <code translate="no" dir="ltr">@auth(expr:)</code>, <code translate="no" dir="ltr">@check(expr:)</code>, <code translate="no" dir="ltr">@refresh(onMutationExecuted:)</code> CEL expressions can evaluate the following:</p> <ul> <li><code translate="no" dir="ltr">request.operationName</code></li> <li>
+<code translate="no" dir="ltr">vars</code> (alias for <code translate="no" dir="ltr">request.variables</code>)</li> <li>
+<code translate="no" dir="ltr">auth</code> (alias for <code translate="no" dir="ltr">request.auth</code>)</li> </ul> <p>In mutations, you can access and assign the contents of:</p> <ul> <li>
+<code translate="no" dir="ltr">response</code> (to check partial results in multi-step logic)</li> </ul> <p>Additionally, <code translate="no" dir="ltr">@check(expr:)</code> expressions can evaluate:</p> <ul> <li>
+<code translate="no" dir="ltr">this</code> (the value of the current field)</li> <li>
+<code translate="no" dir="ltr">response</code> (to check partial results in multi-step logic)</li> </ul> <p>And <code translate="no" dir="ltr">@refresh(onMutationExecuted:)</code> expressions have the following binding:</p> <ul> <li><code translate="no" dir="ltr">mutation.variables</code></li> <li><code translate="no" dir="ltr">mutation.auth</code></li> </ul> <h4 id="the_requestoperationname_binding">The request.operationName binding</h4> <p>The <code translate="no" dir="ltr">request.operarationName</code> binding stores the type of operation, either query or mutation.</p> <h4 id="the_vars_binding_requestvars">The <code translate="no" dir="ltr">vars</code> binding (request.vars)</h4> <p>The <code translate="no" dir="ltr">vars</code> binding allows your expressions to access all variables passed in your query or mutation.</p> <p>You can use <code translate="no" dir="ltr">vars.&lt;variablename&gt;</code> in an expression as an alias for the fully-qualified <code translate="no" dir="ltr">request.variables.&lt;variablename&gt;</code>:</p> 
+<pre># The following are equivalent
+mutation StringType($v: String!) @auth(expr: "vars.v == 'hello'")
+mutation StringType($v: String!) @auth(expr: "request.variables.v == 'hello'")
+</pre> <h4 id="the_auth_binding_requestauth">The <code translate="no" dir="ltr">auth</code> binding (request.auth)</h4> <p>Authentication identifies users requesting access to your data and provides that information as a binding you can build on in your expressions.</p> <p>In your filters and expressions, you can use <code translate="no" dir="ltr">auth</code> as an alias for <code translate="no" dir="ltr">request.auth</code>.</p> <p>The auth binding contains the following information:</p> <ul> <li>
+<code translate="no" dir="ltr">uid</code>: A unique user ID, assigned to the requesting user.</li> <li>
+<code translate="no" dir="ltr">token</code>: A map of values collected by Authentication.</li> </ul> <p>For more details on the contents of <code translate="no" dir="ltr">auth.token</code> see <a href="#auth-token-contents">Data in auth tokens</a></p> <h4 id="the_response_binding">The <code translate="no" dir="ltr">response</code> binding</h4> <p>The <code translate="no" dir="ltr">response</code> binding contains the data being assembled by the server in response to a query or mutation <em>as that data is being assembled</em>.</p> <p>As the operation proceeds, as each step is completed successfully, <code translate="no" dir="ltr">response</code> contains response data from successfully-completed steps.</p> <p>The <code translate="no" dir="ltr">response</code> binding is structured according the shape of its associated operation, including (multiple) nested fields and (if applicable) embedded queries.</p> <p>Note that when you access <strong>embedded query response data</strong>, fields can contain any data type, depending on the data requested in the embedded query; when you access data returned by mutation fields like <code translate="no" dir="ltr">_insert</code>s and <code translate="no" dir="ltr">_delete</code>s, they may contain UUID keys, number of deletes, nulls (see the <a href="https://firebase.google.com/docs/reference/sql-connect/gql/mutation">mutations reference</a>).</p> <p>For example:</p> <ul> <li>In a mutation that contains an embedded query, the <code translate="no" dir="ltr">response</code> binding contains lookup data at <code translate="no" dir="ltr">response.query.&lt;fieldName&gt;.&lt;fieldName&gt;....</code>, in this case, <code translate="no" dir="ltr">response.query.todoList</code> and <code translate="no" dir="ltr">response.query.todoList.priority</code>.</li> </ul> 
+<pre>mutation CheckTodoPriority(
+  $uniqueListName: String!
+) {
+  # This query is identified as `response.query`
+  query @check(expr: "response.query.todoList.priority == 'high'", message: "This list is not for high priority items!") {
+    # This field is identified as `response.query.todoList`
+    todoList(where: { name: $uniqueListName }) {
+      # This field is identified as `response.query.todoList.priority`
+      priority
+    }
+  }
+}
+</pre> <ul> <li>In a multi-step mutation, for example with multiple <code translate="no" dir="ltr">_insert</code> fields, the <code translate="no" dir="ltr">response</code> binding contains partial data at <code translate="no" dir="ltr">response.&lt;fieldName&gt;.&lt;fieldName&gt;....</code>, in this case, <code translate="no" dir="ltr">response.todoList_insert.id</code>.</li> </ul> 
+<pre>mutation CreateTodoListWithFirstItem(
+  $listName: String!,
+  $itemContent: String!
+) @transaction {
+  # Step 1
+  todoList_insert(data: {
+    id_expr: "uuidV4()",
+    name: $listName,
+  })
+  # Step 2:
+  todo_insert(data: {
+    listId_expr: "response.todoList_insert.id" # &lt;-- Grab the newly generated ID from the partial response so far.
+    content: $itemContent,
+  })
+}
+</pre> <h4 id="cel-this-binding">The <code translate="no" dir="ltr">this</code> binding</h4> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr">this</code> binding is valid for <code translate="no" dir="ltr">@check</code> expressions, not <code translate="no" dir="ltr">@auth</code> expressions.</span></aside> <p>The binding <code translate="no" dir="ltr">this</code> evaluates to the field that the <code translate="no" dir="ltr">@check</code> directive is attached to. In a basic case, you might evaluate single-valued query results.</p> 
+<pre>mutation UpdateMovieTitle (
+  $movieId: UUID!,
+  $newTitle: String!)
+  @auth(level: USER)
+  @transaction {
+  # Step 1: Query and check
+  query @redact {
+    moviePermission( # Look up a join table called MoviePermission with a compound key.
+      key: {movieId: $movieId, userId_expr: "auth.uid"}
+    ) {
+      # Check if the user has the editor role for the movie. `this` is the string value of `role`.
+      # If the parent moviePermission is null, the @check will also fail automatically.
+      role @check(expr: "this == 'editor'", message: "You must be an editor of this movie to update title")
+    }
+  }
+  # Step 2: Act
+  movie_update(id: $movieId, data: {
+    title: $newTitle
+  })
+}
+</pre> <p>If the returned field occurs multiple times because any ancestor is a list, each occurrence is tested with <code translate="no" dir="ltr">this</code> bound to each value.</p> <p>For any given path, if an ancestor is <code translate="no" dir="ltr">null</code> or <code translate="no" dir="ltr">[]</code>, the field won't be reached and the CEL evaluation will be skipped for that path. In other words, evaluation only takes place when <code translate="no" dir="ltr">this</code> is <code translate="no" dir="ltr">null</code> or non-<code translate="no" dir="ltr">null</code>, but never <code translate="no" dir="ltr">undefined</code>.</p> <p>When the field itself is a list or object, <code translate="no" dir="ltr">this</code> follows the same structure (including all descendants selected in case of objects), as illustrated in the following example.</p> 
+<pre>mutation UpdateMovieTitle2($movieId: UUID!, $newTitle: String!) @auth(level: USER) @transaction {
+  # Step 1: Query and check
+  query {
+    moviePermissions( # Now we query for a list of all matching MoviePermissions.
+      where: {movieId: {eq: $movieId}, userId: {eq_expr: "auth.uid"}}
+    # This time we execute the @check on the list, so `this` is the list of objects.
+    # We can use the `.exists` macro to check if there is at least one matching entry.
+    ) @check(expr: "this.exists(p, p.role == 'editor')", message: "You must be an editor of this movie to update title") {
+      role
+    }
+  }
+  # Step 2: Act
+  movie_update(id: $movieId, data: {
+    title: $newTitle
+  })
+}
+</pre> <h3 id="complex_expression_syntax">Complex expression syntax</h3> <p>You can write more complex expressions by combining with the <code translate="no" dir="ltr">&amp;&amp;</code> and <code translate="no" dir="ltr">||</code> operators.</p> 
+<pre>mutation UpsertUser($username: String!) @auth(expr: "(auth != null) &amp;&amp; (vars.username == 'joe')")
+</pre> <p>The following section describes all available operators.</p> <h3 id="operators_and_operator_precedence">Operators and operator precedence</h3> <p>Use the following table as a reference for operators and their corresponding precedence.</p> <p>Given arbitrary expressions <code translate="no" dir="ltr">a</code> and <code translate="no" dir="ltr">b</code>, a field <code translate="no" dir="ltr">f</code>, and an index <code translate="no" dir="ltr">i</code>.</p> <table> <thead> <tr> <th>Operator</th> <th>Description</th> <th>Associativity</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">a[i] a() a.f</code></td> <td>Index, call, field access</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">!a -a</code></td> <td>Unary negation</td> <td>right to left</td> </tr> <tr> <td><code translate="no" dir="ltr">a/b a%b a*b</code></td> <td>Multiplicative operators</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a+b a-b</code></td> <td>Additive operators</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a&gt;b a&gt;=b a&lt;b a&lt;=b</code></td> <td>Relational operators</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a in b</code></td> <td>Existence in list or map</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">type(a) == t</code></td> <td>Type comparison, where <code translate="no" dir="ltr">t</code> can be bool, int, float, number, string, list, map, timestamp, or duration</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a==b a!=b</code></td> <td>Comparison operators</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a &amp;&amp; b</code></td> <td>Conditional AND</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a || b</code></td> <td>Conditional OR</td> <td>left to right</td> </tr> <tr> <td><code translate="no" dir="ltr">a ? true_value : false_value</code></td> <td>Ternary expression</td> <td>left to right</td> </tr> </tbody> </table> <h3 id="auth-token-contents">Data in auth tokens</h3> <p>The <code translate="no" dir="ltr">auth.token</code> object may contain the following values:</p> <table> <thead> <tr> <th>Field</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">email</code></td> <td>The email address associated with the account, if present.</td> </tr> <tr> <td><code translate="no" dir="ltr">email_verified</code></td> <td>
+<code translate="no" dir="ltr">true</code> if the user has verified they have access to the <code translate="no" dir="ltr">email</code> address. Some providers automatically verify email addresses they own.</td> </tr> <tr> <td><code translate="no" dir="ltr">phone_number</code></td> <td>The phone number associated with the account, if present.</td> </tr> <tr> <td><code translate="no" dir="ltr">name</code></td> <td>The user's display name, if set.</td> </tr> <tr> <td><code translate="no" dir="ltr">sub</code></td> <td>The user's Firebase UID. This is unique within a project.</td> </tr> <tr> <td><code translate="no" dir="ltr">firebase.identities</code></td> <td>Dictionary of all the identities that are associated with this user's account. The keys of the dictionary can be any of the following: <code translate="no" dir="ltr">email</code>, <code translate="no" dir="ltr">phone</code>, <code translate="no" dir="ltr">google.com</code>, <code translate="no" dir="ltr">facebook.com</code>, <code translate="no" dir="ltr">github.com</code>, <code translate="no" dir="ltr">twitter.com</code>. The values of the dictionary are arrays of unique identifiers for each identity provider associated with the account. For example, <code translate="no" dir="ltr">auth.token.firebase.identities["google.com"][0]</code> contains the first Google user ID associated with the account.</td> </tr> <tr> <td><code translate="no" dir="ltr">firebase.sign_in_provider</code></td> <td>The sign-in provider used to obtain this token. Can be one of the following strings: <code translate="no" dir="ltr">custom</code>, <code translate="no" dir="ltr">password</code>, <code translate="no" dir="ltr">phone</code>, <code translate="no" dir="ltr">anonymous</code>, <code translate="no" dir="ltr">google.com</code>, <code translate="no" dir="ltr">facebook.com</code>, <code translate="no" dir="ltr">github.com</code>, <code translate="no" dir="ltr">twitter.com</code>.</td> </tr> <tr> <td><code translate="no" dir="ltr">firebase.tenant</code></td> <td>The tenantId associated with the account, if present. For example, <code translate="no" dir="ltr">tenant2-m6tyz</code>
+</td> </tr> </tbody> </table> <h4 id="additional_fields_in_jwt_id_tokens">Additional fields in JWT ID tokens</h4> <p>You can also access the following <code translate="no" dir="ltr">auth.token</code> fields:</p> <table class="responsive"> <tr><th colspan="3">Custom Token Claims</th></tr> <tr> <td><code translate="no" dir="ltr">alg</code></td> <td>Algorithm</td> <td><code translate="no" dir="ltr">"RS256"</code></td> </tr> <tr> <td><code translate="no" dir="ltr">iss</code></td> <td>Issuer</td> <td>Your project's service account email address</td> </tr> <tr> <td><code translate="no" dir="ltr">sub</code></td> <td>Subject</td> <td>Your project's service account email address</td> </tr> <tr> <td><code translate="no" dir="ltr">aud</code></td> <td>Audience</td> <td><code translate="no" dir="ltr">"https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit"</code></td> </tr> <tr> <td><code translate="no" dir="ltr">iat</code></td> <td>Issued-at time</td> <td>The current time, in seconds since the UNIX epoch</td> </tr> <tr> <td><code translate="no" dir="ltr">exp</code></td> <td>Expiration time</td> <td> The time, in seconds since the UNIX epoch, at which the token expires. It can be a <b>maximum of 3600 seconds later</b> than the <code translate="no" dir="ltr">iat</code>. <br> Note: this only controls the time when the <i>custom token</i> itself expires. But once you sign a user in using <code translate="no" dir="ltr">signInWithCustomToken()</code>, they will remain signed in into the device until their session is invalidated or the user signs out. </td> </tr> <tr> <td>
+<code translate="no" dir="ltr">&lt;claims&gt;</code> (optional)</td> <td></td> <td> Optional custom claims to include in token, which can be accessed through <code translate="no" dir="ltr">auth.token</code> (or <code translate="no" dir="ltr">request.auth.token</code>) in expressions. For example, if you create a custom claim <code translate="no" dir="ltr">adminClaim</code>, you can access it with <code translate="no" dir="ltr">auth.token.adminClaim</code>. </td> </tr> </table> <h2 id="whats-next">What's next?</h2> <ul> <li>Firebase SQL Connect provides an Admin SDK to let you perform <a href="admin-sdk">queries and mutations from privileged environments</a>.</li> <li>Learn about IAM security in the <a href="manage-services-and-databases">guide for managing services and databases</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/authorization-and-security" class="_attribution-link">https://firebase.google.com/docs/sql-connect/authorization-and-security</a>
+  </p>
+</div>

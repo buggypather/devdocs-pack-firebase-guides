@@ -1,0 +1,182 @@
+<h1>Learn the core syntax of the Realtime Database Security Rules language</h1> <p>Firebase Realtime Database Security Rules allow you to control access to data stored in your database. The flexible rules syntax allows you to create rules that match anything, from all writes to your database to operations on individual nodes.</p> <p>Realtime Database Security Rules are <em>declarative</em> configuration for your database. This means that the rules are defined separately from the product logic. This has a number of advantages: clients aren't responsible for enforcing security, buggy implementations will not compromise your data, and perhaps most importantly, there is no need for an intermediate referee, such as a server, to protect data from the world.</p> <p>This topic describes the basic syntax and structure Realtime Database Security Rules used to create complete rulesets.</p> <h2 id="structuring_your_security_rules">Structuring Your Security Rules</h2> <p>Realtime Database Security Rules are made up of JavaScript-like expressions contained in a JSON document. The structure of your rules should follow the structure of the data you have stored in your database.</p> <p>Basic rules <em>identify a set of nodes</em> to be secured, the <em>access methods</em> (e.g., read, write) involved, and <em>conditions</em> under which access is either allowed or denied. In the following examples, our <em>conditions</em> will be simple <code translate="no" dir="ltr">true</code> and <code translate="no" dir="ltr">false</code> statements, but in the next topic we'll cover more dynamic ways to express conditions.</p> <p>So, for example, if we are trying to secure a <code translate="no" dir="ltr">child_node</code> under a <code translate="no" dir="ltr">parent_node</code>, the general syntax to follow is:</p> 
+<pre>{
+  "rules": {
+    "parent_node": {
+      "child_node": {
+        ".read": &lt;condition&gt;,
+        ".write": &lt;condition&gt;,
+        ".validate": &lt;condition&gt;,
+      }
+    }
+  }
+}</pre> <p>Let's apply this pattern. For example, let's say you are keeping track of a list of messages and have data that looks like this:</p> 
+<pre>{
+  "messages": {
+    "message0": {
+      "content": "Hello",
+      "timestamp": 1405704370369
+    },
+    "message1": {
+      "content": "Goodbye",
+      "timestamp": 1405704395231
+    },
+    ...
+  }
+}</pre> <p>Your rules should be structured in a similar manner. Here's a set of rules for read-only security that might make sense for this data structure. This example illustrates how we specify database nodes to which rules apply and the conditions for evaluating rules at those nodes.</p> 
+<pre>{
+  "rules": {
+    // For requests to access the 'messages' node...
+    "messages": {
+      // ...and the individual wildcarded 'message' nodes beneath
+      // (we'll cover wildcarding variables more a bit later)....
+      "$message": {
+
+        // For each message, allow a read operation if &lt;condition&gt;. In this
+        // case, we specify our condition as "true", so read access is always granted.
+        ".read": "true",
+
+        // For read-only behavior, we specify that for write operations, our
+        // condition is false.
+        ".write": "false"
+      }
+    }
+  }
+}</pre> <h2 id="basic_rules_operations">Basic Rules Operations</h2> <p>There are three types of rules for enforcing security based on the type of operation being performed on the data: <code translate="no" dir="ltr">.write</code>, <code translate="no" dir="ltr">.read</code>, and <code translate="no" dir="ltr">.validate</code>. Here is a quick summary of their purposes:</p> <table class="responsive"> <thead> <tr> <th colspan="2">Rule Types</th> </tr> </thead> <tbody> <tr> <td><strong>.read</strong></td> <td>Describes if and when data is allowed to be read by users.</td> </tr> <tr> <td><strong>.write</strong></td> <td>Describes if and when data is allowed to be written.</td> </tr> <tr> <td><strong>.validate</strong></td> <td>Defines what a correctly formatted value will look like, whether it has child attributes, and the data type.</td> </tr> </tbody> </table> <aside class="note"><strong>Note:</strong><span> Access is disallowed by default. If no <code translate="no" dir="ltr">.write</code> or <code translate="no" dir="ltr">.read</code> rule is specified at or above a path, access will be denied.</span></aside> <h3 id="wildcard_capture_variables">Wildcard Capture Variables</h3> <p>All rules statements point to nodes. A statement can point to a specific node or use <code translate="no" dir="ltr">$</code> wildcard <em>capture variables</em> to point to sets of nodes at a level of the hierarchy. Use these capture variables to store the value of node keys for use inside subsequent rules statements. This technique lets you write more complex Security Rules <em>conditions</em>, something we'll cover in more detail in the next topic.</p> 
+<pre>{
+  "rules": {
+    "rooms": {
+      // this rule applies to any child of /rooms/, the key for each room id
+      // is stored inside $room_id variable for reference
+      "$room_id": {
+        "topic": {
+          // the room's topic can be changed if the room id has "public" in it
+          ".write": "$room_id.contains('public')"
+        }
+      }
+    }
+  }
+}</pre> <p>The dynamic <code translate="no" dir="ltr">$</code> variables can also be used in parallel with constant path names. In this example, we're using the <code translate="no" dir="ltr">$other</code> variable to declare a <code translate="no" dir="ltr">.validate</code> rule that ensures that <code translate="no" dir="ltr">widget</code> has no children other than <code translate="no" dir="ltr">title</code> and <code translate="no" dir="ltr">color</code>. Any write that would result in additional children being created would fail.</p> 
+<pre>{
+  "rules": {
+    "widget": {
+      // a widget can have a title or color attribute
+      "title": { ".validate": true },
+      "color": { ".validate": true },
+
+      // but no other child paths are allowed
+      // in this case, $other means any key excluding "title" and "color"
+      "$other": { ".validate": false }
+    }
+  }
+}</pre> <aside class="note"><strong>Note:</strong><span> Path keys are always strings. For this reason, it's important to keep in mind that when we attempt to compare a <code translate="no" dir="ltr">$</code> variable to a number, this will always fail. This can be corrected by converting the number to a string (e.g. <code translate="no" dir="ltr">$key === newData.val()+''</code>)</span></aside> <h2 id="read_and_write_rules_cascade">Read and Write Rules Cascade</h2> <aside class="note"><strong>Note:</strong><span> Shallower security rules override rules at deeper paths. Child rules can only grant additional privileges to what parent nodes have already declared. They cannot revoke a read or write privilege.</span></aside> <p><code translate="no" dir="ltr">.read</code> and <code translate="no" dir="ltr">.write</code> rules work from top-down, with shallower rules overriding deeper rules. If a rule grants read or write permissions at a particular path, then it also grants access to <em>all child nodes under it.</em> Consider the following structure:</p> 
+<pre>{
+  "rules": {
+     "foo": {
+        // allows read to /foo/*
+        ".read": "data.child('baz').val() === true",
+        "bar": {
+          /* ignored, since read was allowed already */
+          ".read": false
+        }
+     }
+  }
+}</pre> <p>This security structure allows <code translate="no" dir="ltr">/bar/</code> to be read from whenever <code translate="no" dir="ltr">/foo/</code> contains a child <code translate="no" dir="ltr">baz</code> with value <code translate="no" dir="ltr">true</code>. The <code translate="no" dir="ltr">".read": false</code> rule under <code translate="no" dir="ltr">/foo/bar/</code> has no effect here, since access cannot be revoked by a child path.</p> <p>While it may not seem immediately intuitive, this is a powerful part of the rules language and allows for very complex access privileges to be implemented with minimal effort. This will be illustrated when we get into user-based security later in this guide.</p> <p>Note that <code translate="no" dir="ltr">.validate</code> rules do not cascade. All validate rules must be satisfied at all levels of the hierarchy in order for a write to be allowed.</p> <h2 id="rules-not-filters">Rules Are Not Filters</h2> <p>Rules are applied in an atomic manner. That means that a read or write operation is failed immediately if there isn't a rule at that location or at a parent location that grants access. Even if every affected child path is accessible, reading at the parent location will fail completely. Consider this structure:</p> 
+<pre>{
+  "rules": {
+    "records": {
+      "rec1": {
+        ".read": true
+      },
+      "rec2": {
+        ".read": false
+      }
+    }
+  }
+}</pre> <p>Without understanding that rules are evaluated atomically, it might seem like fetching the <code translate="no" dir="ltr">/records/</code> path would return <code translate="no" dir="ltr">rec1</code> but not <code translate="no" dir="ltr">rec2</code>. The actual result, however, is an error:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+<pre data-language="">var db = firebase.database();
+db.ref("records").once("value", function(snap) {
+  // success method is not called
+}, function(err) {
+  // error callback triggered with PERMISSION_DENIED
+});</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">FIRDatabaseReference *ref = [[FIRDatabase database] reference];
+[[_ref child:@"records"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+  // success block is not called
+} withCancelBlock:^(NSError * _Nonnull error) {
+  // cancel block triggered with PERMISSION_DENIED
+}];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">var ref = FIRDatabase.database().reference()
+ref.child("records").observeSingleEventOfType(.Value, withBlock: { snapshot in
+    // success block is not called
+}, withCancelBlock: { error in
+    // cancel block triggered with PERMISSION_DENIED
+})</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
+DatabaseReference ref = database.getReference("records");
+ref.addListenerForSingleValueEvent(new ValueEventListener() {
+  @Override
+  public void onDataChange(DataSnapshot snapshot) {
+    // success method is not called
+  }
+
+  @Override
+  public void onCancelled(FirebaseError firebaseError) {
+    // error callback triggered with PERMISSION_DENIED
+  });
+});</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+<pre data-language="">
+curl https://docs-examples.firebaseio.com/rest/records/
+# response returns a PERMISSION_DENIED error
+</pre> </section> </div> <p>Since the read operation at <code translate="no" dir="ltr">/records/</code> is atomic, and there's no read rule that grants access to all of the data under <code translate="no" dir="ltr">/records/</code>, this will throw a <code translate="no" dir="ltr">PERMISSION_DENIED</code> error. If we evaluate this rule in the security simulator in our <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, we can see that the read operation was denied because no read rule allowed access to the <code translate="no" dir="ltr">/records/</code> path. However, note that the rule for <code translate="no" dir="ltr">rec1</code> was never evaluated because it wasn't in the path we requested. To fetch <code translate="no" dir="ltr">rec1</code>, we would need to access it directly:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+<pre data-language="">var db = firebase.database();
+db.ref("records/rec1").once("value", function(snap) {
+  // SUCCESS!
+}, function(err) {
+  // error callback is not called
+});</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">FIRDatabaseReference *ref = [[FIRDatabase database] reference];
+[[ref child:@"records/rec1"] observeSingleEventOfType:FEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
+    // SUCCESS!
+}];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">var ref = FIRDatabase.database().reference()
+ref.child("records/rec1").observeSingleEventOfType(.Value, withBlock: { snapshot in
+    // SUCCESS!
+})</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
+DatabaseReference ref = database.getReference("records/rec1");
+ref.addListenerForSingleValueEvent(new ValueEventListener() {
+  @Override
+  public void onDataChange(DataSnapshot snapshot) {
+    // SUCCESS!
+  }
+
+  @Override
+  public void onCancelled(FirebaseError firebaseError) {
+    // error callback is not called
+  }
+});</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+<pre data-language="">
+curl https://docs-examples.firebaseio.com/rest/records/rec1
+# SUCCESS!
+</pre> </section> </div> <h2 id="overlapping_statements">Overlapping Statements</h2> <p>It's possible for a more than one rule to apply to a node. In the case where multiple rules expressions identify a node, the access method is denied if <strong>any</strong> of the conditions is <code translate="no" dir="ltr">false</code>:</p> 
+<pre>{
+  "rules": {
+    "messages": {
+      // A rule expression that applies to all nodes in the 'messages' node
+      "$message": {
+        ".read": "true",
+        ".write": "true"
+      },
+      // A second rule expression applying specifically to the 'message1` node
+      "message1": {
+        ".read": "false",
+        ".write": "false"
+      }
+    }
+  }
+}</pre> <p>In the example above, reads to the <code translate="no" dir="ltr">message1</code> node will be denied because the second rules is always <code translate="no" dir="ltr">false</code>, even though the first rule is always <code translate="no" dir="ltr">true</code>.</p> <h2 id="next_steps">Next steps</h2> <p>You can deepen your understanding of Firebase Realtime Database Security Rules:</p> <ul> <li><p>Learn the next major concept of the Security Rules language, dynamic <a href="rules-conditions">conditions</a>, which let your Security Rules check user authorization, compare existing and incoming data, validate incoming data, check the structure of queries coming from the client, and more.</p></li> <li><p>Review typical security use cases and the <a href="../../rules/basics">Firebase Security Rules definitions that address them</a>.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/security/securing-data" class="_attribution-link">https://firebase.google.com/docs/database/security/securing-data</a>
+  </p>
+</div>

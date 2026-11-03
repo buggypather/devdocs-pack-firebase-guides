@@ -1,0 +1,45 @@
+<h1>Firebase Cloud Messaging message types</h1>     <aside class="tip"><strong>Tip:</strong><span> Transition your Android server-side requests to <code translate="no" dir="ltr">AndroidConfigV2</code> for timely delivery of user-visible notifications. For guidance, see <a href="../send/v2-api">Migrate from AndroidConfig to AndroidConfigV2</a>.</span></aside> <p>With FCM, you can send two types of messages to your client apps:</p> <ul> <li>Notification messages, similar to "display messages", are handled by the FCM SDK automatically. (On Android with <a href="../send/v2-api"><code translate="no" dir="ltr">AndroidConfigV2</code></a>, use <code translate="no" dir="ltr">RemoteNotification</code> for <strong>all</strong> messages that display a user-visible notification so they are delivered without intended delay; notifications are displayed automatically whether the app is in the foreground or background unless explicitly silenced in client code.)</li> <li>Data messages, which are handled by the client app.</li> </ul> <p>Notification messages contain a predefined set of user-visible keys and can contain an optional data payload. Data messages, by contrast, contain only your user-defined custom key-value pairs. Maximum payload for both message types is 4096 bytes, except when sending messages from the Firebase console, which enforces a 1000 character limit.</p> <table> <tr> <th></th> <th>Use scenario</th> <th>How to send</th> </tr> <tr> <td>Notification message</td> <td>FCM SDK displays the message to end-user devices on behalf of the client app when it's running in the background. Otherwise, if the app is running in the foreground when the notification is received, the app's code determines the behavior. </td> <td> <ol> <li>
+<p>In a trusted environment such as <a href="../../functions">Cloud Functions</a> or your app server, use the <a href="../send/admin-sdk">Firebase Admin SDK</a> or the <a href="../send/v1-api">HTTP v1 API</a>. Set the <code translate="no" dir="ltr">notification</code> key. May have optional data payload. Always <a href="collapsible-message-types">collapsible</a>.</p> <p> See some <a href="cross-platform#notification-message-color-icon"> examples of display notifications</a> and send request payloads. </p> </li> <li>Use the <a href="https://console.firebase.google.com/project/_/notification"> Notifications composer</a>: Enter the Message Text, Title, etc., and send. Add optional data payload by providing Custom data. </li> </ol>
+</td> </tr> <tr> <td>Data message</td> <td>Client app is responsible for processing data messages. Data messages have only custom key-value pairs with no reserved key names (see below). </td> <td>In a trusted environment such as <a href="../../functions"> Cloud Functions</a> or your app server, use the <a href="../send/admin-sdk">Firebase Admin SDK</a> or the <a href="../send/v1-api">HTTP v1 API</a>. In the send request, Set the <code translate="no" dir="ltr">data</code> key. </td> </tr> </table> <p>You can use notification messages when you want the FCM SDK to handle displaying a notification automatically when your app is running in the background. FCM can send a notification message with an optional data payload. In such cases, FCM displays the notification payload, and the client app handles the data payload.</p> <p>You can use data messages when you want to process the messages with your own client app code.</p> <aside class="note"><strong>Note:</strong><span> To learn more, see the <a href="../android-message-priority#deprioritize">Message handling and deprioritization on Android</a> page to make sure your notifications reach your users on Android</span></aside> <h2 id="notification-messages">Notification messages</h2> <p>You can send notification messages using the <a href="../send/firebase-console">Firebase console</a>, the <a href="../send/admin-sdk"> Firebase Admin SDK</a>, or the <a href="../send/v1-api">FCM HTTP v1 API</a>. The Firebase console provides analytics-based <a href="../../ab-testing/abtest-with-console">A/B testing</a> to help you refine and improve your notification messages.</p> <p>To send notification messages using the Firebase Admin SDK or the FCM HTTP v1 API, set the <code translate="no" dir="ltr">notification</code> key with the predefined set of key-value options of the notification message. You can use the following example to format a notification message in an IM app</p> 
+<pre>{
+  "message":{
+    "token":"bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
+    "notification":{
+      "title":"Portugal vs. Denmark",
+      "body":"great match!"
+    }
+  }
+}
+</pre> <p>Notification messages are delivered to the notification tray when the app is in the background. For apps in the foreground, messages are handled by a callback function.</p> <p>You can use the <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/projects.messages#Notification">FCM HTTP v1 API notification object</a> reference documentation for the full list of predefined keys available for building notification messages.</p> <h2 id="data-messages">Data messages</h2> <aside class="special"><strong>Important:</strong><span> While the connection to FCM is encrypted, it is not end-to-end encrypted. For sensitive data, you should implement your own end-to-end encryption. To learn more, see <a href="../encryption">Secure Your Message Data with End-to-End Encryption</a>.</span></aside> <p>It is up to you how you want to use the FCM payload <code translate="no" dir="ltr">data</code> to implement your encryption scheme of choice. Make sure that you don't use any reserved words in your custom key-value pairs. Reserved words include <code translate="no" dir="ltr">from</code>, <code translate="no" dir="ltr">message_type</code>, or any word starting with <code translate="no" dir="ltr">google.</code>, <code translate="no" dir="ltr">gcm.</code> or <code translate="no" dir="ltr">gcm.notification.</code>.</p> <p>The following example shows usage of the top-level, or common data field, which is interpreted by clients on all platforms that receive the message. On each platform, the client app receives the data payload in a callback function</p> 
+<pre>{
+  "message":{
+    "token":"bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
+    "data":{
+      "Nick" : "Mario",
+      "body" : "great match!",
+      "Room" : "PortugalVSDenmark"
+    }
+  }
+}
+</pre> <h2 id="optional-data-payload">Notification messages with optional data payload</h2> <p>You can send notification messages that contain an optional payload of custom key-value pairs programmatically or using the Firebase console. In the <a href="https://console.firebase.google.com/project/_/notification">Notifications composer</a>, use the <strong>Custom data</strong> fields in <strong>Advanced options</strong>.</p> <p>App behavior when receiving messages that include both notification and data payloads depends on whether the app is in the background or the foreground—essentially, whether or not it is active at the time of receipt.</p> <ul> <li>
+<strong>When in the background</strong>, apps receive the notification payload in the notification tray, and only handle the data payload when the user taps on the notification.</li> <li>
+<strong>When in the foreground</strong>, your app receives a message object with both payloads available.</li> </ul> <p>Here is a JSON-formatted message containing both the <code translate="no" dir="ltr">notification</code> key and the <code translate="no" dir="ltr">data</code> key:</p> 
+<pre>{
+  "message":{
+    "token":"bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
+    "notification":{
+      "title":"Portugal vs. Denmark",
+      "body":"great match!"
+    },
+    "data" : {
+      "Nick" : "Mario",
+      "Room" : "PortugalVSDenmark"
+    }
+  }
+}
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/customize-messages/set-message-type" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/customize-messages/set-message-type</a>
+  </p>
+</div>

@@ -1,0 +1,33 @@
+<h1>Run an XCTest</h1> <p>This guide describes how to prepare an XCTest for testing in Firebase Test Lab.</p> <h2 id="derived-data-location">
+<strong>Step 1</strong>: Configure your project's Derived Data location</h2> <p>Xcode places compiled iOS artifacts, including any tests you build, in a Derived Data directory. It is possible to keep the default location for that directory, if you'd like, but it's often helpful to choose a more easily-accessible place for the files, especially if you're going to be running tests with Test Lab often:</p> <ol> <li>Open your project in Xcode.</li> <li>In the macOS menu bar, select <strong>File</strong> &gt; <strong>Project Settings...</strong> </li> <li>Change the <strong>Derived Data</strong> drop-down from <strong>Default Location</strong> to <strong>Custom Location</strong>. </li> <li>In the field below the drop-down, select a location for Xcode to output your tests to. (This is your <var class="edit" scope="FOLDER_WITH_TEST_OUTPUT" translate="no">FOLDER_WITH_TEST_OUTPUT</var>) </li> </ol> <h2 id="build-generic-file">
+<strong>Step 2</strong>: Build a generic test file</h2> <p>Test Lab runs unit tests and UI tests using the <a href="https://developer.apple.com/documentation/xctest">XCTest</a> framework. To run your app's XCTests on Test Lab devices, build it for testing on a Generic iOS Device: </p> <ol> <li>From the device drop-down at the top of your Xcode workspace window, select <strong>Generic iOS Device</strong>. </li> <li>In the macOS menu bar, select <strong>Product</strong> &gt; <strong>Build For</strong> &gt; <strong>Testing</strong>. </li> </ol> <p>As an alternative, you can build your XCTest from the command line. Use the following command in a terminal:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>project</strong></p> 
+<pre data-language="">
+xcodebuild -project PATH/TO/YOUR_WORKSPACE/PROJECT_NAME.xcodeproj \
+   -scheme YOUR_SCHEME \
+   -derivedDataPath FOLDER_WITH_TEST_OUTPUT \
+   -sdk iphoneos build-for-testing</pre> </section> <section> <p class="_firebase-tab"><strong>workspace</strong></p> 
+<pre data-language="">
+xcodebuild -workspace PATH/TO/YOUR_WORKSPACE.xcworkspace \
+   -scheme YOUR_SCHEME \
+   -derivedDataPath FOLDER_WITH_TEST_OUTPUT \
+   -sdk iphoneos build-for-testing</pre> </section> </div> <h2 id="sign-verify-test">
+<strong>Step 3</strong>: Sign your test and verify</h2> <ol> <li>
+<p>Make sure all artifacts in the app and test are signed. For example, you can do this through Xcode by specifying signing settings like provisioning profile and identity. For more information, see <a href="https://developer.apple.com/support/code-signing/">Apple Code Signing</a>.</p> <aside class="note"><strong>Note</strong>: Test Lab re-signs your app with its own provisioning profile and certificate.</aside>
+</li> <li><p>Verify app signature by running <code translate="no" dir="ltr">codesign --verify --deep --verbose /path/to/MyApp.app</code> where "MyApp" is the name of the app inside the unzipped folder. This varies for each project. Expected output is <code translate="no" dir="ltr">MyApp.app: valid on disk</code>.</p></li> <li><p>If you are running an XCUITest, then you need to verify the test and runner by running <code translate="no" dir="ltr">codesign --verify --deep --verbose /path/to/MyTest-Runner.app</code> where "MyTest" is the name of the runner inside the unzipped folder. This varies for each project. Expected output is <code translate="no" dir="ltr">MyTest-Runner.app: valid on disk</code>.</p></li> </ol> <h2 id="package-app">
+<strong>Step 4</strong>: Package your app and test for uploading</h2> <ol> <li>
+<p>After your test successfully builds, zip it for upload to Test Lab:</p> 
+<pre>
+cd FOLDER_WITH_TEST_OUTPUT/Build/Products : \
+zip -r MyTests.zip Debug-iphoneos YOUR_SCHEME_iphoneosDEPLOYMENT_TARGET-arm64.xctestrun
+</pre>
+</li> </ol> <p>You can also package up your test by compressing the test files manually:</p> <ol> <li><p>Open Finder and navigate to <code translate="no" dir="ltr"><var class="edit" scope="FOLDER_WITH_TEST_OUTPUT" translate="no">FOLDER_WITH_TEST_OUTPUT</var></code>.</p></li> <li><p>Open the folder that has your project name as a prefix, then navigate to <code translate="no" dir="ltr">Build/Products</code> folder inside.</p></li> <li><p>Select the folders <code translate="no" dir="ltr">Debug-iphoneos</code> and <code translate="no" dir="ltr"><var class="edit" scope="YOUR_SCHEME" translate="no">YOUR_SCHEME</var>_iphoneos<var class="edit" scope="DEPLOYMENT_TARGET" translate="no">DEPLOYMENT_TARGET</var>-arm64.xctestrun</code> and then compress them.</p></li> </ol> <h2 id="run-test-locally">
+<strong>Step 5</strong>: (Optional) Run your test locally</h2> <p>Before running your test with Test Lab, you can run it locally with a USB-connected device to quality check its behavior:</p> 
+<pre>
+xcodebuild test-without-building \
+    -xctestrun "Derived Data/Build/Products/YOUR_SCHEME.xctestrun" \
+    -destination id=your-phone-id</pre> <h2 id="next-steps">Next steps</h2> <p>Upload and run your test in the <a href="firebase-console">Firebase console</a> or the <a href="command-line">gcloud CLI</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/test-lab/ios/run-xctest" class="_attribution-link">https://firebase.google.com/docs/test-lab/ios/run-xctest</a>
+  </p>
+</div>

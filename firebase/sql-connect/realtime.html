@@ -1,0 +1,317 @@
+<h1>Get real-time updates from SQL Connect</h1> <p>Your client code can subscribe to queries to get real-time updates when the result of the query changes.</p> <h2 id="before-you-begin">Before you begin</h2> <ul> <li>
+<p>Set up SDK generation for your project as described in the documentation for <a href="ios-sdk">Apple platforms</a>, <a href="android-sdk">Android</a>, <a href="web-sdk">web</a>, and <a href="flutter-sdk">Flutter</a>.</p> <ul> <li>You must enable client-side caching for all of your generated SDKs. Specifically, every SDK configuration must contain a declaration like the following:</li> </ul> 
+<pre>clientCache:
+  maxAge: 5s
+  storage: ... # Optional.
+</pre>
+</li> <li>
+<p>Your app clients must be must be using a recent version of the SQL Connect core SDK:</p> <ul> <li>Apple: Firebase SQL Connect SDK for Swift version 11.12.0 or newer</li> <li>Android: Firebase SQL Connect SDK version 17.3.0 or newer (BoM version 34.14.0 or newer)</li> <li>Web: JavaScript SDK version 12.12.0 or newer</li> <li>Flutter: <code translate="no" dir="ltr">firebase_data_connect</code> version 0.3.0 or newer</li> </ul>
+</li> <li><p>Regenerate your client SDKs using version 15.14.0 of the Firebase CLI, or newer.</p></li> </ul> <h2 id="subscribing-to-query-results">Subscribing to query results</h2> <p>You can subscribe to a query to respond to changes in the query result. For example, suppose you have the following schema and operations defined in your project:</p> 
+<pre># dataconnect/schema/schema.gql
+
+type Movie @table(key: "id") {
+  id: UUID! @default(expr: "uuidV4()")
+  title: String!
+  releaseYear: Int
+  genre: String
+  description: String
+  averageRating: Int
+}
+</pre>
+
+<pre># dataconnect/connector/operations.gql
+
+query GetMovieById($id: UUID!) @auth(level: PUBLIC) {
+  movie(id: $id) {
+    id
+    title
+    releaseYear
+    genre
+    description
+  }
+}
+
+mutation UpdateMovie(
+  $id: UUID!,
+  $genre: String!,
+  $description: String!
+) {
+  movie_update(id: $id,
+    data: {
+      genre: $genre
+      description: $description
+    })
+}
+</pre> <p>To subscribe to changes in the result of running <code translate="no" dir="ltr">GetMovieById</code>:</p> <div> <section><p class="_firebase-tab"><strong>Web</strong></p>
+
+<pre data-language="javascript">import { subscribe, DataConnectError, QueryResult } from 'firebase/data-connect';
+import { getMovieByIdRef, GetMovieByIdData, GetMovieByIdVariables } from '@dataconnect/generated';
+
+const queryRef = getMovieByIdRef({ id: "&lt;MOVIE_ID&gt;" });
+
+// Called when receiving an update.
+const onNext = (result: QueryResult&lt;GetMovieByIdData, GetMovieByIdVariables&gt;) =&gt; {
+  console.log("Movie &lt;MOVIE_ID&gt; updated", result);
+}
+
+const onError = (err?: DataConnectError) =&gt; {
+  console.error("received error", err);
+}
+
+// Called when unsubscribing or when the subscription is automatically released.
+const onComplete = () =&gt; {
+  console.log("subscription complete!");
+}
+
+const unsubscribe = subscribe(queryRef, onNext, onError, onComplete);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (React)</strong></p>
+
+<pre data-language="">import { subscribe, QueryResult } from 'firebase/data-connect';
+import { getMovieByIdRef, GetMovieByIdData, GetMovieByIdVariables } from '@dataconnect/generated';
+import { useState, useEffect } from "react";
+
+export const MovieInfo = ({ id: movieId }: { id: string }) =&gt; {
+  const [movieInfo, setMovieInfo] = useState&lt;GetMovieByIdData&gt;();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState&lt;Error | null&gt;(null);
+
+  useEffect(() =&gt; {
+    const queryRef = getMovieByIdRef({ id: movieId });
+
+    function updateUi(result: QueryResult&lt;GetMovieByIdData, GetMovieByIdVariables&gt;): void {
+      setMovieInfo(result.data);
+      setLoading(false);
+    }
+
+    const unsubscribe = subscribe(
+      queryRef,
+      updateUi,
+      (err) =&gt; {
+        setError(err ?? new Error("Unknown error occurred"));
+        setLoading(false);
+      }
+    );
+
+    return () =&gt; unsubscribe();
+  }, [movieId]);
+
+  if (loading)
+    return &lt;div&gt;Loading movie details...&lt;/div&gt;;
+  if (error || !movieInfo || !movieInfo.movie)
+    return &lt;div&gt;Error loading movie details: {error?.message}&lt;/div&gt;;
+
+  return (
+    &lt;div&gt;
+      &lt;h2&gt;{movieInfo.movie.title} ({movieInfo.movie.releaseYear})&lt;/h2&gt;
+      &lt;ul&gt;
+        &lt;li&gt;Genre: {movieInfo.movie.genre}&lt;/li&gt;
+        &lt;li&gt;Description: {movieInfo.movie.description}&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/div&gt;
+  );
+};
+</pre> <p>SQL Connect also supports caching and real-time subscriptions using TanStack. When you specify <code translate="no" dir="ltr">react: true</code> or <code translate="no" dir="ltr">angular: true</code> in your <code translate="no" dir="ltr">connector.yaml</code> file, SQL Connect generates bindings for React or Angular using TanStack.</p> <p>These bindings can work alongside of SQL Connect's built-in real-time support, but only with some difficulty. We recommend that you use either the TanStack-based bindings or SQL Connect's built-in real time support, but <strong>not both</strong>.</p> <p>Note that SQL Connect's own real-time implementation has some advantages over the TanStack bindings:</p> <ul> <li>Normalized caching: SQL Connect implements <em>normalized caching</em>, which improves data consistency as well as memory and network efficiency compared to query-level caching. With normalized caching, if an entity updates in one area of your app, it will also update in other areas that use that entity.</li> <li>Remote invalidation: SQL Connect can remotely invalidate cached entities on all subscribed devices.</li> </ul> <p>If you choose not to use TanStack, you should remove the <code translate="no" dir="ltr">react: true</code> and <code translate="no" dir="ltr">angular: true</code> settings from your <code translate="no" dir="ltr">connector.yaml</code> file.</p></section> <section><p class="_firebase-tab"><strong>iOS</strong></p>
+
+<pre data-language="">struct MovieDetailsView: View {
+    // QueryRef has the @Observable annotation, so its properties will
+    // automatically trigger updates on changes.
+    // Realtime subscriptions will keep the query results updated with changes.
+
+    // Define the ref variable.
+    // If parameters are known before hand, refs can be initialized here directly
+    // else they can be initialized in the init for the view, like here
+    @State private var queryRef: GetMovieByIdQuery.Ref
+
+    // Store the handle to unsubscribe from query updates.
+    // QueryRef can be used in multiple views.
+    // Each view can separately subscribe / unsubscribe to updates
+    // When there are no more subscribers to a QueryRef,
+    // it will cancel automatic updates for that QueryRef.
+    @State private var querySub: AnyCancellable?
+
+    init(movieId: String) {
+      // initialize the ref with the movieId
+      queryRef = DataConnect.moviesConnector.getMovieByIdQuery.ref(movieId: movieId)
+    }
+
+    var body: some View {
+        VStack {
+            // Use the query results in a View.
+            if let movie = queryRef.data?.movie {
+              Text(movie.title)
+              Text(mpvie.description)
+              // other details
+            } else {
+              // if last fetch/update resulted in an error
+              if error = queryRef.lastError {
+                Text("Error loading movie")
+              } else {
+                Text("Loading movie ...")
+              }
+            }
+        }
+        .onAppear {
+            // Subscribe to the query for updates using the Observable macro.
+            Task {
+                do {
+                    querySub = try await queryRef.subscribe().sink { _ in }
+                } catch {
+                    print("Error subscribing to query: \(error)")
+                }
+            }
+        }
+        .onDisappear {
+          // Calling cancel will unsubscribe from receiving updates.
+          querySub?.cancel()
+        }
+    }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+
+<pre data-language="java">class ExampleViewModel(
+  private val movieId: UUID
+) : ViewModel() {
+  private val _uiState = MutableStateFlow&lt;GetMovieByIdQuery.Data.Movie?&gt;(null)
+  val uiState = _uiState.asStateFlow()
+
+  // Subscribe to the query.
+  private val movieInfoSub = ExampleConnector.instance
+      .getMovieById.ref(GetMovieByIdQuery.Variables(id = movieId))
+      .subscribe()
+
+  init {
+    viewModelScope.launch {
+      movieInfoSub.flow.collect {
+        // As query results are collected, update the UI state.
+        val result = it.result.getOrElse { return@collect }
+        _uiState.update{ result.data.movie }
+      }
+    }
+  }
+
+  companion object {
+    fun provideFactory(movieId: UUID): ViewModelProvider.Factory =
+      viewModelFactory {
+        initializer {
+          ExampleViewModel(movieId = movieId)
+        }
+      }
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Flutter</strong></p>
+<p>Import your project's generated SDK:</p> 
+<pre data-language="dart">import 'package:flutter_app/dataconnect_generated/generated.dart';
+</pre> <p>Then call the <code translate="no" dir="ltr">subscribe()</code> method on a query reference:</p> 
+<pre data-language="dart">final queryRef = MovieConnector.instance.getMovieById(id: "&lt;MOVIE_ID&gt;").ref();
+final subscription = queryRef.subscribe().listen((result) {
+  final movie = result.data.movie;
+  if (movie != null) {
+    // Execute your logic to update the UI with the refreshed movie information.
+    updateUi(movie.title);
+  }
+});
+</pre> <p>To stop updates, you can call <code translate="no" dir="ltr">subscription.cancel()</code>.</p></section> </div> <p>Once you are subscribed to the query as in the preceding example, you will get updates whenever the result of the specific query changes. For example, if another client executes the <code translate="no" dir="ltr">UpdateMovie</code> mutation on the same ID you subscribed to, you will get an update.</p> <h2 id="automatic-query-refresh">Implicit query refresh signals</h2> <p>In the preceding example, you were able to subscribe to a query and get real-time updates without any additional modifications to your operations. In particular, you didn't need to specify that the <code translate="no" dir="ltr">UpdateMovie</code> mutation can affect the result of the <code translate="no" dir="ltr">GetMovieById</code> query.</p> <p>This is possible because the <code translate="no" dir="ltr">GetMovieById</code> query implicitly gets a refresh signal from the <code translate="no" dir="ltr">UpdateMovie</code> mutation. Implicit refresh signals are sent between a subset of the queries and mutations that you might write:</p> <p>If your <strong>query</strong> performs a <strong>single entity lookup by primary key</strong>, then any <strong>mutation</strong> that writes to the same entity, <strong>also identified by its primary key</strong> will implicitly trigger a refresh signal.</p> <ul> <li>
+<code translate="no" dir="ltr">_insert</code> and <code translate="no" dir="ltr">_insertMany</code>
+</li> <li>
+<code translate="no" dir="ltr">_upsert</code> and <code translate="no" dir="ltr">_upsertMany</code>
+</li> <li><code translate="no" dir="ltr">_update</code></li> <li><code translate="no" dir="ltr">_delete</code></li> </ul> <p><code translate="no" dir="ltr">_deleteMany</code> and <code translate="no" dir="ltr">_updateMany</code> don't send refresh signals.</p> <p>In the prior example, the <code translate="no" dir="ltr">GetMovieById</code> query looks up a single movie by ID (<code translate="no" dir="ltr">movie(id: $id)</code>) and the <code translate="no" dir="ltr">UpdateMovie</code> mutation updates a single movie, specified by ID (<code translate="no" dir="ltr">movie_update(id: $id, ...)</code>), so the query can take advantage of implicit refresh.</p> <p>Insert and upsert operations can trigger implicit refresh signals when you are keying off a known value, such as a Firebase Authentication user's UID.</p> <p>For example, consider a query like the following:</p> 
+<pre>query GetExtendedProfileByUser @auth(level: USER) {
+  profile(key: { id_expr: "auth.uid" }) {
+    id
+    status
+    photoUrl
+    socialLink
+  }
+}
+</pre> <p>The query would implicitly receive a refresh signal from a mutation like the following:</p> 
+<pre>mutation UpsertExtendedProfile($status: String, $photoUrl: String, $socialLink: String) @auth(level: USER) {
+  profile_upsert(
+    data: {
+      id_expr: "auth.uid"
+      status: $status
+      photoUrl: $photoUrl
+      socialLink: $socialLink
+    }
+  ) {
+    id
+    status
+    photoUrl
+    socialLink
+  }
+}
+</pre> <p>When your queries or mutations are more complicated, you will need to specify the conditions that require a query refresh. Continue to the next section to learn how.</p> <h2 id="explicit-query-refresh">Explicit query refresh signals</h2> <p>In addition to the refresh signals that are implicitly sent by mutations to queries, you can also explicitly specify when a query should receive a refresh signal. You do this by annotating your queries with the <code translate="no" dir="ltr">@refresh</code> directive.</p> <p>Using the <code translate="no" dir="ltr">@refresh</code> directive is required whenever your queries don't meet the specific criteria (see above) for automatic automatic refresh. Some examples of queries that must include this directive include:</p> <ul> <li>Queries that retrieve <strong>lists of entities</strong>
+</li> <li>Queries that perform <strong>joins on other tables</strong>
+</li> <li>
+<strong>Aggregation</strong> queries</li> <li>Queries using <strong>native SQL</strong>
+</li> <li>Queries using <strong>custom resolvers</strong>
+</li> </ul> <p>You can specify a refresh policy in two ways:</p> <h3 id="time-based-intervals">Time-based intervals</h3> <p>Refresh the query on a fixed time interval.</p> <p>For example, suppose your very active user base can result in a movie's cumulative rating being updated many times every minute, particularly after a movie's release. Rather than refreshing the query every time the rating changes, you could instead refresh the query every few seconds, to get updates reflecting the cumulative result of potentially several mutations.</p> 
+<pre># dataconnect/connector/operations.gql
+
+query GetMovieRating($id: UUID!) @auth(level: PUBLIC) @refresh(every: {seconds: 30}) {
+  movie(id: $id) {
+    id
+    averageRating
+  }
+}
+</pre> <h3 id="mutation-execution">Mutation execution</h3> <p>Refresh the query when a specific mutation is executed. This approach makes explicit which mutations have the potential to change the result of the query.</p> <p>For example, suppose you have a query that retrieves information about multiple movies instead of a specific one. This query should refresh whenever a mutation has updated any of the movie records.</p> 
+<pre>query ListMovies($offset: Int)
+    @auth(level: PUBLIC, insecureReason: "Anyone can list all movies.")
+    @refresh(onMutationExecuted: { operation: "UpdateMovie" }) {
+  movies(limit: 10, offset: $offset) {
+    id
+    title
+    releaseYear
+    genre
+    description
+  }
+}
+</pre> <p>You can also specify a CEL expression condition that must be satisfied for the mutation to trigger a query refresh.</p> <p>Doing so is highly recommended. The more precise you can be when specifying the condition, the fewer unnecessary database resources will be consumed, and the more responsive your app will be.</p> <p>For example, suppose you had a query that listed movies only in a specified genre. This query should only refresh when a mutation updates a movie in the same genre:</p> 
+<pre>query ListMoviesByGenre($genre: String, $offset: Int)
+    @auth(level: PUBLIC, insecureReason: "Anyone can list movies.")
+    @refresh(onMutationExecuted: {
+      operation: "UpdateMovie",
+      condition: "request.variables.genre == mutation.variables.genre"
+    }) {
+  movies(
+      where: { genre: { eq: $genre } },
+      limit: 10,
+      offset: $offset) {
+    id
+    title
+    releaseYear
+    genre
+    description
+  }
+}
+</pre> <h4 id="cel_bindings_in_refresh_conditions">CEL bindings in @refresh conditions</h4> <p>The <code translate="no" dir="ltr">condition</code> expression in <code translate="no" dir="ltr">onMutationExecuted</code> has access to two contexts:</p> <h5 id="request"><code translate="no" dir="ltr">request</code></h5> <p>The state of the query being subscribed to.</p> <table> <thead> <tr> <th>Binding</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">request.variables</code></td> <td>Variables passed to the query (for example, <code translate="no" dir="ltr">request.variables.id</code>)</td> </tr> <tr> <td><code translate="no" dir="ltr">request.auth.uid</code></td> <td>Firebase Authentication UID of the user who executed the query</td> </tr> <tr> <td><code translate="no" dir="ltr">request.auth.token</code></td> <td>Dictionary of Firebase Authentication token claims for the user who executed the query</td> </tr> </tbody> </table> <h5 id="mutation"><code translate="no" dir="ltr">mutation</code></h5> <p>The state of the mutation that executed.</p> <table> <thead> <tr> <th>Binding</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">mutation.variables</code></td> <td>Variables passed to the mutation (e.g., <code translate="no" dir="ltr">mutation.variables.movieId</code>)</td> </tr> <tr> <td><code translate="no" dir="ltr">mutation.auth.uid</code></td> <td>Firebase Authentication UID of the user who executed the mutation</td> </tr> <tr> <td><code translate="no" dir="ltr">mutation.auth.token</code></td> <td>Dictionary of Firebase Authentication token claims for the user who executed the mutation</td> </tr> </tbody> </table> <h5 id="common_patterns">Common Patterns</h5> 
+<pre># Refresh only when the mutation targets the same entity
+"request.variables.id == mutation.variables.id"
+
+# Refresh only when the same user who subscribed makes a change
+"request.auth.uid == mutation.auth.uid"
+
+# Refresh when a specific field value matches a condition
+"request.auth.uid == mutation.auth.uid &amp;&amp; mutation.variables.status == 'PUBLISHED'"
+
+# Refresh when a specific flag is set in the mutation
+"mutation.variables.isPublic == true"
+</pre> <h3 id="multiple-refresh-directives">Multiple @refresh directives</h3> <p>You can specify the <code translate="no" dir="ltr">@refresh</code> directive multiple times on a query to trigger a refresh whenever any of the criteria specified by one of the <code translate="no" dir="ltr">@refresh</code> directives are satisfied.</p> <p>For example, the following query will refresh every 30 seconds as well as whenever one of the specified mutations are executed:</p> 
+<pre>query ListMovies($offset: Int)
+    @auth(level: PUBLIC, insecureReason: "Anyone can list all movies.")
+    @refresh(every: {seconds: 30})
+    @refresh(onMutationExecuted: { operation: "UpdateMovie" })
+    @refresh(onMutationExecuted: { operation: "BulkUpdateMovies" }) {
+  movies(limit: 10, offset: $offset) {
+    id
+    title
+    releaseYear
+    genre
+    description
+  }
+}
+</pre> <h3 id="reference">Reference</h3> <p>See the <a href="https://firebase.google.com/docs/reference/sql-connect/gql/directive#refresh"><code translate="no" dir="ltr">@refresh</code> directive reference</a> for more examples.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/realtime" class="_attribution-link">https://firebase.google.com/docs/sql-connect/realtime</a>
+  </p>
+</div>

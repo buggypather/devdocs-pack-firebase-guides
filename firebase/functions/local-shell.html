@@ -1,0 +1,106 @@
+<h1>Test functions interactively</h1> <p>The Cloud Functions shell provides an interactive shell for invoking functions with test data. The shell supports all trigger types.</p> <h2 id="set_up_admin_credentials_optional">Set up admin credentials (optional)</h2> <p>If you want your functions tests to interact with Google APIs or other Firebase APIs via the <a href="../admin/setup">Firebase Admin SDK</a>, you may need to set up admin credentials.</p> <ul> <li>Cloud Firestore and Realtime Database triggers already have sufficient credentials, and do <strong>not</strong> require additional setup.</li> <li>All other APIs, including Firebase APIs such as Authentication and FCM or Google APIs such as Cloud Translation or Cloud Speech, require the setup steps described in this section. This applies whether you're using the Cloud Functions shell or <code translate="no" dir="ltr">firebase emulators:start</code>.</li> </ul> <p><strong>To set up admin credentials for emulated functions:</strong></p> <ol> <li>Open the <a href="https://console.cloud.google.com/iam-admin/serviceaccounts">Service Accounts pane</a> of the Google Cloud console.</li> <li>Make sure that <strong>App Engine default service account</strong> is selected, and use the options menu at right to select <strong>Create key</strong>.</li> <li>When prompted, select <strong>JSON</strong> for the key type, and click <strong>Create</strong>.</li> <li>
+<p>Set your Google default credentials to point to the downloaded key:</p> <div> <section><p class="_firebase-tab"><strong>Unix</strong></p>
+
+<pre data-language="">export GOOGLE_APPLICATION_CREDENTIALS="path/to/key.json"
+firebase functions:shell
+</pre></section> <section><p class="_firebase-tab"><strong>Windows</strong></p>
+
+<pre data-language="">set GOOGLE_APPLICATION_CREDENTIALS=path\to\key.json
+firebase functions:shell
+</pre></section> </div>
+</li> </ol> <p>After completing these steps, your functions tests can access Firebase and Google APIs using the <a href="../admin/setup">Admin SDK</a>. For example, when testing an Authentication trigger, the emulated function could call <code translate="no" dir="ltr">admin.auth().getUserByEmail(email)</code>.</p> <h2 id="serve_functions_using_a_cloud_functions_shell">Serve functions using a Cloud Functions shell</h2> <p>The Cloud Functions shell emulates all types of function triggers with an interactive shell for invoking the functions with test data. Options vary by function type, but the basic usage format is:</p> 
+<pre>myFunctionName(data, options)
+</pre> <p>The <code translate="no" dir="ltr">data</code> parameter is required for Realtime Database, Cloud Firestore, and PubSub triggers, and optional for all other function types. Also, the optional <code translate="no" dir="ltr">options</code> parameter is valid only for Realtime Database and Cloud Firestore functions.</p> <p>Optionally, you can load test data from a local file by saving the file as a variable and invoking a function with it:</p> 
+<pre>var data = require('./path/to/testData.json');
+myFunction(data);
+</pre> <h3 id="install_and_configure_the_cloud_functions_shell">Install and configure the Cloud Functions shell</h3> <p>To use this feature, <code translate="no" dir="ltr">firebase-tools</code> must have minimum version 3.11.0, and <code translate="no" dir="ltr">firebase-functions</code> SDK must have minimum version 0.6.2. To update both, run the following commands in the <code translate="no" dir="ltr">functions/</code> directory for your project:</p> 
+<pre>npm install --save firebase-functions@latest
+npm install -g firebase-tools
+</pre>  <p>If you're using custom functions configuration variables, first run the command to get your custom config (run this within the <code translate="no" dir="ltr">functions</code> directory) in your local environment:</p> 
+<pre>firebase functions:config:get &gt; .runtimeconfig.json
+# If using Windows PowerShell, replace the above with:
+# firebase functions:config:get | ac .runtimeconfig.json
+</pre> <p>Finally, run the shell with the following command:</p> 
+<pre>firebase functions:shell
+</pre> <h3 id="invoke_https_functions">Invoke HTTPS functions</h3> <p>For invoking HTTPS functions in the shell, usage is the same as the <a href="https://www.npmjs.com/package/request"><code translate="no" dir="ltr">request</code></a> NPM module, but replace <code translate="no" dir="ltr">request</code> with the name of the function you want to emulate. For example:</p> 
+<pre># invoke
+myHttpsFunction()
+myHttpsFunction.get()
+myHttpsFunction.post()
+
+# invoke at sub-path
+myHttpsFunction('/path')
+myHttpsFunction.get('/path')
+myHttpsFunction.post('/path')
+
+# send POST request with form data
+myHttpsFunction.post('/path').form( {foo: 'bar' })
+</pre> <h3 id="invoke_https_callable_functions">Invoke HTTPS Callable functions</h3> <p>When invoking HTTPS Callable functions locally, you'll need to provide appropriate test data.</p> 
+<pre># invoke
+myCallableFunction('test data')
+myCallableFunction({'foo': 'bar'})
+</pre> <p>Optionally, you may pass in a <code translate="no" dir="ltr">Firebase-Instance-ID-token</code> as the second parameter. This must be a string.</p> 
+<pre># invoke with FCM registration token
+myCallableFunction('test data', {instanceIdToken: 'sample token'})
+</pre> <p>Emulation of <code translate="no" dir="ltr">context.auth</code> is currently unavailable.</p> <h3 id="invoke_realtime_database_functions">Invoke Realtime Database functions</h3> <p>When running Realtime Database functions locally, you'll need to provide appropriate test data. This generally means providing new test data for <code translate="no" dir="ltr">onCreate</code> operations, old/removed data for <code translate="no" dir="ltr">onDelete</code> operations, and both for <code translate="no" dir="ltr">onUpdate</code> or <code translate="no" dir="ltr">onWrite</code> functions:</p> 
+<pre># invoke onCreate function
+myDatabaseFunction('new_data')
+
+# invoke onDelete function
+myDatabaseFunction('old_data')
+
+# invoke onUpdate or onWrite function
+myDatabaseFunction({before: 'old_data', after: 'new_data' })
+</pre> <p>In addition to the <code translate="no" dir="ltr">before/after</code> options, the shell provides the <code translate="no" dir="ltr">params</code> option to use in mocking wildcards in a path:</p> 
+<pre># mock wildcards in path, for example: if the path was input/{group}/{id}
+myDatabaseFunction('data', {params: {group: 'a', id: 123}})
+</pre> <p>By default, the shell runs Realtime Database functions with admin (service account) privileges. Use the <code translate="no" dir="ltr">auth</code> option to instead run functions as a particular end user, or as an unauthenticated user:</p> 
+<pre># to mock unauthenticated user
+myDatabaseFunction('data', {authMode: 'USER'})
+# to mock end user
+myDatabaseFunction('data', {auth: {uid: 'abcd'}})
+</pre> <h3 id="invoke_firestore_functions">Invoke Firestore functions</h3> <p>When running Firestore functions locally, you'll need to provide appropriate test data. This generally means providing new test data for <code translate="no" dir="ltr">onCreate</code> operations, old/removed data for <code translate="no" dir="ltr">onDelete</code> operations, and both for <code translate="no" dir="ltr">onUpdate</code> or <code translate="no" dir="ltr">onWrite</code> functions. Note that Firestore data has to be key-value pairs; see <a href="../firestore/manage-data/data-types">Supported Data Types</a>.</p> 
+<pre># invoke onCreate function
+myFirestoreFunction({foo: ‘new’})
+
+# invoke onDelete function
+myFirestoreFunction({foo: ‘old’})
+
+# invoke onUpdate or onWrite function
+myFirestoreFunction({before: {foo: ‘old’}, after: {foo: ‘new’} })
+</pre> <p>In addition to the <code translate="no" dir="ltr">before/after</code> fields of the <code translate="no" dir="ltr">data</code> object, you can use the <code translate="no" dir="ltr">params</code> fields on the <code translate="no" dir="ltr">options</code> object to mock wildcards in a document name:</p> 
+<pre># mock wildcards in document name, for example: if the name was input/{group}/{id}
+myFirestoreFunction({foo: ‘new’}, {params: {group: 'a', id: 123}})
+</pre> <p>The shell always runs Firestore functions with administrative privileges, which means it mocks a create/update/delete event as if it were done by an administrative user.</p> <h3 id="invoke_pubsub_functions">Invoke PubSub functions</h3> <p>For PubSub functions, insert your message payload in a <code translate="no" dir="ltr">Buffer</code> instance and add optionally data attributes as shown:</p> 
+<pre>// invokes a function with the JSON message { hello: 'world' } and attributes { foo: 'bar' }
+myPubsubFunction({data: new Buffer('{"hello":"world"}'), attributes: {foo: 'bar'}})
+</pre> <h3 id="invoke_analytics_functions">Invoke Analytics functions</h3> <p>You can invoke an Analytics function without any data by running <code translate="no" dir="ltr">myAnalyticsFunction()</code> in the shell. To run the function with test data, it is recommended to define a variable for the specific event data fields that your function needs:</p> 
+<pre>var data = {
+  eventDim: [{
+    // populates event.data.params
+    params: {foo: {stringValue: 'bar'} },
+    // Also valid:
+    //   {intValue: '10'}, {floatValue: '1.0'}, {doubleValue: '1.0'}
+    // populates event.data.name
+    name: 'event_name',
+    // populates event.data.logTime, specify in microseconds
+    timestampMicros: Date.now() * 1000,
+    // populates event.data.previousLogTime, specify in microseconds
+    previousTimestampMicros: Date.now() * 1000,
+    // populates event.data.reportingDate, specify in 'YYYYMMDD' format
+    date: '20170930',
+    // populates event.data.valueInUSD
+    valueInUsd: 230
+  }],
+  userDim: userDim
+};
+
+myAnalyticsFunction(data);
+</pre> <h3 id="invoke_storage_and_auth_functions">Invoke Storage and Auth functions</h3> <p>For Storage and Auth functions, invoke the local function with the test data that you’d like to see inside of the function. Your test data must follow the corresponding data formats:</p> <ul> <li>For Cloud Storage: <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.storage.objectmetadata"><code translate="no" dir="ltr">ObjectMetadata</code></a>
+</li> <li>For Authentication: <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.auth#authuserrecord"><code translate="no" dir="ltr">UserRecord</code></a>
+</li> </ul> <p>Specify only the fields that your code depends on, or none at all if you only want to run the function.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/local-shell" class="_attribution-link">https://firebase.google.com/docs/functions/local-shell</a>
+  </p>
+</div>

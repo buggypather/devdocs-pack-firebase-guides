@@ -1,0 +1,1409 @@
+<h1>Get started with Terraform and Firebase</h1> <aside class="preview"><strong>Preview:</strong><span> This is a preview release of Firebase support for Terraform. This set of features and tools might be changed in backward-incompatible ways and is not subject to any SLA or deprecation policy.</span></aside> <p>Firebase is beginning to support <a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs" class="external">Terraform</a>. If you're on a team that wants to automate and standardize creating Firebase projects with specific resources provisioned and services enabled, then using Terraform with Firebase can be a good fit for you.</p> <p>The basic workflow for using Terraform with Firebase includes the following:</p> <ul> <li><p>Creating and customizing a Terraform configuration file (a <code translate="no" dir="ltr">.tf</code> file) which specifies the infrastructure you want to provision (that is, resources you want to provision and the services you want to enable).</p></li> <li><p>Using gcloud CLI commands that interface with Terraform to provision the infrastructure specified in the <code translate="no" dir="ltr">.tf</code> file.</p></li> </ul> <h2 id="terraform-and-firebase">What can you do with Terraform and Firebase?</h2> <p>The <a href="#general-workflow-terraform-and-firebase">example generalized workflow in this guide</a> is creating a new Firebase project with an Android app. But you can do a lot more with Terraform, such as:</p> <ul> <li><p>Delete and modify existing infrastructure using Terraform.</p></li> <li>
+<p>Manage product-specific configuration and tasks using Terraform, like:</p> <ul> <li>Enabling Firebase Authentication sign-in providers.</li> <li>Creating Cloud Storage buckets or database instances and deploying Firebase Security Rules for them.</li> <li>Creating Firebase App Hosting backends, builds, and other related resources.</li> </ul>
+</li> </ul> <p>You can use standard Terraform config files and commands to accomplish all these tasks. And to help you with this, we've provided <a href="#sample-config-files">sample Terraform config files</a> for several common use cases.</p> <aside class="note">This guide and the currently available Firebase resources with Terraform support are the first releases for Firebase's support of Terraform. If you have feedback or encounter an issue, we'd like to hear from you! Please file an <a href="https://github.com/hashicorp/terraform-provider-google/issues" class="external">issue in the GitHub repo</a> (make sure to include the applicable <code translate="no" dir="ltr">resource</code> type). </aside> <p><br></p> <hr class="full-width"> <h2 id="general-workflow-terraform-and-firebase">Generalized workflow for using Terraform with Firebase</h2> <h3 id="general-workflow-prereqs"><strong>Prerequisites</strong></h3> <p>This guide is an introduction to using Terraform with Firebase, so it assumes basic proficiency with Terraform. Make sure that you've completed the following prerequisites before starting this workflow.</p> <ul> <li><p><a href="https://learn.hashicorp.com/tutorials/terraform/install-cli" class="external">Install Terraform</a> and familiarize yourself with Terraform using their official tutorials.</p></li> <li>
+<p><a href="https://cloud.google.com/sdk/docs/install-sdk" class="external">Install the Google Cloud CLI</a> (gcloud CLI). Login using a <a href="https://cloud.google.com/sdk/gcloud/reference/auth/application-default" class="external">user account</a> or a <a href="https://cloud.google.com/sdk/gcloud/reference/auth/activate-service-account" class="external">service account</a>.</p> <p><section class="expandable arrow-icon"> <p class="showalways">View requirements for user accounts and service accounts</p></section></p> <blockquote> <ul> <li>If using a user account, you must have accepted the Firebase Terms of Service (Firebase ToS). You have accepted the Firebase ToS if you can view a Firebase project in the <a href="https://console.firebase.google.com/" class="external">Firebase console</a> </li> <li>For Terraform to take certain actions (for example, create projects), the following must be true: <ul> <li>The user or service account must have the applicable IAM access for those actions.</li> <li>If the user or service account is part of a Google Cloud organization, then the org policies must allow the account to take those actions.</li> </ul>
+</li> </ul> </blockquote> 
+</li> </ul> <hr> <h3 id="general-workflow-create-customize-config-file">
+<strong>Step 1:</strong> Create and customize a Terraform config file</h3> <p>A Terraform config file needs two main sections (which are described in detail below):</p> <ul> <li><a href="#general-workflow-set-up-provider">A<code translate="no" dir="ltr">provider</code> setup section which dictates which Terraform resources can be accessed</a></li> <li><a href="#general-workflow-specify-infrastructure-to-create">A section of individual <code translate="no" dir="ltr">resource</code> blocks that specify what infrastructure to create</a></li> </ul> <h4 id="general-workflow-set-up-provider"><strong>Set up your <code translate="no" dir="ltr">provider</code></strong></h4> <p>A <code translate="no" dir="ltr">provider</code> setup is required no matter which Firebase products or services are involved.</p> <ol> <li>
+<p>Create a Terraform config file (like <code translate="no" dir="ltr">main.tf</code> file) in your local directory.</p> <p>In this guide, you'll use this config file to specify both the <code translate="no" dir="ltr">provider</code> setup and all the infrastructure that you want Terraform to create. Note, though, that you have options for how to include the provider setup.</p> <p><section class="expandable arrow-icon" id="options-for-provider-setup"> <p class="showalways" id="options-for-provider-setup">View options for how to include the <code translate="no" dir="ltr">provider</code> setup</p></section></p> <blockquote> <p>You have the following options for how to include a <code translate="no" dir="ltr">provider</code> setup to the rest of your Terraform configuration:</p> <ul> <li>
+<p><strong>Option 1:</strong> Include it at the top of a single Terraform <code translate="no" dir="ltr">.tf</code> config file (as shown in this guide).</p> <ul> <li>Use this option if you're just getting started with Terraform or just trying out Terraform with Firebase.</li> </ul>
+</li> <li>
+<p><strong>Option 2:</strong> Include it in a separate <code translate="no" dir="ltr">.tf</code> file (like a <code translate="no" dir="ltr">provider.tf</code> file), apart from the <code translate="no" dir="ltr">.tf</code> file where you specify infrastructure to create (like a <code translate="no" dir="ltr">main.tf</code> file).</p> <ul> <li>Use this option if you're part of a larger team that needs to standardize setup.</li> <li>When running Terraform commands, both the <code translate="no" dir="ltr">provider.tf</code> file and the <code translate="no" dir="ltr">main.tf</code> file must be in the same directory.</li> </ul>
+</li> </ul> </blockquote> 
+</li> <li>
+<p>Include the following <code translate="no" dir="ltr">provider</code> setup at the top of the <code translate="no" dir="ltr">main.tf</code> file.</p> <p>You must use the <code translate="no" dir="ltr">google-beta</code> provider because this is a beta release of using Firebase with Terraform. Exercise caution when using in production.</p> 
+<pre># Terraform configuration to set up providers by version.
+terraform {
+  required_providers {
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~&gt; 6.0"
+    }
+  }
+}
+
+# Configures the provider to use the resource block's specified project for quota checks.
+provider "google-beta" {
+  user_project_override = true
+}
+
+# Configures the provider to not use the resource block's specified project for quota checks.
+# This provider should only be used during project creation and initializing services.
+provider "google-beta" {
+  alias = "no_user_project_override"
+  user_project_override = false
+}</pre> <p>Learn more about the <a href="#faq-understand-project-related-attributes">different types of project-related attributes</a> (including what this guide calls the "quota-check project") when using Terraform with Firebase.</p>
+</li> <li><p>Continue to the next section to complete your config file and specify what infrastructure to create.</p></li> </ol> <h4 id="general-workflow-specify-infrastructure-to-create"><strong>Specify what infrastructure to create using <code translate="no" dir="ltr">resource</code> blocks</strong></h4> <p>In your Terraform config file (for this guide, your <code translate="no" dir="ltr">main.tf</code> file), you need to specify all the infrastructure you want Terraform to create (meaning all the resources you want to provision and all the services you want to enable). In this guide, find a full list of all <a href="#supported-resources">Firebase resources that support Terraform</a>.</p> <aside class="note"><strong>Note:</strong><span> Check out our <a href="#sample-config-files">sample Terraform config files</a> for several common use cases.</span></aside> <ol> <li><p>Open your <code translate="no" dir="ltr">main.tf</code> file.</p></li> <li>
+<p>Under the <code translate="no" dir="ltr">provider</code> setup, include the following config of <code translate="no" dir="ltr">resource</code> blocks.</p> <p>This basic example creates a new Firebase project and then creates a Firebase Android App within that project.</p> <aside class="special"><strong>Important:</strong><span> Whenever you create a Firebase App, you also need to configure your app's codebase to use Firebase, which includes adding your app's Firebase config and the Firebase SDKs for the products you want to use.</span></aside> 
+<pre># Terraform configuration to set up providers by version.
+...
+
+# Configures the provider to use the resource block's specified project for quota checks.
+...
+
+# Configures the provider to not use the resource block's specified project for quota checks.
+...
+
+# Creates a new Google Cloud project.
+resource "google_project" "default" {
+  provider   = google-beta.no_user_project_override
+
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+  # Required for any service that requires the Blaze pricing plan
+  # (like Firebase Authentication with GCIP)
+  billing_account = "000000-000000-000000"
+
+  # Required for the project to display in any list of Firebase projects.
+  labels = {
+    "firebase" = "enabled"
+  }
+}
+
+# Enables required APIs.
+resource "google_project_service" "default" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.default.project_id
+  for_each = toset([
+    "cloudbilling.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "firebase.googleapis.com",
+    # Enabling the ServiceUsage API allows the new project to be quota checked from now on.
+    "serviceusage.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created above.
+resource "google_firebase_project" "default" {
+  provider = google-beta
+  project  = google_project.default.project_id
+
+  # Waits for the required APIs to be enabled.
+  depends_on = [
+    google_project_service.default
+  ]
+}
+
+# Creates a Firebase Android App in the new project created above.
+resource "google_firebase_android_app" "default" {
+  provider = google-beta
+
+  project      = google_project.default.project_id
+  display_name = "My Awesome Android app"
+  package_name = "awesome.package.name"
+
+  # Wait for Firebase to be enabled in the Google Cloud project before creating this App.
+  depends_on = [
+    google_firebase_project.default,
+  ]
+}</pre>
+</li> </ol> <p><section class="expandable" id="annotated-config-file-resources"> <h5 class="showalways" id="annotated-config-file-resources">View a highly annotated version of this example config file</h5></section></p> <p>If you're not familiar with the infrastructure of projects and apps as resources, review the following documentation:</p> <ul> <li><a href="../learn-more">Understand Firebase projects</a></li> <li>
+<a href="https://firebase.google.com/docs/reference/firebase-management/rest">Reference documentation</a> for Firebase project management</li> </ul> 
+<pre># Terraform configuration to set up providers by version.
+...
+
+# Configures the provider to use the resource block's specified project for quota checks.
+...
+
+# Configures the provider to not use the resource block's specified project for quota checks.
+...
+
+# Creates a new Google Cloud project.
+resource "google_project" "default" {
+  # Use the provider that enables the setup of quota checks for a new project
+  provider   = google-beta.no_user_project_override
+
+  name            = "Project Display Name"        // learn more about the project name
+  project_id      = "project-id-for-new-project"  // learn more about the project ID
+  # Required for any service that requires the Blaze pricing plan
+  # (like Firebase Authentication with GCIP)
+  billing_account = "000000-000000-000000"
+
+  # Required for the project to display in any list of Firebase projects.
+  labels = {
+    "firebase" = "enabled"  // learn more about the Firebase-enabled label
+  }
+}
+
+# Enables required APIs.
+resource "google_project_service" "default" {
+  # Use the provider without quota checks for enabling APIS
+  provider = google-beta.no_user_project_override
+  project  = google_project.default.project_id
+  for_each = toset([
+    "cloudbilling.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "firebase.googleapis.com",
+    # Enabling the ServiceUsage API allows the new project to be quota checked from now on.
+    "serviceusage.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created above.
+# This action essentially "creates a Firebase project" and allows the project to use
+# Firebase services (like Firebase Authentication) and
+# Firebase tooling (like the Firebase console).
+# Learn more about the relationship between Firebase projects and Google Cloud.
+resource "google_firebase_project" "default" {
+  # Use the provider that performs quota checks from now on
+  provider = google-beta
+
+  project  = google_project.default.project_id
+
+  # Waits for the required APIs to be enabled.
+  depends_on = [
+    google_project_service.default
+  ]
+}
+
+# Creates a Firebase Android App in the new project created above.
+# Learn more about the relationship between Firebase Apps and Firebase projects.
+resource "google_firebase_android_app" "default" {
+  provider = google-beta
+
+  project      = google_project.default.project_id
+  display_name = "My Awesome Android app"  # learn more about an app's display name
+  package_name = "awesome.package.name"    # learn more about an app's package name
+
+  # Wait for Firebase to be enabled in the Google Cloud project before creating this App.
+  depends_on = [
+    google_firebase_project.default,
+  ]
+}</pre>  <hr> <h3 id="general-workflow-run-terraform-commands">
+<strong>Step 2:</strong> Run Terraform commands to create the specified infrastructure</h3> <p>To provision the resources and enable the services specified in your <code translate="no" dir="ltr">main.tf</code> file, run the following commands from the same directory as your <code translate="no" dir="ltr">main.tf</code> file. For detailed information about these commands, see the <a href="https://developer.hashicorp.com/terraform/cli/commands" class="external">Terraform documentation</a>.</p> <ol> <li>
+<p>If this is the first time that you're running Terraform commands in the directory, you need to initialize the configuration directory and install the Google Terraform provider. Do this by running the following command:</p> 
+<pre>terraform init</pre>
+</li> <li>
+<p>Create the infrastructure specified in your <code translate="no" dir="ltr">main.tf</code> file by running the following command:</p> 
+<pre>terraform apply</pre>
+</li> <li>
+<p>Confirm that everything was provisioned or enabled as expected:</p> <ul> <li>
+<p><strong>Option 1:</strong> See the configuration printed in your terminal by running the following command:</p> 
+<pre>terraform show</pre>
+</li> <li><p><strong>Option 2:</strong> View your Firebase project in the <a href="https://console.firebase.google.com/" class="external">Firebase console</a>.</p></li> </ul>
+</li> </ol> <p><br></p> <hr class="full-width"> <h2 id="supported-resources">Firebase resources with Terraform support</h2> <p>The following Firebase and Google resources have Terraform support. And we're adding more resources all the time! So if you don't see the resource that you want to manage with Terraform, then check back soon to see if it's available or request it by <a href="https://github.com/hashicorp/terraform-provider-google/issues" class="external">filing an issue in the GitHub repo</a>.</p> <hr> <h3 id="resources-project-app-management">Firebase project and app management</h3> <ul> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_project" class="external"><code translate="no" dir="ltr">google_firebase_project</code></a> — enable Firebase services on an existing Google Cloud project</p></li> <li>
+<p>Firebase Apps</p> <ul> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_apple_app" class="external"><code translate="no" dir="ltr">google_firebase_apple_app</code></a> — create or manage a Firebase Apple platforms App</li> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_android_app" class="external"><code translate="no" dir="ltr">google_firebase_android_app</code></a> — create or manage a Firebase Android App</li> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_web_app" class="external"><code translate="no" dir="ltr">google_firebase_web_app</code></a> — create or manage a Firebase Web App</li> </ul> <aside class="special"><strong>Important:</strong><span> Whenever you create a Firebase App, you also need to configure your app's codebase to use Firebase, which includes adding your app's Firebase config and the Firebase SDKs for the products you want to use.</span></aside>
+</li> </ul> <hr> <h3 id="resources-authentication">Firebase Authentication</h3> <ul> <li>
+<p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/identity_platform_config" class="external"><code translate="no" dir="ltr">google_identity_platform_config</code></a> — enable Google Cloud Identity Platform (GCIP) (which is the backend for Firebase Authentication) and provide project-level authentication settings</p> <ul> <li><p>Configuring Firebase Authentication via Terraform requires enabling GCIP. Make sure to review the <a href="#tf-sample-auth">sample <code translate="no" dir="ltr">.tf</code> file for how to set up Firebase Authentication</a>.</p></li> <li><p>The project in which Terraform will enable GCIP and/or Firebase Authentication must be on the Blaze pricing plan (that is, the project must have an associated Cloud Billing account). You can do this programmatically by setting the <a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/google_project#billing_account" class="external"><code translate="no" dir="ltr">billing_account</code></a> attribute in the <code translate="no" dir="ltr">google_project</code> resource.</p></li> <li><p>This resource also enables more configurations, like local sign-in methods, such as anonymous, email/password, and phone authentication, as well as blocking functions and authorized domains.</p></li> </ul>
+</li> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/identity_platform_default_supported_idp_config" class="external"><code translate="no" dir="ltr">google_identity_platform_default_supported_idp_config</code></a> — configure common federated Identity Providers, like Google, Facebook, or Apple</p></li> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/identity_platform_oauth_idp_config" class="external"><code translate="no" dir="ltr">identity_platform_oauth_idp_config</code></a> — configure arbitrary OAuth Identity Provider (IdP) sources</p></li> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/identity_platform_inbound_saml_config" class="external"><code translate="no" dir="ltr">google_identity_platform_inbound_saml_config</code></a> — configure SAML integrations</p></li> </ul> <p>Not yet supported:</p> <ul> <li>Configuring multi-factor authentication (MFA) via Terraform</li> </ul> <hr> <h3 id="resources-app-hosting">Firebase App Hosting</h3> <ul> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebase_app_hosting_backend" class="external"><code translate="no" dir="ltr">google_firebase_app_hosting_backend</code></a> — create and manage a Firebase App Hosting backend, including its GitHub repository connection and live branch for continuous deployment.</p></li> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebase_app_hosting_build" class="external"><code translate="no" dir="ltr">google_firebase_app_hosting_build</code></a> — create a build for a backend, at a specific point codebase reference tag and point in time.</p></li> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebase_app_hosting_traffic" class="external"><code translate="no" dir="ltr">google_firebase_app_hosting_traffic</code></a> — roll out a build or configure continuous GitHub deployment.</p></li> </ul> <hr> <h3 id="resources-firebase-data-connect">Firebase SQL Connect</h3> <ul> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebase_data_connect_service" class="external"><code translate="no" dir="ltr">google_firebase_data_connect_service</code></a> — create a SQL Connect service</li> </ul> <hr> <h3 id="resources-realtime-database">Firebase Realtime Database</h3> <ul> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_database_instance" class="external"><code translate="no" dir="ltr">google_firebase_database_instance</code></a> — create a Realtime Database instance</li> </ul> <p>Not yet supported:</p> <ul> <li>Deploying Firebase Realtime Database Security Rules via Terraform (learn how to <a href="../../rules/manage-deploy#realtime-database">deploy these Security Rules</a> using other tooling, including programmatic options)</li> </ul> <hr> <h3 id="resources-firestore">Cloud Firestore</h3> <ul> <li>
+<p><a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firestore_database" class="external"><code translate="no" dir="ltr">google_firestore_database</code></a> — create a Cloud Firestore instance</p> <aside class="special"><strong>Important:</strong><span> Set the following field to use Cloud Firestore with Firebase: <code translate="no" dir="ltr">type = "FIRESTORE_NATIVE"</code></span></aside>
+</li> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_index" class="external"><code translate="no" dir="ltr">google_firestore_index</code></a> — enable efficient queries for Cloud Firestore</p></li> <li>
+<p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firestore_document" class="external"><code translate="no" dir="ltr">google_firestore_document</code></a> — seed a Cloud Firestore instance with a specific document in a collection</p> <p><strong>Important:</strong> Do not use real end-user or production data in this seed document.</p>
+</li> </ul> <hr> <h3 id="resources-storage">Cloud Storage for Firebase</h3> <ul> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_storage_bucket" class="external"><code translate="no" dir="ltr">google_firebase_storage_bucket</code></a> — make an existing Cloud Storage bucket accessible for Firebase SDKs, authentication, and Firebase Security Rules</p></li> <li>
+<p><a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/storage_bucket_object" class="external"><code translate="no" dir="ltr">google_storage_bucket_object</code></a> — add an object to a Cloud Storage bucket</p> <p><strong>Important:</strong> Do not use real end-user or production data in this file.</p>
+</li> </ul> <aside class="caution"> <p><strong>Starting <nobr>October 30, 2024</nobr></strong>, you can no longer provision the <em>default</em> Cloud Storage bucket using Terraform. For details about these changes, see our <a href="../../storage/faqs-storage-changes-announced-sept-2024#terraform-changes">FAQs</a>. </p> <p>Instead, provision the default Cloud Storage bucket using the <a href="https://console.firebase.google.com/project/_/storage/" class="external">Firebase console</a> or the <a href="https://firebase.google.com/docs/reference/rest/storage/rest/v1alpha/projects.defaultBucket/create"><code translate="no" dir="ltr">projects.defaultBucket.create</code></a> endpoint. </p> </aside> <hr> <h3 id="resources-security-rules">Firebase Security Rules (for Cloud Firestore and Cloud Storage)</h3> <p>Note that Firebase Realtime Database uses a different provisioning system for its Firebase Security Rules.</p> <ul> <li><p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebaserules_ruleset" class="external"><code translate="no" dir="ltr">google_firebaserules_ruleset</code></a> — define Firebase Security Rules that apply to a Cloud Firestore instance or a Cloud Storage bucket</p></li> <li>
+<p><a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebaserules_release" class="external"><code translate="no" dir="ltr">google_firebaserules_release</code></a> — deploy specific rulesets to a Cloud Firestore instance or a Cloud Storage bucket</p> <aside class="special"><strong>Important:</strong><span> A <code translate="no" dir="ltr">ruleset</code> doesn't go into effect until the latest deployed <code translate="no" dir="ltr">release</code> specifies that <code translate="no" dir="ltr">ruleset</code> as the one to be in effect for the Cloud Firestore instance and/or Cloud Storage bucket.</span></aside>
+</li> </ul> <hr> <h3 id="resources-firebase-appcheck">Firebase App Check</h3> <ul> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_app_check_service_config" class="external"><code translate="no" dir="ltr">google_firebase_app_check_service_config</code></a> — enable App Check enforcement for a service</li> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_app_check_app_attest_config" class="external"><code translate="no" dir="ltr">google_firebase_app_check_app_attest_config</code></a> — register an Apple platforms app with the App Attest provider</li> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_app_check_device_check_config" class="external"><code translate="no" dir="ltr">google_firebase_app_check_device_check_config</code></a> — register an Apple platforms app with the DeviceCheck provider</li> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_app_check_play_integrity_config" class="external"><code translate="no" dir="ltr">google_firebase_app_check_play_integrity_config</code></a> — register an Android app with the Play Integrity provider</li> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_app_check_recaptcha_enterprise_config" class="external"><code translate="no" dir="ltr">google_firebase_app_check_recaptcha_enterprise_config</code></a> — register a web app with the reCAPTCHA Enterprise provider</li> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_app_check_recaptcha_v3_config" class="external"><code translate="no" dir="ltr">google_firebase_app_check_recaptcha_v3_config</code></a> — register a web app with the reCAPTCHA v3 provider</li> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firebase_app_check_debug_token" class="external"><code translate="no" dir="ltr">google_firebase_app_check_debug_token</code></a> — use debug tokens for testing</li> </ul> <hr> <h3 id="resources-firebase-extensions">Firebase Extensions</h3> <ul> <li>
+<a href="https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/firebase_extensions_instance" class="external"><code translate="no" dir="ltr">google_firebase_extensions_instance</code></a> — install or update an instance of a Firebase Extension</li> </ul> <p><br></p> <hr class="full-width"> <h2 id="sample-config-files">Sample Terraform config files for common use cases</h2> <p><section class="expandable" id="tf-sample-auth"> <h4 class="showalways" id="tf-sample-auth">Set up Firebase Authentication with GCIP</h4></section></p> <p>This config creates a new Google Cloud project, associates the project with a Cloud Billing account (the Blaze pricing plan is required for Firebase Authentication with GCIP), enables Firebase services for the project, sets up Firebase Authentication with GCIP, and registers three different app types with the project.</p> <p>Note that enabling GCIP is required to set up Firebase Authentication via Terraform.</p> 
+<pre># Creates a new Google Cloud project.
+resource "google_project" "auth" {
+  provider  = google-beta.no_user_project_override
+  folder_id = "folder-id-for-new-project"
+  name            = "Project Display Name"
+  project_id      = "project-id-for-new-project"
+
+  # Associates the project with a Cloud Billing account
+  # (required for Firebase Authentication with GCIP).
+  billing_account = "000000-000000-000000"
+}
+
+# Enables required APIs.
+resource "google_project_service" "auth" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.auth.project_id
+  for_each = toset([
+    "cloudbilling.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "serviceusage.googleapis.com",
+    "identitytoolkit.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created above.
+resource "google_firebase_project" "auth" {
+  provider = google-beta
+  project  = google_project.auth.project_id
+
+  depends_on = [
+    google_project_service.auth,
+  ]
+}
+
+# Creates an Identity Platform config.
+# Also enables Firebase Authentication with Identity Platform in the project if not.
+resource "google_identity_platform_config" "auth" {
+  provider = google-beta
+  project  = google_firebase_project.auth.project
+
+  # Auto-deletes anonymous users
+  autodelete_anonymous_users = true
+
+  # Configures local sign-in methods, like anonymous, email/password, and phone authentication.
+  sign_in {
+    allow_duplicate_emails = true
+
+    anonymous {
+      enabled = true
+    }
+
+    email {
+      enabled = true
+      password_required = false
+    }
+
+    phone_number {
+      enabled = true
+      test_phone_numbers = {
+        "+11231231234" = "000000"
+      }
+    }
+  }
+
+  # Sets an SMS region policy.
+  sms_region_config {
+    allowlist_only {
+      allowed_regions = [
+        "US",
+        "CA",
+      ]
+    }
+  }
+
+  # Configures blocking functions.
+  blocking_functions {
+    triggers {
+      event_type = "beforeSignIn"
+      function_uri = "https://us-east1-${google_project.auth.project_id}.cloudfunctions.net/before-sign-in"
+    }
+    forward_inbound_credentials {
+      refresh_token = true
+      access_token = true
+      id_token = true
+    }
+  }
+
+  # Configures a temporary quota for new signups for anonymous, email/password, and phone number.
+  quota {
+    sign_up_quota_config {
+      quota = 1000
+      start_time = ""
+      quota_duration = "7200s"
+    }
+  }
+
+  # Configures authorized domains.
+  authorized_domains = [
+    "localhost",
+    "${google_project.auth.project_id}.firebaseapp.com",
+    "${google_project.auth.project_id}.web.app",
+  ]
+}
+
+# Creates a Firebase Android App in the new project created above.
+resource "google_firebase_android_app" "auth" {
+  provider     = google-beta
+  project      = google_firebase_project.auth.project
+  display_name = "My Android app"
+  package_name = "android.package.name"
+}
+
+# Creates a Firebase Apple-platforms App in the new project created above.
+resource "google_firebase_apple_app" "auth" {
+  provider     = google-beta
+  project      = google_firebase_project.auth.project
+  display_name = "My Apple app"
+  bundle_id    = "apple.app.12345"
+}
+
+# Creates a Firebase Web App in the new project created above.
+resource "google_firebase_web_app" "auth" {
+  provider     = google-beta
+  project      = google_firebase_project.auth.project
+  display_name = "My Web app"
+}
+</pre>  <p><section class="expandable" id="tf-sample-firebase-dataconnect"> <h4 class="showalways" id="tf-sample-firebase-dataconnect">Provision a Firebase SQL Connect service</h4></section></p> <p>This config creates a new Google Cloud project, enables Firebase services for the project, and provisions a SQL Connect service.</p> 
+<pre># Creates a new Google Cloud project.
+resource "google_project" "dataconnect" {
+  provider   = google-beta.no_user_project_override
+  folder_id  = "folder-id-for-new-project"
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+
+  # Associates the project with a Cloud Billing account
+  # (required to use Firebase Data Connect).
+  billing_account = "000000-000000-000000"
+
+  # Required for the project to display in a list of Firebase projects.
+  labels = {
+    "firebase" = "enabled"
+  }
+}
+
+# Enables required APIs.
+resource "google_project_service" "services" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.dataconnect.project_id
+  for_each = toset([
+    "serviceusage.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "firebasedataconnect.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created earlier.
+resource "google_firebase_project" "dataconnect" {
+  provider = google-beta
+  project  = google_project.dataconnect.project_id
+
+  depends_on = [google_project_service.services]
+}
+
+# Create a Firebase Data Connect service
+resource "google_firebase_data_connect_service" "dataconnect-default" {
+  project         = google_firebase_project.dataconnect.project
+  location        = "name-of-region-for-service"
+  service_id      = "${google_firebase_project.dataconnect.project}-default-fdc"
+  deletion_policy = "DEFAULT"
+}
+</pre>  <p><section class="expandable" id="tf-sample-realtime-database-default"> <h4 class="showalways" id="tf-sample-realtime-database">Provision the default Firebase Realtime Database instance</h4></section></p> <p>This config creates a new Google Cloud project, enables Firebase services for the project, provisions the project's default Realtime Database instance, and registers three different app types with the project.</p> <aside class="note"><strong>Note:</strong><span> Currently, Firebase doesn't support deploying Firebase Realtime Database Security Rules via Terraform. Learn how to <a href="../../rules/manage-deploy#realtime-database">deploy these Security Rules</a> using other tooling, including programmatic options.</span></aside>
+<pre># Creates a new Google Cloud project.
+resource "google_project" "rtdb" {
+  provider   = google-beta.no_user_project_override
+  folder_id  = "folder-id-for-new-project"
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+}
+
+# Enables required APIs.
+resource "google_project_service" "rtdb" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.rtdb.project_id
+  for_each = toset([
+    "serviceusage.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "firebasedatabase.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created above.
+resource "google_firebase_project" "rtdb" {
+  provider = google-beta
+  project  = google_project.rtdb.project_id
+
+  depends_on = [google_project_service.rtdb]
+}
+
+# Provisions the default Realtime Database default instance.
+resource "google_firebase_database_instance" "database" {
+  provider    = google-beta
+  project     = google_firebase_project.rtdb.project
+  # See available locations: https://firebase.google.com/docs/database/locations
+  region      = "name-of-region"
+  # This value will become the first segment of the database's URL.
+  instance_id = "${google_project.rtdb.project_id}-default-rtdb"
+  type        = "DEFAULT_DATABASE"
+}
+
+# Creates a Firebase Android App in the new project created above.
+resource "google_firebase_android_app" "rtdb" {
+  provider     = google-beta
+  project      = google_firebase_project.rtdb.project
+  display_name = "My Android app"
+  package_name = "android.package.name"
+}
+
+# Creates a Firebase Apple-platforms App in the new project created above.
+resource "google_firebase_apple_app" "rtdb" {
+  provider     = google-beta
+  project      = google_firebase_project.rtdb.project
+  display_name = "My Apple app"
+  bundle_id    = "apple.app.12345"
+}
+
+# Creates a Firebase Web App in the new project created above.
+resource "google_firebase_web_app" "rtdb" {
+  provider     = google-beta
+  project      = google_firebase_project.rtdb.project
+  display_name = "My Web app"
+}
+</pre>  <p><section class="expandable" id="tf-sample-realtime-database-multiple"> <h4 class="showalways" id="tf-sample-realtime-database">Provision multiple Firebase Realtime Database instances</h4></section></p> <p>This config creates a new Google Cloud project, associates the project with a Cloud Billing account (the Blaze pricing plan is required for multiple Realtime Database instances), enables Firebase services for the project, provisions multiple Realtime Database instances (including the project's default Realtime Database instance), and registers three different app types with the project.</p> <aside class="note"><strong>Note:</strong><span> Currently, Firebase doesn't support deploying Firebase Realtime Database Security Rules via Terraform. Learn how to <a href="../../rules/manage-deploy#realtime-database">deploy these Security Rules</a> using other tooling, including programmatic options.</span></aside>
+<pre># Creates a new Google Cloud project.
+resource "google_project" "rtdb-multi" {
+  provider   = google-beta.no_user_project_override
+  folder_id  = "folder-id-for-new-project"
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+
+  # Associate the project with a Cloud Billing account
+  # (required for multiple Realtime Database instances).
+  billing_account = "000000-000000-000000"
+}
+
+# Enables required APIs.
+resource "google_project_service" "rtdb-multi" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.rtdb-multi.project_id
+  for_each = toset([
+    "cloudbilling.googleapis.com",
+    "serviceusage.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "firebasedatabase.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created above.
+resource "google_firebase_project" "rtdb-multi" {
+  provider = google-beta
+  project  = google_project.rtdb-multi.project_id
+
+  depends_on = [google_project_service.rtdb-multi]
+}
+
+# Provisions the default Realtime Database default instance.
+resource "google_firebase_database_instance" "database-default" {
+  provider    = google-beta
+  project     = google_firebase_project.rtdb-multi.project
+  # See available locations: https://firebase.google.com/docs/database/locations
+  region      = "name-of-region"
+  # This value will become the first segment of the database's URL.
+  instance_id = "${google_project.rtdb-multi.project_id}-default-rtdb"
+  type        = "DEFAULT_DATABASE"
+}
+
+# Provisions an additional Realtime Database instance.
+resource "google_firebase_database_instance" "database-additional" {
+  provider    = google-beta
+  project     = google_firebase_project.rtdb-multi.project
+  # See available locations: https://firebase.google.com/docs/projects/locations#rtdb-locations
+  # This location doesn't need to be the same as the default database instance.
+  region      = "name-of-region"
+  # This value will become the first segment of the database's URL.
+  instance_id = "name-of-additional-database-instance"
+  type        = "USER_DATABASE"
+}
+
+# Creates a Firebase Android App in the new project created above.
+resource "google_firebase_android_app" "rtdb-multi" {
+  provider     = google-beta
+  project      = google_firebase_project.rtdb-multi.project
+  display_name = "My Android app"
+  package_name = "android.package.name"
+}
+
+# Creates a Firebase Apple-platforms App in the new project created above.
+resource "google_firebase_apple_app" "rtdb-multi" {
+  provider     = google-beta
+  project      = google_firebase_project.rtdb-multi.project
+  display_name = "My Apple app"
+  bundle_id    = "apple.app.12345"
+}
+
+# Creates a Firebase Web App in the new project created above.
+resource "google_firebase_web_app" "rtdb-multi" {
+  provider     = google-beta
+  project      = google_firebase_project.rtdb-multi.project
+  display_name = "My Web app"
+}
+</pre>  <p><section class="expandable" id="tf-sample-firestore"> <h4 class="showalways" id="tf-sample-firestore">Provision the default Cloud Firestore instance</h4></section></p> <p>This config creates a new Google Cloud project, enables Firebase services for the project, provisions the project's default Cloud Firestore instance, and registers three different app types with the project.</p> <p>It also provisions Firebase Security Rules for the default Cloud Firestore instance, creates a Cloud Firestore index, and adds a Cloud Firestore document with seed data.</p> 
+<pre># Creates a new Google Cloud project.
+resource "google_project" "firestore" {
+  provider   = google-beta.no_user_project_override
+  folder_id  = "folder-id-for-new-project"
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+}
+
+# Enables required APIs.
+resource "google_project_service" "firestore" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.firestore.project_id
+  for_each = toset([
+    "cloudresourcemanager.googleapis.com",
+    "serviceusage.googleapis.com",
+    "firestore.googleapis.com",
+    "firebaserules.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created above.
+resource "google_firebase_project" "firestore" {
+  provider = google-beta
+  project  = google_project.firestore.project_id
+
+  depends_on = [google_project_service.firestore]
+}
+
+# Provisions the Firestore database instance.
+resource "google_firestore_database" "firestore" {
+  provider                    = google-beta
+  project                     = google_firebase_project.firestore.project
+  name                        = "(default)"
+  # See available locations: https://firebase.google.com/docs/firestore/locations
+  location_id                 = "name-of-region"
+  # "FIRESTORE_NATIVE" is required to use Firestore with Firebase SDKs, authentication, and Firebase Security Rules.
+  type                        = "FIRESTORE_NATIVE"
+  concurrency_mode            = "OPTIMISTIC"
+}
+
+# Creates a ruleset of Firestore Security Rules from a local file.
+resource "google_firebaserules_ruleset" "firestore" {
+  provider = google-beta
+  project  = google_firestore_database.firestore.project
+  source {
+    files {
+      name = "firestore.rules"
+      # Write security rules in a local file named "firestore.rules".
+      # Learn more: https://firebase.google.com/docs/firestore/security/get-started
+      content = file("firestore.rules")
+    }
+  }
+}
+
+# Releases the ruleset for the Firestore instance.
+resource "google_firebaserules_release" "firestore" {
+  provider     = google-beta
+  name         = "cloud.firestore"  # must be cloud.firestore
+  ruleset_name = google_firebaserules_ruleset.firestore.name
+  project      = google_firestore_database.firestore.project
+}
+
+# Adds a new Firestore index.
+resource "google_firestore_index" "indexes" {
+  provider = google-beta
+  project  = google_firestore_database.firestore.project
+
+  collection  = "quiz"
+  query_scope = "COLLECTION"
+
+  fields {
+    field_path = "question"
+    order      = "ASCENDING"
+  }
+
+  fields {
+    field_path = "answer"
+    order      = "ASCENDING"
+  }
+}
+
+# Adds a new Firestore document with seed data.
+# Don't use real end-user or production data in this seed document.
+resource "google_firestore_document" "doc" {
+  provider    = google-beta
+  project     = google_firestore_database.firestore.project
+  collection  = "quiz"
+  document_id = "question-1"
+  fields      = "{\"question\":{\"stringValue\":\"Favorite Database\"},\"answer\":{\"stringValue\":\"Firestore\"}}"
+}
+
+# Creates a Firebase Android App in the new project created above.
+resource "google_firebase_android_app" "firestore" {
+  provider     = google-beta
+  project      = google_firebase_project.firestore.project
+  display_name = "My Android app"
+  package_name = "android.package.name"
+}
+
+# Creates a Firebase Apple-platforms App in the new project created above.
+resource "google_firebase_apple_app" "firestore" {
+  provider     = google-beta
+  project      = google_firebase_project.firestore.project
+  display_name = "My Apple app"
+  bundle_id    = "apple.app.12345"
+}
+
+# Creates a Firebase Web App in the new project created above.
+resource "google_firebase_web_app" "firestore" {
+  provider     = google-beta
+  project      = google_firebase_project.firestore.project
+  display_name = "My Web app"
+}
+</pre> <p>This is the ruleset of Cloud Firestore Security Rules that should be in a local file named <code translate="no" dir="ltr">firestore.rules</code>.</p> 
+<pre>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /some_collection/{document} {
+      allow read, create, update: if request.auth != null;
+    }
+  }
+}
+</pre>  <p><section class="expandable" id="tf-sample-storage-default"> <h4 class="showalways" id="tf-sample-storage-default">Provision the default Cloud Storage bucket</h4></section></p> <aside class="caution"> <p><strong>Starting <nobr>October 30, 2024</nobr></strong>, you can no longer provision the <em>default</em> Cloud Storage bucket using Terraform. For details about these changes, see our <a href="../../storage/faqs-storage-changes-announced-sept-2024#terraform-changes">FAQs</a>. </p> <p>Instead, provision the default Cloud Storage bucket using the <a href="https://console.firebase.google.com/project/_/storage/" class="external">Firebase console</a> or the <a href="https://firebase.google.com/docs/reference/rest/storage/rest/v1alpha/projects.defaultBucket/create"><code translate="no" dir="ltr">projects.defaultBucket.create</code></a> endpoint. </p> </aside>  <p><section class="expandable" id="tf-sample-storage-additional"> <h4 class="showalways" id="tf-sample-storage-additional">Provision additional Cloud Storage buckets</h4></section></p> <p>This config creates a new Google Cloud project, associates the project with a Cloud Billing account (the Blaze pricing plan is required for additional buckets), enables Firebase services for the project, provisions additional, non-default Cloud Storage buckets, and registers three different app types with the project.</p> <p>It also provisions Firebase Security Rules for each Cloud Storage bucket, and uploads a file to one of the Cloud Storage buckets.</p> <aside class="caution"> <p><strong>Starting <nobr>October 30, 2024</nobr></strong>, you can no longer provision the <em>default</em> Cloud Storage bucket using Terraform. For details about these changes, see our <a href="../../storage/faqs-storage-changes-announced-sept-2024#terraform-changes">FAQs</a>. </p> <p>Instead, provision the default Cloud Storage bucket using the <a href="https://console.firebase.google.com/project/_/storage/" class="external">Firebase console</a> or the <a href="https://firebase.google.com/docs/reference/rest/storage/rest/v1alpha/projects.defaultBucket/create"><code translate="no" dir="ltr">projects.defaultBucket.create</code></a> endpoint. </p> </aside> 
+<pre># Creates a new Google Cloud project.
+resource "google_project" "storage-multi" {
+  provider  = google-beta.no_user_project_override
+  folder_id = "folder-id-for-new-project"
+  name            = "Project Display Name"
+  project_id      = "project-id-for-new-project"
+
+  # Associates the project with a Cloud Billing account
+  # (required for multiple Cloud Storage buckets).
+  billing_account = "000000-000000-000000"
+}
+
+# Enables required APIs.
+resource "google_project_service" "storage-multi" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.storage-multi.project_id
+  for_each = toset([
+    "cloudbilling.googleapis.com",
+    "serviceusage.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "firebaserules.googleapis.com",
+    "firebasestorage.googleapis.com",
+    "storage.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created above.
+resource "google_firebase_project" "storage-multi" {
+  provider = google-beta
+  project  = google_project.storage-multi.project_id
+
+  depends_on = [google_project_service.storage-multi]
+}
+
+# Provisions a Cloud Storage bucket.
+resource "google_storage_bucket" "bucket-1" {
+  provider = google-beta
+  project  = google_firebase_project.storage-multi.project
+  name     = "name-of-storage-bucket"
+  # See available locations: https://cloud.google.com/storage/docs/locations#available-locations
+  location = "name-of-region-for-bucket"
+}
+
+# Provisions an additional Cloud Storage bucket.
+resource "google_storage_bucket" "bucket-2" {
+  provider = google-beta
+  project  = google_firebase_project.storage-multi.project
+  name     = "name-of-additional-storage-bucket"
+  # See available locations: https://cloud.google.com/storage/docs/locations#available-locations
+  # This location does not need to be the same as the existing Storage bucket.
+  location = "name-of-region-for-additional-bucket"
+}
+
+# Makes the first Storage bucket accessible for Firebase SDKs, authentication, and Firebase Security Rules.
+resource "google_firebase_storage_bucket" "bucket-1" {
+  provider  = google-beta
+  project   = google_firebase_project.storage-multi.project
+  bucket_id = google_storage_bucket.bucket-1.name
+}
+
+# Makes the additional Storage bucket accessible for Firebase SDKs, authentication, and Firebase Security Rules.
+resource "google_firebase_storage_bucket" "bucket-2" {
+  provider  = google-beta
+  project   = google_firebase_project.storage-multi.project
+  bucket_id = google_storage_bucket.bucket-2.name
+}
+
+# Creates a ruleset of Firebase Security Rules from a local file.
+resource "google_firebaserules_ruleset" "storage-multi" {
+  provider = google-beta
+  project  = google_firebase_project.storage-multi.project
+  source {
+    files {
+      # Write security rules in a local file named "storage.rules"
+      # Learn more: https://firebase.google.com/docs/storage/security/get-started
+      name    = "storage.rules"
+      content = file("storage.rules")
+    }
+  }
+}
+
+# Releases the ruleset to the first Storage bucket.
+resource "google_firebaserules_release" "bucket-1" {
+  provider     = google-beta
+  name         = "firebase.storage/${google_storage_bucket.bucket-1.name}"
+  ruleset_name = "projects/${google_project.storage-multi.project_id}/rulesets/${google_firebaserules_ruleset.storage-multi.name}"
+  project      = google_firebase_project.storage-multi.project
+}
+
+# Releases the ruleset to the additional Storage bucket.
+resource "google_firebaserules_release" "bucket-2" {
+  provider     = google-beta
+  name         = "firebase.storage/${google_storage_bucket.bucket-2.name}"
+  ruleset_name = "projects/${google_project.storage-multi.project_id}/rulesets/${google_firebaserules_ruleset.storage-multi.name}"
+  project      = google_firebase_project.storage-multi.project
+}
+
+# Uploads a new file to the first Storage bucket.
+# Do not use real end-user or production data in this file.
+resource "google_storage_bucket_object" "cat-picture-multi" {
+  provider = google-beta
+  name     = "cat.png"
+  source   = "path/to/cat.png"
+  bucket   = google_storage_bucket.bucket-1.name
+}
+
+# Creates a Firebase Android App in the new project created above.
+resource "google_firebase_android_app" "storage-multi" {
+  provider     = google-beta
+  project      = google_firebase_project.storage-multi.project
+  display_name = "My Android app"
+  package_name = "android.package.name"
+}
+
+# Creates a Firebase Apple-platforms App in the new project created above.
+resource "google_firebase_apple_app" "storage-multi" {
+  provider     = google-beta
+  project      = google_firebase_project.storage-multi.project
+  display_name = "My Apple app"
+  bundle_id    = "apple.app.12345"
+}
+
+# Creates a Firebase Web App in the new project created above.
+resource "google_firebase_web_app" "storage-multi" {
+  provider     = google-beta
+  project      = google_firebase_project.storage-multi.project
+  display_name = "My Web app"
+}
+</pre> <p>This is the ruleset of Cloud Storage Security Rules that should be in a local file named <code translate="no" dir="ltr">storage.rules</code>.</p> 
+<pre>rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /some_folder/{fileName} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+</pre>  <p><section class="expandable" id="tf-sample-firebase-appcheck"> <h4 class="showalways" id="tf-sample-firebase-appcheck">Protect an API resource with Firebase App Check</h4></section></p> <aside class="note"><strong>Note:</strong><span> This config shows an example for enabling enforcement of App Check for Cloud Firestore, but you can also <a href="../../app-check">use App Check with other products and services</a>.</span></aside> <p>This config creates a new Google Cloud project, enables Firebase services for the project, and sets up and enables enforcement of Firebase App Check for Cloud Firestore so that it can only be accessed from your Android app.</p> 
+<pre># Creates a new Google Cloud project.
+resource "google_project" "appcheck" {
+  provider   = google-beta.no_user_project_override
+  folder_id  = "folder-id-for-new-project"
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+}
+
+# Enables required APIs.
+resource "google_project_service" "services" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.appcheck.project_id
+  for_each = toset([
+    "cloudresourcemanager.googleapis.com",
+    "firebase.googleapis.com",
+    "firebaseappcheck.googleapis.com",
+    "firestore.googleapis.com",
+    "serviceusage.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created earlier.
+resource "google_firebase_project" "appcheck" {
+  provider = google-beta
+  project  = google_project.appcheck.project_id
+
+  depends_on = [google_project_service.services]
+}
+
+# Provisions the Firestore database instance.
+resource "google_firestore_database" "database" {
+  provider = google-beta
+  project  = google_firebase_project.appcheck.project
+  name     = "(default)"
+  # See available locations: https://firebase.google.com/docs/projects/locations#default-cloud-location
+  location_id = "name-of-region"
+  # "FIRESTORE_NATIVE" is required to use Firestore with Firebase SDKs, authentication, and Firebase Security Rules.
+  type             = "FIRESTORE_NATIVE"
+  concurrency_mode = "OPTIMISTIC"
+}
+
+# Creates a Firebase Android App in the new project created earlier.
+resource "google_firebase_android_app" "appcheck" {
+  provider     = google-beta
+  project      = google_firebase_project.appcheck.project
+  display_name = "Play Integrity app"
+  package_name = "package.name.playintegrity"
+  sha256_hashes = [
+    # TODO: insert your Android app's SHA256 certificate
+  ]
+}
+
+# Register the Android app with the Play Integrity provider
+resource "google_firebase_app_check_play_integrity_config" "appcheck" {
+  provider = google-beta
+  project  = google_firebase_project.appcheck.project
+  app_id   = google_firebase_android_app.appcheck.app_id
+
+  depends_on = [google_firestore_database.database]
+
+  lifecycle {
+    precondition {
+      condition     = length(google_firebase_android_app.appcheck.sha256_hashes) &gt; 0
+      error_message = "Provide a SHA-256 certificate on the Android App to use App Check"
+    }
+  }
+}
+
+# Enable enforcement of App Check for Firestore
+resource "google_firebase_app_check_service_config" "firestore" {
+  provider = google-beta
+
+  project    = google_firebase_project.appcheck.project
+  service_id = "firestore.googleapis.com"
+
+  depends_on = [google_project_service.services]
+}
+</pre>  <p><section class="expandable" id="tf-sample-firebase-extensions"> <h4 class="showalways" id="tf-sample-firebase-extensions">Install an instance of a Firebase Extension</h4></section></p> <p>This config creates a new Google Cloud project, enables Firebase services for the project, and installs a new instance of a Firebase Extension in the project. If the instance already exists, its parameters are updated based on the values provided in the config.</p> 
+<pre># Creates a new Google Cloud project.
+resource "google_project" "extensions" {
+  provider   = google-beta.no_user_project_override
+  folder_id  = "folder-id-for-new-project"
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+
+  # Associates the project with a Cloud Billing account
+  # (required to use Firebase Extensions).
+  billing_account = "000000-000000-000000"
+}
+
+# Enables required APIs.
+resource "google_project_service" "extensions" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.extensions.project_id
+  for_each = toset([
+    "cloudbilling.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "serviceusage.googleapis.com",
+    "firebase.googleapis.com",
+    "firebaseextensions.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created above.
+resource "google_firebase_project" "extensions" {
+  provider = google-beta
+  project  = google_project.extensions.project_id
+
+  depends_on = [
+    google_project_service.extensions,
+  ]
+}
+
+# Installs an instance of the "Translate Text in Firestore" extension.
+# Or updates the extension if the specified instance already exists.
+resource "google_firebase_extensions_instance" "translation" {
+  provider = google-beta
+  project = google_firebase_project.extensions.project
+
+  instance_id = "translate-text-in-firestore"
+  config {
+    extension_ref = "firebase/firestore-translate-text"
+
+    params = {
+      COLLECTION_PATH      = "posts/comments/translations"
+      DO_BACKFILL          = true
+      LANGUAGES            = "ar,en,es,de,fr"
+      INPUT_FIELD_NAME     = "input"
+      LANGUAGES_FIELD_NAME = "languages"
+      OUTPUT_FIELD_NAME    = "translated"
+    }
+
+    system_params = {
+      "firebaseextensions.v1beta.function/location"                   = "us-central1"
+      "firebaseextensions.v1beta.function/memory"                     = "256"
+      "firebaseextensions.v1beta.function/minInstances"               = "0"
+      "firebaseextensions.v1beta.function/vpcConnectorEgressSettings" = "VPC_CONNECTOR_EGRESS_SETTINGS_UNSPECIFIED"
+    }
+  }
+}
+</pre>  <p><section class="expandable" id="tf-sample-firebase-ai-logic"> <h4 class="showalways" id="tf-sample-firebase-ai-logic">Enable and protect <span class='\"notranslate\"'>Firebase AI Logic</span>
+</h4></section></p> <p>This config creates a new Google Cloud project, enables Firebase services for the project, including <span class='\"notranslate\"'>Firebase AI Logic</span>, and sets up and enables enforcement of Firebase App Check for <span class='\"notranslate\"'>Firebase AI Logic</span> so that it can only be accessed from your apps.</p> 
+<pre># Creates a new Google Cloud project.
+resource "google_project" "vertex" {
+  provider   = google-beta.no_user_project_override
+  folder_id  = "folder-id-for-new-project"
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+
+  # Associate the project with a Cloud Billing account
+  # (required for Vertex AI in Firebase).
+  billing_account = "000000-000000-000000"
+}
+
+# Enables required APIs.
+resource "google_project_service" "services" {
+  provider   = google-beta.no_user_project_override
+
+  project  = google_project.vertex.project_id
+  for_each = toset([
+    "cloudresourcemanager.googleapis.com",
+    "firebase.googleapis.com",
+    "serviceusage.googleapis.com",
+    # Required APIs for Vertex AI in Firebase
+    "aiplatform.googleapis.com",
+    "firebasevertexai.googleapis.com",
+    # App Check is recommended to protect Vertex AI in Firebase from abuse
+    "firebaseappcheck.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created earlier.
+resource "google_firebase_project" "vertex" {
+  provider = google-beta
+  project  = google_project.vertex.project_id
+
+  depends_on = [google_project_service.services]
+}
+
+# Creates a Firebase Web App in the new project created earlier.
+resource "google_firebase_web_app" "app" {
+  provider = google-beta
+  project  = google_firebase_project.vertex.project
+
+  display_name = "My Web App"
+}
+
+# Creates a Firebase Android App in the new project created earlier.
+resource "google_firebase_android_app" "app" {
+  provider     = google-beta
+  project      = google_firebase_project.vertex.project
+  display_name = "My Android App"
+  package_name = "package.name.playintegrity"
+  sha256_hashes = [
+    # TODO: insert your Android app's SHA256 certificate
+  ]
+}
+
+# Creates a Firebase Apple App in the new project created earlier.
+resource "google_firebase_apple_app" "app" {
+  provider     = google-beta
+  project      = google_firebase_project.vertex.project
+  display_name = "My Apple App"
+  bundle_id    = "bundle.id"
+  team_id      = "1234567890"
+}
+
+### Protects Vertex AI in Firebase with App Check.
+
+# Turns on enforcement for Vertex AI in Firebase
+resource "google_firebase_app_check_service_config" "vertex" {
+  provider = google-beta
+
+  project          = google_firebase_project.vertex.project
+  service_id       = "firebaseml.googleapis.com"
+  enforcement_mode = "ENFORCED"
+}
+
+# Enables the reCAPTCHA Enterprise API
+resource "google_project_service" "recaptcha_enterprise" {
+  provider = google-beta
+
+  project = google_firebase_project.vertex.project
+  service = "recaptchaenterprise.googleapis.com"
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables the Play Integrity API
+resource "google_project_service" "play_integrity" {
+  provider = google-beta
+
+  project = google_firebase_project.vertex.project
+  service = "playintegrity.googleapis.com"
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Allows the web app to use reCAPTCHA Enterprise with App Check
+resource "google_firebase_app_check_recaptcha_enterprise_config" "appcheck" {
+  provider = google-beta
+
+  project   = google_firebase_project.vertex.project
+  app_id    = google_firebase_web_app.app.app_id
+  site_key  = "your site key"
+  token_ttl = "7200s" # Optional
+
+  depends_on = [google_project_service.recaptcha_enterprise]
+}
+
+# Registers the Android app with the Play Integrity provider
+resource "google_firebase_app_check_play_integrity_config" "appcheck" {
+  provider  = google-beta
+  project   = google_firebase_project.vertex.project
+  app_id    = google_firebase_android_app.app.app_id
+  token_ttl = "7200s" # Optional
+
+  lifecycle {
+    precondition {
+      condition     = length(google_firebase_android_app.app.sha256_hashes) &gt; 0
+      error_message = "Provide a SHA-256 certificate on the Android App to use App Check"
+    }
+  }
+
+  depends_on = [google_project_service.play_integrity]
+}
+
+# Registers the Apple app with the AppAttest provider
+resource "google_firebase_app_check_app_attest_config" "appcheck" {
+  provider  = google-beta
+  project   = google_firebase_project.vertex.project
+  app_id    = google_firebase_apple_app.app.app_id
+  token_ttl = "7200s" # Optional
+
+  lifecycle {
+    precondition {
+      condition     = google_firebase_apple_app.app.team_id != ""
+      error_message = "Provide a Team ID on the Apple App to use App Check"
+    }
+  }
+}
+</pre>  <p><section class="expandable" id="tf-sample-apphosting-manual"> <h4 class="showalways" id="tf-sample-apphosting-manual">Manually provision an App Hosting backend</h4></section></p> <p>This configuration demonstrates how to manually provision an App Hosting backend using Terraform. This approach gives you fine-grained control over the resources created, but requires you to define each resource individually. This is useful when you need to customize the backend beyond the default options.</p> 
+<pre># Creates a new Google Cloud project.
+resource "google_project" "apphosting" {
+  provider   = google-beta.no_user_project_override
+  folder_id  = "folder-id-for-new-project"
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+
+  # Associates the project with a Cloud Billing account
+  # (required to use Firebase App Hosting).
+  billing_account = "000000-000000-000000"
+}
+
+# Enables required APIs.
+resource "google_project_service" "services" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.apphosting.project_id
+  for_each = toset([
+    "cloudresourcemanager.googleapis.com",
+    "firebase.googleapis.com",
+    "firebaseapphosting.googleapis.com",
+    "serviceusage.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created earlier.
+resource "google_firebase_project" "apphosting" {
+  provider = google-beta
+  project  = google_project.apphosting.project_id
+
+  depends_on = [google_project_service.services]
+}
+
+# Creates a Firebase Web App in the new project created earlier.
+resource "google_firebase_web_app" "apphosting" {
+  provider     = google-beta
+  project      = google_firebase_project.apphosting.project
+  display_name = "My web app"
+}
+
+# Creates a Firebase App Hosting Backend
+resource "google_firebase_app_hosting_backend" "example" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+
+  # Choose the region closest to your users
+  location         = "name-of-region-for-service"
+  backend_id       = "name-of-backend-for-service"
+  app_id           = google_firebase_web_app.apphosting.app_id
+  display_name     = "My Backend"
+  serving_locality = "GLOBAL_ACCESS"
+  service_account  = google_service_account.service_account.email
+}
+
+# Creates the service account for Firebase App Hosting
+resource "google_service_account" "service_account" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+
+  # Must be firebase-app-hosting-compute
+  account_id                   = "firebase-app-hosting-compute"
+  display_name                 = "Firebase App Hosting compute service account"
+
+  # Do not throw if already exists
+  create_ignore_already_exists = true
+}
+
+# Adds permission to the App Hosting service account
+resource "google_project_iam_member" "app_hosting_sa" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+
+  for_each = toset([
+    "roles/firebase.sdkAdminServiceAgent",
+    "roles/firebaseapphosting.computeRunner"
+  ])
+
+  role   = each.key
+  member = google_service_account.service_account.member
+}
+
+# Creates a Build
+resource "google_firebase_app_hosting_build" "example" {
+  provider = google-beta
+
+  project          = google_firebase_app_hosting_backend.example.project
+  location         = google_firebase_app_hosting_backend.example.location
+  backend          = google_firebase_app_hosting_backend.example.backend_id
+  build_id         = "my-build"
+
+  source {
+    container {
+      # TODO: use your own image
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
+    }
+  }
+}
+
+# Rolls out the Build
+resource "google_firebase_app_hosting_traffic" "example" {
+  provider = google-beta
+
+  project          = google_firebase_app_hosting_backend.example.project
+  location         = google_firebase_app_hosting_backend.example.location
+  backend          = google_firebase_app_hosting_backend.example.backend_id
+
+  target {
+    splits {
+      build = google_firebase_app_hosting_build.example.name
+      percent = 100
+    }
+  }
+}
+</pre>  <p><section class="expandable" id="tf-sample-apphosting-github"> <h4 class="showalways" id="tf-sample-apphosting-github">Provision an App Hosting backend using GitHub</h4></section></p> <p>This configuration demonstrates how to provision an App Hosting backend using application code stored in a GitHub repository. This approach allows you to manage and update your infrastructure through GitHub pull requests and CI/CD pipelines according to the typical model for App Hosting deployments.</p> 
+<pre># Creates a new Google Cloud project.
+resource "google_project" "apphosting" {
+  provider   = google-beta.no_user_project_override
+  folder_id  = "folder-id-for-new-project"
+  name       = "Project Display Name"
+  project_id = "project-id-for-new-project"
+
+  # Associates the project with a Cloud Billing account
+  # (required to use Firebase App Hosting).
+  billing_account = "000000-000000-000000"
+}
+
+# Enables required APIs.
+resource "google_project_service" "services" {
+  provider = google-beta.no_user_project_override
+  project  = google_project.apphosting.project_id
+  for_each = toset([
+    "cloudresourcemanager.googleapis.com",
+    "firebase.googleapis.com",
+    "firebaseapphosting.googleapis.com",
+    "serviceusage.googleapis.com",
+    "developerconnect.googleapis.com",
+  ])
+  service = each.key
+
+  # Don't disable the service if the resource block is removed by accident.
+  disable_on_destroy = false
+}
+
+# Enables Firebase services for the new project created earlier.
+resource "google_firebase_project" "apphosting" {
+  provider = google-beta
+  project  = google_project.apphosting.project_id
+
+  depends_on = [google_project_service.services]
+}
+
+# Creates a Firebase Web App in the new project created earlier.
+resource "google_firebase_web_app" "apphosting" {
+  provider     = google-beta
+  project      = google_firebase_project.apphosting.project
+  display_name = "My web app"
+}
+
+### Setting up Firebase App Hosting ###
+
+# Creates a Firebase App Hosting Backend
+resource "google_firebase_app_hosting_backend" "example" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+
+  # Choose the region closest to your users
+  location         = "name-of-region-for-service"
+  backend_id       = "name-of-backend-for-service"
+  app_id           = google_firebase_web_app.apphosting.app_id
+  display_name     = "My Backend"
+  serving_locality = "GLOBAL_ACCESS"
+  service_account  = google_service_account.service_account.email
+
+  codebase {
+    repository = google_developer_connect_git_repository_link.my-repository.name
+    root_directory = "/"
+  }
+}
+
+# Creates the service account for Firebase App Hosting
+resource "google_service_account" "service_account" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+
+  # Must be firebase-app-hosting-compute
+  account_id                   = "firebase-app-hosting-compute"
+  display_name                 = "Firebase App Hosting compute service account"
+
+  # Do not throw if already exists
+  create_ignore_already_exists = true
+}
+
+# Adds permission to the App Hosting service account
+resource "google_project_iam_member" "app_hosting_sa" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+
+  for_each = toset([
+    "roles/developerconnect.readTokenAccessor",
+    "roles/firebase.sdkAdminServiceAgent",
+    "roles/firebaseapphosting.computeRunner"
+  ])
+
+  role   = each.key
+  member = google_service_account.service_account.member
+}
+
+# Configures auto rollout from GitHub
+resource "google_firebase_app_hosting_traffic" "example" {
+  provider = google-beta
+
+  project  = google_firebase_app_hosting_backend.example.project
+  location = google_firebase_app_hosting_backend.example.location
+  backend  = google_firebase_app_hosting_backend.example.backend_id
+
+  rollout_policy {
+    codebase_branch = "main" # Or another branch
+  }
+}
+
+###
+
+### Setting up a connection to GitHub ###
+
+# Provisions Service Agent for Developer Connect
+resource "google_project_service_identity" "devconnect-p4sa" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+
+  service  = "developerconnect.googleapis.com"
+}
+
+# Adds permission to Developer Connect Service Agent to manager GitHub tokens
+resource "google_project_iam_member" "devconnect-secret" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+
+  role     = "roles/secretmanager.admin"
+  member   = google_project_service_identity.devconnect-p4sa.member
+}
+
+# Connects to a GitHub account
+resource "google_developer_connect_connection" "my-connection" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+
+  # Must match the google_firebase_app_hosting_backend's location
+  location = "name-of-region-for-service"
+
+  # Must be `firebase-app-hosting-github-oauth`
+  connection_id = "firebase-app-hosting-github-oauth"
+  github_config {
+    github_app = "FIREBASE"
+  }
+  depends_on = [google_project_iam_member.devconnect-secret]
+}
+
+# Follow the next steps to set up the GitHub connection
+# Tip: Run terraform refresh to obtain the output
+output "next_steps" {
+  description = "Follow the action_uri if present to continue setup"
+  value = google_developer_connect_connection.my-connection.installation_state
+}
+
+# Links a GitHub repo to the project
+resource "google_developer_connect_git_repository_link" "my-repository" {
+  provider = google-beta
+  project  = google_firebase_project.apphosting.project
+  location = google_developer_connect_connection.my-connection.location
+
+  git_repository_link_id = "my-repo-id"
+  parent_connection = google_developer_connect_connection.my-connection.connection_id
+  clone_uri = "https://github.com/myuser/myrepo.git"
+}
+
+###
+</pre>  <p><br></p> <hr class="full-width"> <h2 id="troubleshooting-and-faq">Troubleshooting and FAQ</h2> <p><section class="expandable" id="faq-understand-project-related-attributes"> <h4 class="showalways" id="faq-understand-project-related-attributes">You want to learn more about all the different project-related attributes (like <code translate="no" dir="ltr">project</code> and <code translate="no" dir="ltr">user_project_override</code>) </h4></section></p> <p>This guide uses the following Terraform attributes when working with "projects".</p> <dl> <dt>
+<code translate="no" dir="ltr">project</code> within a <code translate="no" dir="ltr">resource</code> block</dt> <dd><p>Recommended: whenever possible, include the <code translate="no" dir="ltr">project</code> attribute within each <code translate="no" dir="ltr">resource</code> block</p></dd> <dd><p>By including a project attribute, Terraform will create the infrastructure specified in the resource block within the specified project. This guide and our sample config files all use this practice.</p></dd> <dd><p>See the official Terraform documentation about <a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/guides/provider_reference#project" class="external"><code translate="no" dir="ltr">project</code></a>.</p></dd> <dt>
+<code translate="no" dir="ltr">user_project_override</code> within the <code translate="no" dir="ltr">provider</code> block</dt> <dd><p>For provisioning most resources, you should use <code translate="no" dir="ltr">user_project_override = true</code>, which means to check quota against your own Firebase project. However, to set up your new project so that it can accept quota checks, you first need to use <code translate="no" dir="ltr">user_project_override = false</code>.</p></dd> <dd><p>See the official Terraform documentation about <a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/guides/provider_reference#user_project_override" class="external"><code translate="no" dir="ltr">user_project_override</code></a>.</p></dd> </dl>  <p><section class="expandable" id="faq-error-tos-not-accepted"> <h4 class="showalways" id="faq-error-tos-not-accepted">You get this error: <code translate="no" dir="ltr">generic::permission_denied: Firebase Tos Not Accepted</code>. </h4></section></p> <p>Make sure that the user account that you're using to run gcloud CLI commands has accepted the Firebase Terms of Service (Firebase ToS).</p> <ul> <li><p>You can do this check by using a browser signed into the user account and trying to view an existing Firebase project in the <a href="https://console.firebase.google.com/" class="external">Firebase console</a>. If you can view an existing Firebase project, then the user account has accepted the Firebase ToS.</p></li> <li><p>If you can't view any existing Firebase project, then the user account probably hasn't accepted the Firebase ToS. To fix this, create a new Firebase project via the <a href="https://console.firebase.google.com/" class="external">Firebase console</a> and accept the Firebase ToS as part of project creation. You can immediately delete this project via <em>Project Settings</em> in the console.</p></li> </ul>  <p><section class="expandable" id="faq-error-permission-denied"> <h4 class="showalways" id="faq-error-permission-denied">After running <code translate="no" dir="ltr">terraform apply</code>, you get this error: <code translate="no" dir="ltr">generic::permission_denied: IAM authority does not have the
+  permission</code>. </h4></section></p> <p>Wait a few minutes, and then try running <code translate="no" dir="ltr">terraform apply</code> again.</p>  <p><section class="expandable" id="faq-error-resource-creation-failed-but-get-already-exists"> <h4 class="showalways" id="faq-error-resource-creation-failed-but-get-already-exists">The creation of a resource failed, but when you run <code translate="no" dir="ltr">terraform apply</code> again, it says <code translate="no" dir="ltr">ALREADY_EXISTS</code>. </h4></section></p> <p>This could be due to a propagation delay in various systems. Try to resolve this issue by importing the resource into the Terraform state by running <code translate="no" dir="ltr">terraform import</code>. Then try running <code translate="no" dir="ltr">terraform apply</code> again.</p> <p>You can learn how to import each resource in the "Import" section of its Terraform documentation (for example, the <a href="https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/firestore_database#import" class="external">"Import" documentation for Cloud Firestore</a>).</p>  <p><section class="expandable" id="faq-error-409-concurrent-access"> <h4 class="showalways" id="faq-error-409-concurrent-access">When working with Cloud Firestore, you get this error: <code translate="no" dir="ltr">Error creating Index: googleapi:
+  Error 409;...Concurrent access -- try again</code> </h4></section></p> <p>As the error suggests, Terraform may be trying to provision multiple indices and/or creating a document at the same time and ran into a concurrency error. Try running <code translate="no" dir="ltr">terraform apply</code> again.</p>  <p><section class="expandable" id="faq-error-specify-header-for-quota-billing"> <h4 class="showalways" id="faq-error-specify-header-for-quota-billing">You get this error: <code translate="no" dir="ltr">"you may need to specify 'X-Goog-User-Project' HTTP header for quota and
+  billing purposes"</code>. </h4></section></p> <p>This error means that Terraform doesn't know which project to check quota against. To troubleshoot, check the following in the <code translate="no" dir="ltr">resource</code> block:</p> <ul> <li>Make sure that you have specified a value for the <code translate="no" dir="ltr">project</code> attribute.</li> <li>Make sure that you're using the provider with <code translate="no" dir="ltr">user_project_override = true</code> (no alias), which in the Firebase samples is <code translate="no" dir="ltr">google-beta</code>.</li> </ul>  <p><section class="expandable" id="faq-error-project-id-already-exists"> <h4 class="showalways" id="faq-error-project-id-already-exists">When creating a new Google Cloud project, you get the error that the project ID specified for the new project already exists. </h4></section></p> <p>Here are the possible reasons the project ID may already exist:</p> <ul> <li>
+<p>The project associated with that ID belongs to someone else.</p> <ul> <li>
+<strong>To resolve:</strong> Choose another project ID.</li> </ul>
+</li> <li>
+<p>The project associated with that ID was recently deleted (in soft-delete state).</p> <ul> <li>
+<strong>To resolve:</strong> If you think that the project associated with the ID belongs to you, then check the state of the project using the <a href="https://firebase.google.com/docs/reference/firebase-management/rest/v1beta1/projects/get"><code translate="no" dir="ltr">projects.get</code> REST API</a>.</li> </ul>
+</li> <li>
+<p>The project associated with that ID exists correctly under the current user. A possible cause for the error could be that a previous <code translate="no" dir="ltr">terraform apply</code> got interrupted.</p> <ul> <li>
+<strong>To resolve:</strong> Run the following commands:<br> <code translate="no" dir="ltr">terraform import google_project.default <var translate="no">PROJECT_ID</var></code> and then<br> <code translate="no" dir="ltr">terraform import google_firebase_project.default <var translate="no">PROJECT_ID</var></code>
+</li> </ul>
+</li> </ul>  <p><section class="expandable" id="faq-understand-project-related-attributes"> <h4 class="showalways" id="faq-understand-project-related-attributes">Why do you need to provision the default Cloud Firestore instance before the default Cloud Storage bucket? </h4></section></p> <aside class="special"><strong>Important:</strong><span> <strong>Starting <nobr>October 30, 2024</nobr></strong>, you can no longer provision the default Cloud Storage bucket using Terraform.</span></aside> <p>If you provisioned your default Cloud Storage bucket (via <code translate="no" dir="ltr">google_app_engine_application</code>) <em>before</em> you try to provision your default Cloud Firestore instance, then you'll find that your default Cloud Firestore instance has already been provisioned. Note that the provisioned database instance is in Datastore mode, which means that it's <em>not</em> accessible to Firebase SDKs, authentication, or Firebase Security Rules. If you want to use Cloud Firestore with these Firebase services, then you'll need to empty the database and then change its database type in the <a href="https://console.cloud.google.com/" class="external">Google Cloud console</a>.</p>  <p><section class="expandable" id="faq-error-location-mismatch-gae-then-firestore"> <h4 class="showalways" id="faq-error-location-mismatch-gae-then-firestore">When trying to provision Cloud Storage (via <code translate="no" dir="ltr">google_app_engine_application</code>) and then your default Cloud Firestore instance, you get this error: <code translate="no" dir="ltr">Error: Error creating Database: googleapi: Error 409: Database already
+  exists. Please use another database_id</code>. </h4></section></p> <aside class="special"><strong>Important:</strong><span> <strong>Starting <nobr>October 30, 2024</nobr></strong>, you can no longer provision the default Cloud Storage bucket using Terraform.</span></aside> <p>When you provision a project's default Cloud Storage bucket (via <code translate="no" dir="ltr">google_app_engine_application</code>) and the project doesn't yet have its default Cloud Firestore instance, then <code translate="no" dir="ltr">google_app_engine_application</code> automatically provisions the project's default Cloud Firestore instance.</p> <p>So, since your project's default Cloud Firestore instance is <em>already</em> provisioned, <code translate="no" dir="ltr">google_firestore_database</code> will error if you try to explicitly provision that default instance again.</p> <p>Once the project's default Cloud Firestore instance is provisioned, you cannot "re-provision" it or change its location. Note that the provisioned database instance is in Datastore mode, which means that it's <em>not</em> accessible to Firebase SDKs, authentication, or Firebase Security Rules. If you want to use Cloud Firestore with these Firebase services, then you'll need to empty the database and then change its database type in the <a href="https://console.cloud.google.com/" class="external">Google Cloud console</a>.</p> <div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/projects/terraform/get-started" class="_attribution-link">https://firebase.google.com/docs/projects/terraform/get-started</a>
+  </p>
+</div>

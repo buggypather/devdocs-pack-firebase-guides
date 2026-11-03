@@ -1,0 +1,170 @@
+<h1>Migrate to the Firebase AI Logic SDKs from the GA version of Vertex AI in Firebase SDKs</h1> <aside class="note"> <strong>This guide helps you migrate from the GA versions of the "<span class='\"notranslate\"'>Vertex AI in Firebase</span>" SDKs to the <span class='\"notranslate\"'>Firebase AI Logic</span> client SDKs</strong>.<br> These client SDKs are available in Swift for Apple platforms, Kotlin and Java for Android, JavaScript for Web, Dart for Flutter, and Unity. <p>If you're using a Preview version of a "<span class='\"notranslate\"'>Vertex AI in Firebase</span>" SDK (you'll see "beta" or "preview" in the version or the package/library name), then go to the guide for <a href="migrate-from-preview">migrating from the preview version of the SDK</a>. </p> </aside> <p><br></p> <p><span class='\"notranslate\"'>Firebase AI Logic</span> and its client SDKs were formerly called "<span class='\"notranslate\"'>Vertex AI in Firebase</span>". To better reflect our expanded services and features (for example, we now support the <span class='\"notranslate\"'>Gemini Developer API</span>!), <strong>we renamed and repackaged our services into <span class='\"notranslate\"'>Firebase AI Logic</span></strong>.</p> <p>To securely access Google's generative AI models directly from your mobile or web apps, <strong>you can now choose a "<span class='\"notranslate\"'>Gemini API</span>" provider — either the long-available <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span> or now the <span class='\"notranslate\"'>Gemini Developer API</span></strong>. This means that you now have the option to use the <span class='\"notranslate\"'>Gemini Developer API</span>, which provides a <strong>no-cost tier</strong> with reasonable rate limits and quotas.</p> <h4 id="overview-migration-steps">Overview of steps to migrate to the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs</h4> <ul> <li><p><strong>Step 1</strong>: Choose the best "<span class='\"notranslate\"'>Gemini API</span>" provider for your app and use cases.</p></li> <li><p><strong>Step 2</strong>: Set up your Firebase project so that you can use the <span class='\"notranslate\"'>Gemini Developer API</span>.<br> <em>Only applicable if you're swapping to use the <span class='\"notranslate\"'>Gemini Developer API</span> instead of the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>.</em></p></li> <li><p><strong>Step 3</strong>: Update the library used in your app.</p></li> <li><p><strong>Step 4</strong>: Update the initialization in your app.</p></li> <li><p><strong>Step 5</strong>: Update your code depending on the features that you use.</p></li> </ul> <h2 id="choose-provider">
+<strong>Step 1</strong>: Choose the best "Gemini API" provider for your app</h2> <p>With this migration, you have a choice in "<span class='\"notranslate\"'>Gemini API</span>" provider:</p> <ul> <li><p>The old "<span class='\"notranslate\"'>Vertex AI in Firebase</span>" SDKs could only use the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>.</p></li> <li><p>The new <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs let you choose which "<span class='\"notranslate\"'>Gemini API</span>" provider you want to call directly from your mobile or web app – either the <span class='\"notranslate\"'>Gemini Developer API</span> or the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>.</p></li> </ul> <p>Review the <a href="faq-and-troubleshooting#differences-between-gemini-api-providers">differences between using the two <span class='\"notranslate\"'>Gemini API</span> providers</a>, especially in terms of supported features, pricing, and rate limits. For just one example, the <span class='\"notranslate\"'>Gemini Developer API</span> doesn't support providing files using Cloud Storage URLs, but it might be a good choice if you want to take advantage of its no-cost tier and reasonable quota.</p> <aside class="note"><b>Important</b>: If you want to use the "free tier" for the <span class='\"notranslate\"'>Gemini Developer API</span>, you need to <a href="https://console.firebase.google.com/project/_/overview" class="external">downgrade</a> the Firebase project that you currently use with the client SDKs to the no-cost Spark pricing plan (that is, unlink the Cloud Billing account). Before downgrading, make sure that you're not depending on any other services or quotas that require the Blaze pricing plan. <p>If your Firebase project stays on the Blaze pricing plan, then you'll be using one of the "paid tiers" for the <span class='\"notranslate\"'>Gemini Developer API</span>. </p> </aside> <ul> <li><p><strong>If you want to keep using the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span></strong>:<br> Skip the next step and jump straight to <a href="migrate-to-latest-sdk">updating the library in your app</a>, and then the rest of this guide.</p></li> <li><p><strong>If you want to swap to the <span class='\"notranslate\"'>Gemini Developer API</span></strong>:<br> Continue to the next step to <a href="#set-up-firebase">set up your Firebase project to use that API</a>, and then the rest of this guide.</p></li> </ul> <h2 id="set-up-firebase">
+<strong>Step 2</strong>: Set up your Firebase project so that you can use the <span class='\"notranslate\"'>Gemini Developer API</span>
+</h2> <p><em>This step is only required if you want to swap to using the <span class='\"notranslate\"'>Gemini Developer API</span> with the <span class='\"notranslate\"'>Firebase AI Logic</span> client SDKs. However, if you want to keep using the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>, skip to the next step.</em></p> <p>Note that it's OK to have both of the "Gemini API" providers enabled in your project at the same time.</p> <ol> <li><p>In the Firebase console, go to <strong>AI Services</strong> &gt; <a href="https://console.firebase.google.com/project/_/ailogic/" class="external"><b>AI Logic</b></a>.</p></li> <li><p>Go to the <strong>Settings</strong> tab, and select <strong><span class='\"notranslate\"'>Gemini Developer API</span></strong>.</p></li> <li>
+<p>Enable the <span class='\"notranslate\"'>Gemini Developer API</span>.</p> <p>The console will make sure the required APIs are enabled and generate a <span class='\"notranslate\"'>Gemini</span> API key in your Firebase project.<br> <em>Do <strong>not</strong> add this <span class='\"notranslate\"'>Gemini</span> API key into your app's codebase.</em> <a href="faq-and-troubleshooting#add-gemini-api-key-to-codebase">Learn more.</a></p>
+</li> <li><p>Continue in this migration guide to update the library and initialization in your app.</p></li> </ol> <h2 id="update-library">
+<strong>Step 3</strong>: Update the library used in your app</h2> <p>Update your app's codebase to use the <span class='\"notranslate\"'>Firebase AI Logic</span> library.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<ol> <li>
+<p>In Xcode, with your app project open, update your Firebase package to v12.5.0 or later using one of the following options:</p> <ul> <li><p><strong>Option 1</strong>: Update all packages: Navigate to <strong>File &gt; Packages &gt; Update to Latest Package Versions</strong>.</p></li> <li><p><strong>Option 2</strong>: Update Firebase individually: Navigate to the Firebase package in the section called <strong>Package Dependencies</strong>. Right-click on the Firebase package, and then select <strong>Update Package</strong>.</p></li> </ul>
+</li> <li><p>Make sure that the Firebase package now shows v12.5.0 or later. If it doesn't, verify that your specified <a href="https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app#Decide-on-package-requirements" class="external">Package Requirements</a> allow updating to v12.5.0 or later.</p></li> <li><p>Select your app's target in the Project Editor, and then navigate to the <strong>Frameworks, Libraries, and Embedded Content</strong> section.</p></li> <li><p>Add the new library: Select the <strong>+</strong> button, and then add <strong>FirebaseAILogic</strong> from the Firebase package.</p></li> <li><p>After you've finished migrating your app (see the remaining sections in this guide), make sure to remove the old library:<br> Select <strong>FirebaseVertexAI</strong>, and then press the <strong>—</strong> button.</p></li> </ol></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<ol> <li>
+<p>In your <strong>module (app-level) Gradle file</strong> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), replace old dependencies (as applicable) with the following.</p> <p>Note that it might be easier to migrate your app's codebase (see the remaining sections in this guide) before deleting the old dependency.</p> 
+<pre data-language="kotlin">// BEFORE
+dependencies {
+  implementation(platform("com.google.firebase:firebase-bom:33.x.y"))
+  implementation("com.google.firebase:firebase-vertexai")
+  // OR if not using the BoM
+  implementation("com.google.firebase:firebase-vertexai:16.x.y")
+}
+
+
+// AFTER
+dependencies {
+  // Import the BoM for the Firebase platform
+  implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+  // Add the dependency for the Firebase AI Logic library
+  // When using the BoM, you don't specify versions in Firebase library dependencies
+  implementation("com.google.firebase:firebase-ai")
+}</pre>
+</li> <li><p>Sync your Android project with Gradle files.</p></li> </ol> <p>Note that if you choose to not use the Firebase Android BoM, then just add the dependency for the <code translate="no" dir="ltr">firebase-ai</code> library and accept the latest version that's suggested by Android Studio.</p></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<ol> <li>
+<p>In your <strong>module (app-level) Gradle file</strong> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), replace old dependencies (as applicable) with the following.</p> <p>Note that it might be easier to migrate your app's codebase (see the remaining sections in this guide) before deleting the old dependency.</p> 
+<pre data-language="java">// BEFORE
+dependencies {
+  implementation(platform("com.google.firebase:firebase-bom:33.x.y"))
+  implementation("com.google.firebase:firebase-vertexai")
+  // OR if not using the BoM
+  implementation("com.google.firebase:firebase-vertexai:16.x.y")
+}
+
+
+// AFTER
+dependencies {
+  // Import the BoM for the Firebase platform
+  implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+  // Add the dependency for the Firebase AI Logic library
+  // When using the BoM, you don't specify versions in Firebase library dependencies
+  implementation("com.google.firebase:firebase-ai")
+}</pre>
+</li> <li><p>Sync your Android project with Gradle files.</p></li> </ol> <p>Note that if you choose to not use the Firebase Android BoM, then just add the dependency for the <code translate="no" dir="ltr">firebase-ai</code> library and accept the latest version that's suggested by Android Studio.</p></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<ol> <li>
+<p>Get the latest version of the Firebase JS SDK for Web using npm:</p> 
+<pre data-language="javascript">npm i firebase@latest</pre> <p>OR</p> 
+<pre data-language="javascript">yarn add firebase@latest</pre>
+</li> <li>
+<p>Wherever you've imported the library, update your import statements to use <code translate="no" dir="ltr">firebase/ai</code> instead.</p> <p>Note that it might be easier to migrate your app's codebase (see the remaining sections in this guide) before deleting the old imports.</p> 
+<pre data-language="javascript">// BEFORE
+import { initializeApp } from "firebase/app";
+import { getVertexAI, getGenerativeModel } from "firebase/vertexai";
+
+
+// AFTER
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel } from "firebase/ai";</pre>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<ol> <li>
+<p>Update to the use the <code translate="no" dir="ltr">firebase_ai</code> package in your <code translate="no" dir="ltr">pubspec.yaml</code> file by running the following command from your Flutter project directory:</p> 
+<pre data-language="dart">flutter pub add firebase_ai</pre>
+</li> <li>
+<p>Rebuild your Flutter project:</p> 
+<pre data-language="dart">flutter run</pre>
+</li> <li>
+<p>After you've finished migrating your app (see the remaining sections in this guide), make sure to delete the old package:</p> 
+
+<pre data-language="dart">flutter pub remove firebase_vertexai</pre> </li> </ol></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Support for Unity wasn't available from "<span class='\"notranslate\"'>Vertex AI in Firebase</span>".</p> <p>Learn how to <a href="get-started">get started with the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK for Unity</a>.</p></section> </div> <h2 id="initialize-service-and-model">
+<strong>Step 4</strong>: Update the initialization in your app</h2> 
+<table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Update how you initialize the service for your chosen API provider and create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create a `GenerativeModel` instance with a model that supports your use case
+let model = ai.generativeModel(modelName: "gemini-3.8-flash")
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+                        .generativeModel("gemini-3.8-flash")
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports your use case.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+        .generativeModel("gemini-3.8-flash");
+
+// Use the GenerativeModelFutures Java compatibility layer which offers
+// support for ListenableFuture and Publisher APIs
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+const model = getGenerativeModel(ai, { model: "gemini-3.8-flash" });
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service
+// Create a `GenerativeModel` instance with a model that supports your use case
+final model =
+      FirebaseAI.googleAI().generativeModel(model: 'gemini-3.8-flash');
+
+</pre> </section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Support for Unity wasn't available from "<span class='\"notranslate\"'>Vertex AI in Firebase</span>".</p> <p>Learn how to <a href="get-started">get started with the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK for Unity</a>. </p></section> </div> <p>Note that <strong>depending on the capability you're using, you might not always create a <code translate="no" dir="ltr">GenerativeModel</code> instance</strong>. To <a href="live-api">stream input and output using the Gemini Live API</a>, create a <code translate="no" dir="ltr">LiveModel</code> instance.</p> <h2 id="additional-changes">
+<strong>Step 5</strong>: Update your code depending on features that you use</h2> <p>This step describes changes that may be required depending on which features you use.</p> <ul> <li><p>If you use Cloud Storage URLs <em><strong>and</strong></em> you swapped to use the <span class='\"notranslate\"'>Gemini Developer API</span> in this migration, then you need to update your multimodal requests to <a href="generate-text">include files as inline data</a> (or use YouTube URLs for videos).</p></li> <li><p>Review the following lists for any changes that you might need to make in your code to accommodate taking up the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK.</p></li> </ul> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>No additional changes.</p></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<ul> <li>
+<p><strong>Live API</strong></p> <ul> <li>Removed <code translate="no" dir="ltr">UNSPECIFIED</code> value for enum class <code translate="no" dir="ltr">ResponseModality</code>. Instead use <code translate="no" dir="ltr">null</code>.</li> </ul>
+</li> </ul></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<ul> <li>
+<p><strong>Live API</strong></p> <ul> <li>Removed <code translate="no" dir="ltr">UNSPECIFIED</code> value for enum class <code translate="no" dir="ltr">ResponseModality</code>. Instead use <code translate="no" dir="ltr">null</code>.</li> </ul>
+</li> <li><p>Changed various Java builder methods to now correctly return the instance of their class, instead of void.</p></li> </ul></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Changes required <em>only if you're starting to use the <span class='\"notranslate\"'>Gemini Developer API</span></em> (instead of the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>):</p> <ul> <li>
+<p><strong>Safety settings</strong></p> <ul> <li>Removed usages of the unsupported <code translate="no" dir="ltr">SafetySetting.method</code>.</li> </ul>
+</li> <li>
+<p><strong>Inline data</strong></p> <ul> <li>Removed usages of the unsupported <code translate="no" dir="ltr">InlineDataPart.videoMetadata</code>.</li> </ul>
+</li> </ul></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>No additional changes.</p></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Support for Unity wasn't available from "<span class='\"notranslate\"'>Vertex AI in Firebase</span>".</p> <p>Learn how to <a href="get-started">get started with the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK for Unity</a>.</p></section> </div> <p><br></p> <p><a class="button button-primary" href="feedback">Give feedback about your experience with <span class='\"notranslate\"'>Firebase AI Logic</span></a></p> <p><br></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/migrate-to-latest-sdk" class="_attribution-link">https://firebase.google.com/docs/ai-logic/migrate-to-latest-sdk</a>
+  </p>
+</div>

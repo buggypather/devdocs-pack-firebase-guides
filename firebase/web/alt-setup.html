@@ -1,0 +1,81 @@
+<h1>Alternative ways to add Firebase to your JavaScript project</h1> <p>For most Firebase web apps we strongly recommend using <a href="setup">the SDK via npm</a>. However, for users with special requirements, Firebase provides alternative <a href="learn-more#ways-to-add-web-sdks">ways to add the SDK</a>. This page provides detailed setup instructions for these alternative methods:</p> <ul> <li>CDN (content delivery network)</li> <li>npm for Node.js apps</li> </ul> <p>Using these methods, you can add any of the <a href="learn-more#available-libraries">available libraries</a> to your app.</p> <div> <section><p class="_firebase-tab"><strong>From the CDN</strong></p>
+<p>You can configure partial import of the Firebase JavaScript SDK and only load the Firebase products that you need. Firebase stores each library of the Firebase JavaScript SDK on our global CDN (content delivery network).</p> <ol> <li>
+<p>To include only <a href="learn-more#libraries-cdn">specific Firebase products</a> (for example, Authentication and Cloud Firestore), add the following script to the bottom of your <code translate="no" dir="ltr">&lt;body&gt;</code> tag, but before you use any Firebase services:</p> 
+<pre data-language="">&lt;body&gt;
+  &lt;!-- Insert this script at the bottom of the HTML, but before you use any Firebase services --&gt;
+  &lt;script type="module"&gt;
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js'
+
+    // If you enabled Analytics in your project, add the Firebase SDK for Google Analytics
+    import { getAnalytics } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js'
+
+    // Add Firebase products that you want to use
+    import { getAuth } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js'
+    import { getFirestore } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js'
+  &lt;/script&gt;
+&lt;/body&gt;</pre> <aside class="note">You can optionally <a href="learn-more#delay-sdks-cdn">delay loading of Firebase SDKs</a> until the entire page has loaded.</aside>
+</li> <li>
+<p>Add your Firebase configuration object, and then initialize Firebase in your app:</p> 
+<pre data-language="">&lt;body&gt;
+  &lt;script type="module"&gt;
+    // ...
+
+    // TODO: Replace the following with your app's Firebase configuration
+    const firebaseConfig = {
+      // ...
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+  &lt;/script&gt;
+&lt;/body&gt;</pre>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Node.js apps</strong></p>
+<aside class="caution"><strong>Caution:</strong><span> The following instructions are for using the Firebase JavaScript SDK as a client for end-user access (for example, in a Node.js desktop or IoT application). To set up administrative access from privileged environments (such as servers), <a href="../admin/setup">set up the Firebase Admin SDK</a> instead.</span></aside><ol> <li>
+<p>Install the Firebase JavaScript SDK:</p> <ol> <li>
+<p>If you don't already have a <code translate="no" dir="ltr">package.json</code> file, create one by running the following command from the root of your JavaScript project:</p> 
+<pre data-language="">npm init</pre>
+</li> <li>
+<p>Install the <code translate="no" dir="ltr">firebase</code> npm package and save it to your <code translate="no" dir="ltr">package.json</code> file by running:</p> 
+<pre data-language="">npm install --save firebase@13.1.0</pre>
+</li> </ol>
+</li> <li>
+<p>Use one of the following options to use the Firebase module in your app:</p> <ul> <li>
+<p><strong>You can <code translate="no" dir="ltr">require</code> modules from any JavaScript file</strong></p> <p>To include only <a href="learn-more#libraries-nodejs">specific Firebase products</a> (like Authentication and Cloud Firestore):</p> 
+<pre data-language="">// Firebase App (the core Firebase SDK) is always required and
+// must be listed before other Firebase SDKs
+var firebase = require("firebase/app");
+
+// Add the Firebase products that you want to use
+require("firebase/auth");
+require("firebase/firestore");
+</pre> <section class="expandable"> <p class="showalways">Include the entire Firebase JavaScript SDK, rather than individual SDKs <em>(not recommended for production apps)</em></p> <aside class="caution">Loading the entire SDK is not efficient for production web apps.<br> Use this option for development purposes only. </aside> 
+<pre data-language="">var firebase = require("firebase");</pre> </section> <p><br></p>
+</li> <li>
+<p><strong>You can use ESM syntax to <code translate="no" dir="ltr">import</code> modules</strong></p> <p>To include only <a href="learn-more#libraries-nodejs">specific Firebase products</a> (like Authentication and Cloud Firestore):</p> 
+<pre data-language="">// Firebase App (the core Firebase SDK) is always required and
+// must be listed before other Firebase SDKs
+import firebase from "firebase/app";
+
+// Add the Firebase services that you want to use
+import "firebase/auth";
+import "firebase/firestore";
+</pre> <section class="expandable"> <p class="showalways">Include the entire Firebase JavaScript SDK, rather than individual SDKs <em>(not recommended for production apps)</em></p> <aside class="caution">Loading the entire SDK is not efficient for production web apps.<br> Use this option for development purposes only. </aside> 
+<pre data-language="">import firebase from "firebase";</pre> </section>
+</li> </ul>
+</li> <li>
+<p>Add your Firebase configuration object, and then initialize Firebase in your app:</p> 
+<pre data-language="">import { initializeApp } from 'firebase/app';
+
+// TODO: Replace the following with your app's Firebase configuration
+const firebaseConfig = {
+  //...
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);</pre>
+</li> </ol></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/web/alt-setup" class="_attribution-link">https://firebase.google.com/docs/web/alt-setup</a>
+  </p>
+</div>

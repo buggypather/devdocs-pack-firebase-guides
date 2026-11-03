@@ -1,0 +1,62 @@
+<h1>Report errors</h1> <h2 id="automatically_reporting_errors">Automatically reporting errors</h2> <p>You can emit an error from a function to <a href="https://cloud.google.com/error-reporting/docs">Error Reporting</a> as shown below:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// These WILL be reported to Error Reporting
+throw new Error('I failed you'); // Will cause a cold start if not caught
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@functions_framework.http
+def hello_error_1(request):
+    # This WILL be reported to Error Reporting,
+    # and WILL NOT show up in logs or
+    # terminate the function.
+    from google.cloud import error_reporting
+
+    client = error_reporting.Client()
+
+    try:
+        raise RuntimeError("I failed you")
+    except RuntimeError:
+        client.report_exception()
+
+    # This WILL be reported to Error Reporting,
+    # and WILL terminate the function
+    raise RuntimeError("I failed you")
+
+@functions_framework.http
+def hello_error_2(request):
+    # These errors WILL NOT be reported to Error
+    # Reporting, but will show up in logs.
+    import logging
+    import sys
+
+    print(RuntimeError("I failed you (print to stdout)"))
+    logging.warning(RuntimeError("I failed you (logging.warning)"))
+    logging.error(RuntimeError("I failed you (logging.error)"))
+    sys.stderr.write("I failed you (sys.stderr.write)\n")
+
+    # This is considered a successful execution and WILL NOT be reported
+    # to Error Reporting, but the status code (500) WILL be logged.
+    from flask import abort
+
+    return abort(500)
+</pre></section> </div> <p>If you would like more fine-grained error reporting, you can use the <a href="https://cloud.google.com/error-reporting/docs/reference/libraries">Error Reporting client libraries</a>.</p> <p>You can view the reported errors in <a href="https://console.cloud.google.com/errors">Error Reporting</a> in the Google Cloud console. You can also see the errors reported from a particular function when you select it from the <a href="https://console.cloud.google.com/functions">list of functions</a> in the Google Cloud console.</p> <p>Uncaught exceptions produced by your function will appear in Error Reporting. Note that some types of uncaught exceptions (such as those thrown asynchronously) will cause a <a href="https://cloud.google.com/functions/docs/bestpractices/tips">cold start</a> to occur upon a future function invocation. This increases the amount of time your function will take to run.</p> <h2 id="manually_reporting_errors">Manually reporting errors</h2> <h3 id="importing_dependencies">Importing dependencies</h3> <p>To report an error to <a href="https://cloud.google.com/error-reporting/docs">Error Reporting</a> from a function, import the <code translate="no" dir="ltr">error</code> function from the Cloud Functions <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.logger">logger</a> SDK:</p> 
+<pre>// All available logging functions
+const {
+  log,
+  info,
+  debug,
+  warn,
+  error,
+  write,
+} = require("firebase-functions/logger");
+</pre> <h3 id="sending-to-logging">Sending to Cloud Logging</h3> <p>The <code translate="no" dir="ltr">error</code> function from the Cloud Functions <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.logger">logger</a> SDK will report errors to both Cloud Logging and <a href="https://cloud.google.com/error-reporting/docs">Error Reporting</a>. To include more context from the error as <a href="https://cloud.google.com/logging/docs/structured-logging">structured data</a>, pass an error object as the second argument:</p> 
+<pre> } catch (err) {
+  // Attach an error object as the second argument
+  error("Unable to read quote from Firestore, sending default instead",
+      err);
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/reporting-errors" class="_attribution-link">https://firebase.google.com/docs/functions/reporting-errors</a>
+  </p>
+</div>

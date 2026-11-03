@@ -1,0 +1,83 @@
+<h1>Send messages to device groups</h1>     <aside class="caution"><strong>Caution:</strong><span> Device groups are deprecated and will be removed on September 29, 2027. You can retrieve FCM tokens of existing groups using the <a href="#retrieving_tokens">export API</a>. After exporting the FCM tokens and storing them in your own database, you can send messages to each single token. New projects cannot onboard device groups after December 1, 2026. See the <a href="migrate-off-device-groups">guidance</a> for how to migrate off.</span></aside> <p>Device group messaging lets you add multiple devices to a single group. This is similar to topic messaging, but includes authentication to ensure that group membership is managed only by your servers.</p> <p>For example, if you want to send different messages to different phone models, your servers can add or remove registrations to the appropriate groups and send the appropriate message to each group. Device group messaging differs from topic messaging in that it involves managing device groups from your servers instead of directly within your application.</p> <p>The maximum number of members allowed for a notification key is 20.</p> <h2 id="managing-device-groups">Manage device groups</h2> <p>Before sending messages to a device group, you must:</p> <ol> <li>Obtain registration tokens for each device you want to add to the group.</li> <li>Create the <code translate="no" dir="ltr">notification_key</code>, which identifies the device group by mapping a particular group (typically a user) to all of the group's associated registration tokens. You can create notification keys on the app server.</li> </ol> <p>Basic management of device groups — creating and removing groups, and adding or removing devices — is performed using the HTTP v1 API, using short-lived tokens to <a href="send/v1-api#authorize-http-v1-send-requests">authorize send requests</a>. See <a href="#device-group-management-keys">Device group management keys</a> for a list of supported keys.</p> <h3 id="managing-device-groups-on-app-server">Manage device groups on the app server</h3> <aside class="caution"><strong>Caution:</strong><span> Device groups are deprecated and the management API will be removed on September 29, 2027. You can retrieve FCM tokens of existing groups using the <a href="#retrieving_tokens">export API</a> before September 29, 2027. See the <a href="migrate-off-device-groups">guidance</a> for how to migrate off.</span></aside> <h4 id="creating_a_device_group">Create a device group</h4> <p>To create a device group, send a POST request that provides a name for the group, and a list of registration tokens for the devices. FCM returns a new <code translate="no" dir="ltr">notification_key</code> that represents the device group.</p> <h5 id="http_post_request">HTTP POST request</h5> <p>Send a request like the following to <code translate="no" dir="ltr">https://fcm.googleapis.com/fcm/notification</code>:</p> 
+<pre>https://fcm.googleapis.com/fcm/notification
+Content-Type:application/json
+access_token_auth: true
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+project_id:SENDER_ID
+
+{
+   "operation": "create",
+   "notification_key_name": "appUser-Chris",
+   "registration_ids": ["bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...",
+                        "cR1rjyj4_Kc:APA91bGusqbypSuMdsh7jSNrW4nzsM...",
+                        ... ]
+}
+</pre> <p>The <code translate="no" dir="ltr">notification_key_name</code> is a name or identifier (e.g., it can be a username) that is unique to a given group. The <code translate="no" dir="ltr">notification_key_name</code> and <code translate="no" dir="ltr">notification_key</code> are unique to a group of registration tokens. It is important that <code translate="no" dir="ltr">notification_key_name</code> is unique per client app if you have multiple client apps for the same <a href="server-environment#required-credentials">sender ID</a>. This ensures that messages only go to the intended target app.</p> <h5 id="response_format">Response format</h5> <p>A successful request returns a <code translate="no" dir="ltr">notification_key</code> like the following:</p> 
+<pre>{
+   "notification_key": "APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ"
+}
+</pre> <p>Save the <code translate="no" dir="ltr">notification_key</code> and the corresponding <code translate="no" dir="ltr">notification_key_name</code> to use in subsequent operations.</p> <aside class="caution"><strong>Caution:</strong><span> Invalid registration tokens are dropped when a device group is successfully created.</span></aside> <h4 id="retrieving_a_notification_key">Retrieving a notification key</h4> <p>If you need to retrieve an existing notification key, use the <code translate="no" dir="ltr">notification_key_name</code> in a GET request as shown:</p> 
+<pre>https://fcm.googleapis.com/fcm/notification?notification_key_name=appUser-Chris
+Content-Type:application/json
+access_token_auth: true
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+project_id:SENDER_ID
+{}
+</pre> <p>For each GET request for a given notification key name, the server returns a unique encoded string. Though each string may appear to be a different key, it is actually a valid <code translate="no" dir="ltr">notification_key</code> value.</p> <h4 id="retrieving_tokens">Retrieving FCM tokens for device groups</h4> <p>If you need to retrieve FCM tokens belonging to a device group, use the <code translate="no" dir="ltr">notification_key</code> in a GET request as shown:</p> 
+<pre>https://fcm.googleapis.com/fcm/notification?notification_key=APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ
+Content-Type:application/json
+access_token_auth: true
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+project_id:SENDER_ID
+{}
+</pre> <p>The response looks like this:</p> 
+<pre>{
+   "notification_key_name": "appUser-Chris",
+   "registration_ids": ["token1", "token2"]
+}
+</pre> <h4 id="adding_and_removing_devices_from_a_device_group">Adding and removing devices from a device group</h4> <p>To add or remove devices from an existing group, send a POST request with the <code translate="no" dir="ltr">operation</code> parameter set to <code translate="no" dir="ltr">add</code> or <code translate="no" dir="ltr">remove</code>, and provide the registration tokens for addition or removal.</p> <aside class="caution"><strong>Caution:</strong><span> If you remove all existing registration tokens from a device group, FCM deletes the device group.</span></aside> <h5 id="http_post_request_2">HTTP POST request</h5> <p>For example, to add a device with the registration token <code translate="no" dir="ltr">bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1...</code> to <code translate="no" dir="ltr">appUser-Chris</code>, you would send this request:</p> 
+<pre>https://fcm.googleapis.com/fcm/notification
+Content-Type:application/json
+access_token_auth: true
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+project_id:SENDER_ID
+
+{
+   "operation": "add",
+   "notification_key_name": "appUser-Chris",
+   "notification_key": "APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ",
+   "registration_ids": ["bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1..."]
+}
+</pre> <h5 id="response_format_2">Response format</h5> <p>A successful request to either add or remove a device returns a <code translate="no" dir="ltr">notification_key</code> like the following:</p> 
+<pre>{ "notification_key": "APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ" }
+</pre>
+<aside class="note"><strong>Note:</strong><span> <code translate="no" dir="ltr">notification_key_name</code> is not required for adding or removing registration tokens, but including it protects you against accidentally using the incorrect <code translate="no" dir="ltr">notification_key</code>.</span></aside> <h3 id="device-group-management-keys">Device group management keys</h3> <p>The following table lists the keys for creating device groups and adding and removing members.</p> <table> <thead> <tr> <th>Parameter</th> <th>Usage</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">operation</code></td> <td>Required, string</td> <td>The operation to run.Valid values are <code translate="no" dir="ltr">create</code>, <code translate="no" dir="ltr">add</code>, and <code translate="no" dir="ltr">remove</code>.</td> </tr> <tr> <td><code translate="no" dir="ltr">notification_key_name</code></td> <td>Required, string</td> <td>The user-defined name of the device group to create or modify.</td> </tr> <tr> <td><code translate="no" dir="ltr">notification_key</code></td> <td>Required (except for <code translate="no" dir="ltr">create</code> operation, string)</td> <td>Unique identifier of the device group. This value is returned in the response for a successful <code translate="no" dir="ltr">create</code> operation, and is required for all subsequent operations on the device group.</td> </tr> <tr> <td><code translate="no" dir="ltr">registration_ids</code></td> <td>Required, array of strings</td> <td>The device tokens to add or remove. If you remove all existing registration tokens from a device group, FCM deletes the device group.</td> </tr> </tbody> </table> <h2 id="sending-messages-to-device-groups">Send messages to device groups</h2> <p>Sending messages to a device group is very similar to sending messages to an individual device, using the same method to <a href="send/v1-api#authorize-http-v1-send-requests">authorize send requests</a>. Set the <code translate="no" dir="ltr">token</code> field to the group notification key:</p> <div> <section><p class="_firebase-tab"><strong>REST</strong></p>
+
+<pre data-language="">POST https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send HTTP/1.1
+
+Content-Type: application/json
+Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA
+
+{
+   "message":{
+      "token":"APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ",
+      "data":{
+        "hello": "This is a Firebase Cloud Messaging device group message!"
+      }
+   }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>cURL command</strong></p>
+
+<pre data-language="">curl -X POST -H "Authorization: Bearer ya29.ElqKBGN2Ri_Uz...HnS_uNreA" -H "Content-Type: application/json" -d '{
+"message":{
+   "data":{
+     "hello": "This is a Firebase Cloud Messaging device group message!"
+   },
+   "token":"APA91bGHXQBB...9QgnYOEURwm0I3lmyqzk2TXQ"
+}}' https://fcm.googleapis.com/v1/projects/myproject-b5ae1/messages:send
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/device-group" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/device-group</a>
+  </p>
+</div>

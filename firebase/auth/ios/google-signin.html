@@ -1,0 +1,148 @@
+<h1>Authenticate Using Google Sign-In on Apple Platforms</h1> <p>You can let your users authenticate with Firebase using their Google Accounts by integrating Google Sign-In into your app.</p>  <h2 id="before_you_begin">Before you begin</h2>  <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+<pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Firebase Authentication library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> <h2 id="add_the_google_sign-in_sdk_to_your_project">Add the Google Sign-In SDK to your project</h2> <ol> <li><p>In Xcode, with your app project open, navigate to <strong>File &gt; Add Packages</strong>.</p></li> <li>
+<p>When prompted, add the Google Sign-In SDK repository:</p> 
+<pre>https://github.com/google/GoogleSignIn-iOS
+</pre>
+</li> <li><p>When finished, Xcode will automatically begin resolving and downloading your dependencies in the background.</p></li> </ol> <h2 id="enable_google_sign-in_for_your_firebase_project">Enable Google Sign-In for your Firebase project</h2> <p>To allow users to sign in using Google Sign-In, you must first enable the Google Sign-In provider for your Firebase project:</p> <ol> <li><p>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><strong>Authentication</strong></a>.</p></li> <li><p>In the <strong>Sign-in method</strong> tab, enable the <strong>Google</strong> provider.</p></li> <li><p>Click <strong>Save</strong>.</p></li> <li><p>Download a new copy of your project's <code translate="no" dir="ltr">GoogleService-Info.plist</code> file and copy it to your Xcode project. Overwrite any existing versions with the new one. (See <a href="../../ios/setup#add-config-file">Add Firebase to your iOS project</a>.)</p></li> </ol> <h2 id="import_the_required_header_files">Import the required header files</h2> <p>First, you must import the Firebase SDK and Google Sign-In SDK header files into your app.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">import FirebaseAuth
+import GoogleSignIn</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">@import FirebaseCore;
+@import GoogleSignIn;</pre> </section> </div> <h2 id="implement_google_sign-in">Implement Google Sign-In</h2> <p>Implement Google Sign-In by following these steps. See the <a href="https://developers.google.com/identity/sign-in/ios">Google Sign-In developer documentation</a> for details on using Google Sign-In with iOS.</p> <ol> <li>Add custom URL schemes to your Xcode project:</li> <ol> <li>Open your project configuration: click the project name in the left tree view. Select your app from the <b>TARGETS</b> section, then select the <b>Info</b> tab, and expand the <b>URL Types</b> section. </li> <li>Click the <b>+</b> button, and add a URL scheme for your reversed client ID. To find this value, open the <code translate="no" dir="ltr"><code translate="no" dir="ltr"><nobr>GoogleService-Info.plist</nobr></code></code> configuration file, and look for the <code translate="no" dir="ltr">REVERSED_CLIENT_ID</code> key. Copy the value of that key, and paste it into the <b>URL Schemes</b> box on the configuration page. Leave the other fields untouched. <p>When completed, your config should look something similar to the following (but with your application-specific values):</p> <img src="https://firebase.google.com/static/docs/auth/images/xcode_infotab_url_type_values.png" class="screenshot"> </li> </ol> <li>In your app delegate's <code translate="no" dir="ltr">application:didFinishLaunchingWithOptions:</code> method, configure the <code translate="no" dir="ltr">FirebaseApp</code> object. <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">// Use Firebase library to configure APIs
+FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Use Firebase library to configure APIs
+[FIRApp configure];</pre> </section> </div> </li> <li>Implement the <code translate="no" dir="ltr">application:openURL:options:</code> method of your app delegate. The method should call the <code translate="no" dir="ltr">handleURL</code> method of the <code translate="no" dir="ltr">GIDSignIn</code> instance, which will properly handle the URL that your application receives at the end of the authentication process. <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">func scene(_ scene: UIScene, openURLContexts URLContexts: Set&lt;UIOpenURLContext&gt;) {
+  // ...
+}
+  return GIDSignIn.sharedInstance.handle(url)
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">- (BOOL)application:(nonnull UIApplication *)application
+            openURL:(nonnull NSURL *)url
+            options:(nonnull NSDictionary&lt;NSString *, id&gt; *)options {
+  return [[GIDSignIn sharedInstance] handleURL:url];
+}</pre> </section> </div> </li> <li>Pass the presenting view controller and client ID for your app to the <code translate="no" dir="ltr">signIn</code> method of the Google Sign-In provider and create a Firebase Authentication credential from the resulting Google auth token: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">guard let clientID = FirebaseApp.app()?.options.clientID else { return }
+
+// Create Google Sign In configuration object.
+let config = GIDConfiguration(clientID: clientID)
+GIDSignIn.sharedInstance.configuration = config
+
+// Start the sign in flow!
+GIDSignIn.sharedInstance.signIn(withPresenting: viewController) { result, error in
+  guard error == nil else {
+    // ...
+    return
+  }
+
+  guard let user = result?.user,
+        let idToken = user.idToken?.tokenString
+  else {
+    // ...
+    return
+  }
+
+  let credential = GoogleAuthProvider.credential(withIDToken: idToken,
+                                                 accessToken: user.accessToken.tokenString)
+  self.signIn(with: credential)
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">GIDConfiguration *config = [[GIDConfiguration alloc] initWithClientID:[FIRApp defaultApp].options.clientID];
+[GIDSignIn.sharedInstance setConfiguration:config];
+
+__weak __auto_type weakSelf = self;
+[GIDSignIn.sharedInstance signInWithPresentingViewController:self
+      completion:^(GIDSignInResult * _Nullable result, NSError * _Nullable error) {
+  __auto_type strongSelf = weakSelf;
+  if (strongSelf == nil) { return; }
+
+  if (error == nil) {
+    FIRAuthCredential *credential =
+    [FIRGoogleAuthProvider credentialWithIDToken:result.user.idToken.tokenString
+                                     accessToken:result.user.accessToken.tokenString];
+    // ...
+  } else {
+    // ...
+  }
+}];</pre> </section> </div> </li> <li>Add a <code translate="no" dir="ltr">GIDSignInButton</code> to your storyboard, XIB file, or instantiate it programmatically. To add the button to your storyboard or XIB file, add a View and set its custom class to <code translate="no" dir="ltr">GIDSignInButton</code>. <aside class="note">When you add a <code translate="no" dir="ltr">GIDSignInButton</code> view to your storyboard, the sign-in button doesn't render in the interface builder. Run the app to see the sign-in button.</aside> </li> <li>
+<strong>Optional</strong>: If you want to customize the button, do the following: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <ol> <li>In your view controller, declare the sign-in button as a property. 
+<pre data-language="swift">@IBOutlet weak var signInButton: GIDSignInButton!</pre> </li> <li>Connect the button to the <code translate="no" dir="ltr">signInButton</code> property you just declared.</li> <li>Customize the button by setting the properties of the <a href="https://developers.google.com/identity/sign-in/ios/api/interface_g_i_d_sign_in_button#property-summary"> GIDSignInButton</a> object.</li> </ol> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <ol> <li>In your view controller's header file, declare the sign-in button as a property. 
+<pre data-language="objectivec">@property(weak, nonatomic) IBOutlet GIDSignInButton *signInButton;</pre> </li> <li>Connect the button to the <code translate="no" dir="ltr">signInButton</code> property you just declared.</li> <li>Customize the button by setting the properties of the <a href="https://developers.google.com/identity/sign-in/ios/api/interface_g_i_d_sign_in_button#property-summary"> GIDSignInButton</a> object.</li> </ol> </section> </div> </li> </ol> <h2 id="authenticate_with_firebase">Authenticate with Firebase</h2> <p>Finally, complete the Firebase login process with the auth credential created in the previous step.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">Auth.auth().signIn(with: credential) { result, error in
+  guard error == nil else {
+    // ...
+    return
+  }
+
+  // At this point, our user is signed in
+}
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">[[FIRAuth auth] signInWithCredential:credential
+                          completion:^(FIRAuthDataResult * _Nullable authResult,
+                                       NSError * _Nullable error) {
+    if (isMFAEnabled &amp;&amp; error &amp;&amp; error.code == FIRAuthErrorCodeSecondFactorRequired) {
+      FIRMultiFactorResolver *resolver = error.userInfo[FIRAuthErrorUserInfoMultiFactorResolverKey];
+      NSMutableString *displayNameString = [NSMutableString string];
+      for (FIRMultiFactorInfo *tmpFactorInfo in resolver.hints) {
+        [displayNameString appendString:tmpFactorInfo.displayName];
+        [displayNameString appendString:@" "];
+      }
+      [self showTextInputPromptWithMessage:[NSString stringWithFormat:@"Select factor to sign in\n%@", displayNameString]
+                           completionBlock:^(BOOL userPressedOK, NSString *_Nullable displayName) {
+       FIRPhoneMultiFactorInfo* selectedHint;
+       for (FIRMultiFactorInfo *tmpFactorInfo in resolver.hints) {
+         if ([displayName isEqualToString:tmpFactorInfo.displayName]) {
+           selectedHint = (FIRPhoneMultiFactorInfo *)tmpFactorInfo;
+         }
+       }
+       [FIRPhoneAuthProvider.provider
+        verifyPhoneNumberWithMultiFactorInfo:selectedHint
+        UIDelegate:nil
+        multiFactorSession:resolver.session
+        completion:^(NSString * _Nullable verificationID, NSError * _Nullable error) {
+          if (error) {
+            [self showMessagePrompt:error.localizedDescription];
+          } else {
+            [self showTextInputPromptWithMessage:[NSString stringWithFormat:@"Verification code for %@", selectedHint.displayName]
+                                 completionBlock:^(BOOL userPressedOK, NSString *_Nullable verificationCode) {
+             FIRPhoneAuthCredential *credential =
+                 [[FIRPhoneAuthProvider provider] credentialWithVerificationID:verificationID
+                                                              verificationCode:verificationCode];
+             FIRMultiFactorAssertion *assertion = [FIRPhoneMultiFactorGenerator assertionWithCredential:credential];
+             [resolver resolveSignInWithAssertion:assertion completion:^(FIRAuthDataResult * _Nullable authResult, NSError * _Nullable error) {
+               if (error) {
+                 [self showMessagePrompt:error.localizedDescription];
+               } else {
+                 NSLog(@"Multi factor finanlize sign in succeeded.");
+               }
+             }];
+           }];
+          }
+        }];
+     }];
+    }
+  else if (error) {
+    // ...
+    return;
+  }
+  // User successfully signed in. Get user data from the FIRUser object
+  if (authResult == nil) { return; }
+  FIRUser *user = authResult.user;
+  // ...
+}];</pre> </section> </div> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_user"><code translate="no" dir="ltr">User</code> </a> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_auth#ab0d5111f05c3f1906243852cc8ef41b1"> <code translate="no" dir="ltr">signOut:</code></a>.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">let firebaseAuth = Auth.auth()
+do {
+  try firebaseAuth.signOut()
+} catch let signOutError as NSError {
+  print("Error signing out: %@", signOutError)
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">NSError *signOutError;
+BOOL status = [[FIRAuth auth] signOut:&amp;signOutError];
+if (!status) {
+  NSLog(@"Error signing out: %@", signOutError);
+  return;
+}</pre> </section> </div> <p>You may also want to add error handling code for the full range of authentication errors. See <a href="errors">Handle Errors</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/ios/google-signin" class="_attribution-link">https://firebase.google.com/docs/auth/ios/google-signin</a>
+  </p>
+</div>

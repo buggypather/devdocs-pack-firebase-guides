@@ -1,0 +1,302 @@
+<h1>Log schema for exported data in Cloud Logging</h1>   <p>This page provides the log schema for exported Crashlytics data and Firebase sessions data in Cloud Logging.</p> <ul> <li><p><a href="#crashlytics">Crashlytics schema</a></p></li> <li><p><a href="#sessions">Firebase sessions schema</a> (if sessions data is enabled for export)</p></li> <li><p><a href="#device-log">Device log schema</a></p></li> </ul> <p><br></p> <hr> <h2 id="crashlytics">Crashlytics schema</h2> <h3 id="crashlytics-event"><code translate="no" dir="ltr">Event</code></h3> <p>The message describing a single Crashlytics event.</p> <p>JSON representation</p> 
+<pre>{
+  "name": string,
+  "platform": string,
+  "bundleOrPackage": string,
+  "eventId": string,
+  "sessionId": string,
+  "eventTime": string,
+  "receivedTime": string,
+  "issue": {
+    object (Issue)
+  },
+  "issueVariant": {
+    object (IssueVariant)
+  },
+  "device": {
+    object (Device)
+  },
+  "memory": {
+    object (Memory)
+  },
+  "storage": {
+    object (Storage)
+  },
+  "operatingSystem": {
+    object (OperatingSystem)
+  },
+  "browser": {
+    object (Browser)
+  },
+  "version": {
+    object (Version)
+  },
+  "user": {
+    object (User)
+  },
+  "customKeys": {
+    string: string,
+    ...
+  },
+  "installationUuid": string,
+  "crashlyticsSdkVersion": string,
+  "appOrientation": string,
+  "deviceOrientation": string,
+  "logs": [
+    {
+      object (Log)
+    }
+  ],
+  "breadcrumbs": [
+    {
+      object (Breadcrumb)
+    }
+  ],
+  "blameFrame": {
+    object (Frame)
+  },
+  "exceptions": [
+    {
+      object (Exception)
+    }
+  ],
+  "errors": [
+    {
+      object (Error)
+    }
+  ],
+  "threads": [
+    {
+      object (Thread)
+    }
+  ],
+  "processState": string,
+  "issueTitle": string,
+  "issueSubtitle": string,
+  "buildStamp": string,
+  "routePath": string
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">name</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p><strong>Required.</strong> <strong>Output only.</strong> <strong>Immutable.</strong> <strong>Identifier.</strong> The name of the event resource. Format: <code translate="no" dir="ltr">projects/{project}/apps/{app_id}/events/{event}</code>.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">platform</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>ANDROID, IOS, or WEB.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">bundleOrPackage</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The bundle name for iOS apps or the package name of Android apps. Format: <code translate="no" dir="ltr">com.mycompany.myapp</code>.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">eventId</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p><strong>Output only.</strong> <strong>Immutable.</strong> The unique event identifier is assigned during processing.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">sessionId</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Unique identifier for the Firebase session.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">eventTime</code></td> <td>
+<code translate="no" dir="ltr">string (Timestamp format)</code> <p>Device timestamp at which the event was recorded.</p> <p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: "2014-10-02T15:01:23Z", "2014-10-02T15:01:23.045123456Z" or "2014-10-02T15:01:23+05:30".</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">receivedTime</code></td> <td>
+<code translate="no" dir="ltr">string (Timestamp format)</code> <p>Server timestamp at which the event was received by Crashlytics.</p> <p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: "2014-10-02T15:01:23Z", "2014-10-02T15:01:23.045123456Z" or "2014-10-02T15:01:23+05:30".</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">state_update_time</code></td> <td>
+<code translate="no" dir="ltr">string (Timestamp format)</code> <p>The time that the issue state was last changed.</p> <p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: "2014-10-02T15:01:23Z", "2014-10-02T15:01:23.045123456Z" or "2014-10-02T15:01:23+05:30".</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">first_seen_version</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The first app display_version in which this issue was seen, populated for mobile issues only.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">last_seen_version</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The most recent app display_version in which this issue was seen, populated for mobile issues only.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">first_time_seen</code></td> <td>
+<code translate="no" dir="ltr">string (Timestamp format)</code> <p>The first time this issue was seen.</p> <p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: "2014-10-02T15:01:23Z", "2014-10-02T15:01:23.045123456Z" or "2014-10-02T15:01:23+05:30".</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">last_time_seen</code></td> <td>
+<code translate="no" dir="ltr">string (Timestamp format)</code> <p>The most recent time the issue was seen.</p> <p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: "2014-10-02T15:01:23Z", "2014-10-02T15:01:23.045123456Z" or "2014-10-02T15:01:23+05:30".</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">issue</code></td> <td>
+<code translate="no" dir="ltr">object (Issue)</code> <p>Details for the [Issue] assigned to this [Event].</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">issueVariant</code></td> <td>
+<code translate="no" dir="ltr">object (IssueVariant)</code> <p>Details for the [IssueVariant] assigned to this [Event].</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">device</code></td> <td>
+<code translate="no" dir="ltr">object (Device)</code> <p>Mobile device metadata.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">memory</code></td> <td>
+<code translate="no" dir="ltr">object (Memory)</code> <p>Mobile device memory usage.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">storage</code></td> <td>
+<code translate="no" dir="ltr">object (Storage)</code> <p>Mobile device disk/flash usage.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">operatingSystem</code></td> <td>
+<code translate="no" dir="ltr">object (OperatingSystem)</code> <p>Operating system and version.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">browser</code></td> <td>
+<code translate="no" dir="ltr">object (Browser)</code> <p>Browser and version.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">version</code></td> <td>
+<code translate="no" dir="ltr">object (Version)</code> <p>Mobile application version.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">user</code></td> <td>
+<code translate="no" dir="ltr">object (User)</code> <p>End user identifiers for the device owner.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">customKeys</code></td> <td>
+<code translate="no" dir="ltr">map (key: string, value: string)</code> <p>Custom keys set by the developer during the session.</p> <p>An object containing a list of "key": value pairs. Example: { "name": "wrench", "mass": "1.3kg", "count": "3" }.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">installationUuid</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Unique identifier for the device-app installation. This field is used to compute the unique number of impacted users.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">crashlyticsSdkVersion</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Crashlytics SDK version.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">appOrientation</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>App orientation at the time of the crash (portrait or landscape).</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">deviceOrientation</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Device orientation at the time of the crash (portrait or landscape).</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">logs[]</code></td> <td>
+<code translate="no" dir="ltr">object (Log)</code> <p>Log messages recorded by the developer during the session.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">breadcrumbs[]</code></td> <td>
+<code translate="no" dir="ltr">object (Breadcrumb)</code> <p>Analytics events recorded by the analytics SDK during the session.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">blameFrame</code></td> <td>
+<code translate="no" dir="ltr">object (Frame)</code> <p>The stack trace frame blamed by Crashlytics processing. May not be present in future analyzer.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">exceptions[]</code></td> <td>
+<code translate="no" dir="ltr">object (Exception)</code> <p>Android and web only. Exceptions that occurred during this event. Nested exceptions are presented in reverse chronological order, so that the last record is the first exception thrown.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">errors[]</code></td> <td>
+<code translate="no" dir="ltr">object (Error)</code> <p>Apple only. A non-fatal error captured by the iOS SDK and its stacktrace.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">threads[]</code></td> <td>
+<code translate="no" dir="ltr">object (Thread)</code> <p>Application threads present at the time the event was recorded. Each contains a stacktrace. One thread will be blamed for the error.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">processState</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The state of the app process at the time of the event.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">issueTitle</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The title of the issue in which the event was grouped. This is usually a source file or method name.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">issueSubtitle</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The subtitle of the issue in which the event was grouped. This is usually a symbol or an exception message.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">buildStamp</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Metadata provided by the app's build system, including version control repository info.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">routePath</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Web only. The route path of the web application when the event occurred, excluding query parameters and fragment.</p> </td> </tr> </tbody> </table> <h3 id="crashlytics-memory"><code translate="no" dir="ltr">Memory</code></h3> <p>Mobile device memory usage.</p> <p>JSON representation</p> 
+<pre>{
+  "used": string,
+  "free": string
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">used</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>Bytes in use.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">free</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>Bytes free.</p> </td> </tr> </tbody> </table> <h3 id="crashlytics-storage"><code translate="no" dir="ltr">Storage</code></h3> <p>Mobile device disk/flash usage. Not reported for all devices.</p> <p>JSON representation</p> 
+<pre>{
+  "used": string,
+  "free": string
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">used</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>Bytes used.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">free</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>Bytes free.</p> </td> </tr> </tbody> </table> <h3 id="crashlytics-user"><code translate="no" dir="ltr">User</code></h3> <p>Developer-provided end user identifiers.</p> <p>JSON representation</p> 
+<pre>{
+  "id": string
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">id</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>User id if provided by the app developer.</p> </td> </tr> </tbody> </table> <h3 id="crashlytics-frame"><code translate="no" dir="ltr">Frame</code></h3> <p>A frame in a stacktrace.</p> <p>JSON representation</p> 
+<pre>{
+  "line": string,
+  "file": string,
+  "symbol": string,
+  "offset": string,
+  "address": string,
+  "library": string,
+  "owner": string,
+  "blamed": boolean
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">line</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>The line number in the file of the frame.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">file</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The name of the source file in which the frame is found.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">symbol</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The frame symbol after it has been deobfuscated or symbolicated. The raw symbol from the device if it could not be hydrated.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">offset</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>The byte offset into the binary image that contains the code. Present for native frames.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">address</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>The address in the binary image which contains the code. Present for native frames.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">library</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The display name of the library that includes the frame.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">owner</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>One of DEVELOPER, VENDOR, RUNTIME, PLATFORM, or SYSTEM.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">blamed</code></td> <td>
+<code translate="no" dir="ltr">boolean</code> <p>True when the Crashlytics analysis has determined that this frame is likely to be the cause of the error.</p> </td> </tr> </tbody> </table> <h3 id="crashlytics-exception"><code translate="no" dir="ltr">Exception</code></h3> <p>A Java or Javascript exception and its stacktrace. Only from Android and web apps.</p> <p>JSON representation</p> 
+<pre>{
+  "type": string,
+  "exceptionMessage": string,
+  "nested": boolean,
+  "title": string,
+  "subtitle": string,
+  "blamed": boolean,
+  "frames": [
+    {
+      object (Frame)
+    }
+  ]
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">type</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The exception type e.g. java.lang.IllegalStateException.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">exceptionMessage</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>A message associated with the exception.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">nested</code></td> <td>
+<code translate="no" dir="ltr">boolean</code> <p>True for all but the last-thrown exception (i.e. the first record).</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">title</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The title of the exception.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">subtitle</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The subtitle of the exception.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">blamed</code></td> <td>
+<code translate="no" dir="ltr">boolean</code> <p>True when the Crashlytics analysis has determined that this thread is where the fault occurred.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">frames[]</code></td> <td>
+<code translate="no" dir="ltr">object (Frame)</code> <p>The frames in the exception's stacktrace.</p> </td> </tr> </tbody> </table> <h3 id="crashlytics-error"><code translate="no" dir="ltr">Error</code></h3> <p>A non-fatal error and its stacktrace, only from Apple apps.</p> <p>JSON representation</p> 
+<pre>{
+  "queue": string,
+  "code": string,
+  "title": string,
+  "subtitle": string,
+  "blamed": boolean,
+  "frames": [
+    {
+      object (Frame)
+    }
+  ]
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">queue</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The queue on which the thread was running.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">code</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>Error code associated with the app's custom logged NSError.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">title</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The title of the error.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">subtitle</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The subtitle of the error.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">blamed</code></td> <td>
+<code translate="no" dir="ltr">boolean</code> <p>True when the Crashlytics analysis has determined that the stacktrace in this error is where the fault occurred.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">frames[]</code></td> <td>
+<code translate="no" dir="ltr">object (Frame)</code> <p>The frames in the error's stacktrace.</p> </td> </tr> </tbody> </table> <h3 id="crashlytics-thread"><code translate="no" dir="ltr">Thread</code></h3> <p>An application thread.</p> 
+<pre>JSON representation&lt;/code&gt;&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;{
+  "crashed": boolean,
+  "name": string,
+  "queue": string,
+  "signal": string,
+  "signalCode": string,
+  "crashAddress": string,
+  "title": string,
+  "subtitle": string,
+  "blamed": boolean,
+  "frames": [
+    {
+      object (Frame)
+    }
+  ],
+  "threadId": string,
+  "sysThreadId": string,
+  "threadState": enum (State)
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">crashed</code></td> <td>
+<code translate="no" dir="ltr">boolean</code> <p>True when the thread has crashed.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">name</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The name of the thread.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">queue</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The queue on which the thread was running.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">signal</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The name of the signal that caused the app to crash. Only present on crashed native threads.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">signalCode</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The code of the signal that caused the app to crash. Only present on crashed native threads.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">crashAddress</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>The address of the signal that caused the application to crash. Only present on crashed native threads.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">title</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The title of the thread.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">subtitle</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The subtitle of the thread.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">blamed</code></td> <td>
+<code translate="no" dir="ltr">boolean</code> <p>True when the Crashlytics analysis has determined that the stacktrace in this thread is where the fault occurred.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">frames[]</code></td> <td>
+<code translate="no" dir="ltr">object (Frame)</code> <p>The frames in the thread's stacktrace.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">threadId</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>The id of the thread, only available for ANR threads.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">sysThreadId</code></td> <td>
+<code translate="no" dir="ltr">string (int64 format)</code> <p>The system id of the thread, only available for ANR threads.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">threadState</code></td> <td>
+<code translate="no" dir="ltr">enum (State)</code> <p><strong>Output only.</strong> The state of the thread at the time the ANR occurred.</p> </td> </tr> </tbody> </table> <h3 id="crashlytics-state"><code translate="no" dir="ltr">State</code></h3> <p>The state of a thread when the ANR occurred.</p> <table> <thead> <tr> <th width="30%">Enums</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">STATE_UNSPECIFIED</code></td> <td><p>Thread state unspecified.</p></td> </tr> <tr> <td><code translate="no" dir="ltr">THREAD_STATE_TERMINATED</code></td> <td><p>Thread was terminated.</p></td> </tr> <tr> <td><code translate="no" dir="ltr">THREAD_STATE_RUNNABLE</code></td> <td><p>Thread was runnable.</p></td> </tr> <tr> <td><code translate="no" dir="ltr">THREAD_STATE_TIMED_WAITING</code></td> <td><p>Thread was waiting with a timeout.</p></td> </tr> <tr> <td><code translate="no" dir="ltr">THREAD_STATE_BLOCKED</code></td> <td><p>Thread was blocked.</p></td> </tr> <tr> <td><code translate="no" dir="ltr">THREAD_STATE_WAITING</code></td> <td><p>Thread was waiting.</p></td> </tr> <tr> <td><code translate="no" dir="ltr">THREAD_STATE_NEW</code></td> <td><p>Thread was started, yet to run anything.</p></td> </tr> <tr> <td><code translate="no" dir="ltr">THREAD_STATE_NATIVE_RUNNABLE</code></td> <td><p>The thread was native and we could not heuristically determine that it was was waiting, so assume it's runnable.</p></td> </tr> <tr> <td><code translate="no" dir="ltr">THREAD_STATE_NATIVE_WAITING</code></td> <td><p>We heuristically determined that the thread is waiting.</p></td> </tr> </tbody> </table> <p><br></p> <hr> <h2 id="sessions">Firebase sessions schema</h2> <h3 id="sessions-firebasesessionevent"><code translate="no" dir="ltr">FirebaseSessionEvent</code></h3> <p>Sessions recorded by the Firebase App Quality Sessions SDK.</p> <p>JSON representation</p> 
+<pre>{
+  "sessionId": string,
+  "eventType": enum (SessionEventType),
+  "firstSessionId": string,
+  "sessionIndex": integer,
+  "firebaseInstallationId": string,
+  "eventTime": string,
+  "version": {
+    object (Version)
+  },
+  "device": {
+    object (Device)
+  },
+  "operatingSystem": {
+    object (OperatingSystem)
+  }
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">sessionId</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Unique identifier for the Firebase session.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">eventType</code></td> <td>
+<code translate="no" dir="ltr">enum (SessionEventType)</code> <p>Session event type. The SDK only supports SESSION_START events at this time.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">firstSessionId</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>The identifier of the first session since the last cold start. This id and the sessionId will be the same for app launches.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">sessionIndex</code></td> <td>
+<code translate="no" dir="ltr">integer</code> <p>Indicates the number of sessions since the last cold start.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">firebaseInstallationId</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Uniquely identifies a device with Firebase apps installed.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">eventTime</code></td> <td>
+<code translate="no" dir="ltr">string (Timestamp format)</code> <p>The start timestamp for the session event.</p> <p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: "2014-10-02T15:01:23Z", "2014-10-02T15:01:23.045123456Z" or "2014-10-02T15:01:23+05:30".</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">version</code></td> <td>
+<code translate="no" dir="ltr">object (Version)</code> <p>Mobile application version numbers.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">device</code></td> <td>
+<code translate="no" dir="ltr">object (Device)</code> <p>Mobile device metadata.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">operatingSystem</code></td> <td>
+<code translate="no" dir="ltr">object (OperatingSystem)</code> <p>Operating system and version.</p> </td> </tr> </tbody> </table> <h3 id="sessions-sessioneventtype"><code translate="no" dir="ltr">SessionEventType</code></h3> <p>Types of <code translate="no" dir="ltr">SessionEvent</code> that are recorded.</p> <table> <thead> <tr> <th width="30%">Enums</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">SESSION_EVENT_TYPE_UNKNOWN</code></td> <td><p>Unknown.</p></td> </tr> <tr> <td><code translate="no" dir="ltr">SESSION_START</code></td> <td><p>Application session started.</p></td> </tr> </tbody> </table> <p><br></p> <hr> <h2 id="device-log">Device Log schema</h2> <h3 id="device-log-devicelog"><code translate="no" dir="ltr">DeviceLog</code></h3> <p>Represents the structure of the deviceLog entries.</p> <p>JSON representation</p> 
+<pre>{
+  "eventId": string,
+  "sessionId": string,
+
+  // Union field payload can be only one of the following:
+  "log": {
+    object (Log)
+  },
+  "breadcrumb": {
+    object (Breadcrumb)
+  }
+  // End of list of possible types for union field payload.
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">eventId</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p><strong>Output only.</strong> <strong>Immutable.</strong> The identifier of the event to which this is associated.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">sessionId</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Unique identifier for the Firebase session.</p> </td> </tr> <tr class="alt"> <td colspan="2">
+<p>Union field <code translate="no" dir="ltr">payload</code>. Payload can either be a Crashlytics log or a Breadcrumb. <code translate="no" dir="ltr">payload</code> can be only one of the following:</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">log</code></td> <td>
+<code translate="no" dir="ltr">object (Log)</code> <p>Crashlytics log.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">breadcrumb</code></td> <td>
+<code translate="no" dir="ltr">object (Breadcrumb)</code> <p>Crashlytics breadcrumb.</p> </td> </tr> </tbody> </table> <h3 id="device-log-log"><code translate="no" dir="ltr">Log</code></h3> <p>Developer-provided log lines recorded during the session.</p> <p>JSON representation</p> 
+<pre>{
+  "logTime": string,
+  "message": string
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">logTime</code></td> <td>
+<code translate="no" dir="ltr">string (Timestamp format)</code> <p>Device timestamp when the line was logged.</p> <p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: "2014-10-02T15:01:23Z", "2014-10-02T15:01:23.045123456Z" or "2014-10-02T15:01:23+05:30".</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">message</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Log message.</p> </td> </tr> </tbody> </table> <h3 id="device-log-breadcrumb"><code translate="no" dir="ltr">Breadcrumb</code></h3> <p>Analytics events recorded during the session.</p> <p>JSON representation</p> 
+<pre>{
+  "eventTime": string,
+  "title": string,
+  "params": {
+    string: string,
+    ...
+  }
+}
+</pre> <table> <thead> <tr> <th width="30%">Fields</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">eventTime</code></td> <td>
+<code translate="no" dir="ltr">string (Timestamp format)</code> <p>Device timestamp for the event.</p> <p>Uses RFC 3339, where generated output will always be Z-normalized and use 0, 3, 6 or 9 fractional digits. Offsets other than "Z" are also accepted. Examples: "2014-10-02T15:01:23Z", "2014-10-02T15:01:23.045123456Z" or "2014-10-02T15:01:23+05:30".</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">title</code></td> <td>
+<code translate="no" dir="ltr">string</code> <p>Analytic event name.</p> </td> </tr> <tr> <td><code translate="no" dir="ltr">params</code></td> <td>
+<code translate="no" dir="ltr">map (key: string, value: string)</code> <p>Event parameters.</p> <p>An object containing a list of "key": value pairs. Example: { "name": "wrench", "mass": "1.3kg", "count": "3" }.</p> </td> </tr> </tbody> </table><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/crashlytics/cloud-logging-schema" class="_attribution-link">https://firebase.google.com/docs/crashlytics/cloud-logging-schema</a>
+  </p>
+</div>

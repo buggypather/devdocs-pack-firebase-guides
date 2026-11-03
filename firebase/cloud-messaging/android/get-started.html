@@ -1,0 +1,227 @@
+<h1>Get started with Firebase Cloud Messaging in Android apps</h1>     <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/get-started">iOS+</a> <a class="button button-primary" href="get-started">Android</a> <a class="button" href="../web/get-started">Web</a> <a class="button" href="../flutter/get-started">Flutter</a> <a class="button" href="../unity/get-started">Unity</a> <a class="button" href="../cpp/get-started">C++</a> </td> </tr> </table> <p><br></p> <p>This guide describes how to get started with Firebase Cloud Messaging in your Android client apps so that you can reliably send messages.</p> <p>FCM clients require devices running Android 7.0 or higher that also have the Google Play Store app installed, or an emulator running Android 7.0 with Google APIs. Note that you are not limited to deploying your Android apps through Google Play Store.</p> <h2 id="setup-the-sdk">Set up the SDK</h2> <p>If you haven't already, <a href="../../android/setup">add Firebase to your Android project</a>.</p> <p>For an optimal experience with FCM, we strongly recommend <a href="https://support.google.com/firebase/answer/9289399#linkga" class="external">enabling Google Analytics</a> in your project. Google Analytics is a requirement for <a href="../understand-delivery">message delivery reporting</a> for FCM.</p> <h2 id="edit-app-manifest">Edit your app manifest</h2> <p>Add the following to your app's manifest:</p> <ul> <li>A service that extends <code translate="no" dir="ltr">FirebaseMessagingService</code>. This is required if you want to do any message handling beyond receiving notifications on apps in the background. To receive notifications in foreground apps, to receive data payload, and more, you must extend this service.</li> 
+</ul>
+<pre>&lt;service
+    android:name=".java.MyFirebaseMessagingService"
+    android:exported="false"&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name="com.google.firebase.MESSAGING_EVENT" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/service&gt;</pre> <li>(Optional) Within the application component, metadata elements to set a default notification icon and color. Android uses these values whenever incoming messages don't explicitly set icon or color.</li> 
+<pre>&lt;!-- Set custom default icon. This is used when no icon is set for incoming notification messages.
+     See README(https://goo.gl/l4GJaQ) for more. --&gt;
+&lt;meta-data
+    android:name="com.google.firebase.messaging.default_notification_icon"
+    android:resource="@drawable/ic_stat_ic_notification" /&gt;
+&lt;!-- Set color used with incoming notification messages. This is used when no color is set for the incoming
+     notification message. See README(https://goo.gl/6BKBk7) for more. --&gt;
+&lt;meta-data
+    android:name="com.google.firebase.messaging.default_notification_color"
+    android:resource="@color/colorAccent" /&gt;</pre> <li>(Optional) From Android 8.0 (API level 26) and higher, <a href="https://developer.android.com/guide/topics/ui/notifiers/notifications.html#ManageChannels"> notification channels</a> are supported and recommended. FCM provides a default notification channel with basic settings. If you prefer to <a href="https://developer.android.com/guide/topics/ui/notifiers/notifications.html#CreateChannel"> create</a> and use your own default channel, set <code translate="no" dir="ltr">default_notification_channel_id</code> to the ID of your notification channel object as shown; FCM will use this value whenever incoming messages don't explicitly set a notification channel. To learn more, see <a href="https://developer.android.com/guide/topics/ui/notifiers/notifications.html#ManageChannels"> Manage notification channels</a>. </li> 
+<pre>&lt;meta-data
+    android:name="com.google.firebase.messaging.default_notification_channel_id"
+    android:value="@string/default_notification_channel_id" /&gt;</pre>  <h2 id="request-permission13">Request runtime notification permission on Android 13+</h2> <p>Android 13 introduces a new runtime permission for showing notifications. This affects all apps running on Android 13 or higher that use FCM notifications.</p> <p>By default, the FCM SDK (version 23.0.6 or higher) includes the <a href="https://developer.android.com/reference/android/Manifest.permission#POST_NOTIFICATIONS"><code translate="no" dir="ltr">POST_NOTIFICATIONS</code></a> permission defined in the manifest. However, your app will also need to request the runtime version of this permission using the constant, <code translate="no" dir="ltr">android.permission.POST_NOTIFICATIONS</code>. Your app won't be allowed to show notifications until the user has granted this permission.</p> <p>To request the new runtime permission:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">// Declare the launcher at the top of your Activity/Fragment:
+private val requestPermissionLauncher = registerForActivityResult(
+    ActivityResultContracts.RequestPermission(),
+) { isGranted: Boolean -&gt;
+    if (isGranted) {
+        // FCM SDK (and your app) can post notifications.
+    } else {
+        // TODO: Inform user that that your app will not show notifications.
+    }
+}
+
+private fun askNotificationPermission() {
+    // This is only necessary for API level &gt;= 33 (TIRAMISU)
+    if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.TIRAMISU) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            // FCM SDK (and your app) can post notifications.
+        } else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            // TODO: display an educational UI explaining to the user the features that will be enabled
+            //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
+            //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.
+            //       If the user selects "No thanks," allow the user to continue without notifications.
+        } else {
+            // Directly ask for the permission
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">// Declare the launcher at the top of your Activity/Fragment:
+private final ActivityResultLauncher&lt;String&gt; requestPermissionLauncher =
+        registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -&gt; {
+            if (isGranted) {
+                // FCM SDK (and your app) can post notifications.
+            } else {
+                // TODO: Inform user that that your app will not show notifications.
+            }
+        });
+
+private void askNotificationPermission() {
+    // This is only necessary for API level &gt;= 33 (TIRAMISU)
+    if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.TIRAMISU) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED) {
+            // FCM SDK (and your app) can post notifications.
+        } else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            // TODO: display an educational UI explaining to the user the features that will be enabled
+            //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
+            //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.
+            //       If the user selects "No thanks," allow the user to continue without notifications.
+        } else {
+            // Directly ask for the permission
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        }
+    }
+}</pre> </section> </div> <p>Generally, you should display a UI explaining to the user the features that will be enabled if they grant permissions for the app to post notifications. This UI should provide the user options to agree or deny, such as <strong>OK</strong> and <strong>No thanks</strong> buttons. If the user selects <strong>OK</strong>, directly request the permission. If the user selects <strong>No thanks</strong>, allow the user to continue without notifications.</p> <p>See <a href="https://developer.android.com/about/versions/13/changes/notification-permission#new-apps">Notification runtime permission</a> for more best practices on when your app should request the <code translate="no" dir="ltr">POST_NOTIFICATIONS</code> permission from the user.</p> <h3 id="notification-permissions">Notification permissions for apps targeting Android 12L (API level 32) or lower</h3> <p>Android automatically asks the user for permission the first time your app creates a notification channel, as long as the app is in the foreground. However, there are important caveats regarding the timing of channel creation and permission requests:</p> <ul> <li>If your app creates its first notification channel when it is running in the background, which the FCM SDK does when receiving an FCM notification, Android won't allow the notification to be displayed and won't prompt the user for the notification permission until the next time your app is opened. This means that any notifications received before your app is opened and the user accepts the permission will be lost.</li> <li>We strongly recommend that you update your app to target Android 13+ to take advantage of the platform's APIs to request permission. If that isn't possible, your app should create notification channels before you send any notifications to the app in order to trigger the notification permission dialog and make sure no notifications are lost. See <a href="https://developer.android.com/about/versions/13/changes/notification-permission#wait-to-show-prompt">notification permission best practices</a> for more information.</li> </ul> <h4 id="remove-post-notification-permission">Optional: remove <code translate="no" dir="ltr">POST_NOTIFICATIONS</code> permission</h4> <p>By default, the FCM SDK includes the <code translate="no" dir="ltr">POST_NOTIFICATIONS</code> permission. If your app does not use notification messages (whether through FCM notifications, through another SDK, or directly posted by your app) and you don't want your app to include the permission, you can remove it using the <a href="https://developer.android.com/studio/build/manage-manifests">manifest merger's</a> <code translate="no" dir="ltr">remove</code> marker. Keep in mind that removing this permission prevents the display of all notifications, not just FCM notifications. Add the following to your app's manifest file:</p> 
+<pre>&lt;uses-permission android:name="android.permission.POST_NOTIFICATIONS" tools:node="remove"/&gt;
+</pre> <h2 id="access-firebase-installation-id">Access the Firebase Installation ID</h2> <aside class="tip"><strong>Tip:</strong><span> See <a href="../../projects/manage-installations#monitor-id-lifecycle">Monitor the Firebase installation ID lifecycle</a> for details on when FIDs are reissued and how to monitor them and <a href="../manage-tokens">Best practices for FCM registration management</a> for tips on managing registrations.</span></aside> <p> On initial startup of your app, the FCM SDK registers the app instance with FCM and returns an identifier for the app instance. If you want to target individual app instances, you'll need to access this identifier by extending <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessagingService"> <code translate="no" dir="ltr">FirebaseMessagingService</code></a> and overriding <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessagingService#onRegistered(java.lang.String)"> <code translate="no" dir="ltr">onRegistered()</code></a>. As a best practice, retrieve the latest updated identifier since the identifier can rotate after the initial startup. </p> <aside class="caution"> Apps still using <a href="../../projects/manage-installations#fid-iid">deprecated Instance ID APIs</a> for registration management should update all registration logic to use the FCM APIs described here. </aside> <h3 id="enable-registration-via-firebase-installation-id">Enable registration via Firebase Installation ID</h3> To enable registering your app instance with FCM using <a href="../../projects/manage-installations">the Firebase Installation ID (FID)</a>, add the following metadata flag to your <code translate="no" dir="ltr">AndroidManifest.xml</code> file: 
+<pre>&lt;meta-data
+    android:name="firebase_messaging_installation_id_enabled"
+    android:value="true" /&gt;</pre>  <h3 id="implement-the-onregistered-callback">Implement the <code translate="no" dir="ltr">onRegistered()</code> callback</h3> <p>App instances are targeted using the Firebase Installation ID (FID) once they are registered with FCM. To retrieve the FID upon registration, implement the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessagingService#onRegistered(java.lang.String)"> <code translate="no" dir="ltr">onRegistered()</code></a> callback. Once an app instance is registered, the FCM SDK automatically monitors FID changes and invokes the callback when a change is detected. When auto-initialization is enabled, the FCM SDK automatically syncs with the FCM backend to keep the registration fresh and invokes the callback to ensure your app server has the current identifier. To protect against FID loss or outdated FIDs, you should send the FID to your app server whenever this callback triggers. </p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin</strong></p> 
+<pre data-language="kotlin">  /**
+   * There are three scenarios when `onRegistered` is called:
+   * 1) Every time a manual `register()` call finishes successfully
+   * 2) Whenever the FID is changed and the app is re-registered with FCM via the new FID.
+   * 3) Automatically on app startup or routine sync when auto-initialization is enabled.
+   * Under #2, there are three scenarios when the existing FID is changed:
+   * A) App is restored to a new device
+   * B) User uninstalls/reinstalls the app
+   * C) User clears app data
+   */
+  override fun onRegistered(installationId: String) {
+      Log.d(TAG, "Registered installation ID: $installationId")
+
+      // Send the Firebase Installation ID to your app server.
+      sendRegistrationToServer(installationId)
+  }
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">  /**
+   * There are three scenarios when `onRegistered` is called:
+   * 1) Every time a manual `register()` call finishes successfully
+   * 2) Whenever the FID is changed and the app is re-registered with FCM via the new FID
+   * 3) Automatically on app startup or routine sync when auto-initialization is enabled.
+   * Under #2, there are three scenarios when the existing FID is changed:
+   * A) App is restored to a new device
+   * B) User uninstalls/reinstalls the app
+   * C) User clears app data
+   */
+  @Override
+  public void onRegistered(@NonNull String installationId) {
+      Log.d(TAG, "Registered installation ID: " + installationId);
+
+      // Send the Firebase Installation ID to your app server.
+      sendRegistrationToServer(installationId);
+  }
+    </pre> </section> </div>  <h3 id="manually-register-when-auto-initialization-is-disabled">Manually register when auto initialization is disabled</h3> <p>If you must disable auto-initialization, the FCM SDK will not automatically sync or trigger the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessagingService#onRegistered(java.lang.String)"> <code translate="no" dir="ltr">onRegistered()</code></a> callback at startup. It is strongly recommended to re-enable auto initialization after notification permissions are granted. To learn more, see <a href="get-started#reenable-auto-initialization"> Re-enable auto-initialization</a>. </p> <p>If auto-initialization must remain disabled, call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessaging#register()"> <code translate="no" dir="ltr">FirebaseMessaging.getInstance().register()</code></a> on app startup to trigger registration and FID delivery through the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessagingService#onRegistered(java.lang.String)"> <code translate="no" dir="ltr">onRegistered()</code></a> callback. You can execute this call is within the <a href="https://developer.android.com/reference/android/app/Activity#onCreate(android.os.Bundle,%20android.os.PersistableBundle)"> <code translate="no" dir="ltr">onCreate()</code></a> method of your main <a href="https://developer.android.com/reference/android/app/Activity"><code translate="no" dir="ltr">Activity</code></a>.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin</strong></p> 
+<pre data-language="kotlin">  // Trigger manual registration if auto-initialization is turned off.
+  // Consider calling this every time the app starts to guarantee sync status.
+  FirebaseMessaging.getInstance().register()
+      .addOnCompleteListener(this) { task -&gt;
+        if (!task.isSuccessful()) {
+          // Registration failed. Consider retrying the registration with exponential backoff.
+          Log.w(TAG, "Failed to register with Firebase Cloud Messaging", task.exception)
+        }
+        // Success! The Firebase Installation ID can be used to target messages to this app
+        // instance and will be delivered asynchronously to your `onRegistered()` callback.
+      }
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">  // Trigger manual registration if auto-initialization is turned off.
+  // Consider calling this every time the app starts to guarantee sync status.
+  FirebaseMessaging.getInstance().register()
+      .addOnCompleteListener(task -&gt; {
+        if (!task.isSuccessful()) {
+          // Registration failed. Consider retrying the registration with exponential backoff.
+          Log.w(TAG, "Failed to register with Firebase Cloud Messaging", task.exception)
+        }
+        // Success! The Firebase Installation ID can be used to target messages to this app
+        // instance and will be delivered asynchronously to your `onRegistered()` callback.
+      });
+    </pre> </section> </div>  <h2 id="access-fcm-registration-token">Access the FCM registration token (deprecated)</h2> <aside class="caution"><strong>Caution:</strong><span> This feature is deprecated. Use <a href="#access-firebase-installation-id">Firebase Installation IDs</a>, as this method will be removed in a future release.</span></aside><aside class="tip"><strong>Tip:</strong><span> See <a href="../manage-tokens">Best practices for FCM registration management</a> for tips on managing registrations.</span></aside> <p> On initial startup of your app, the FCM SDK generates a registration token for the client app instance. If you want to target single app instances or create device groups, you'll need to access this token by extending <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessagingService"> <code translate="no" dir="ltr">FirebaseMessagingService</code></a> and overriding <code translate="no" dir="ltr">onNewToken</code>. Because the token could be rotated after initial startup, you are strongly recommended to retrieve the latest updated registration token.</p> <p>The registration token may change when: </p>
+<ul> <li>The app is restored on a new device</li> <li>The user uninstalls/reinstall the app</li> <li>The user clears app data.</li> </ul> <aside class="caution"> Apps still using <a href="../../projects/manage-installations#fid-iid">deprecated Instance ID APIs</a> for registration management should update all registration logic to use the FCM APIs described here. </aside> <h3 id="retrieve-current-registration-token">Retrieve the current registration token</h3> <p>When you need to retrieve the current token, call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/messaging/FirebaseMessaging#getToken()"> <code translate="no" dir="ltr">FirebaseMessaging.getInstance().getToken()</code></a>: </p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task -&gt;
+    if (!task.isSuccessful) {
+        Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+        return@OnCompleteListener
+    }
+
+    // Get new FCM registration token
+    val token = task.result
+
+    // Log and toast
+    val msg = getString(R.string.msg_token_fmt, token)
+    Log.d(TAG, msg)
+    Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+})</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">FirebaseMessaging.getInstance().getToken()
+    .addOnCompleteListener(new OnCompleteListener&lt;String&gt;() {
+        @Override
+        public void onComplete(@NonNull Task&lt;String&gt; task) {
+          if (!task.isSuccessful()) {
+            Log.w(TAG, "Fetching FCM registration token failed", task.getException());
+            return;
+          }
+
+          // Get new FCM registration token
+          String token = task.getResult();
+
+          // Log and toast
+          String msg = getString(R.string.msg_token_fmt, token);
+          Log.d(TAG, msg);
+          Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+        }
+    });</pre> </section> </div> <h3 id="monitor-token-generation">Monitor token generation</h3> <p>The <code translate="no" dir="ltr">onNewToken</code> callback fires whenever a new token is generated.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">/**
+ * Called if the FCM registration token is updated. This may occur if the security of
+ * the previous token had been compromised. Note that this is called when the
+ * FCM registration token is initially generated so this is where you would retrieve the token.
+ */
+override fun onNewToken(token: String) {
+    Log.d(TAG, "Refreshed token: $token")
+
+    // If you want to send messages to this application instance or
+    // manage this apps subscriptions on the server side, send the
+    // FCM registration token to your app server.
+    sendRegistrationToServer(token)
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">/**
+ * There are two scenarios when onNewToken is called:
+ * 1) When a new token is generated on initial app startup
+ * 2) Whenever an existing token is changed
+ * Under #2, there are three scenarios when the existing token is changed:
+ * A) App is restored to a new device
+ * B) User uninstalls/reinstalls the app
+ * C) User clears app data
+ */
+@Override
+public void onNewToken(@NonNull String token) {
+    Log.d(TAG, "Refreshed token: " + token);
+
+    // If you want to send messages to this application instance or
+    // manage this apps subscriptions on the server side, send the
+    // FCM registration token to your app server.
+    sendRegistrationToServer(token);
+}</pre> </section> </div> <p>After you've obtained the token, you can send it to your app server and store it using your preferred method.</p> <h2 id="check-google-play-services">Check for Google Play services</h2> <p>Apps that rely on the Play Services SDK should always check the device for a compatible Google Play services APK before accessing Google Play services features. To learn more, see <a href="https://developers.google.com/android/guides/setup">set up Google Play services</a>. It is recommended to do this in two places: in the main activity's <code translate="no" dir="ltr">onCreate()</code> method, and in its <code translate="no" dir="ltr">onResume()</code> method. The check in <code translate="no" dir="ltr">onCreate()</code> makes sure that the app can't be used without a successful check. The check in <code translate="no" dir="ltr">onResume()</code> makes sure that if the user returns to the running app through some other means, such as through the back button, the check is still performed.</p> <p>If the device doesn't have a compatible version of Google Play services, your app can call <a href="https://developers.google.com/android/reference/com/google/android/gms/common/GoogleApiAvailability.html#public-methods"><code translate="no" dir="ltr">GoogleApiAvailability.makeGooglePlayServicesAvailable()</code></a> to allow users to download Google Play services from the Play Store.</p> <h2 id="prevent-auto-initialization">Prevent auto initialization</h2> <p>When a FCM registration is generated, the library uploads the identifier and configuration data to Firebase. If you prefer to prevent auto registration, disable Analytics collection and FCM auto initialization (you must disable both) by adding these metadata values to your <code translate="no" dir="ltr">AndroidManifest.xml</code>:</p> 
+<pre>&lt;meta-data
+    android:name="firebase_messaging_auto_init_enabled"
+    android:value="false" /&gt;
+&lt;meta-data
+    android:name="firebase_analytics_collection_enabled"
+    android:value="false" /&gt;</pre> <h3 id="reenable-auto-initialization">Re-enable auto initialization</h3> <p>To re-enable FCM auto-init, make a runtime call:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">Firebase.messaging.isAutoInitEnabled = true</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">FirebaseMessaging.getInstance().setAutoInitEnabled(true);</pre> </section> </div> <p>To re-enable Analytics collection, call the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/analytics/FirebaseAnalytics#setAnalyticsCollectionEnabled(boolean)"><code translate="no" dir="ltr">setAnalyticsCollectionEnabled()</code></a> method of the <code translate="no" dir="ltr">FirebaseAnalytics</code> class. For example:</p> 
+<pre>setAnalyticsCollectionEnabled(true);
+</pre> <p>These values persist across app restarts once set.</p> <h2 id="send-notification-message">Send a notification message</h2> <p>To make sure that your Android client is setup correctly, you can send a test notification message using the following instructions:</p> <ol> <li><p>Install and run the app on the target device.</p></li> <li><p>Make sure the app is in the background on the device.</p></li> <li><p>In the Firebase console, go to <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/messaging/" class="external"><strong>Messaging</strong></a> </p></li> <li>
+<p>Create a campaign.</p> <ul> <li>
+<p>If this is your first message:</p> <ol> <li><p>Select <strong>Create your first campaign</strong>.</p></li> <li><p>Select <strong>Firebase Notification messages</strong> and select <strong>Create</strong>.</p></li> </ol>
+</li> <li>
+<p>If you have previously created campaigns:</p> <ol> <li><p>On the <strong>Campaigns</strong> tab, select <strong>New campaign</strong>.</p></li> <li><p>Click <strong>Notifications</strong>.</p></li> </ol>
+</li> </ul>
+</li> <li><p>Enter the message text. All other fields are optional.</p></li> <li><p>Select <strong>Send test message</strong> from the right pane.</p></li> <li><p>In the field labeled <strong>Add an FCM registration token</strong>, enter the registration token you obtained in a previous section of this guide.</p></li> <li><p>Select <strong>Test</strong>.</p></li> </ol> <p>The targeted client device, with the app in the background, should receive the notification.</p> <p>For insight into message delivery to your app, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Messaging</strong> &gt; <a href="https://console.firebase.google.com/project/_/notification/reporting" class="external"><strong>Reports</strong> dashboard</a> in the Firebase console. This dashboard records the number of messages sent and opened on Apple and Android devices, along with data for "impressions" (notifications seen by users) for Android apps.</p> <h2 id="next-steps">Next steps</h2> <p>After you have completed the setup steps, here are a few options for moving forward with FCM for Android:</p> <ul> <li><a href="../server-environment">Send messages to devices</a></li> <li><a href="../receive-messages">Receive messages in an Android app</a></li> <li><a href="../topic-messaging">Send messages to topics</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/android/get-started" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/android/get-started</a>
+  </p>
+</div>

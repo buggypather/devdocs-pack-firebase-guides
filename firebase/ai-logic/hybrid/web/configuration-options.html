@@ -1,0 +1,59 @@
+<h1>Configuration options for hybrid experiences in Web apps</h1> <p>This page describes the following configuration options:</p> <ul> <li><p><a href="#inference-modes">Set an inference mode</a></p></li> <li><p><a href="#override-default-cloud-model">Override the default cloud-hosted fallback model</a></p></li> <li><p><a href="#model-config">Use model configuration to control responses</a></p></li> </ul> <p>You can also <a href="generate-structured-output">generate structured output</a>, including JSON and enums.</p> <h2 id="before-you-begin">Before you begin</h2> <p>Make sure that you've completed the <a href="get-started#get-started">getting started guide for building hybrid experiences</a>.</p> <h2 id="inference-modes">Set an inference mode</h2> <p>The examples in the getting started guide use the <code translate="no" dir="ltr">PREFER_ON_DEVICE</code> mode, but this is only one of the four available <a href="https://firebase.google.com/docs/reference/js/ai.hybridparams#hybridparamsmode">inference modes</a>.</p> <aside class="note"><strong>Note:</strong><span> For requests sent to the on-device model, make sure it's <a href="get-started#features-not-yet-available">supported by on-device inference</a>. <br> For requests sent off-device, the device must be online. Also, the <strong>default cloud-hosted model is <nobr><code translate="no" dir="ltr">gemini-3.5-flash-lite</code></nobr></strong>, but you can <a href="#override-default-cloud-model">override the default</a>.</span></aside> <ul> <li>
+<p><strong><code translate="no" dir="ltr">PREFER_ON_DEVICE</code></strong>: Use the on-device model if it's available; otherwise, <em>fall back to the cloud-hosted model</em>.</p> 
+<pre>const model = getGenerativeModel(ai, { mode: InferenceMode.PREFER_ON_DEVICE });
+</pre>
+</li> <li>
+<p><strong><code translate="no" dir="ltr">ONLY_ON_DEVICE</code></strong>: Use the on-device model if it's available; otherwise, <em>throw an exception</em>.</p> 
+<pre>const model = getGenerativeModel(ai, { mode: InferenceMode.ONLY_ON_DEVICE });
+</pre>
+</li> <li>
+<p><strong><code translate="no" dir="ltr">PREFER_IN_CLOUD</code></strong>: Use the cloud-hosted model if it's available; otherwise, <em>fall back to the on-device model</em>.</p> 
+<pre>const model = getGenerativeModel(ai, { mode: InferenceMode.PREFER_IN_CLOUD });
+</pre>
+</li> <li>
+<p><strong><code translate="no" dir="ltr">ONLY_IN_CLOUD</code></strong>: Use the cloud-hosted model if it's available; otherwise, <em>throw an exception</em>.</p> 
+<pre>const model = getGenerativeModel(ai, { mode: InferenceMode.ONLY_IN_CLOUD });
+</pre>
+</li> </ul> <aside class="note"><strong>Note:</strong><span> <strong>Downloading the on-device model can take several minutes.</strong><br> If you haven't yet <a href="get-started#instructions-to-download-on-device-model">downloaded the model before your first request for on-device inference</a>, the request will automatically start the model download in the background (which can significantly delay receiving a response to that request).</span></aside> <h3 id="determine-inference-mode">Determine whether on-device or in-cloud inference was used</h3> <p>If you use <code translate="no" dir="ltr">PREFER_ON_DEVICE</code> or <code translate="no" dir="ltr">PREFER_IN_CLOUD</code> inference modes, then it might be helpful to know which mode was used for given requests. This information is provided by the <code translate="no" dir="ltr">inferenceSource</code> property of each response (available starting with JS SDK v12.5.0).</p> <p>When you access this property, the returned value will be either <code translate="no" dir="ltr">ON_DEVICE</code> or <code translate="no" dir="ltr">IN_CLOUD</code>.</p> 
+<pre>// ...
+
+console.log('You used: ' + result.response.inferenceSource);
+
+console.log(result.response.text());
+</pre> <h2 id="override-default-cloud-model">Override the default fallback model</h2> <p><strong>The default cloud-hosted model is <nobr><code translate="no" dir="ltr">gemini-3.5-flash-lite</code></nobr></strong> (starting with JS SDK v13.0.0).</p> <p>This model is the fallback cloud-hosted model when you use the <code translate="no" dir="ltr">PREFER_ON_DEVICE</code> mode. It's also the default model when you use the <code translate="no" dir="ltr">ONLY_IN_CLOUD</code> mode or the <code translate="no" dir="ltr">PREFER_IN_CLOUD</code> mode.</p> <p>You can use the <a href="https://firebase.google.com/docs/reference/js/ai.hybridparams#hybridparamsincloudparams"><code translate="no" dir="ltr">inCloudParams</code></a> configuration option to specify an alternative default cloud-hosted model.</p> 
+<pre>const model = getGenerativeModel(ai, {
+  mode: InferenceMode.INFERENCE_MODE,
+  inCloudParams: {
+    model: "GEMINI_MODEL_NAME"
+  }
+});
+</pre> <p>Find model names for all <a href="../../models">supported Gemini models</a>.</p> <h2 id="model-config">Use model configuration to control responses</h2> <p>In each request to a model, you can send along a model configuration to control how the model generates a response. Cloud-hosted models and on-device models offer different configuration options.</p> <p>The configuration is maintained for the lifetime of the instance. If you want to use a different config, create a new <code translate="no" dir="ltr">GenerativeModel</code> instance with that config.</p> <aside class="note"><strong>Note:</strong><span> You can <a href="generate-structured-output">generate structured output (like JSON and enums)</a> by configuring the model to respond with structured output.</span></aside> <h3 id="model-config-cloud">Configure cloud-hosted model</h3> <p>Use the <a href="https://firebase.google.com/docs/reference/js/ai.hybridparams#hybridparamsincloudparams"><code translate="no" dir="ltr">inCloudParams</code></a> option to configure a cloud-hosted <span class='\"notranslate\"'>Gemini</span> model. Learn about <a href="../../model-parameters#parameters-descriptions-gemini">available parameters</a>.</p> 
+<pre>const model = getGenerativeModel(ai, {
+  mode: InferenceMode.INFERENCE_MODE,
+  inCloudParams: {
+    model: "GEMINI_MODEL_NAME",
+    generationConfig: {
+      maxOutputTokens: 200,
+      stopSequences: ["red"]
+    }
+  }
+});
+</pre> <h3 id="model-config-on-device">Configure on-device model</h3> <p>Note that inference using an on-device model uses the <a href="https://developer.chrome.com/docs/extensions/ai/prompt-api" class="external">Prompt API from Chrome</a>.</p> <p>Use the <a href="https://firebase.google.com/docs/reference/js/ai.hybridparams#hybridparamsondeviceparams"><code translate="no" dir="ltr">onDeviceParams</code></a> option to configure an on-device model. Learn about <a href="https://github.com/webmachinelearning/prompt-api" class="external">available parameters</a>.</p> 
+<pre>const model = getGenerativeModel(ai, {
+  mode: InferenceMode.INFERENCE_MODE,
+  onDeviceParams: {
+    createOptions: {
+      expectedInputs: [{ type: "text", languages: ["en"] }],
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
+      initialPrompts: [
+        { role: "system", content: [{ type: "text", value: "You are a helpful and concise assistant." }] }
+      ]
+    }
+  }
+});
+</pre> <p><br></p> <p><a class="button button-primary" href="../../feedback">Give feedback about your experience with <span class='\"notranslate\"'>Firebase AI Logic</span></a></p> <p><br></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/hybrid/web/configuration-options" class="_attribution-link">https://firebase.google.com/docs/ai-logic/hybrid/web/configuration-options</a>
+  </p>
+</div>

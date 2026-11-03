@@ -1,0 +1,43 @@
+<h1>Generate test reports</h1> <p>Cloud Firestore and Realtime Database both rely on powerful, concise rules languages specifically created to govern information security and access control. However, as rules get longer and more complex, you might need some help debugging errors in their behavior.</p> <p>The Firebase Emulators include the ability to generate rule coverage reports, so you can see see exactly what each subexpression evaluated to when you reproduce an error. The reports also provide information about how frequently each test case used a rule, like traditional "line coverage" techniques.</p> <h2 id="generate_a_report">Generate a report</h2> <p>After running a suite of tests, you can access test coverage reports that show how each of your security rules was evaluated.</p> <p>To get the reports, query an exposed endpoint on the emulator while it's running. For a browser-friendly version, use the following URL:</p> <div> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p>
+
+<pre data-language="">http://localhost:8080/emulator/v1/projects/&lt;database_name&gt;:ruleCoverage.html
+ </pre></section> <section><p class="_firebase-tab"><strong>Realtime Database</strong></p>
+
+<pre data-language="">http://localhost:9000/.inspect/coverage?ns=&lt;database_name&gt;
+ </pre></section> </div> <p>This breaks your rules into expressions and subexpressions that you can mouseover for more information, including number of evaluations and values returned. For the raw JSON version of this data, include the following URL in your query:</p> <div> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p>
+
+<pre data-language="">http://localhost:8080/emulator/v1/projects/&lt;database_name&gt;:ruleCoverage
+ </pre></section> <section><p class="_firebase-tab"><strong>Realtime Database</strong></p>
+
+<pre data-language="">http://localhost:9000/.inspect/coverage.json?ns=&lt;database_name&gt;
+ </pre></section> </div> <h2 id="debugging_example_rules">Debugging example rules</h2> <p>To easily generate a test report, use the emulator quickstarts available on GitHub for <a href="https://github.com/firebase/quickstart-testing/">Cloud Firestore</a> and <a href="https://github.com/firebase/quickstart-testing/">Realtime Database</a>. These quickstarts guide you through properly installing and initializing the emulators, then generating sample tests from an example set of rules.</p> <p>Consider an example app using Cloud Firestore that counts how many times users click a button. The app employs the following rules:</p> <div> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p>
+
+<pre data-language=""> service cloud.firestore {
+   match /databases/{database}/documents {
+     match /counters/{counter} {
+       allow read;
+       allow write: if request.resource.data.value == resource.data.value +1;
+     }
+   }
+ }
+ </pre></section> </div> <p>To debug the errors in the rules shown above, use the following sample JavaScript test:</p> 
+<pre>const counter0 = db.collection("counters").doc("0");
+await firebase.assertSucceeds(counter0.set({value: 0}));
+</pre> <p>The emulator generates a report available at the URL noted above:</p> 
+<pre>http://localhost:8080/emulator/v1/projects/&lt;database_name&gt;:ruleCoverage.html</pre> <p>The report shows the following undefined and null-value errors:</p> <p><img src="https://firebase.google.com/static/docs/rules/images/rules-report-broken.png"></p> <p>The problem with this specific example is that the rules don't differentiate between creating the document and updating the document. Consequently, the write isn't allowed if the document doesn't exist, and the document can't be created because it doesn't exist. Differentiating the "write" into two more specific operations — "create" and "update" — solves the problem.</p> <div> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p>
+
+<pre data-language=""> service cloud.firestore {
+   match /databases/{database}/documents {
+     match /counters/{counter} {
+       allow read;
+       allow create: if request.resource.data.value == 0;
+       allow update: if request.resource.data.value == resource.data.value +1;
+     }
+   }
+ }
+ </pre></section> </div> <p>The generated report shows how frequently each rule was used and what was returned.</p> <p><img src="https://firebase.google.com/static/docs/rules/images/rules-report-fixed.png"></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/rules/emulator-reports" class="_attribution-link">https://firebase.google.com/docs/rules/emulator-reports</a>
+  </p>
+</div>

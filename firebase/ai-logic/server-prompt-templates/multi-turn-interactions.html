@@ -1,0 +1,743 @@
+<h1>Multi-turn interactions with server prompt templates</h1> <aside class="preview"><b>Preview</b>: Using server prompt templates is a feature that's in Preview, which means that it isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways. </aside> <p><br></p> <p>This guide applies to any capability that depends on multi-turn interactions, including:</p> <ul> <li><p><a href="#chat">Multi-turn conversation (chat)</a>, including text-output-only chat and iterative image editing</p></li> <li><p><a href="#function-calling">Function calling</a></p></li> </ul> <aside class="note"><strong>Note:</strong><span> Before using this guide about multi-turn interactions, review <a href="get-started">Get started with server prompt templates</a> so that you're familiar with how server prompt templates work in a "Hello World" scenario.</span></aside> <h2 id="high-level">High-level overview</h2> <p>For multi-turn interactions, the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs manage the state of the conversation. This applies when using server prompt templates, too.</p> <p>The basic workflow for multi-turn interactions and server prompt templates is fundamentally the same as for single-turn requests, with some important differences:</p> <ol> <li>
+<p>Create the template using the guided UI in the <a href="https://console.firebase.google.com/project/_/ailogic/templates" class="external">Firebase console</a>.</p> <p>For multi-turn interactions, you must add the <code translate="no" dir="ltr">{{history}}</code> tag in the template's content, which tells the template where to inject the conversation turns managed by the client SDK.</p>
+</li> <li>
+<p>Test the template in a real request using the testing experience in the Firebase console.</p> <p>For multi-turn interactions, the console testing experience can only help test the initial turn. You can test how subsequent turns (the history) are handled by using the template with your actual app.</p>
+</li> <li>
+<p>Access the template from your app's code using <code translate="no" dir="ltr">templateGenerativeModel</code>.</p> <p>For multi-turn interactions, you must use <code translate="no" dir="ltr">startChat</code> and <code translate="no" dir="ltr">sendMessage</code> (just like you do for multi-turn interactions when <em>not</em> using server prompt templates).</p>
+</li> </ol> <p>Note that for <a href="#function-calling">function calling</a>, there are a few more differences, which are described in that section later on this page.</p> <p><br></p> <hr> <h2 id="chat">Multi-turn conversation (chat)</h2> <p>If you haven't already, review the <a href="../chat">general guide for building multi-turn conversations (chat)</a> when <em>not</em> using server prompt templates.</p> <aside class="note"><strong>Note:</strong><span> The instructions in this section can be used with any <span class='\"notranslate\"'>Gemini</span> model that supports chat, including the Gemini Nano Banana models for iterative image editing.</span></aside> <h3 id="chat-basic-format">Basic format of a server prompt template</h3> <p>For <span class='\"notranslate\"'>Firebase AI Logic</span>, the <a href="https://console.firebase.google.com/project/_/ailogic/templates" class="external">Firebase console</a> provides a guided UI for you to specify the template's frontmatter and contents.</p> <p>Server prompt templates use a Dotprompt-based syntax and format. For more details, see <a href="syntax-and-examples">Template format, syntax, and examples</a>.</p> <p>The example template below shows the most important components for a template when building a multi-turn conversation (chat). Note the addition of the <code translate="no" dir="ltr">{{history}}</code> tag in the template's content, which tells the template where to inject the conversation turns managed by the client SDK.</p> 
+<pre>---
+model: 'gemini-3.8-flash'
+---
+
+{{role "system"}}
+You help customers with their invoices, including answering questions or providing their invoices to them.
+If an invoice is requested, it must be a clearly structured invoice document that uses a tabular or clearly delineated list format for line items.
+
+{{history}}
+
+</pre> <h3 id="chat-use-template-in-code">Use your template in code</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>The example client code below shows how to use the template in your code. Note the use of <code translate="no" dir="ltr">templateGenerativeModel</code> along with <code translate="no" dir="ltr">startChat</code> and <code translate="no" dir="ltr">sendMessage</code> when building multi-turn interactions.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">For Swift, using server prompt templates with multi-turn interactions is not yet supported. Check back soon!
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+                        .templateGenerativeModel()
+
+// Start a chat session with a template.
+val chatSession = model.startChat(
+  // Specify your template ID.
+  templateId= "my-chat-template-v1-0-0",
+  inputs = emptyMap()
+)
+
+// Send messages.
+// The template's system instructions and model config apply to every turn automatically.
+// The SDK automatically manages the state of the conversation.
+val response = chatSession.sendMessage(
+  content("user") { text("I need a copy of my invoice.") }
+)
+
+val text = response.text
+println(text)
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// ...
+
+// Initialize the Gemini Developer API backend service
+// Create a `TemplateGenerativeModel` instance.
+TemplateGenerativeModel templateModel = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+    .templateGenerativeModel();
+// Initialize TemplateChat with history and inputs
+TemplateChat templateChat = templateModel.startChat(
+    // Specify your template ID.
+    "my-chat-template-v1-0-0",
+    Map.of(),
+    Collections.emptyList()
+);
+TemplateChatFutures chatFutures = TemplateChatFutures.from(templateChat);
+
+// Send messages.
+// The template's system instructions and model config apply to every turn automatically.
+// The SDK automatically manages the state of the conversation.
+Content prompt = new Content.Builder().addText("I need a copy of my invoice.").build();
+ListenableFuture responseFuture = chatFutures.sendMessage(prompt);
+
+Futures.addCallback(responseFuture, new FutureCallback() {
+  @Override
+  public void onSuccess(GenerateContentResponse result) {
+    System.out.println("Response: " + result.getText());
+  }
+
+  @Override
+  public void onFailure(Throwable t) {
+    t.printStackTrace();
+  }
+}, executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+
+// Create a `TemplateGenerativeModel` instance.
+const model = getTemplateGenerativeModel(ai);
+
+// Start a chat session with a template.
+const chatSession = model.startChat({
+  // Specify your template ID.
+  templateId: 'my-chat-template-v1-0-0',
+  templateVariables: {},
+});
+
+// Send messages.
+// The template's system instructions and model config apply to every turn automatically.
+// The SDK automatically manages the state of the conversation.
+const result = await chatSession.sendMessage("I need a copy of my invoice.");
+
+const text = result.response.text();
+console.log(text);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+final model = FirebaseAI.googleAI().templateGenerativeModel();
+
+// Start a chat session with a template.
+final chatSession = model.startChat(
+  // Specify your template ID.
+  'my-chat-template-v1-0-0',
+  inputs: {},
+);
+
+// Send messages.
+// The template's system instructions and model config apply to every turn automatically.
+// The SDK automatically manages the state of the conversation.
+final response = await chatSession.sendMessage(
+  Content.text('I need a copy of my invoice.'),
+);
+
+final text = response.text;
+print(text);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+var firebaseAI = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `TemplateGenerativeModel` instance.
+var model = firebaseAI.GetTemplateGenerativeModel();
+
+// Start a chat session with a template.
+var chatSession = model.StartChat(
+    // Specify your template ID.
+    "my-chat-template-v1-0-0"
+);
+
+// Send messages.
+// The template's system instructions and model config apply to every turn automatically.
+// The SDK automatically manages the state of the conversation.
+try
+{
+   var response = await chatSession.SendMessageAsync(ModelContent.Text("I need a copy of my invoice."));
+   Debug.Log($"Response Text: {response.Text}");
+}
+catch (Exception e) {
+  Debug.LogError($"An error occurred: {e.Message}");
+}
+
+</pre></section> </div>
+<aside class="special"><strong>Important:</strong><span> We strongly recommend <a href="versioning-with-remote-config">using Firebase Remote Config with server prompt templates</a> so that you can more easily change the template ID and other values in your request.</span></aside> <p><br></p> <hr> <h2 id="function-calling">Function calling</h2> <p>If you haven't already, review the general guide for <a href="../function-calling">function calling</a> when <em>not</em> using server prompt templates. This guide about using server prompt templates assumes that you understand how function calling works generally.</p> <aside class="important"><b>Important</b>: When using function calling with server prompt templates, you need to decide whether you want to define the function schema in the template or in the client code. <p> For functions with basic schema, defining the schema in the template might be preferable. However, for more complex schema, you might find that defining the schema in client code is easier and keeps the schema close to the function itself. </p> <p> If a function's schema is provided in the client code, it <em><strong>will override</strong></em> any schema specified in the template. </p> <p> <strong>The first example in this section shows how to define schema in the template</strong>. Later on the page, find an example template and client code for <a href="#function-calling-schema-defined-in-code">defining schema in client code</a>. </p> </aside> <h3 id="function-calling-basic-format">Basic format of a server prompt template</h3> <p>For <span class='\"notranslate\"'>Firebase AI Logic</span>, the <a href="https://console.firebase.google.com/project/_/ailogic/templates" class="external">Firebase console</a> provides a guided UI for you to specify the template's frontmatter and contents.</p> <p>Server prompt templates use a Dotprompt-based syntax and format. For more details, see <a href="syntax-and-examples">Template format, syntax, and examples</a>.</p> <p>The example template below shows the most important components for a template when using function calling. Note the following:</p> <ul> <li>
+<p>In the template's frontmatter, list the functions that the model has access to by providing function declarations in the <code translate="no" dir="ltr">tools</code> object.</p> <aside class="special"><strong>Important:</strong><span> If a function isn't listed in the template, then the model doesn't have access to it.</span></aside> <ul> <li><p>Define the <code translate="no" dir="ltr">name</code> <em>(required)</em> and the <code translate="no" dir="ltr">description</code> <em>(optional)</em> for each function that the model has access to.</p></li> <li>
+<p>Define the schema for each function that the model has access to.</p> <p>This example template below assumes that you're defining function schemas in the template. However, you can instead provide the function's schema in the client code. Schema defined in client code <em><strong>will override</strong></em> any schema defined in the template. Later on this page, find an example of a template and client code for <a href="#function-calling-schema-defined-in-code">defining schema in client code</a>.</p>
+</li> </ul>
+</li> <li><p>In the template's content, add the <code translate="no" dir="ltr">{{history}}</code> tag, which tells the template where to inject the conversation turns managed by the client SDK.</p></li> </ul> <p><strong>Example template with function schema defined in template</strong></p> 
+<pre>---
+model: gemini-3.8-flash
+tools:
+  - name: fetchWeather
+    description: Get the weather conditions for a specific city on a specific date.
+    input:
+      schema:
+        location(object, The name of the city and its state for which to get the weather. Only cities in the USA are supported.):
+          city: string, The city of the location.
+          state: string, The state of the location.
+        date: string, The date for which to get the weather. Date must be in the format YYYY-MM-DD.
+
+---
+
+What was the weather like in Boston, Massachusetts on 10/17 in year 2024?
+
+{{history}}
+
+</pre> <h3 id="function-calling-use-template-in-code">Use your template in code</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>The example client code below shows how to use the template in your code. Note the following:</p> <ul> <li><p>Use <code translate="no" dir="ltr">templateGenerativeModel</code> along with <code translate="no" dir="ltr">startChat</code> and <code translate="no" dir="ltr">sendMessage</code> when using multi-turn interactions.</p></li> <li><p>During initialization of the model in your client code, do <em><strong>not</strong></em> list the functions that the model has access to. Instead, functions must be listed in the <code translate="no" dir="ltr">tools</code> object of the template's frontmatter (see above).</p></li> <li><p>This example client code below assumes that you're defining function schemas in the template. If you instead decide to define schema in your client code, it <em><strong>will override</strong></em> the template-defined schema. Later on this page, see an example template and client code for <a href="#function-calling-schema-defined-in-code">defining schema in client code</a>.</p></li> <li><p>Check whether the model returns a function call as part of fulfilling a request. If it does, your app needs to execute the local logic and then send the result back to the model.</p></li> </ul> <p><strong>Example client code with function schema defined in template</strong></p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">For Swift, using server prompt templates with multi-turn interactions is not yet supported. Check back soon!
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+    .templateGenerativeModel()
+
+// Start a chat session with a template that has functions listed as tools.
+val chatSession = model.startChat(
+    // Specify your template ID
+    templateId = "my-function-calling-template-v1-0-0",
+    inputs = emptyMap()
+)
+
+// Send a message that might trigger a function call.
+val response = chatSession.sendMessage(
+    content("user") { text(userMessage) }
+)
+
+// When the model responds with one or more function calls, invoke the function(s).
+// Note that this is the same as when *not* using server prompt templates.
+val functionCalls = response.functionCalls
+val fetchWeatherCall = functionCalls.find { it.name == "fetchWeather" }
+
+// Forward the structured input data from the model to the hypothetical external API.
+val functionResponse = fetchWeatherCall?.let {
+  // Alternatively, if your `Location` class is marked as @Serializable, you can use
+  // val location = Json.decodeFromJsonElement(it.args["location"]!!)
+  val location = Location(
+      it.args["location"]!!.jsonObject["city"]!!.jsonPrimitive.content,
+      it.args["location"]!!.jsonObject["state"]!!.jsonPrimitive.content
+  )
+  val date = it.args["date"]!!.jsonPrimitive.content
+  fetchWeather(location, date)
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">// ...
+
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+TemplateGenerativeModel model = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+    .templateGenerativeModel();
+
+
+// Start a chat session with a template that has functions listed as tools.
+TemplateChat chatSession = model.startChat(
+    // Specify your template ID.
+    "my-function-calling-template-v1-0-0",
+    Map.of(), // Inputs
+    List.of() // History
+);
+TemplateChatFutures chatFutures = TemplateChatFutures.from(chatSession);
+
+// Send a message that might trigger a function call.
+Content prompt = new Content.Builder().addText(userMessage).build();
+ListenableFuture responseFuture = chatFutures.sendMessage(prompt);
+
+Futures.addCallback(responseFuture, new FutureCallback() {
+  @Override
+  public void onSuccess(GenerateContentResponse result) {
+    // When the model responds with one or more function calls, invoke the function(s).
+    // Note that this is the same as when *not* using server prompt templates.
+    for (FunctionCallPart callPart : result.getFunctionCalls()) {
+      if ("fetchWeather".equals(callPart.getName())) {
+        // Forward the structured input data from the model to the hypothetical external API.
+        JsonObject location = (JsonObject) callPart.getArgs().get("location");
+        String city = ((JsonPrimitive) location.get("city")).getContent();
+        String state = ((JsonPrimitive) location.get("state")).getContent();
+        String date = ((JsonPrimitive) callPart.getArgs().get("date")).getContent();
+        Object response = fetchWeather(city, state, date);
+      }
+    }
+  }
+
+  @Override
+  public void onFailure(Throwable t) {
+    t.printStackTrace();
+  }
+}, executor);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+
+// Create a `TemplateGenerativeModel` instance.
+const model = getTemplateGenerativeModel(ai);
+
+// Start a chat session with a template that has functions listed as tools.
+const chatSession = model.startChat({
+  // Specify your template ID
+  templateId: 'my-function-calling-template-v1-0-0',
+  templateVariables: {},
+});
+
+// Send a message that might trigger a function call.
+const result = await chatSession.sendMessage(userMessage);
+
+// When the model responds with one or more function calls, invoke the function(s).
+// Note that this is the same as when *not* using server prompt templates.
+const functionCalls = result.response.functionCalls();
+let functionCall;
+let functionResult;
+
+if (functionCalls.length &gt; 0) {
+  for (const call of functionCalls) {
+    if (call.name === "fetchWeather") {
+      // Forward the structured input data prepared by the model
+      // to the hypothetical external API.
+      functionResult = await fetchWeather(call.args);
+      functionCall = call;
+    }
+  }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+final model = FirebaseAI.googleAI().templateGenerativeModel();
+
+// Start a chat session with a template that has functions listed as tools.
+var chatSession = model.startChat(
+    // Specify your template ID
+    'my-function-calling-template-v1-0-0',
+    inputs: {},
+);
+
+// Send a message that might trigger a function call.
+var response = await chatSession.sendMessage(
+    Content.text(userMessage),
+);
+
+// Check if the model wants to call a function.
+// Note that this is the same as when *not* using server prompt templates.
+final functionCalls = response?.functionCalls.toList();
+// When the model responds with one or more function calls, invoke the function(s).
+if (functionCalls != null &amp;&amp; functionCalls.isNotEmpty) {
+  for (final functionCall in functionCalls) {
+    if (functionCall.name == 'fetchWeather') {
+      Map&lt;String, dynamic&gt; location =
+          functionCall.args['location']! as Map&lt;String, dynamic&gt;;
+      var date = functionCall.args['date']! as String;
+      var city = location['city'] as String;
+      var state = location['state'] as String;
+      final functionResult =
+          await fetchWeather(Location(city, state), date);
+      // Send the response to the model so that it can use the result to
+      // generate text for the user.
+      response = await chatSession.sendMessage(
+        Content.functionResponse(functionCall.name, functionResult),
+      );
+    }
+  }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+var firebaseAI = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `TemplateGenerativeModel` instance.
+var model = firebaseAI.GetTemplateGenerativeModel();
+
+// Start a chat session with a template that has functions listed as tools.
+var chatSession = model.StartChat(
+    // Specify your template ID
+    "my-function-calling-template-v1-0-0"
+);
+
+try
+{
+   // Send a message that might trigger a function call.
+   var response = await chatSession.SendMessageAsync(ModelContent.Text(userMessage));
+   var functionResponses = new List();
+
+  // When the model responds with one or more function calls, invoke the function(s).
+  // Note that this is the same as when *not* using server prompt templates.
+  foreach (var functionCall in response.FunctionCalls) {
+    if (functionCall.Name == "fetchWeather") {
+      // TODO(developer): Handle invalid arguments.
+      var location = functionCall.Args["location"] as Dictionary&lt;string, object&gt;;
+      var city = location["city"] as string;
+      var state = location["state"] as string;
+      var date = functionCall.Args["date"] as string;
+
+      functionResponses.Add(ModelContent.FunctionResponse(
+        name: functionCall.Name,
+        // Forward the structured input data prepared by the model
+        // to the hypothetical external API.
+        response: FetchWeather(city: city, state: state, date: date)
+      ));
+    }
+    // TODO(developer): Handle other potential function calls, if any.
+  }
+
+  // Send the function responses back to the model.
+  var functionResponseResult = await chatSession.SendMessageAsync(functionResponses);
+}
+catch (Exception e) {
+  Debug.LogError($"An error occurred: {e.Message}");
+}
+
+</pre></section> </div>
+<aside class="special"><strong>Important:</strong><span> We strongly recommend <a href="versioning-with-remote-config">using Firebase Remote Config with server prompt templates</a> so that you can more easily change the template ID and other values in your request.</span></aside> <p><br></p> <h3 id="function-calling-schema-defined-in-code">Function calling - define schema in client code</h3> <p>Make sure to review the sections above about how function calling works with server prompt templates (in particular, the use of the <code translate="no" dir="ltr">{{history}}</code> tag in the content of the template). This section here provides an example template and client code if you want to define your function schema in client code (instead of in the template).</p> <p>Note the following about defining function schema in client code:</p> <ul> <li><p>If you define a function's schema in your client code (as shown in the example below), the client-side schema <em><strong>will override</strong></em> any template-defined schema for that function.</p></li> <li><p>To define the function schema in client code, write the function declaration and then <strong>provide the declaration in <code translate="no" dir="ltr">startChat</code></strong>, <em>not during model initialization</em> (which is what you do when <em>not</em> using server prompt templates).</p></li> <li><p>Even though the function declaration specifies a <code translate="no" dir="ltr">name</code>, the template must still list the functions that you want the model to have access to. The <code translate="no" dir="ltr">name</code> in the template must match the <code translate="no" dir="ltr">name</code> in the client code.</p></li> </ul> <p><strong>Example template with function schema defined in client code</strong></p> 
+<pre>---
+model: gemini-3.8-flash
+tools:
+  - name: fetchWeather
+    description: Get the weather conditions for a specific city on a specific date.
+---
+
+What was the weather like in Boston, Massachusetts on 10/17 in year 2024, formatted in CELSIUS?
+
+{{history}}
+
+</pre> <p><strong>Example client code with function schema defined in client code</strong><br> <em>(for details omitted from this example, see the <a href="#function-calling-use-template-in-code">example client code above</a>)</em></p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">For Swift, using server prompt templates with multi-turn interactions is not yet supported. Check back soon!
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">// ...
+
+// Initialize your desired Gemini API backend service.
+// Create a `TemplateGenerativeModel` instance.
+...
+
+// Define the schema for any functions listed in your template.
+val fetchWeatherTool = functionDeclarations(
+    functionDeclarations = listOf(
+        FunctionDeclaration(
+            name = "fetchWeather",
+            description = "Returns the weather for a given location at a given time",
+            parameters = mapOf(
+                "location" to Schema.obj(
+                    description = "The name of the city and its state for which to get the weather. Only cities in the USA are supported.",
+                    properties = mapOf(
+                        "city" to Schema.string(
+                            description = "The city of the location."
+                        ),
+                        "state" to Schema.string(
+                            description = "The state of the location."
+                        ),
+                        "zipCode" to Schema.string(
+                            description = "Optional zip code of the location.",
+                            nullable = true
+                        )
+                    ),
+                    optionalProperties = listOf("zipCode")
+                ),
+                "date" to Schema.string(
+                    description = "The date for which to get the weather. Date must be in the format: YYYY-MM-DD."
+                ),
+                "unit" to Schema.enumeration(
+                    description = "The temperature unit.",
+                    values = listOf("CELSIUS", "FAHRENHEIT"),
+                    nullable = true
+                )
+
+            ),
+            optionalParameters = listOf("unit"),
+        )
+    )
+)
+
+// Start a chat session with a template that has functions listed as tools.
+var chatSessionWithSchemaOverride = model.startChat(
+    // Specify your template ID.
+    templateId = "my-function-calling-template-with-no-function-schema-v1-0-0",
+    // In `startChat`, provide the schema for any functions listed in your template.
+    // This client-side schema will override any schema defined in the template.
+    tools = listOf(fetchWeatherTool)
+)
+
+// Send a message that might trigger a function call.
+...
+
+// When the model responds with one or more function calls, invoke the function(s).
+// Note that this is the same as when *not* using server prompt templates.
+...
+
+// Forward the structured input data from the model to the hypothetical external API.
+...
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">TemplateFunctionDeclaration tool = new TemplateFunctionDeclaration(
+    "fetchWeather", // Name
+    JsonSchema.obj( // Parameters
+        Map.of(
+            "location", JsonSchema.obj(
+                Map.of(
+                    "city", JsonSchema.string(
+                        "The city of the location."
+                    ),
+                    "state", JsonSchema.string(
+                        "The state of the location."
+                    ),
+                    "zipCode", JsonSchema.string(
+                        "Optional zip code of the location",
+                        true // Nullable
+                    )
+                ),
+                List.of("zipCode"),
+                ""
+            ),
+            "date", JsonSchema.string(
+                "The date for which to get the weather. Date must be in the format: YY-MM-DD."
+            ),
+            "unit", JsonSchema.enumeration(
+                List.of("CELSIUS", "FAHRENHEIT"),
+                "The temperature unit.",
+                true // Nullable
+            )
+        )
+    ),
+    JsonSchema.string(
+        "A description of the current weather."
+    )
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+TemplateGenerativeModel templateModel = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+    .templateGenerativeModel(
+        new RequestOptions(),
+        List.of(TemplateTool.functionDeclarations(List.of(tool), List.of()))
+    );
+
+// In `startChat`, provide the schema for any functions listed in your template.
+// This client-side schema will override any schema defined in the template.
+TemplateChat chat = templateModel.startChat(
+    // Specify your template ID.
+    "my-function-calling-template-with-no-function-schema-v1-0-0",
+    Map.of(),
+    List.of()
+);
+TemplateChatFutures futures = TemplateChatFutures.from(chat);
+
+// Send a message that might trigger a function call.
+...
+
+// When the model responds with one or more function calls, invoke the function(s).
+// Note that this is the same as when *not* using server prompt templates.
+...
+
+// Forward the structured input data from the model to the hypothetical external API.
+...
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// ...
+
+// Initialize your desired Gemini API backend service.
+...
+
+// Create a `TemplateGenerativeModel` instance.
+...
+
+// Start a chat session with a template that has functions listed as tools.
+const chatSessionWithSchemaOverride = model.startChat({
+  // Specify your template ID.
+  templateId: 'my-function-calling-template-with-no-function-schema-v1-0-0',
+  templateVariables: {},
+  // In `startChat`, provide the schema for any functions listed in your template.
+  // This client-side schema will override any schema defined in the template.
+  tools: [
+    {
+      functionDeclarations: [
+        {
+          name: "fetchWeather",
+          parameters: {
+            type: SchemaType.OBJECT,
+            properties: {
+              location: {
+                type: SchemaType.OBJECT,
+                description: "The name of the city and its state for which to get the weather. Only cities in the USA are supported.",
+                properties: {
+                  city: {
+                    type: SchemaType.STRING,
+                    description: "The city of the location."
+                  },
+                  state: {
+                    type: SchemaType.STRING,
+                    description: "The state of the location."
+                  },
+                  zipCode: {
+                    type: SchemaType.INTEGER,
+                    description: "Optional zip code of the location.",
+                    nullable: true
+                  },
+                },
+                required: ["city", "state"],
+              },
+              date: {
+                type: SchemaType.STRING,
+                description: "The date for which to get the weather. Date must be in the format: YYYY-MM-DD.",
+              },
+              unit: {
+                type: SchemaType.STRING,
+                description: "The temperature unit.",
+                enum: ["CELSIUS", "FAHRENHEIT"],
+                nullable: true,
+              },
+            },
+            required: ["location", "date"],
+          },
+        },
+      ],
+    }
+  ],
+});
+
+// Send a message that might trigger a function call.
+...
+
+// When the model responds with one or more function calls, invoke the function(s).
+// Note that this is the same as when *not* using server prompt templates.
+...
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">// ...
+
+// Initialize your desired Gemini API backend service.
+// Create a `TemplateGenerativeModel` instance.
+...
+
+// Start a chat session with a template that has functions listed as tools.
+final chatSessionWithSchemaOverride = model?.startChat(
+      // Specify your template ID.
+      'my-function-calling-template-with-no-function-schema-v1-0-0',
+      inputs: {},
+      // In `startChat`, provide the schema for any functions listed in your template.
+      // This client-side schema will override any schema defined in the template.
+      tools: [
+        TemplateTool.functionDeclarations(
+          [
+            TemplateFunctionDeclaration(
+              'fetchWeather',
+              parameters: {
+                'location': JSONSchema.object(
+                  description:
+                      'The name of the city and its state for which to get '
+                      'the weather. Only cities in the USA are supported.',
+                  properties: {
+                    'city': JSONSchema.string(
+                      description: 'The city of the location.',
+                    ),
+                    'state': JSONSchema.string(
+                      description: 'The state of the location.',
+                    ),
+                    'zipCode': JSONSchema.integer(
+                      description: 'Optional zip code of the location.',
+                      nullable: true,
+                    ),
+                  },
+                  optionalProperties: ['zipCode'],
+                ),
+                'date': JSONSchema.string(
+                  description: 'The date for which to get the weather. '
+                      'Date must be in the format: YYYY-MM-DD.',
+                ),
+                'unit': JSONSchema.enumString(
+                  enumValues: ['CELSIUS', 'FAHRENHEIT'],
+                  description: 'The temperature unit.',
+                  nullable: true,
+                ),
+              },
+              optionalParameters: ['unit'],
+            ),
+          ],
+        ),
+      ],
+    );
+
+// Send a message that might trigger a function call.
+...
+
+// Check if the model wants to call a function.
+// Note that this is the same as when *not* using server prompt templates.
+...
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">// ...
+
+// Initialize your chosen Gemini API backend service.
+...
+
+// Create a `TemplateGenerativeModel` instance.
+...
+
+// Define the schema for any functions listed in your template.
+var fetchWeatherTool = new TemplateTool.FunctionDeclaration(
+    name: "fetchWeather",
+    parameters: new Dictionary&lt;string, JsonSchema&gt;() {
+        { "location", JsonSchema.Object(
+            description: "The name of the city and its state for which to get the weather. Only cities in the USA are supported.",
+            properties: new Dictionary&lt;string, JsonSchema&gt;() {
+                { "city", JsonSchema.String(description: "The city of the location.") },
+                { "state", JsonSchema.String(description: "The state of the location.") },
+                { "zipCode", JsonSchema.Int(description: "Optional zip code of the location.", nullable: true) }
+            },
+            optionalProperties: new[] { "zipCode" })
+        },
+        { "date", JsonSchema.String(description: "The date for which to get the weather. Date must be in the format: YYYY-MM-DD.")},
+        { "unit", JsonSchema.Enum(
+            values: new[] { "CELSIUS", "FAHRENHEIT" },
+            description: "The temperature unit.",
+            nullable: true)
+        }
+    },
+    optionalParameters: new[] { "unit" }
+);
+
+// Start a chat session with a template that has functions listed as tools.
+var chatSessionWithSchemaOverride = model.StartChat(
+    // Specify your template ID.
+    templateId: "my-function-calling-template-with-no-function-schema-v1-0-0",
+    // In `startChat`, provide the schema for any functions listed in your template.
+    // This client-side schema will override any schema defined in the template.
+    tools: new[] { fetchWeatherTool }
+);
+
+try
+{
+   // Send a message that might trigger a function call.
+   ...
+
+  // When the model responds with one or more function calls, invoke the function(s).
+  // Note that this is the same as when *not* using server prompt templates.
+  ...
+}
+
+// ...
+</pre></section> </div> <p><br></p> <hr> <h2 id="what-next">What's next?</h2> <ul> <li><p>Learn about <a href="best-practices-and-considerations">best practices and considerations</a> for using server prompt templates.</p></li> <li><p>Learn details about the <a href="syntax-and-examples">template format and syntax, along with examples</a>.</p></li> <li><p><a href="manage-templates">Manage templates</a>, including editing, locking, and version control.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions" class="_attribution-link">https://firebase.google.com/docs/ai-logic/server-prompt-templates/multi-turn-interactions</a>
+  </p>
+</div>

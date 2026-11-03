@@ -1,0 +1,160 @@
+<h1>Firebase Realtime Database operation types</h1> <h2 id="profiler_command">Firebase Realtime Database profiler command</h2> <p>To generate a report of the speed and bandwidth usage for operations in your Realtime Database instance, use the following command:</p> 
+<pre>firebase database:profile</pre> <table> <tr> <th>Flag options</th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">-h, --help</code></td> <td>Output usage information.</td> </tr> <tr> <td><code translate="no" dir="ltr">-o, --output <var translate="no">FILENAME</var></code></td> <td>Save the output to the specified file.</td> </tr> <tr> <td><code translate="no" dir="ltr">-i, --input <var translate="no">FILENAME</var></code></td> <td>Generate the report based on the specified file instead of stream logs from the server.</td> </tr> <tr> <td><code translate="no" dir="ltr">-d, --duration <var translate="no">SECONDS</var></code></td> <td>Collect database usage information for the specified number of seconds.</td> </tr> <tr> <td><code translate="no" dir="ltr">--raw </code></td> <td>Output the raw stats collected as new-line delimited JSON.</td> </tr> </table> <h2 id="operation_types">Operation types</h2> <h3 id="concurrent-connect">concurrent-connect</h3> <p>This operation reflects realtime connections to the database (for example, when a new client connects via an SDK). RESTful connections are not reflected in concurrent-connect operations.</p> 
+<pre>{
+    "name": "concurrent-connect",
+    "timestamp": 1484776334900
+}</pre> <h3 id="concurrent-disconnect">concurrent-disconnect</h3> <p>Concurrent-disconnects reflect a connection that has disconnected from the database (for example, when a client disconnects or signs off).</p> 
+<pre>{
+    "name": "concurrent-disconnect",
+    "timestamp": 1484776341844
+}</pre> <h3 id="realtime-write">realtime-write</h3> <p>Write requests from realtime connections. For example, <code translate="no" dir="ltr">set()</code> and <code translate="no" dir="ltr">push()</code> operations for web clients. Delete requests are also counted as <code translate="no" dir="ltr">realtime-write</code> operations, and reflect writes of 0 bytes.</p> 
+<pre>{
+    "allowed": true, // If security rules allow the operation
+    "bytes": 1,
+    "millis": 2,
+    "name": "realtime-write",
+    "path": [
+        "foo"
+    ],
+    "timestamp": 1484776538763
+}</pre> <h3 id="realtime-transaction">realtime-transaction</h3> <p>This operation type includes transactions conducted through realtime connections. Repeat transactions may be the result of failed attempts and retries.</p> 
+<pre>{
+    "allowed": true,
+    "bytes": 20,
+    "millis": 2,
+    "name": "realtime-transaction",
+    "path": [
+        "foo"
+    ],
+    "timestamp": 1484776854610
+}</pre> <h3 id="realtime-update">realtime-update</h3> <p>These realtime operations for updates reflect overwites of specific data, not the more general write operations in <code translate="no" dir="ltr">realtime-write</code>.</p> 
+<pre>{
+    "allowed": true,
+    "bytes": 5,
+    "millis": 2,
+    "name": "realtime-update",
+    "path": [
+        "foo"
+    ],
+    "timestamp": 1484776538769
+}</pre> <h3 id="listener-listen">listener-listen</h3> <p>These operations reflect the initial ask for data at a specific location from a client. For example, the <code translate="no" dir="ltr">on()</code> or <code translate="no" dir="ltr">once()</code> methods for web clients.</p> 
+<pre>{
+    "allowed": true,
+    "bytes": 0,
+    "millis": 26,
+    "name": "listener-listen",
+    "path": [
+        "foo"
+    ],
+    "querySet": [],
+    "timestamp": 1484776335024,
+    "unIndexed": false
+}</pre> <h3 id="listener-broadcast">listener-broadcast</h3> <p>This operation covers the data sent from the server to any and all clients that are listening at a given location following every write and update operation. The change to the data leads to a broadcast operation. However, you may see 0 updates if there aren't any clients listening.</p> 
+<pre>{
+    "bytes": 56, // Total bytes sent across clients
+    "clientsUpdated": 3, // This may be 0 if no clients are listening
+    "millis": 17,
+    "name": "listener-broadcast",
+    "path": [
+        "baz",
+        "mar"
+    ],
+    "timestamp": 1484775969928
+}</pre> <h3 id="listener-unlisten">listener-unlisten</h3> <p>These operations reflect listening clients that sign off or stop listening through the detach methods (for example, <code translate="no" dir="ltr">off()</code> for web, or <code translate="no" dir="ltr">removeAllObservers</code> for iOS).</p> 
+<pre>{
+    "name": "listener-unlisten",
+    "path": [
+        "foo"
+    ],
+    "timestamp": 1484776335044
+}</pre> <h3 id="rest-read">rest-read</h3> <p><a href="https://firebase.google.com/docs/reference/rest/database#section-get"><code translate="no" dir="ltr">GET</code></a> requests through the REST API.</p> 
+<pre>{
+    "allowed": true,
+    "bytes": 348, // This would be 0 if the read data was null
+    "millis": 26,
+    "name": "rest-read",
+    "path": [],
+    "querySet": [
+        {
+            "default": true,
+            "endIndexValue": "[MAX_NAME]",
+            "equality": false,
+            "index": {},
+            "limit": null,
+            "range": false,
+            "simpleLimit": false,
+            "startIndexValue": "[MIN_NAME]",
+            "viewFrom": null
+        }
+    ],
+    "timestamp": 1484775747416
+}</pre> <h3 id="rest-write">rest-write</h3> <p><a href="https://firebase.google.com/docs/reference/rest/database#section-put"><code translate="no" dir="ltr">PUT</code></a> and <a href="https://firebase.google.com/docs/reference/rest/database#section-post"><code translate="no" dir="ltr">POST</code></a> requests through the REST API. <a href="https://firebase.google.com/docs/reference/rest/database#section-delete"><code translate="no" dir="ltr">DELETE</code></a> requests reflect <code translate="no" dir="ltr">rest-write</code> operations of 0 bytes.</p> 
+<pre>{
+    "allowed": true,
+    "bytes": 13,
+    "millis": 116,
+    "name": "rest-write",
+    "path": [],
+    "timestamp": 1484775917216
+}</pre> <h3 id="rest-transaction">rest-transaction</h3> <p>For transaction-like behavior, use <a href="../database/rest/save-data#section-conditional-requests">conditional Requests</a>. The <code translate="no" dir="ltr">rest-transaction</code> operation captures requests using <code translate="no" dir="ltr">Etag</code> or <code translate="no" dir="ltr">if-match</code> headers.</p> 
+<pre>{
+    "allowed": true,
+    "bytes": 13,
+    "millis": 116,
+    "name": "rest-transaction",
+    "path": [],
+    "timestamp": 1484775917216
+}</pre> <h3 id="rest-update">rest-update</h3> <p>Updates through the REST API reflect <a href="https://firebase.google.com/docs/reference/rest/database#section-patch"><code translate="no" dir="ltr">PATCH</code></a> requests.</p> 
+<pre>{
+    "allowed": true,
+    "bytes": 5,
+    "millis": 11,
+    "name": "rest-update",
+    "path": [
+        "baz",
+        "mar"
+    ],
+    "timestamp": 1484775969930
+}</pre> <h3 id="on-disconnect-put">on-disconnect-put</h3> <p>These operations reflect the addition of <code translate="no" dir="ltr">onDisconnect</code> listeners to write operations. For example, when you use <code translate="no" dir="ltr">onDisconnect().setValue()</code>.</p> 
+<pre>{
+    "allowed": true,
+    "bytes": 4,
+    "millis": 2,
+    "name": "on-disconnect-put",
+    "path": [
+        "baz",
+        "mar"
+    ],
+    "timestamp": 1484775969930
+}</pre> <h3 id="on-disconnect-update">on-disconnect-update</h3> <p>These operations reflect the addition of <code translate="no" dir="ltr">onDisconnect</code> listeners to update operations. For example, when you use <code translate="no" dir="ltr">onDisconnect().updateChildren()</code>.</p> 
+<pre>{
+    "allowed": true,
+    "bytes": 4,
+    "millis": 2,
+    "name": "on-disconnect-update",
+    "path": [
+        "baz",
+        "mar"
+    ],
+    "timestamp": 1484775969930
+}</pre> <h3 id="on-disconnect-cancel">on-disconnect-cancel</h3> <p>These operations reflect the removal of onDisconnect listeners. For example, when you use <code translate="no" dir="ltr">onDisconnect().set().cancel()</code>.</p> 
+<pre>{
+    "millis": 2,
+    "name": "on-disconnect-cancel",
+    "path": [
+        "baz",
+        "mar"
+    ],
+    "timestamp": 1484775969930
+}</pre> <h3 id="run-on-disconnect">run-on-disconnect</h3> <p>These operations reflect the triggering of <code translate="no" dir="ltr">onDisconnect</code> listeners. When a realtime client disconnects after adding at least one <code translate="no" dir="ltr">onDisconnect</code> listener, the profiler records a single <code translate="no" dir="ltr">run-on-disconnect</code> operation to reflect the aggregated bytes and time of all the <code translate="no" dir="ltr">onDisconnect</code> listeners triggered.</p> 
+<pre>{
+    "bytes": 4,
+    "millis": 2,
+    "name": "run-on-disconnect",
+    "timestamp": 1484775969930
+}</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cli/database-profile" class="_attribution-link">https://firebase.google.com/docs/cli/database-profile</a>
+  </p>
+</div>

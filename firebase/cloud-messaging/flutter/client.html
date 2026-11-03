@@ -1,0 +1,129 @@
+<h1>Get started with Firebase Cloud Messaging in Flutter apps</h1>     <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/get-started">iOS+</a> <a class="button" href="../android/get-started">Android</a> <a class="button" href="../web/get-started">Web</a> <a class="button button-primary" href="get-started">Flutter</a> <a class="button" href="../unity/get-started">Unity</a> <a class="button" href="../cpp/get-started">C++</a> </td> </tr> </table> <p><br></p> <p>This guide describes how to get started with Firebase Cloud Messaging in your Flutter client apps so that you can reliably send messages.</p> <p>Depending on the platform you're targeting, there are some additional required setup steps that you'll need to take.</p> <h2 id="ios-setup-requirements">iOS+</h2> <p><section class="expandable" id="enable-xcode"> <h3 class="showalways" id="enable-xcode">Enable app capabilities in XCode</h3></section></p> <p>Before your application can start to receive messages, you must enable push notifications and background modes in your Xcode project.</p> <ol> <li>Open your Xcode project workspace (`ios/Runner.xcworkspace`).</li> <li>
+<a href="https://help.apple.com/xcode/mac/current/#/devdfd3d04a1">Enable push notifications</a>.</li> <li>Enable the <b>Background fetch</b> and the <b>Remote notifications</b> <a href="https://developer.apple.com/documentation/xcode/configuring-background-execution-modes">background execution modes</a>.</li> </ol>  <p><section class="expandable" id="upload-authentication-key"> <h3 class="showalways" id="upload-authentication-key">Upload your APNs authentication key</h3></section></p> <p> Before you use FCM, upload your APNs authentication key to Firebase. If you don't already have an APNs authentication key, create one in the <a href="https://developer.apple.com/membercenter/index.action" class="external">Apple Developer Member Center</a>. </p> <ol> <li> In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <b>General</b>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><b>Cloud Messaging</b> tab</a>. </li> <li> In <b>APNs authentication key</b> under <b>iOS app configuration</b>, click <b>Upload</b> to upload your development authentication key, or production authentication key, or both. At least one is required. </li> <li> For each authentication key, select the <code translate="no" dir="ltr">.p8</code> file, and provide the key ID and your Apple team ID. Click <b>Save</b>. </li> </ol>  <h4 id="method-swizzling">Method swizzling</h4> <p>To use the FCM Flutter plugin on Apple devices, method swizzling is required. Without it, key Firebase features such as FCM registration handling won't function properly.</p> <h2 id="android-setup-requirements">Android</h2> <h3 id="google-play-services-requirements">Google Play services</h3> <p>FCM clients require devices running Android 7.0 or higher that also have Google Play services installed, or an emulator running Android 7.0 with Google APIs. Note that you are not limited to deploying your Android apps through Google Play Store.</p> <p>Apps that rely on the Play Services SDK should always check the device for a compatible Google Play services APK before accessing Google Play services features. It is recommended to do this in two places: in the main activity's <code translate="no" dir="ltr">onCreate()</code> method, and in its <code translate="no" dir="ltr">onResume()</code> method. The check in <code translate="no" dir="ltr">onCreate()</code> makes sure that the app can't be used without a successful check. The check in <code translate="no" dir="ltr">onResume()</code> makes sure that if the user returns to the running app through some other means, such as through the back button, the check is still performed.</p> <p>If the device doesn't have a compatible version of Google Play services, your app can call <a href="https://developers.google.com/android/reference/com/google/android/gms/common/GoogleApiAvailability.html#public-methods"><code translate="no" dir="ltr">GoogleApiAvailability.makeGooglePlayServicesAvailable()</code></a> to allow users to download Google Play services from the Play Store.</p> <h2 id="web-setup-requirements">Web</h2> <h3 id="configure-web-with-fcm">Configure Web Credentials with FCM</h3> <p>The FCM Web interface uses Web credentials called Voluntary Application Server Identification, or "VAPID" keys, to authorize send requests to supported web push services. To subscribe your app to push notifications, you need to associate a pair of keys with your Firebase project. You can either generate a new key pair or import your existing key pair through the Firebase console.</p> <p><section class="expandable" id="generate-new-key-pair"> <h3 class="showalways" id="generate-new-key-pair">Generate a new key pair</h3></section></p> <ol> <li><p>In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <strong>General</strong>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><strong>Cloud Messaging</strong> tab</a>.</p></li> <li><p>Go to the <strong>Web configuration</strong> section.</p></li> <li>
+<p>In the <strong>Web Push certificates</strong> tab, click <strong>Generate Key Pair</strong>.</p> <p>The console displays a notice that the key pair was generated, and it displays the public key string and date added.</p>
+</li> </ol>  <p><section class="expandable" id="import-existing-key-pair"> <h3 class="showalways" id="import-existing-key-pair">Import an existing key pair</h3></section></p> <p>If you have an existing key pair you are already using with your web app, you can import it to FCM so that you can reach your existing web app instances through FCM APIs. To import keys, you must have owner-level access to the Firebase project. Import your existing public and private key in base64 URL safe encoded form:</p> <ol> <li><p>In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <strong>General</strong>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><strong>Cloud Messaging</strong> tab</a>.</p></li> <li><p>Go to the <strong>Web configuration</strong> section.</p></li> <li><p>In the <strong>Web Push certificates</strong> tab, select <strong>import an existing key pair</strong>.</p></li> <li>
+<p>In the <strong>Import a key pair</strong> dialog, provide your public and private keys in the corresponding fields and click <strong>Import</strong>.</p> <p>The console displays the public key string and date added.</p>
+</li> </ol> <p>For more information about the format of the keys and how to generate them, see <a href="https://developers.google.com/web/fundamentals/push-notifications/web-push-protocol#application_server_keys" class="external">Application server keys</a>.</p>  <h2 id="install-fcm-plugin">Install the FCM plugin</h2> <ol> <li><p><a href="../../flutter/setup">Install and initialize the Firebase plugins for Flutter</a> if you haven't already done so.</p></li> <li>
+<p>From the root of your Flutter project, run the following command to install the plugin:</p> 
+<pre>flutter pub add firebase_messaging
+</pre>
+</li> <li>
+<p>Once complete, rebuild your Flutter application:</p> 
+<pre>flutter run
+</pre>
+</li> </ol> <h2 id="request-notification-permission">Request notification permission</h2> <p>To send a notification message to a device, you need to register the device with FCM using <code translate="no" dir="ltr">register()</code>. If notification permission has not been granted, this method will ask the user for notification permissions. Otherwise, it delivers the FID through <code translate="no" dir="ltr">onRegistered</code> on success or rejects the future due to an error.</p> <aside class="warning"><strong>Warning:</strong><span> In iOS SDK 10.4.0 and higher, it is required that the APNs token is available before making API requests. The APNs token is not guaranteed to have been received before making FCM plugin API requests.</span></aside>
+<pre>// You may set the permission requests to "provisional" which allows the user to choose what type
+// of notifications they would like to receive once the user receives a notification.
+final notificationSettings = await FirebaseMessaging.instance.requestPermission(provisional: true);
+
+// For apple platforms, make sure the APNS token is available before making any FCM plugin API calls
+final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+if (apnsToken != null) {
+ // APNS token is available, make FCM plugin API requests...
+}
+</pre> <h2 id="access-firebase-installation-id">Access the Firebase Installation ID</h2> <aside class="caution"><strong>Caution:</strong><span> Don't use both the Firebase Installation ID APIs and the deprecated <a href="#access-registration-token">registration token APIs</a> for registration management at the same time. We recommend using Firebase Installation IDs (FIDs) to segment or target your app instances.</span></aside><aside class="tip"><strong>Tip:</strong><span> See <a href="../manage-tokens">Best practices for FCM registration management</a> for tips on managing registrations.</span></aside> <h3 id="enable-fid-registration">Enable registration using Firebase Installation ID</h3> <p>To enable registering your app instance with FCM using the <a href="../../projects/manage-installations">Firebase Installation ID (FID)</a>, you must first enable FIDs in your app's configuration for Android and Apple platforms (no static opt-in configuration is required on Web):</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Android</strong></p> <p>Add the following <code translate="no" dir="ltr">&lt;meta-data&gt;</code> element inside the <code translate="no" dir="ltr">&lt;application&gt;</code> element of your <code translate="no" dir="ltr">AndroidManifest.xml</code>:</p> 
+<pre data-language="java">&lt;meta-data android:name="firebase_messaging_installation_id_enabled"
+           android:value="true" /&gt;</pre> </section> <section> <p class="_firebase-tab"><strong>iOS+</strong></p> <p>Add the <code translate="no" dir="ltr">FirebaseMessagingInstallationIdEnabled</code> key to your <code translate="no" dir="ltr">Info.plist</code> and set it to <code translate="no" dir="ltr">true</code> (<code translate="no" dir="ltr">YES</code>):</p> 
+<pre data-language="">&lt;key&gt;FirebaseMessagingInstallationIdEnabled&lt;/key&gt;
+&lt;true/&gt;</pre> </section> </div> <h3 id="subscribe-to-onregistered">Subscribe to the <code translate="no" dir="ltr">onRegistered</code> stream</h3> <p>To send a message to your app instance on a specific device, you need the <a href="../../projects/manage-installations">Firebase Installation ID (FID)</a> of that app instance once it has been registered with FCM. The FID is delivered asynchronously through the <code translate="no" dir="ltr">onRegistered</code> stream.</p> <p>On Android and Apple platforms, FCM automatically registers the app instance at startup when auto-initialization is enabled (the default). However, an explicit call to <code translate="no" dir="ltr">register()</code> is required:</p> <ul> <li>On <strong>Web</strong>. You can optionally pass <code translate="no" dir="ltr">vapidKey</code> and <code translate="no" dir="ltr">serviceWorkerScriptPath</code>.</li> <li>On <strong>Android and Apple platforms</strong> if <a href="#prevent-auto-init">auto-initialization is disabled</a> or after calling <code translate="no" dir="ltr">unregister()</code>. You can also call <code translate="no" dir="ltr">register()</code> at any time to trigger <code translate="no" dir="ltr">onRegistered</code> with the already registered FID.</li> </ul> <p>Always subscribe to <code translate="no" dir="ltr">onRegistered</code> before calling <code translate="no" dir="ltr">register()</code> so that your listener is active when the registration event is emitted:</p> 
+<pre>final messaging = FirebaseMessaging.instance;
+
+messaging.onRegistered
+    .listen((String installationId) {
+      // TODO: Send the Firebase Installation ID (FID) to your application server.
+    })
+    .onError((err) {
+      // Error getting Firebase Installation ID.
+    });
+
+// Required on Web, and on Android/Apple if auto-initialization is disabled.
+await messaging.register(
+  // Optional on Web (ignored on Android and Apple platforms)
+  vapidKey: "BKagOny0KF_2pCJQ3m....moL0ewzQ8rZu",
+);
+</pre> <p>The <code translate="no" dir="ltr">onRegistered</code> stream emits the FID in the following scenarios:</p> <ol> <li>Automatically on initial app startup and routine sync on Android and Apple platforms when auto-initialization is enabled.</li> <li>Every time a manual <code translate="no" dir="ltr">register()</code> call finishes (even if the app instance is already registered, <code translate="no" dir="ltr">onRegistered</code> still emits the already registered FID).</li> <li>Whenever a Firebase Installation ID change is detected and the app is re-registered with FCM, or on Web when a <a href="https://www.w3.org/TR/push-api/#the-pushsubscriptionchange-event"><code translate="no" dir="ltr">pushsubscriptionchange</code></a> event is fired.</li> </ol> <p>After you've obtained the Firebase Installation ID (FID), send it to your app server and store it using your preferred method.</p> <h2 id="access-registration-token">Access the registration token (deprecated)</h2> <aside class="caution"><strong>Caution:</strong><span> This feature is deprecated. Use <a href="#access-firebase-installation-id">Firebase Installation IDs</a>, as this method will be removed in a future release.</span></aside><aside class="tip"><strong>Tip:</strong><span> See <a href="../manage-tokens">Best practices for FCM registration management</a> for tips on managing registrations.</span></aside> <p>To send a message to a specific device, you need to know the device registration token. To retrieve the registration token for an app instance, call <code translate="no" dir="ltr">getToken()</code>. If notification permission has not been granted, this method will ask the user for notification permissions. Otherwise, it returns a token or rejects the future due to an error.</p> <p>On web platforms, pass your VAPID public key to <code translate="no" dir="ltr">getToken()</code>:</p> 
+<pre>final fcmToken = await FirebaseMessaging.instance.getToken(vapidKey: "BKagOny0KF_2pCJQ3m....moL0ewzQ8rZu");
+</pre> <p>To be notified whenever the token is updated, subscribe to the <code translate="no" dir="ltr">onTokenRefresh</code> stream:</p> 
+<pre>FirebaseMessaging.instance.onTokenRefresh
+    .listen((fcmToken) {
+      // TODO: If necessary send token to application server.
+
+      // Note: This callback is fired at each app startup and whenever a new
+      // token is generated.
+    })
+    .onError((err) {
+      // Error getting token.
+    });
+</pre> <h2 id="prevent-auto-init">Prevent auto initialization</h2> <p>When a FCM registration is generated, the library uploads the identifier and configuration data to Firebase. If you prefer to prevent auto registration, disable auto-initialization at build time.</p> <p>When auto-initialization is disabled, you can explicitly register the app instance at runtime by calling <code translate="no" dir="ltr">register()</code> (make sure to subscribe to <code translate="no" dir="ltr">onRegistered</code> first to receive the Firebase Installation ID):</p> 
+<pre>await FirebaseMessaging.instance.register();
+</pre> <h3 id="prevent-ios-auto-initialization">iOS</h3> <p>On iOS, add a metadata value to your <code translate="no" dir="ltr">Info.plist</code>:</p> 
+<pre>FirebaseMessagingAutoInitEnabled = NO
+</pre> <h3 id="prevent-android-auto-initialization">Android</h3> <p>On Android, disable Analytics collection and FCM auto initialization (you must disable both) by adding these metadata values to your <code translate="no" dir="ltr">AndroidManifest.xml</code>:</p> 
+<pre>&lt;meta-data
+    android:name="firebase_messaging_auto_init_enabled"
+    android:value="false" /&gt;
+&lt;meta-data
+    android:name="firebase_analytics_collection_enabled"
+    android:value="false" /&gt;
+</pre> <h3 id="reenable-fcm-auto-init-at-runtime">Re-enable FCM auto-init at runtime</h3> <p>To enable auto-init for a specific app instance, call <code translate="no" dir="ltr">setAutoInitEnabled()</code>:</p> 
+<pre>await FirebaseMessaging.instance.setAutoInitEnabled(true);
+</pre> <p>This value persists across app restarts once set.</p> <h2 id="send-notification-message">Send a test notification message</h2> <ol> <li><p>Install and run the app on the target device. On Apple devices, you'll need to accept the request for permission to receive remote notifications.</p></li> <li><p>Make sure the app is in the background on the device.</p></li> <li><p>In the Firebase console, go to <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/messaging/" class="external"><strong>Messaging</strong></a>.</p></li> <li>
+<p>Create a campaign.</p> <ul> <li>
+<p>If this is your first message:</p> <ol> <li><p>Select <strong>Create your first campaign</strong>.</p></li> <li><p>Select <strong>Firebase Notification messages</strong> and select <strong>Create</strong>.</p></li> </ol>
+</li> <li>
+<p>If you have previously created campaigns:</p> <ol> <li><p>On the <strong>Campaigns</strong> tab, select <strong>New campaign</strong>.</p></li> <li><p>Click <strong>Notifications</strong>.</p></li> </ol>
+</li> </ul>
+</li> <li><p>Enter the message text.</p></li> <li><p>Select <strong>Send test message</strong> from the right pane.</p></li> <li><p>In the field labeled <strong>Add a Firebase Installation ID or FCM registration token</strong>, enter your registered Firebase Installation ID or registration token.</p></li> <li><p>Select <strong>Test</strong>.</p></li> </ol> <p>After you select <strong>Test</strong>, the targeted client device, with the app in the background, should receive the notification.</p> <p>For insight into message delivery to your app, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Messaging</strong> &gt; <a href="https://console.firebase.google.com/project/_/notification/reporting" class="external"><strong>Reports</strong> dashboard</a> in the Firebase console. This dashboard records the number of messages sent and opened on Apple and Android devices, along with data for "impressions" (notifications seen by users) for Android apps.</p> <h2 id="handling-interactions">Handling interaction</h2> <p>When users tap a notification, the default behavior on both Android and iOS is to open the application. If the application is terminated, it will be started, and if it is in the background, it will be brought to the foreground.</p> <p>Depending on the content of a notification, you may want to handle the user's interaction when the application opens. For example, if a new chat message is sent using a notification and the user selects it, you may want to open the specific conversation when the application opens.</p> <p>The <code translate="no" dir="ltr">firebase-messaging</code> package provides two ways to handle this interaction:</p> <ol> <li>
+<code translate="no" dir="ltr">getInitialMessage():</code> If the application is opened from a terminated state, this method returns a <code translate="no" dir="ltr">Future</code> containing a <code translate="no" dir="ltr">RemoteMessage</code>. Once consumed, the <code translate="no" dir="ltr">RemoteMessage</code> will be removed.</li> <li>
+<code translate="no" dir="ltr">onMessageOpenedApp</code>: A<code translate="no" dir="ltr">Stream</code> which posts a <code translate="no" dir="ltr">RemoteMessage</code> when the application is opened from a background state.</li> </ol> <p>To make sure your users have a smooth experience, you should handle both scenarios. The following code example outlines how this can be achieved:</p> 
+<pre>class Application extends StatefulWidget {
+  @override
+  State createState() =&gt; _Application();
+}
+
+class _Application extends State {
+  // In this example, suppose that all messages contain a data field with the key 'type'.
+  Future setupInteractedMessage() async {
+    // Get any messages which caused the application to open from
+    // a terminated state.
+    RemoteMessage? initialMessage =
+        await FirebaseMessaging.instance.getInitialMessage();
+
+    // If the message also contains a data property with a "type" of "chat",
+    // navigate to a chat screen
+    if (initialMessage != null) {
+      _handleMessage(initialMessage);
+    }
+
+    // Also handle any interaction when the app is in the background using a
+    // Stream listener
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+  }
+
+  void _handleMessage(RemoteMessage message) {
+    if (message.data['type'] == 'chat') {
+      Navigator.pushNamed(context, '/chat',
+        arguments: ChatArguments(message),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Run code required to handle interacted messages in an async function
+    // as initState() must not be async
+    setupInteractedMessage();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text("...");
+  }
+}</pre> <p>How you handle interaction depends on your setup. The previously shown example is a basic example of using a <code translate="no" dir="ltr">StatefulWidget</code>.</p> <h2 id="next-steps">Next steps</h2> <p>After you have completed the setup steps, here are a few options for moving forward with FCM for Flutter:</p> <ul> <li><a href="../server-environment">Send messages to devices</a></li> <li><a href="../receive-messages">Receive messages in a Flutter app</a></li> <li><a href="../topic-messaging">Send messages to topics</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/flutter/client" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/flutter/client</a>
+  </p>
+</div>

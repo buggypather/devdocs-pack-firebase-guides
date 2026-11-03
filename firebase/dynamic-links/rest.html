@@ -1,0 +1,46 @@
+<h1>Create Dynamic Links with the REST API</h1> <aside class="note"> <b>Note:</b> Firebase Dynamic Links is <i>deprecated</i> and should not be used in new projects. The service will be shutting down soon. Follow the <a href="https://firebase.google.com/support/dynamic-links-faq#how_should_i_migrate_from_the_service"> migration guide</a> and see the <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ</a> for more information. </aside> <aside class="note"><strong>Note</strong>: The full <a href="https://firebase.google.com/docs/reference/dynamic-links/link-shortener">Short Links API reference</a> can be found in the Reference section.</aside> <p>You can create short Dynamic Links with the Firebase Dynamic Links REST API. This API accepts either a long Dynamic Link or an object containing Dynamic Link parameters, and returns a URL like the following example:</p> 
+<pre>https://example.page.link/WXYZ</pre> <p>Short Dynamic Links created with the API and client (Android/Apple) SDK do not show up in the Firebase console. Such Dynamic Links are intended for user-to-user sharing. For marketing use cases, continue to create your links directly through the <a href="https://console.firebase.google.com/project/_/durablelinks/">Dynamic Links page</a> of the Firebase console.</p> <h3 id="before_you_begin">Before you begin</h3> <ol> <li>Get your API key. You will need an API key to authenticate your requests to the API. To find your API key: <ol> <li>Open the <a href="https://console.firebase.google.com/project/_/settings/general/">Settings page</a> of the Firebase console. If you are prompted to choose a project, select your Firebase project from the menu.</li> <li>Take note of the value of the <b>Web API Key</b> field.</li> </ol> </li> <li>In the Firebase console, open the <b>Dynamic Links</b> section.</li> <li> <p>If you have not already accepted the terms of service and set a domain for your Dynamic Links, do so when prompted.</p> <p>If you already have a Dynamic Links domain, take note of it. You need to provide a Dynamic Links domain when you programmatically create Dynamic Links.</p> <p><img src="https://firebase.google.com/static/docs/dynamic-links/images/dynamic-links-domain.png"></p> </li> </ol> <h2 id="creating-a-short-dynamic-link">Creating a short Dynamic Link</h2> <h3 id="create_a_short_link_from_a_long_link">Create a short link from a long link</h3> <p>You can use the Firebase Dynamic Links API to shorten a long Dynamic Link. To do so, make an HTTP POST request to the <code translate="no" dir="ltr">shortLinks</code> endpoint, specifying the long Dynamic Link in the <code translate="no" dir="ltr">longDynamicLink</code> parameter. For example:</p> 
+<pre>
+POST https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=api_key
+Content-Type: application/json
+
+{
+   "longDynamicLink": "https://example.page.link/?link=https://www.example.com/&amp;apn=com.example.android&amp;ibi=com.example.ios"
+}
+</pre> <p>See <a href="create-manually">Manually construct a URL</a> to learn how to create long Dynamic Links.</p> <h3 id="create_a_short_link_from_parameters">Create a short link from parameters</h3> <p>You can also create a short Dynamic Link by specifying the Dynamic Link parameters directly. To do so, make an HTTP POST request to the <code translate="no" dir="ltr">shortLinks</code> endpoint, specifying the Dynamic Link parameters in the <code translate="no" dir="ltr">dynamicLinkInfo</code> parameter. For example:</p> 
+<pre>
+POST https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=api_key
+Content-Type: application/json
+
+{
+  "dynamicLinkInfo": {
+    "domainUriPrefix": "https://example.page.link",
+    "link": "https://www.example.com/",
+    "androidInfo": {
+      "androidPackageName": "com.example.android"
+    },
+    "iosInfo": {
+      "iosBundleId": "com.example.ios"
+    }
+  }
+}
+</pre> <p>For a complete specification of the <code translate="no" dir="ltr">dynamicLinkInfo</code> object, see the <a href="https://firebase.google.com/docs/reference/dynamic-links/link-shortener">API reference</a>.</p> <h3 id="set_the_length_of_a_short">Set the length of a short Dynamic Link</h3> <p>You can also set the <code translate="no" dir="ltr">suffix</code> parameter to specify how the path component of the short Dynamic Link is generated.</p> <p>By default, or if you set the parameter to <code translate="no" dir="ltr">"UNGUESSABLE"</code>, the path component will be a 17-character string, such as in the following example:</p> 
+<pre>https://example.page.link/UVWXYZuvwxyz12345</pre> <p>Such strings are created by base62-encoding randomly generated 96-bit numbers. Use this setting to prevent your Dynamic Links URLs from being guessed and crawled, which can potentially expose sensitive information to unintended recipients.</p> <p>If you set the parameter to <code translate="no" dir="ltr">"SHORT"</code>, the path component will be a string that is only as long as needed to be unique, with a minimum length of 4 characters.</p> 
+<pre>https://example.page.link/WXYZ</pre> <p>Use this method if sensitive information would not be exposed if a short Dynamic Link URL were guessed.</p> <p>The following example shows how you can set the <code translate="no" dir="ltr">suffix</code> parameter:</p> 
+<pre>
+POST https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=api_key
+Content-Type: application/json
+
+{
+   "longDynamicLink": "https://example.page.link/?link=http://www.example.com/&amp;apn=com.example.android&amp;ibi=com.example.ios",
+   "suffix": {
+     "option": "UNGUESSABLE"
+   }
+}
+
+</pre> <h3 id="ensure_deep_link_is_valid">Ensure deep link is valid</h3> <p>At minimum, the deep-link value provided must begin with http:// or https:// schemes. It must also match any URL patterns whitelist entered in the console. Else, the creation API will fail with HTTP error code 400.</p> <h2 id="next_steps">Next steps</h2> <p>Now that you've created Dynamic Links, you need to set up your app to receive Dynamic Links and send users to the right place in your app after a user opens them.</p> <p>To receive Dynamic Links in your app, see the documentation for <a href="ios/receive">iOS</a>, <a href="android/receive">Android</a>, <a href="cpp/receive">C++</a>, and <a href="unity/receive">Unity</a>.</p> <p>Requests are limited to 5 requests/IP address/second, and 200,000 requests/day. If exceeded, then the response will return HTTP error code 429. To request for more quota, fill out this <a href="https://firebase.google.com/support/troubleshooter/fdl/quotas">form</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/dynamic-links/rest" class="_attribution-link">https://firebase.google.com/docs/dynamic-links/rest</a>
+  </p>
+</div>

@@ -1,0 +1,132 @@
+<h1>Enable App Check enforcement for Cloud Functions</h1> <p>When you <a href="monitor-functions-metrics">understand how App Check will affect your users</a> and you're ready to proceed, you can enable App Check enforcement for <a href="../functions/callable">callable functions</a>.</p> <h2 id="enforcement">Enable enforcement</h2> <p>To begin enforcing App Check token requirements in your callable functions, modify your functions to check for valid App Check tokens, as shown below. Once you enable enforcement, all unverified requests will be rejected.</p> <ol> <li>
+<p>Install the Cloud Functions SDK.</p> <div> <section><p class="_firebase-tab"><strong>Node.js (2nd gen)</strong></p>
+<p>Update your project's <code translate="no" dir="ltr">firebase-functions</code> dependency to version 4.0.0 or newer:</p> 
+<pre data-language="">npm install firebase-functions@"&gt;=4.0.0"</pre></section> <section><p class="_firebase-tab"><strong>Node.js (1st gen)</strong></p>
+<p>Update your project's <code translate="no" dir="ltr">firebase-functions</code> dependency to version 4.0.0 or newer:</p> 
+<pre data-language="">npm install firebase-functions@"&gt;=4.0.0"</pre></section> <section><p class="_firebase-tab"><strong>Python (preview)</strong></p>
+<p>Add <code translate="no" dir="ltr">firebase-functions</code> to <code translate="no" dir="ltr">functions/requirements.txt</code>:</p> 
+<pre data-language="">firebase-functions &gt;= 0.1.0
+</pre> <p>Then, update the dependencies in your project's virtual environment:</p> 
+<pre data-language="">./venv/bin/pip install -r requirements.txt
+</pre></section> </div>
+</li> <li>
+<p>Enable the App Check enforcement runtime option for your function:</p> <div> <section><p class="_firebase-tab"><strong>Node.js (2nd gen)</strong></p>
+
+<pre data-language="">const { onCall } = require("firebase-functions/v2/https");
+
+exports.yourV2CallableFunction = onCall(
+  {
+    enforceAppCheck: true, // Reject requests with missing or invalid App Check tokens.
+  },
+  (request) =&gt; {
+    // request.app contains data from App Check, including the app ID.
+    // Your function logic follows.
+    ...
+  }
+);
+</pre></section> <section><p class="_firebase-tab"><strong>Node.js (1st gen)</strong></p>
+
+<pre data-language="">const functions = require("firebase-functions/v1");
+
+exports.yourV1CallableFunction = functions
+  .runWith({
+      enforceAppCheck: true, // Reject requests with missing or invalid App Check tokens.
+  })
+  .https.onCall((data, context) =&gt; {
+        // context.app contains data from App Check, including the app ID.
+        // Your function logic follows.
+        ...
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Python (preview)</strong></p>
+
+<pre data-language="">from firebase_functions import https_fn
+
+@https_fn.on_call(
+    enforce_app_check=True  # Reject requests with missing or invalid App Check tokens.
+)
+def your_callable_function(req: https_fn.CallableRequest) -&gt; https_fn.Response:
+    # req.app contains data from App Check, including the app ID.
+    # Your function logic follows.
+    ...
+</pre></section> </div>
+</li> <li>
+<p>Redeploy your functions:</p> 
+<pre>
+firebase deploy --only functions
+</pre>
+</li> </ol> <p>Once these changes are deployed, your callable functions will require valid App Check tokens. The Cloud Functions client SDKs automatically attach an App Check token when you invoke a callable function.</p> <h2 id="replay-protection">Replay protection (beta)</h2> <p>To protect a callable function from replay attacks, you can consume the App Check token after verifying it. Once the token is consumed, it cannot be used again.</p> <aside class="note"><strong>Note:</strong><span> The replay protection beta supports only the Cloud Functions SDK for Node.js.</span></aside> <p>Note that using replay protection adds a network round trip to token verification, and therefore adds latency to the function call. For this reason, most apps typically enable replay protection only on particularly sensitive endpoints.</p> <p>To consume tokens:</p> <ol> <li>
+<p>In the <a href="https://console.cloud.google.com/iam-admin/iam">Google Cloud console</a>, grant the "Firebase App Check Token Verifier" role to the service account used by the function.</p> <ul> <li>If you're explicitly initializing the Admin SDK and you specified your project's Admin SDK service account credentials, the required role is already granted.</li> <li>If you're using 1st generation Cloud Functions with the default Admin SDK configuration, grant the role to the <strong>App Engine default service account</strong>. See <a href="https://cloud.google.com/appengine/docs/legacy/standard/python/service-account#modifying_the_default_service_account">Changing service account permissions</a>.</li> <li>If you're using 2nd generation Cloud Functions with the default Admin SDK configuration, grant the role to the <strong>Default compute service account</strong>.</li> </ul>
+</li> <li>
+<p>Set <code translate="no" dir="ltr">consumeAppCheckToken</code> to <code translate="no" dir="ltr">true</code> in your function definition:</p> <div> <section><p class="_firebase-tab"><strong>Node.js (2nd gen)</strong></p>
+
+<pre data-language="">const { onCall } = require("firebase-functions/v2/https");
+
+exports.yourV2CallableFunction = onCall(
+  {
+    enforceAppCheck: true, // Reject requests with missing or invalid App Check tokens.
+    consumeAppCheckToken: true  // Consume the token after verification.
+  },
+  (request) =&gt; {
+    // request.app contains data from App Check, including the app ID.
+    // Your function logic follows.
+    ...
+  }
+);
+</pre></section> <section><p class="_firebase-tab"><strong>Node.js (1st gen)</strong></p>
+
+<pre data-language="">const functions = require("firebase-functions/v1");
+
+exports.yourV1CallableFunction = functions
+  .runWith({
+      enforceAppCheck: true, // Reject requests with missing or invalid App Check tokens.
+      consumeAppCheckToken: true  // Consume the token after verification.
+  })
+  .https.onCall((data, context) =&gt; {
+      // context.app contains data from App Check, including the app ID.
+      // Your function logic follows.
+      ...
+  });
+</pre></section> </div>
+</li> <li>
+<p>Update your app client code to acquire consumable limited-use tokens when you call the function:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">let options = HTTPSCallableOptions(requireLimitedUseAppCheckTokens: true)
+let yourCallableFunction =
+    Functions.functions().httpsCallable("yourCallableFunction", options: options)
+do {
+    let result = try await yourCallableFunction.call()
+} catch {
+    // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val yourCallableFunction = Firebase.functions.getHttpsCallable("yourCallableFunction") {
+    limitedUseAppCheckTokens = true
+}
+val result = yourCallableFunction.call().await()
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">HttpsCallableReference yourCallableFunction = FirebaseFunctions.getInstance().getHttpsCallable(
+        "yourCallableFunction",
+        new HttpsCallableOptions.Builder()
+                .setLimitedUseAppCheckTokens(true)
+                .build()
+);
+Task&lt;HttpsCallableResult&gt; result = yourCallableFunction.call();
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { getFunctions, httpsCallable } from "firebase/functions";
+
+const yourCallableFunction = httpsCallable(
+  getFunctions(),
+  "yourCallableFunction",
+  { limitedUseAppCheckTokens: true },
+);
+await yourCallableFunction();
+</pre></section> </div>
+</li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/cloud-functions" class="_attribution-link">https://firebase.google.com/docs/app-check/cloud-functions</a>
+  </p>
+</div>

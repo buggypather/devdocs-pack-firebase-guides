@@ -1,0 +1,97 @@
+<h1>Authenticate REST Requests</h1> <p>The Firebase SDKs handle all authentication and communication with the Firebase Realtime Database on your behalf. However, when you're in an environment that doesn't have a client SDK or you want to avoid the overhead of a persistent database connection, you can make use of the Realtime Database REST API to read and write data.</p> <aside class="note"><strong>Note:</strong><span> Any environment that supports HTTPS requests can use the Realtime Database REST API.</span></aside> <p>Authenticate users through one of the following methods:</p> <ol> <li><p><strong>Google OAuth2 access tokens</strong> - Typically, the ability to read from and write to the Realtime Database is governed by <a href="../security">Realtime Database Rules</a>. But, you can access your data from a server and grant that server full read and write access to your data with a Google OAuth2 access token generated from a service account.</p></li> <li><p><strong>Firebase ID tokens</strong> - You might also want to send requests authenticated as an individual user, like limiting access with Realtime Database Rules on the client SDKs. The REST API accepts the same Firebase ID tokens used by the client SDKs.</p></li> </ol> <h2 id="google_oauth2_access_tokens">Google OAuth2 access tokens</h2> <p>Any data that's publicly readable or writable according to your <a href="../security">Realtime Database Rules</a> is also readable and writable via the REST API without any authentication. However, if you want your server to bypass your Realtime Database Rules, you need to authenticate your read and write requests. Authentication through Google OAuth2 requires the following steps:</p> <ol> <li>Generate an access token.</li> <li>Authenticate with that access token.</li> </ol> <h3 id="generate_an_access_token">Generate an access token</h3> <p>The Realtime Database REST API accepts standard <a href="https://developers.google.com/identity/protocols/OAuth2">Google OAuth2 access tokens</a>. The access tokens can be generated using a service account with proper permissions to your Realtime Database. Clicking the <strong>Generate New Private Key</strong> button at the bottom of the <a href="https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk"><strong>Service Accounts</strong></a> section of the Firebase console allows you to easily generate a new service account key file if you do not have one already.</p> <aside class="warning"><strong>Warning:</strong><span> Use extra caution when handling service account credentials in your code. Do not commit them to a public repository, deploy them in a client app, or expose them in any way that could compromise the security of your Firebase project.</span></aside> <p>Once you have a service account key file, you can use one of the <a href="https://developers.google.com/api-client-library/">Google API client libraries</a> to generate a Google OAuth2 access token with the following required scopes:</p> <ul> <li><code translate="no" dir="ltr">https://www.googleapis.com/auth/userinfo.email</code></li> <li><code translate="no" dir="ltr">https://www.googleapis.com/auth/firebase.database</code></li> </ul> <p>Here are some example implementations that show how to create Google OAuth2 access tokens to authenticate to the Realtime Database REST API in a variety of languages:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<p>Using the <a href="https://github.com/google/google-api-nodejs-client/">Google API Client Library for Node.js</a>:</p> 
+<pre data-language="javascript">var {google} = require("googleapis");
+
+// Load the service account key JSON file.
+var serviceAccount = require("path/to/serviceAccountKey.json");
+
+// Define the required scopes.
+var scopes = [
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/firebase.database"
+];
+
+// Authenticate a JWT client with the service account.
+var jwtClient = new google.auth.JWT(
+  serviceAccount.client_email,
+  null,
+  serviceAccount.private_key,
+  scopes
+);
+
+// Use the JWT client to generate an access token.
+jwtClient.authorize(function(error, tokens) {
+  if (error) {
+    console.log("Error making request to generate access token:", error);
+  } else if (tokens.access_token === null) {
+    console.log("Provided service account does not have permission to generate access tokens");
+  } else {
+    var accessToken = tokens.access_token;
+
+    // See the "Using the access token" section below for information
+    // on how to use the access token to send authenticated requests to
+    // the Realtime Database REST API.
+  }
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+<p>Using the <a href="https://developers.google.com/api-client-library/java/">Google API Client Library for Java</a>:</p> 
+<pre data-language="java">// Load the service account key JSON file
+FileInputStream serviceAccount = new FileInputStream("path/to/serviceAccountKey.json");
+
+// Authenticate a Google credential with the service account
+GoogleCredential googleCred = GoogleCredential.fromStream(serviceAccount);
+
+// Add the required scopes to the Google credential
+GoogleCredential scoped = googleCred.createScoped(
+    Arrays.asList(
+      "https://www.googleapis.com/auth/firebase.database",
+      "https://www.googleapis.com/auth/userinfo.email"
+    )
+);
+
+// Use the Google credential to generate an access token
+scoped.refreshToken();
+String token = scoped.getAccessToken();
+
+// See the "Using the access token" section below for information
+// on how to use the access token to send authenticated requests to the
+// Realtime Database REST API.
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+<p>Using the <a href="https://google-auth.readthedocs.io/en/latest/"><code translate="no" dir="ltr">google-auth</code></a> library:</p> 
+<pre data-language="python">from google.oauth2 import service_account
+from google.auth.transport.requests import AuthorizedSession
+
+# Define the required scopes
+scopes = [
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/firebase.database"
+]
+
+# Authenticate a credential with the service account
+credentials = service_account.Credentials.from_service_account_file(
+    "path/to/serviceAccountKey.json", scopes=scopes)
+
+# Use the credentials object to authenticate a Requests session.
+authed_session = AuthorizedSession(credentials)
+response = authed_session.get(
+    "https://&lt;DATABASE_NAME&gt;.firebaseio.com/users/ada/name.json")
+
+# Or, use the token directly, as described in the "Authenticate with an
+# access token" section below. (not recommended)
+request = google.auth.transport.requests.Request()
+credentials.refresh(request)
+access_token = credentials.token
+</pre></section> </div> <h3 id="authenticate_with_an_access_token">Authenticate with an access token</h3> <p>To send authenticated requests to the Realtime Database REST API, pass the Google OAuth2 access token generated above as the <code translate="no" dir="ltr">Authorization: Bearer &lt;ACCESS_TOKEN&gt;</code> header or the <code translate="no" dir="ltr">access_token=&lt;ACCESS_TOKEN&gt;</code> query string parameter. Here is an example <code translate="no" dir="ltr">curl</code> request to read Ada's name:</p> 
+<pre>curl "https://&lt;DATABASE_NAME&gt;.firebaseio.com/users/ada/name.json?access_token=&lt;ACCESS_TOKEN&gt;"
+</pre> <p>Make sure to replace <code translate="no" dir="ltr">&lt;DATABASE_NAME&gt;</code> with the name of your Realtime Database and <code translate="no" dir="ltr">&lt;ACCESS_TOKEN&gt;</code> with a Google OAuth2 access token.</p> <p>A successful request will be indicated by a <code translate="no" dir="ltr">200 OK</code> HTTP status code. The response contains the data being retrieved:</p> 
+<pre>{"first":"Ada","last":"Lovelace"}
+</pre> <h2 id="firebase_id_tokens">Firebase ID tokens</h2> <p>When a user or device signs in using Firebase Authentication, Firebase creates a corresponding ID token that uniquely identifies them and grants them access to several resources, such as Realtime Database and Cloud Storage. You can re-use that ID token to authenticate the Realtime Database REST API and make requests on behalf of that user.</p> <h3 id="generate_an_id_token">Generate an ID token</h3> <p>To retrieve the Firebase ID token from the client, follow the steps in <a href="../../auth/admin/verify-id-tokens#retrieve_id_tokens_on_clients">Retrieve ID tokens on clients</a>.</p> <p>Note that ID tokens expire after a short period of time, and should be used as quickly as possible after retrieving them.</p> <h3 id="authenticate_with_an_id_token">Authenticate with an ID token</h3> <p>To send authenticated requests to the Realtime Database REST API, pass the ID token generated above as the <code translate="no" dir="ltr">auth=&lt;ID_TOKEN&gt;</code> query string parameter. Here is an example <code translate="no" dir="ltr">curl</code> request to read Ada's name:</p> 
+<pre>curl "https://&lt;DATABASE_NAME&gt;.firebaseio.com/users/ada/name.json?auth=&lt;ID_TOKEN&gt;"
+</pre> <p>Make sure to replace <code translate="no" dir="ltr">&lt;DATABASE_NAME&gt;</code> with the name of your Realtime Database and <code translate="no" dir="ltr">&lt;ID_TOKEN&gt;</code> with a Firebase ID token.</p> <p>A successful request will be indicated by a <code translate="no" dir="ltr">200 OK</code> HTTP status code. The response contains the data being retrieved:</p> 
+<pre>{"first":"Ada","last":"Lovelace"}
+</pre> <h2 id="legacy_tokens">Legacy tokens</h2> <p>If you're still using legacy Firebase authentication tokens, we recommend updating your REST authentication to one of the authentication methods described above.</p> <aside class="warning"> If you aren't using legacy authentication tokens, skip this section. </aside> <p>The Realtime Database REST API still supports authentication via legacy authentication tokens, including <em>secrets</em>. Your Realtime Database secrets can be found in the <a href="https://console.firebase.google.com/project/_/settings/serviceaccounts/databasesecrets"><strong>Service Accounts</strong></a> section of the Firebase console.</p> <p>Secrets are long-lived credentials. We recommend generating a new secret and revoking the existing one when removing users with secret access (such as owners) from a project.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/rest/auth" class="_attribution-link">https://firebase.google.com/docs/database/rest/auth</a>
+  </p>
+</div>

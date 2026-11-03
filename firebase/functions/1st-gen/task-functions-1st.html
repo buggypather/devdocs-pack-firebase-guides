@@ -1,0 +1,74 @@
+<h1>Enqueue functions with Cloud Tasks (1st gen)</h1> <aside class="note"><strong>Note:</strong><span> The 1st-gen functionality described in this page is also supported in Cloud Functions (2nd gen) with improved features and performance. For more information about 2nd gen, see the <a href="../version-comparison">version comparison</a>. To go directly to the 2nd gen guide for this feature, see <a href="../task-functions">Enqueue functions with Cloud Tasks</a>.</span></aside> <p>Task queue functions take advantage of Google <a href="https://cloud.google.com/tasks/docs/dual-overview">Cloud Tasks</a> to help your app run time-consuming, resource-intensive, or bandwidth-limited tasks asynchronously, outside your main application flow.</p> <p>For example, imagine that you want to create backups of a large set of image files that are currently hosted on an API with a rate limit. In order to be a responsible consumer of that API, you need to respect their rate limits. Plus, this kind of long-running job could be vulnerable to failure due to timeouts and memory limits.</p> <p>To mitigate this complexity, you can write a task queue function that sets basic task options like <code translate="no" dir="ltr">scheduleTime</code>, and <code translate="no" dir="ltr">dispatchDeadline</code>, and then hands the function off to a queue in Cloud Tasks. The Cloud Tasks environment is designed specifically to ensure effective congestion control and retry policies for these kinds of operations.</p> <p>The Firebase SDK for Cloud Functions for Firebase v3.20.1 and higher interoperates with Firebase Admin SDK v10.2.0 and higher to support task queue functions.</p> <p>Using task queue functions with Firebase can result in charges for Cloud Tasks processing. See <a href="https://cloud.google.com/tasks/pricing">Cloud Tasks pricing</a> for more information.</p> <h2 id="create-task-q-function">Create task queue functions</h2> <p>To use task queue functions, follow this workflow:</p> <ol> <li>Write a task queue function using the Firebase SDK for Cloud Functions.</li> <li>Test your function by triggering it with an HTTP request.</li> <li>Deploy your function with the Firebase CLI. When deploying your task queue function for the first time, the CLI will create a task queue in Cloud Tasks with options (rate limiting and retry) specified in your source code.</li> <li>Add tasks to the newly created task queue, passing along parameters to set up an execution schedule if needed. You can achieve this by writing the code using the Admin SDK and deploying it to Cloud Functions for Firebase.</li> </ol> <h3 id="write-task-q-function">Write task queue functions</h3> <p>Use <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.tasks.taskqueuebuilder#taskstaskqueuebuilderondispatch"><code translate="no" dir="ltr">onDispatch</code></a> to get started writing task queue functions. An important part of writing a task queue function is to set per-queue retry and rate- limiting configuration. Code samples in this page are based on an app that sets up a service that backs up all images from NASA's <a href="https://apod.nasa.gov/apod/astropix.html">Astronomy Picture of the Day</a>:</p> <h4 id="configure_task_queue_functions">Configure task queue functions</h4> <p>Task queue functions come with a powerful set of configuration settings to precisely control rate limits and retry behavior of a task queue:</p> 
+<pre>exports.backupApod = functions
+    .runWith( {secrets: ["NASA_API_KEY"]})
+    .tasks.taskQueue({
+      retryConfig: {
+        maxAttempts: 5,
+        minBackoffSeconds: 60,
+      },
+      rateLimits: {
+        maxConcurrentDispatches: 6,
+      },
+    }).onDispatch(async (data) =&gt; {
+</pre> <ul> <li>
+<code translate="no" dir="ltr">retryConfig.maxAttempts=5</code>: Each task in the task queue is automatically retried up to 5 times. This helps mitigate transient errors like network errors or temporary service disruption of a dependent, external service.</li> <li>
+<code translate="no" dir="ltr">retryConfig.minBackoffSeconds=60</code>: Each task is retried at least 60 seconds apart from each attempt. This provides a large buffer between each attempt so we don't rush to exhaust the 5 retry attempts too quickly.</li> <li>
+<code translate="no" dir="ltr">rateLimits.maxConcurrentDispatch=6</code>: At most 6 tasks are dispatched at a given time. This helps ensure a steady stream of requests to the underlying function and helps reduce the number of active instances and cold starts.</li> </ul> <h3 id="test-task-q-function-1stgen">Test task queue functions</h3> <p>For most cases, the Cloud Functions emulator is the best way to test task queue functions. See the Emulator Suite documentation to learn how to <a href="../local-emulator#instrument-tq">instrument your app for task queue functions emulation</a>.</p> <p>Additionally, task queue functions are exposed as simple HTTP functions in the Firebase Local Emulator Suite. You can test an emulated task function by sending an HTTP POST request with a json data payload:</p> 
+<pre> # start the Firebase Emulators
+ firebase emulators:start
+
+ # trigger the emulated task queue function
+ curl \
+  -X POST                                            # An HTTP POST request...
+  -H "content-type: application/json" \              # ... with a JSON body
+  http://localhost:$PORT/$PROJECT_ID/$REGION/$NAME \ # ... to function url
+  -d '{"data": { ... some data .... }}'              # ... with JSON encoded data
+
+</pre> <h3 id="deploy-task-q-function-1stgen">Deploy task queue functions</h3> <p>Deploy task queue function using the Firebase CLI:</p> 
+<pre>$ firebase deploy --only functions:backupApod
+</pre> <p>When deploying a task queue function for the first time, the CLI creates a task queue in Cloud Tasks with options (rate limiting and retry) specified in your source code.</p> <p>If you encounter permissions errors when deploying functions, make sure that the appropriate <a href="../../projects/iam/permissions#functions">IAM roles</a> are assigned to the user running the deployment commands.</p> <h2 id="enqueue-task-q-function-1stgen">Enqueue task queue functions</h2> <p>Task queue functions can be enqueued in Cloud Tasks from a trusted server environment like Cloud Functions for Firebase using the Firebase Admin SDK for Node.js. If you're new to the Admin SDKs, see <a href="../../admin/setup">Add Firebase to a server</a> to get started.</p> <p>In a typical flow, the Admin SDK creates a new task, enqueues it in Cloud Tasks, and sets the configuration for the task:</p> 
+<pre>exports.enqueueBackupTasks = functions.https.onRequest(
+async (_request, response) =&gt; {
+  const queue = getFunctions().taskQueue("backupApod");
+  const enqueues = [];
+  for (let i = 0; i &lt;= 10; i += 1) {
+    // Enqueue each task with i*60 seconds delay. Our task queue function
+    // should process ~1 task/min.
+    const scheduleDelaySeconds = i * 60 
+    enqueues.push(
+        queue.enqueue(
+          { id: `task-${i}` },
+          {
+            scheduleDelaySeconds,
+            dispatchDeadlineSeconds: 60 * 5 // 5 minutes
+          },
+        ),
+    );
+  }
+  await Promise.all(enqueues);
+  response.sendStatus(200);
+
+});
+</pre> <ul> <li>
+<code translate="no" dir="ltr">scheduleDelaySeconds</code>: The sample code tries to spread out execution of tasks by associating a delay of Nth minutes for the Nth task. This translates to triggering ~ 1 task/minute. Note that you can also use <code translate="no" dir="ltr">scheduleTime</code> if you want Cloud Tasks to trigger a task at a specific time.</li> <li>
+<code translate="no" dir="ltr">dispatchDeadlineSeconds</code>: Maximum amount of time Cloud Tasks will wait for a task to complete. Cloud Tasks will retry the task following the retry configuration of the queue or until this deadline is reached. In the sample, the queue is configured to retry the task up to 5 times, but the task is automatically cancelled if the whole process (including retry attempts) takes more than 5 minutes.</li> </ul> <aside class="special"><strong>Important:</strong><span> Note that this configuration set in the Admin SDK is applied on a per-task basis, unlike retry and rate limit configuration, which are applied per-queue. You can enqueue multiple tasks with the Admin SDK for the same function with different configurations (<code translate="no" dir="ltr">scheduleTime</code>) and so on.</span></aside> <h2 id="troubleshooting">Troubleshooting</h2> <h3 id="turn-tasks-on">Turn on Cloud Tasks logging</h3> <p>Logs from Cloud Tasks contain useful diagnostic information like the status of the request associated with a task. By default, logs from Cloud Tasks are turned off due to the large volume of logs it can potentially generate on your project. We recommend you turn on the debug logs while you are actively developing and debugging your task queue functions. See <a href="https://cloud.google.com/tasks/docs/logging#turning_on_logging">Turning on logging</a>.</p> <h3 id="iam-permissions">IAM Permissions</h3> <p>You may see <code translate="no" dir="ltr">PERMISSION DENIED</code> errors when enqueueing tasks or when Cloud Tasks tries to invoke your task queue functions. Ensure that your project has the following IAM bindings:</p> <ul> <li>
+<p>The identity used to enqueue tasks to Cloud Tasks needs <code translate="no" dir="ltr">cloudtasks.tasks.create</code> IAM permission.</p> <p>In the sample, this is the <a href="https://cloud.google.com/functions/docs/securing/function-identity#runtime_service_account">App Engine default service account</a></p>
+</li> </ul> 
+<pre>gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member=serviceAccount:${PROJECT_ID}@appspot.gserviceaccount.com \
+  --role=roles/cloudtasks.enqueuer
+</pre> <ul> <li>
+<p>The identity used to enqueue tasks to Cloud Tasks needs permission to use the service account associated with a task in Cloud Tasks.</p> <p>In the sample, this is the <a href="https://cloud.google.com/functions/docs/securing/function-identity#runtime_service_account">App Engine default service account</a>.</p>
+</li> </ul> <p>See <a href="https://cloud.google.com/iam/docs/impersonating-service-accounts#impersonate-sa-%0Alevel">Google Cloud IAM documentation</a> for instructions on how to add the App Engine default service account as a user of the App Engine default service account.</p> <ul> <li>
+<p>The identity used to trigger the task queue function needs <code translate="no" dir="ltr">cloudfunctions.functions.invoke</code> permission.</p> <p>In the sample, this is the <a href="https://cloud.google.com/functions/docs/securing/function-identity#runtime_service_account">App Engine default service account</a></p>
+</li> </ul> 
+<pre>gcloud functions add-iam-policy-binding $FUNCTION_NAME \
+  --region=us-central1 \
+  --member=serviceAccount:${PROJECT_ID}@appspot.gserviceaccount.com \
+  --role=roles/cloudfunctions.invoker
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/1st-gen/task-functions-1st" class="_attribution-link">https://firebase.google.com/docs/functions/1st-gen/task-functions-1st</a>
+  </p>
+</div>

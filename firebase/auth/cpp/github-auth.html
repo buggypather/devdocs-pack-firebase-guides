@@ -1,0 +1,99 @@
+<h1>Authenticate Using GitHub and C++</h1> <p>You can let your users authenticate with Firebase using their GitHub accounts by integrating GitHub authentication into your app.</p> <h2 id="before_you_begin">Before you begin</h2> <ol> <li>
+<a href="../../cpp/setup#note_select_platform">Add Firebase to your C++ project</a>. </li>
+<li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>GitHub</b> sign-in provider. </li> <li> Add the <b>Client ID</b> and <b>Client Secret</b> from that provider's developer console to the provider configuration: <ol> <li> <a href="https://github.com/settings/applications/new" class="external">Register your app</a> as a developer application on GitHub and get your app's OAuth 2.0 <b>Client ID</b> and <b>Client Secret</b>. </li> <li> Make sure your Firebase <b>OAuth redirect URI</b> (for example, <code translate="no" dir="ltr">my-app-12345.firebaseapp.com/__/auth/handler</code>) is set as your <b>Authorization callback URL</b> in your app's settings page on your <a href="https://github.com/settings/developers">GitHub app's config</a>. </li> </ol> </li> <li> Click <b>Save</b>. </li> </ol> <h2 id="access_the_firebaseauthauth_class">Access the <code translate="no" dir="ltr">firebase::auth::Auth</code> class</h2> The <code translate="no" dir="ltr">Auth</code> class is the gateway for all API calls. <ol> <li>Add the Auth and App header files: 
+<pre>#include &lt;cassert&gt;
+#include &lt;cinttypes&gt;
+#include &lt;cstdint&gt;
+
+#include "firebase/app.h"
+#include "firebase/auth.h"</pre> </li> <li>In your initialization code, create a <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/app"><code translate="no" dir="ltr">firebase::App</code></a> class. 
+<pre>#if defined(__ANDROID__)
+  firebase::App* app =
+      firebase::App::Create(firebase::AppOptions(), my_jni_env, my_activity);
+#else
+  firebase::App* app = firebase::App::Create(firebase::AppOptions());
+#endif  // defined(__ANDROID__)</pre> </li> <li>Acquire the <code translate="no" dir="ltr">firebase::auth::Auth</code> class for your <code translate="no" dir="ltr">firebase::App</code>. There is a one-to-one mapping between <code translate="no" dir="ltr">App</code> and <code translate="no" dir="ltr">Auth</code>. 
+<pre>firebase::auth::Auth* auth = firebase::auth::Auth::GetAuth(app);</pre> </li> </ol> <h2 id="authenticate_with_firebase">Authenticate with Firebase</h2> <ol> <li>Follow instructions for <a href="../android/github-auth#authenticate_with_firebase">Android</a> and <a href="../ios/github-auth#authenticate_with_firebase">iOS+</a> to get a token for the signed-in GitHub user. </li> <li>After a user successfully signs in, exchange the token for a Firebase credential, and authenticate with Firebase using the Firebase credential: 
+<pre>firebase::auth::Credential credential =
+    firebase::auth::GitHubAuthProvider::GetCredential(token);
+firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;SignInAndRetrieveDataWithCredential(credential);</pre> </li> <li>If your program has an update loop that runs regularly (say at 30 or 60 times per second), you can check the results once per update with <code translate="no" dir="ltr">Auth::SignInAndRetrieveDataWithCredentialLastResult</code>: 
+<pre>firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+    auth-&gt;SignInAndRetrieveDataWithCredentialLastResult();
+if (result.status() == firebase::kFutureStatusComplete) {
+  if (result.error() == firebase::auth::kAuthErrorNone) {
+    firebase::auth::AuthResult auth_result = *result.result();
+    printf("Sign in succeeded for `%s`\n",
+           auth_result.user.display_name().c_str());
+  } else {
+    printf("Sign in failed with error '%s'\n", result.error_message());
+  }
+}</pre> Or, if your program is event driven, you may prefer to <a href="#register_callback_on_future">register a callback on the Future</a>. </li> </ol> <h2 id="register_a_callback_on_a_future">Register a callback on a Future
+</h2> Some programs have <code translate="no" dir="ltr">Update</code> functions that are called 30 or 60 times per second. For example, many games follow this model. These programs can call the <code translate="no" dir="ltr">LastResult</code> functions to poll asynchronous calls. However, if your program is event driven, you may prefer to register callback functions. A callback function is called upon completion of the Future. 
+<pre>void OnCreateCallback(const firebase::Future&lt;firebase::auth::User*&gt;&amp; result,
+                      void* user_data) {
+  // The callback is called when the Future enters the `complete` state.
+  assert(result.status() == firebase::kFutureStatusComplete);
+
+  // Use `user_data` to pass-in program context, if you like.
+  MyProgramContext* program_context = static_cast&lt;MyProgramContext*&gt;(user_data);
+
+  // Important to handle both success and failure situations.
+  if (result.error() == firebase::auth::kAuthErrorNone) {
+    firebase::auth::User* user = *result.result();
+    printf("Create user succeeded for email %s\n", user-&gt;email().c_str());
+
+    // Perform other actions on User, if you like.
+    firebase::auth::User::UserProfile profile;
+    profile.display_name = program_context-&gt;display_name;
+    user-&gt;UpdateUserProfile(profile);
+
+  } else {
+    printf("Created user failed with error '%s'\n", result.error_message());
+  }
+}
+
+void CreateUser(firebase::auth::Auth* auth) {
+  // Callbacks work the same for any firebase::Future.
+  firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+      auth-&gt;CreateUserWithEmailAndPasswordLastResult();
+
+  // `&amp;my_program_context` is passed verbatim to OnCreateCallback().
+  result.OnCompletion(OnCreateCallback, &amp;my_program_context);
+}</pre> The callback function can also be a lambda, if you prefer. 
+<pre>void CreateUserUsingLambda(firebase::auth::Auth* auth) {
+  // Callbacks work the same for any firebase::Future.
+  firebase::Future&lt;firebase::auth::AuthResult&gt; result =
+      auth-&gt;CreateUserWithEmailAndPasswordLastResult();
+
+  // The lambda has the same signature as the callback function.
+  result.OnCompletion(
+      [](const firebase::Future&lt;firebase::auth::User*&gt;&amp; result,
+         void* user_data) {
+        // `user_data` is the same as &amp;my_program_context, below.
+        // Note that we can't capture this value in the [] because std::function
+        // is not supported by our minimum compiler spec (which is pre C++11).
+        MyProgramContext* program_context =
+            static_cast&lt;MyProgramContext*&gt;(user_data);
+
+        // Process create user result...
+        (void)program_context;
+      },
+      &amp;my_program_context);
+}</pre> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/auth/user"> <code translate="no" dir="ltr">firebase::auth::User</code></a> object:</p> 
+<pre>firebase::auth::User user = auth-&gt;current_user();
+if (user.is_valid()) {
+  std::string name = user.display_name();
+  std::string email = user.email();
+  std::string photo_url = user.photo_url();
+  // The user's ID, unique to the Firebase project.
+  // Do NOT use this value to authenticate with your backend server,
+  // if you have one. Use firebase::auth::User::Token() instead.
+  std::string uid = user.uid();
+}</pre> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/auth/auth#signout"> <code translate="no" dir="ltr">SignOut()</code></a>:</p> 
+<pre>auth-&gt;SignOut();</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/cpp/github-auth" class="_attribution-link">https://firebase.google.com/docs/auth/cpp/github-auth</a>
+  </p>
+</div>

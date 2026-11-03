@@ -1,0 +1,776 @@
+<h1>Template format, syntax, and examples</h1> <aside class="preview"><b>Preview</b>: Using server prompt templates is a feature that's in Preview, which means that it isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways. </aside> <p><br></p> <p>For <span class='\"notranslate\"'>Firebase AI Logic</span>, the Firebase console provides a guided UI for you to specify the contents of a template.</p> <p>Server prompt templates use a Dotprompt-based syntax and format. On this page, you can find detailed descriptions of the template format and syntax, along with examples.</p> <p>Here are the most important components for an example request to a <span class='\"notranslate\"'>Gemini</span> model:</p> 
+<pre>---
+model: 'gemini-3.8-flash'
+---
+
+{{role "system"}}
+All output must be a clearly structured invoice document.
+Use a tabular or clearly delineated list format for line items.
+
+{{role "user"}}
+Create an example customer invoice for a customer named {{customerName}}.
+</pre> <ul> <li><p>The top section within the triple-dashes contains the model name as well as optionally any model configuration, input validation, or schema you want to send in the request. It's written as key-value pairs and is commonly called YAML <em>frontmatter</em>.</p></li> <li><p>The body of the template contains the prompt. It can also optionally include system instructions and input values (using <a href="https://handlebarsjs.com/guide/" class="external">Handlebars</a> syntax).</p></li> </ul> <aside class="special"><strong>Important:</strong><span> Make sure to review the list of <a href="best-practices-and-considerations">not-yet-supported features</a> for the initial release of server prompt templates.</span></aside> <p><br></p> <p>This page provides detailed descriptions of the template format and syntax, along with examples, for the following:</p> <ul> <li><p><a href="#gemini-hello-world">Hello world</a></p></li> <li><p><a href="#gemini-model-config">Model configuration</a></p></li> <li><p><a href="#gemini-thinking">Thinking configuration</a></p></li> <li><p><a href="#gemini-safety-settings">Safety settings</a></p></li> <li><p><a href="#gemini-system-instructions">System instructions</a></p></li> <li><p><a href="#gemini-input-variables">Input variables</a></p></li> <li><p><a href="#gemini-control-flows">Control flows (loops &amp; conditionals)</a></p></li> <li><p><a href="#gemini-input-validation-and-schema">Input validation and schema</a></p></li> <li><p><a href="#gemini-output-schema">Output schema</a></p></li> <li><p><a href="#gemini-multimodal-input">Multimodal input (images, videos, audio, PDFs, etc.)</a></p></li> <li><p><a href="#tools">Tool use (function calling, code execution, URL context, Grounding with <nobr>Google Search</nobr>, Grounding with <nobr>Google Maps</nobr>)</a></p></li> </ul> <p>All the examples on this page show templates that use <code translate="no" dir="ltr">gemini-3.8-flash</code>, but you can use any <span class='\"notranslate\"'>Gemini</span> model supported by <span class='\"notranslate\"'>Firebase AI Logic</span> (except for Gemini Live API models).</p> <h2 id="gemini-hello-world">Hello world</h2> <p>Here's a minimal example of a server prompt template:</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Write a story about a magic backpack.
+</pre> <p><br></p> <hr> <h2 id="gemini-control-response-generation">Control generation of responses</h2> <p>You can control the generation of responses in a variety of ways depending on your use case and the level of control that you need.</p> <h3 id="gemini-model-config">Model configuration</h3> <p>Set a <a href="../model-parameters">model configuration</a> to control how the model generates a response, like max output tokens, stop sequences, etc.</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+config:
+  maxOutputTokens: 200
+  stopSequences: ["red"]
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Write a story about a magic backpack.
+</pre> <p><br></p> <h3 id="gemini-thinking">Thinking configuration</h3> <p>Specify a <a href="../thinking">thinking-related configuration</a> for models that support thinking.</p> <aside class="note"><strong>Note:</strong><span> The <span class='\"notranslate\"'>Gemini 2.5</span> models use <em>thinking budget</em> instead of <em>thinking level</em>, and the <span class='\"notranslate\"'>Gemini 3.x</span> models support <em>thinking budget</em> for backwards-compatibility. However, the <span class='\"notranslate\"'>Gemini 4.x</span> models do <em><strong>not</strong></em> support <em>thinking budget</em> (and will return a 400 error if it's set). Also, if you set both <code translate="no" dir="ltr">thinkingLevel</code> and <code translate="no" dir="ltr">thinkingBudget</code> in the same config, the request returns an error.</span></aside> <p><strong>Configuration (frontmatter)</strong></p> <ul> <li>
+<p><span class='\"notranslate\"'>Gemini 3.x</span> and later models (thinking levels)</p> 
+<pre>---
+model: 'gemini-3.8-flash'
+config:
+  thinkingConfig:
+    thinkingLevel: medium
+    includeThoughts: true
+---
+</pre>
+</li> <li>
+<p><span class='\"notranslate\"'>Gemini 2.5</span> models (thinking budgets)</p> 
+<pre>---
+model: 'gemini-2.5-flash'
+config:
+  thinkingConfig:
+    thinkingBudget: 1024
+    includeThoughts: true
+---
+</pre>
+</li> </ul> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Solve x^2 + 4x + 4 = 0
+</pre> <p><br></p> <h3 id="gemini-safety-settings">Safety settings</h3> <p>Use <a href="../safety-settings">safety settings</a> to adjust the likelihood of getting responses that may be considered harmful.</p> <p><strong>Configuration (frontmatter)</strong></p> <p>Example with one safety setting:</p> 
+<pre>---
+model: 'gemini-3.8-flash'
+config:
+  safetySettings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_ONLY_HIGH
+---
+</pre> <p>Example with multiple safety settings:</p> 
+<pre>---
+model: 'gemini-3.8-flash'
+config:
+  safetySettings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_ONLY_HIGH
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_MEDIUM_AND_ABOVE
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Write a story about a magic backpack.
+</pre> <p><br></p> <h3 id="gemini-system-instructions">System instructions</h3> <p>Set <a href="../system-instructions">system instructions</a> to steer the behavior of the model. You include them as part of the prompt:</p> <ul> <li><p>Specify the system instructions using the <code translate="no" dir="ltr">{{role "system"}}</code> syntax.</p></li> <li><p>Specify the text prompt using the <code translate="no" dir="ltr">{{role "user"}}</code> syntax.</p></li> </ul> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>{{role "system"}}
+All output must be a clearly structured invoice document.
+Use a tabular or clearly delineated list format for line items.
+
+{{role "user"}}
+Create an example customer invoice for a customer.
+</pre> <p><br></p> <hr> <h2 id="gemini-input-variables">Input variables</h2> <p>Some prompts are static, but you often need to include some data from the user as part of the prompt.</p> <p>You can include dynamic input variables in the prompt using <a href="https://handlebarsjs.com/guide/" class="external">Handlebars</a> expressions, which are contained within <code translate="no" dir="ltr">{{ }}</code> tags in the format of <code translate="no" dir="ltr">{{variableName}}</code> or <code translate="no" dir="ltr">{{object.propertyName}}</code> (for example, <code translate="no" dir="ltr">Hello, {{name}} from {{address.city}}</code>).</p> <aside class="special"><strong>Important:</strong><span> Always provide <a href="#gemini-input-validation-and-schema">input validation</a> to ensure that the data passed in the request matches your expectations. Note that if you use an input variable in your prompt and you provide input validation schema, then that value is considered required (unless you denote it as optional in the schema).</span></aside> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Create an example customer invoice for a customer named {{customerName}}.
+</pre> <p>You can provide a <a href="#gemini-input-validation-and-schema">default value</a> in the template, but the value of an input variable is usually provided by the client as part of the request.</p> <p><section class="expandable" id="gemini-input-variables"> <p class="showalways" id="gemini-input-variables">View client-side request that provides input values</p></section></p> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+let model = FirebaseAI.firebaseAI(backend: .googleAI()).templateGenerativeModel()
+
+let customerName = "Jane"
+
+do {
+    let response = try await model.generateContent(
+        // Specify your template ID
+        templateID: "my-first-template-v1-0-0",
+        // Provide the values for any input variables required by your template.
+        inputs: [
+            "customerName": customerName
+        ]
+    )
+    if let text = response.text {
+        print("Response Text: \(text)")
+    }
+} catch {
+    print("An error occurred: \(error)")
+}
+print("\n")
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).templateGenerativeModel()
+
+val customerName = "Jane"
+
+val response = model.generateContent(
+    // Specify your template ID.
+    "my-first-template-v1-0-0",
+    // Provide the values for any input variables required by your template.
+    mapOf(
+        "customerName" to customerName
+    )
+)
+
+val text = response.text
+println(text)
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+TemplateGenerativeModel generativeModel = FirebaseAI.getInstance().templateGenerativeModel();
+
+TemplateGenerativeModelFutures model = TemplateGenerativeModelFutures.from(generativeModel);
+
+String customerName = "Jane";
+
+Future response = model.generateContent(
+    // Specify your template ID
+    "my-first-template-v1-0-0",
+    // Provide the values for any input variables required by your template.
+    mapOf("customerName", customerName)
+);
+addCallback(response,
+       new FutureCallback() {
+           public void onSuccess(GenerateContentResponse result) {
+             System.out.println(result.getText());
+           }
+           public void onFailure(Throwable t) {
+             reportError(t);
+           }
+    }
+executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+
+// Create a `TemplateGenerativeModel` instance.
+const model = getTemplateGenerativeModel(ai);
+
+const customerName = 'Jane';
+
+const result = await model.generateContent({
+  // Specify your template ID.
+  templateId: 'my-first-template-v1-0-0',
+  // Provide the values for any input variables required by your template.
+  templateVariables: {
+    customerName: customerName,
+  },
+});
+
+const response = result.response;
+const text = response.text();
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+var _model = FirebaseAI.googleAI().templateGenerativeModel();
+
+var customerName = 'Jane';
+
+var response = await _model.generateContent(
+        // Specify your template ID
+        'my-first-template-v1-0-0',
+        // Provide the values for any input variables required by your template.
+        inputs: {
+           'customerName': customerName,
+        },
+      );
+
+var text = response?.text;
+print(text);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+var firebaseAI = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `TemplateGenerativeModel` instance.
+var model = firebaseAI.GetTemplateGenerativeModel();
+
+var customerName = "Jane";
+
+try
+{
+   var response = await model.GenerateContentAsync(
+      // Specify your template ID.
+      "my-first-template-v1-0-0",
+      // Provide the values for any input variables required by your template.
+      new Dictionary&lt;string, object&gt; {
+         { "customerName", customerName },
+      }
+   );
+   Debug.Log($"Response Text: {response.Text}");
+}
+catch (Exception e) {
+  Debug.LogError($"An error occurred: {e.Message}");
+}
+
+</pre></section> </div>  <p><br></p> <hr> <h2 id="gemini-control-flows">Control flows (loops &amp; conditionals)</h2> <p>To write more complex prompts, you can use conditional blocks (like <code translate="no" dir="ltr">#if</code> , <code translate="no" dir="ltr">else</code>, and <code translate="no" dir="ltr">#unless</code>) and iteration (<code translate="no" dir="ltr">#each</code>).</p> <p>You can provide additional contextual information as variables with a special <code translate="no" dir="ltr">@</code> prefix:</p> <ul> <li>
+<code translate="no" dir="ltr">@first</code>: true when iterating the first item of an <code translate="no" dir="ltr">#each</code> block.</li> <li>
+<code translate="no" dir="ltr">@last</code>: true when iterating the last item of an <code translate="no" dir="ltr">#each</code> block.</li> <li>
+<code translate="no" dir="ltr">@index</code>: gives the (zero-based) index position of the current element.</li> </ul> <p>See the <a href="https://handlebarsjs.com/guide/builtin-helpers.html" class="external">Handlebars documentation</a> for information on all of the built-in logical helpers.</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Create an example customer invoice for a customer named {{customerName}}.
+
+Include entries for each of the following products
+
+{{#each productNames}}
+  {{#if @first}}
+  Include line items for the following purchases
+  {{/if}}
+  - {{this}}
+{{/each}}
+
+{{#if isVipCustomer}}
+Give the customer a 5% discount.
+{{/if}}
+</pre> <p>Note that conditionals only accept a variable reference, not any type of expression, for example:</p> <ul> <li>The following works: <code translate="no" dir="ltr">{{#if isVipCustomer}} ... {{/if}}</code>
+</li> <li>The following does <em>not</em> work: <code translate="no" dir="ltr">{{#if customer.type == 'vip'}} ... {{/if}}</code>
+</li> </ul> <p>If the variable is a boolean, then the conditional works as you would expect. If the variable is <em>not</em> a boolean then the conditional is effectively an "is-not-null" check. This can be useful for handling optional inputs, for example:</p> 
+<pre>{{#if customerName}}
+Hello {{customerName}}
+{{else}}
+Hello Guest
+{{/if}}
+</pre> <p><br></p> <hr> <h2 id="gemini-input-validation-and-schema">Input validation and schema</h2> <p>If you have data coming from the client, we strongly recommend using input schema to help protect against prompt injection as well as ensure that the data passed in the request matches your expectations.</p> <ul> <li><p>You can provide default values in case the client doesn't provide a value.</p></li> <li><p>The schema supports scalar types <code translate="no" dir="ltr">string</code>, <code translate="no" dir="ltr">integer</code>, <code translate="no" dir="ltr">number</code>, <code translate="no" dir="ltr">boolean</code>, and <code translate="no" dir="ltr">object</code>. Objects, arrays, and enums are denoted by a parenthetical after the field name.</p></li> <li><p>All properties are considered required unless you denote it as optional with <code translate="no" dir="ltr">?</code>. When a property is marked as optional, it's also made nullable to provide more leniency for LLMs to return null instead of omitting a field.</p></li> </ul> <aside class="note"><strong>Note:</strong><span> If you specify an input schema and the client fails to pass valid inputs with a request, then the request will be rejected with a 400 error.</span></aside> <p>Here's a <strong>basic example</strong> for providing input schema. You can find a more advanced schema just below.</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+input:
+  default:
+    isVipCustomer: false
+  schema:
+    customerName: string, the customers name  # string, number, and boolean types are defined like this
+    productNames?(array, list of products to include in the invoice): string  # optional fields are marked with a ?
+    isVipCustomer?: boolean, whether or not the customer is a VIP
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Create an example customer invoice for a customer named {{customerName}}.
+
+Include entries for each of the following products
+
+{{#each productNames}}
+  {{#if @first}}
+  Include line items for the following purchases
+  {{/if}}
+  - {{this}}
+{{/each}}
+
+{{#if isVipCustomer}}
+Give the customer a 5% discount.
+{{/if}}
+</pre> <p><section class="expandable" id="gemini-input-validation-and-schema-complex"> <p class="showalways" id="gemini-input-validation-and-schema-complex">View a more <strong>complex example</strong> for providing input schema</p></section></p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: gemini-3.8-flash
+input:
+  schema:
+    customer:
+      type: object
+      description: details about the customer
+      required: [lastName, address]
+      properties:
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        address:
+          type: object
+          description: customer's address
+          required: [street, city, country]
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            country:
+              type: string
+        isVip:
+          type: boolean
+          description: whether or not the customer is a VIP
+    purchases?:
+      type: array
+      description: list of things the customer purchased
+      items:
+        type: object
+        required: [itemName, sku, cost, quantity]
+        properties:
+          itemName:
+            type: string
+          sku:
+            type: string
+            minLength: 7
+            maxLength: 19
+            pattern: "^[0-9]{1,3}-[a-zA-Z]{3,10}-[0-9]{1,4}$"
+          category:
+            enum: ["ELECTRONICS", "APPAREL", "HOME", "MISC" ]
+          cost:
+            type: number
+            minimum: 0
+          quantity:
+            type: number
+            minimum: 1
+            maximum: 200
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Create an example customer invoice for a customer.
+
+The customer's address is
+
+{{customer.firstName}} {{customer.lastName}}
+{{customer.address.street}}
+{{customer.address.city}}
+{{customer.address.country}}
+
+{{#each purchases}}
+  {{#if @first}}
+  Include line items for the following purchaes
+  {{/if}}
+  - {{quantity}} x {{itemName}} ({{sku}}) @ ${{cost}}, category {{category}}
+{{/each}}
+
+{{#if customer.isVip}}
+Give the customer a 5% discount.
+{{/if}}
+</pre>  <p><br></p> <hr> <h2 id="gemini-output-schema">Output schema</h2> <p>If you want the model to generate <a href="../generate-structured-output">structured JSON output</a>, then you can specify an output schema. By specifying <code translate="no" dir="ltr">format: json</code>, you're constraining the model to always return a JSON response that follows the specified schema.</p> <ul> <li><p>The schema supports scalar types <code translate="no" dir="ltr">string</code>, <code translate="no" dir="ltr">integer</code>, <code translate="no" dir="ltr">number</code>, <code translate="no" dir="ltr">boolean</code>, and <code translate="no" dir="ltr">object</code>. Objects, arrays, and enums are denoted by a parenthetical after the field name.</p></li> <li><p>All properties are considered required unless you denote it as optional with <code translate="no" dir="ltr">?</code>. When a property is marked as optional, it's also made nullable to provide more leniency for LLMs to return null instead of omitting a field.</p></li> </ul> <aside class="note"><strong>Note:</strong><span> Server prompt templates do <em><strong>not</strong></em> yet support <a href="../generate-structured-output#generate-enum-basic">constraining the output to a list of enums</a>.</span></aside> <p>Here's a <strong>basic example</strong> for generating structured JSON output. You can find a more advanced schema just below.</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: gemini-3.8-flash
+output:
+  format: json
+  schema:
+    invoiceId: string
+    invoiceFile(object, an invoice file):
+      url?: string
+      contents: string
+      mimeType: string
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Create an example customer invoice.
+</pre> <p><section class="expandable" id="gemini-output-schema-complex"> <p class="showalways" id="gemini-output-schema-complex">View a more <strong>complex example</strong> for generating structured JSON output</p></section></p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: gemini-3.8-flash
+output:
+  format: json
+  schema:
+    title: string  # string, number, and boolean types are defined like this
+    subtitle?: string  # optional fields are marked with a ?
+    draft?: boolean, true when in draft state
+    status?(enum, approval status): [PENDING, APPROVED]
+    date: string, the date of publication for example '2024-04-09' # descriptions follow a comma
+    tags(array, relevant tags for article): string  # arrays are denoted via parentheses
+    authors(array):
+      name: string
+      email?: string
+    metadata?(object): # objects are also denoted via parentheses
+      updatedAt?: string, ISO timestamp of last update
+      approvedBy?: integer, id of approver
+    extra?: any, arbitrary extra data
+    (*): string, wildcard field
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Store all the specified information about the provided article.
+</pre>  <p><br></p> <hr> <h2 id="gemini-multimodal-input">Multimodal input</h2> <p>Multimodal prompts sent to a Gemini model can include multiple types of input, including <a href="../input-file-requirements">files</a> (like text along with images, PDFs, plain-text files, audio, and video).</p> <ul> <li><p>Provide a file using its URL with the <code translate="no" dir="ltr">{{media url}}</code> syntax.</p></li> <li><p>Provide an inline file with the <code translate="no" dir="ltr">{{media type="mime_type" data="contents"}}</code> syntax.</p></li> </ul> <p><section class="expandable" id="gemini-multimodal-input-testing-base64-data"> <p class="showalways" id="gemini-multimodal-input-testing-base64-data">View how to provide base64-encoded data to test your template in the console</p></section></p> <p>If your template has input that's base64-encoded data, here's how you can include it in the testing experience of the Firebase console:</p> 
+<pre>  {
+    "mimeType": "image/png",
+    "imageData": "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"
+  }
+</pre>  <h3 id="gemini-multimodal-input-basic">Basic example (multimodal input)</h3> <p>Here's a <strong>basic example</strong> for providing multimodal input. You can find a more complex example just below.</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Describe this image
+
+{{media type="mimeType" data="imageData"}}
+</pre> <h3 id="gemini-multimodal-input-complex">Complex example (multimodal input)</h3> <p>Here's a more <strong>complex example</strong> for providing multimodal input.</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: gemini-3.8-flash
+input:
+  schema:
+    image_urls?(array, urls of external images): string
+    inline_images?(array, inline image data):
+      type: object
+      properties:
+        mime_type: string
+        contents: string  # inline data must be base64-encoded
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>{{role "system"}}
+Use the following image as the basis for comparisons
+{{media url="http://example.com/reference_img.bmp"}}
+
+{{role "user"}}
+What do the following images have in common?
+
+{{#each image_urls}}
+  {{media url="this"}}
+{{/each}}
+
+{{#each inline_images}}
+  {{media type="mime_type" data="contents"}}
+{{/each}}
+</pre> <p><br></p> <hr> <h2 id="tools">Tool use</h2> <p>Server prompt templates support the following tools.</p> <ul> <li><p><a href="#function-calling">Function calling</a></p></li> <li><p><a href="#code-execution">Code execution</a></p></li> <li><p><a href="#url-context">URL context</a></p></li> <li><p><a href="#grounding-with-google-search">Grounding with <nobr>Google Search</nobr></a></p></li> <li><p><a href="#grounding-with-google-maps">Grounding with <nobr>Google Maps</nobr></a></p></li> </ul> <p>If you want your users to provide any additional information for the request to the model, then use <a href="#gemini-input-variables">input variables</a> within the server prompt template, along with <a href="#gemini-input-validation-and-schema">input validation</a>.</p> <aside class="special"><strong>Important:</strong><span> During initialization of the model in your client code, do <em><strong>not</strong></em> list the tools that the model has access to. Instead, tools must be listed in the <code translate="no" dir="ltr">tools</code> object of the template's frontmatter.</span></aside> <h3 id="function-calling">Function calling</h3> <p>See the complete guide for <a href="multi-turn-interactions#function-calling">function calling using server prompt templates</a>.</p> <h3 id="code-execution">Code execution</h3> <p>The <a href="../code-execution">code execution</a> tool enables the model to generate and run Python code.</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+tools:
+  - codeExecution
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>What is the sum of the first 50 prime numbers?
+Generate and run code for the calculation, and make sure you get all 50.
+</pre> <h3 id="url-context">URL context</h3> <p>The <a href="../url-context">URL context</a> tool lets you provide additional context to the model in the form of URLs. This example also shows how you might specify input validation for URLs if they're provided by the user.</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+input:
+  schema:
+    url1:
+      type: string
+      pattern: '^https?://[\w.-]+\.[a-z]{2,}\S*$'
+      maxLength: 100
+    url2:
+      type: string
+      pattern: '^https?://[\w.-]+\.[a-z]{2,}\S*$'
+      maxLength: 100
+tools:
+  - urlContext
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Compare the ingredients and cooking times from the recipes at {{url1}} and {{url2}}
+</pre> <h3 id="grounding-with-google-search">Grounding with <nobr>Google Search</nobr>
+</h3> <p>The <a href="../grounding-google-search">Grounding with <nobr>Google Search</nobr></a> tool connects the model to real-time, publicly-available web content.</p> <aside class="special"><strong>Important:</strong><span> If a response contains "<nobr>Google Search</nobr> suggestions" (the <code translate="no" dir="ltr">searchEntryPoint</code> field within the <code translate="no" dir="ltr">groundingMetadata</code> object), then that response is a "grounded result" so <strong>you're required to comply with the "Grounding with <nobr>Google Search</nobr>" usage requirements, which includes how you display the result</strong>. Learn how to <a href="../grounding-google-search#use-and-display-grounded-result">use and display a grounded result</a>.</span></aside> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+tools:
+  - googleSearch
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>Who won the Euro 2024?
+</pre> <h3 id="grounding-with-google-maps">Grounding with <nobr>Google Maps</nobr>
+</h3> <p>The <a href="../grounding-google-maps">Grounding with <nobr>Google Maps</nobr></a> tool provides the model with geospatial data for location-aware functionality.</p> <aside class="special"><strong>Important:</strong><span> If a response contains a <code translate="no" dir="ltr">groundingMetadata</code> object (meaning the response is a <em><nobr>Google Maps</nobr> Grounded Result</em>), you're required to comply with the Grounding with <nobr>Google Maps</nobr> usage requirements, which includes how you display the result. Learn how to <a href="../grounding-google-maps#service-usage-requirements">meet service usage requirements</a>.</span></aside> <p>To use the <code translate="no" dir="ltr">googleMaps</code> tool, list it in the <code translate="no" dir="ltr">tools</code> object of the template's frontmatter. The example below shows some additional <em>optional</em> configurations:</p> <ul> <li><p>Allow <a href="#gemini-input-variables">input variables</a> from the client-side code, and perform <a href="#gemini-input-validation-and-schema">input validation and schema</a> of that input (in this example, a <code translate="no" dir="ltr">question</code>).</p></li> <li><p>Configure the <code translate="no" dir="ltr">googleMaps</code> tool by providing a location's coordinates and/or a language code in your client-side code using a <code translate="no" dir="ltr">TemplateToolConfig</code>.</p></li> </ul> <p>Below the example template, find an <a href="#grounding-with-google-maps-templatetoolconfig">expandable</a> that shows client-side code samples for working with these optional configurations.</p> <p><strong>Configuration (frontmatter)</strong></p> 
+<pre>---
+model: 'gemini-3.8-flash'
+tools:
+  - googleMaps
+input:
+  schema:
+    question: string
+---
+</pre> <p><strong>Prompt and (as applicable) system instructions</strong></p> 
+<pre>{{role "system"}}
+You are a helpful tour guide. Use the Google Maps tool with the provided coordinates to answer the user's question based on their location.
+
+{{role "user"}}
+{{question}}
+</pre> <p><section class="expandable" id="grounding-with-google-maps-templatetoolconfig"> <p class="showalways" id="grounding-with-google-maps-templatetoolconfig">View client-side request that shows working with optional configurations of the <code translate="no" dir="ltr">googleMaps</code> tool when using a template</p></section></p> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import CoreLocation
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Example: Coordinates for New York City
+let latAndLong = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+
+// (Optional) Define a RetrievalConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+let retrievalConfig = RetrievalConfig(
+    location: latAndLong,
+    // Example: Language code for English (US)
+    languageCode: "en-US"
+)
+
+// Wrap the RetrievalConfig inside a TemplateToolConfig.
+let templateToolConfig = TemplateToolConfig(retrievalConfig: retrievalConfig)
+
+// Create a `TemplateGenerativeModel` instance.
+let model = ai.templateGenerativeModel(
+    // Pass the template-compatible tool configuration.
+    toolConfig: templateToolConfig
+)
+
+do {
+    // Generate content using your server template ID, inputs, and grounding configuration.
+    let response = try await model.generateContent(
+        // Specify a template ID that uses the Google Maps tool.
+        templateID: "TEMPLATE_ID",
+        // Provide the values for any input variables required by your template.
+        inputs: [
+            "question": "restaurants near me?"
+        ]
+    )
+
+    print(response.text ?? "No text in response.")
+} catch {
+    print("An error occurred: \(error)")
+}
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">
+// ...
+
+// (Optional) Define a RetrievalConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+val retrievalConfig = RetrievalConfig(
+    // Example: Coordinates for New York City
+    latLng = LatLng(latitude = 40.7128, longitude = -74.0060),
+    // Example: Language code for English (US)
+    languageCode = "en-US"
+)
+
+// Wrap the RetrievalConfig inside a TemplateToolConfig.
+val templateToolConfig = TemplateToolConfig(
+    retrievalConfig = retrievalConfig
+)
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).templateGenerativeModel(
+    // Pass the template-compatible tool configuration.
+    toolConfig = templateToolConfig
+)
+
+// Generate content using your server template ID, inputs, and grounding configuration.
+val response = model.generateContent(
+    // Specify a template ID that uses the Google Maps tool.
+    templateId = "TEMPLATE_ID",
+    // Provide the values for any input variables required by your template.
+    inputs = mapOf(
+        "question" to "restaurants near me?"
+    )
+)
+
+println(response.text)
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">
+// ...
+
+// (Optional) Define a TemplateToolConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+TemplateToolConfig templateToolConfig = new TemplateToolConfig(
+    new RetrievalConfig(
+        // Example: Coordinates for New York City.
+        new LatLng(40.7128, -74.0060),
+        // Example: Language code for English (US)
+        "en-US"
+    )
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+TemplateGenerativeModel generativeModel = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+        .templateGenerativeModel(
+            new RequestOptions(),
+            List.of(TemplateTool.googleMaps()),
+            // Pass the template-compatible tool configuration.
+            templateToolConfig
+        );
+
+TemplateGenerativeModelFutures model = TemplateGenerativeModelFutures.from(generativeModel);
+
+// Generate content using your server template ID, inputs, and grounding configuration.
+ListenableFuture response = model.generateContent(
+        // Specify a template ID that uses the Google Maps tool.
+        "TEMPLATE_ID",
+        // Provide the values for any input variables required by your template.
+        Map.of("question", "restaurants near me?")
+);
+
+Futures.addCallback(response, new FutureCallback() {
+    @Override
+    public void onSuccess(GenerateContentResponse result) {
+        String resultText = result.getText();
+        System.out.println(resultText);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(app, { backend: new GoogleAIBackend() });
+
+// Create a `TemplateGenerativeModel` instance.
+const model = getTemplateGenerativeModel(ai);
+
+// (Optional) Define a templateToolConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+const templateToolConfig = {
+  retrievalConfig: {
+    // Example: Coordinates for New York City
+    latLng: {
+      latitude: 40.7128,
+      longitude: -74.0060
+    },
+    // Example: Language code for English (US)
+    languageCode: 'en-US'
+  }
+};
+
+// Generate content using your server template ID, inputs, and grounding configuration.
+const result = await model.generateContent({
+  // Specify a template ID that uses the Google Maps tool.
+  templateId: 'TEMPLATE_ID',
+  // Provide the values for any input variables required by your template.
+  templateVariables: {
+    question: 'restaurants near me?',
+  },
+  // Pass the template-compatible tool configuration.
+  toolConfig: templateToolConfig,
+});
+
+const response = result.response;
+const text = response.text();
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+// Create a `TemplateGenerativeModel` instance.
+final model = FirebaseAI.googleAI().templateGenerativeModel();
+
+// (Optional) Define a TemplateToolConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+final templateToolConfig = TemplateToolConfig(
+  retrievalConfig: RetrievalConfig(
+    // Example: Coordinates for New York City
+    latLng: LatLng(latitude: 40.712728, longitude: -74.006015),
+    // Example: Language code for English (US)
+    languageCode: 'en',
+  ),
+);
+
+// Generate content using your server template ID, inputs, and grounding configuration.
+final response = await model.generateContent(
+  // Specify a template ID that uses the Google Maps tool.
+  'TEMPLATE_ID',
+  // Provide the values for any input variables required by your template
+  inputs: {
+    'question': 'restaurants near me?',
+  },
+  // Pass the template-compatible tool configuration
+  toolConfig: templateToolConfig,
+);
+
+print(response?.text);
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `TemplateGenerativeModel` instance.
+var model = ai.GetTemplateGenerativeModel();
+
+// Example: Coordinates for New York City
+var latLng = new LatLng(40.7128, -74.0060);
+
+// (Optional) Define a RetrievalConfig to configure the Grounding with Google Maps tool.
+// You can optionally provide a location's coordinates and/or a language code
+// for more relevant and personalized Google Maps results.
+var retrievalConfig = new RetrievalConfig(latLng, languageCode: "en");
+
+// Wrap the RetrievalConfig inside a TemplateToolConfig.
+var templateToolConfig = new TemplateToolConfig(retrievalConfig: retrievalConfig);
+
+try
+{
+  // Generate content using the server template ID, inputs, and grounding configuration.
+  var response = await model.GenerateContentAsync(
+      // Specify a template ID that uses the Google Maps tool.
+      "TEMPLATE_ID",
+      // Provide the values for any input variables required by your template.
+      new Dictionary&lt;string, object&gt; {
+        { "question", "restaurants near me?" }
+      },
+      // Pass the template-compatible tool configuration.
+      toolConfig: templateToolConfig
+  );
+
+  Debug.Log($"Response Text: {response.Text}");
+}
+catch (Exception e)
+{
+  Debug.LogError($"An error occurred: {e.Message}");
+}
+
+// Make sure to comply with the "Grounding with Google Maps" usage requirements
+
+</pre></section> </div> <div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/server-prompt-templates/syntax-and-examples" class="_attribution-link">https://firebase.google.com/docs/ai-logic/server-prompt-templates/syntax-and-examples</a>
+  </p>
+</div>

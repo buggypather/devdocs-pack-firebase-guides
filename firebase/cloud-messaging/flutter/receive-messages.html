@@ -1,0 +1,364 @@
+<h1>Receive messages in Flutter apps</h1>     <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/receive-messages">iOS+</a> <a class="button" href="../android/receive-messages">Android</a> <a class="button" href="../web/receive-messages">Web</a> <a class="button button-primary" href="receive-messages">Flutter</a> <a class="button" href="../unity/receive-messages">Unity</a> <a class="button" href="../cpp/receive-messages">C++</a> </td> </tr> </table> <p><br></p> <p>Depending on a device's state, incoming messages are handled differently. To understand these scenarios and how to integrate FCM into your own application, it is first important to establish the various states a device can be in:</p> <table> <thead> <tr> <th>State</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><strong>Foreground</strong></td> <td>When the application is open, in view and in use.</td> </tr> <tr> <td>
+<strong>Background</strong> </td> <td>When the application is open, but in the background (minimized). This typically occurs when the user has pressed the "home" button on the device, has switched to another app using the app switcher, or has the application open in a different tab (web).</td> </tr> <tr> <td><strong>Terminated</strong></td> <td>When the device is locked or the application is not running.</td> </tr> </tbody> </table> <p>There are a few preconditions which must be met before the application can receive message payloads using FCM:</p> <ul> <li>The application must have opened at least once (to allow for registration with FCM).</li> <li>On iOS, if the user swipes away the application from the app switcher, it must be manually reopened for background messages to start working again.</li> <li>On Android, if the user force-quits the app from device settings, it must be manually reopened for messages to start working.</li> <li>On web, you must have requested a token (using <code translate="no" dir="ltr">getToken()</code>) with your web push certificate.</li> </ul> <h2 id="permissions">Request permission to receive messages</h2> <p>On iOS, macOS, web and Android 13 (or newer), before FCM payloads can be received on your device, you must first ask the user's permission.</p> <p>The <code translate="no" dir="ltr">firebase_messaging</code> package provides an API for requesting permission using the <a href="https://pub.dev/documentation/firebase_messaging/latest/firebase_messaging/FirebaseMessaging/requestPermission.html"><code translate="no" dir="ltr">requestPermission</code></a> method. This API accepts a number of named arguments which define the type of permissions you'd like to request, such as whether messaging containing notification payloads can trigger a sound or read out messages using Siri. By default, the method requests sensible default permissions. The reference API provides full documentation on what each permission is for.</p> <p>To get started, call the method from your application (on iOS a built-in modal will be displayed, on web the browser's API flow will be triggered):</p> 
+<pre>FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+NotificationSettings settings = await messaging.requestPermission(
+  alert: true,
+  announcement: false,
+  badge: true,
+  carPlay: false,
+  criticalAlert: false,
+  provisional: false,
+  sound: true,
+);
+
+print('User granted permission: ${settings.authorizationStatus}');
+</pre> <p>The <code translate="no" dir="ltr">authorizationStatus</code> property of the <code translate="no" dir="ltr">NotificationSettings</code> object returned from the request can be used to determine the user's overall decision:</p> <ul> <li>
+<code translate="no" dir="ltr">authorized</code>: The user granted permission.</li> <li>
+<code translate="no" dir="ltr">denied</code>: The user denied permission.</li> <li>
+<code translate="no" dir="ltr">notDetermined</code>: The user has not yet chosen whether to grant permission.</li> <li>
+<code translate="no" dir="ltr">provisional</code>: The user granted provisional permission</li> </ul> <aside class="note"><strong>Note:</strong><span> On Android versions prior to 13, <code translate="no" dir="ltr">authorizationStatus</code> returns <code translate="no" dir="ltr">authorized</code> if the user has not disabled notifications for the app in the operating system settings. On Android versions 13 and higher, there is no way to determine if the user has chosen whether to grant/deny permission. A <code translate="no" dir="ltr">denied</code> value conveys an undetermined or denied permission state, and it will be up to you to track if a permission request has been made.</span></aside> <p>The other properties on <code translate="no" dir="ltr">NotificationSettings</code> return whether a specific permission is enabled, disabled or not supported on the current device.</p> <p>Once permission has been granted and the different types of device state have been understood, your application can now start to handle the incoming FCM payloads.</p> <h2 id="message-handling">Message handling</h2> <p>Based on your application's current state, incoming payloads of different <a href="../customize-messages/set-message-type">message types</a> require different implementations to handle them:</p> <h3 id="foreground-messages">Foreground messages</h3> <p>To handle messages while your application is in the foreground, listen to the <code translate="no" dir="ltr">onMessage</code> stream.</p> 
+<pre>FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+  print('Got a message whilst in the foreground!');
+  print('Message data: ${message.data}');
+
+  if (message.notification != null) {
+    print('Message also contained a notification: ${message.notification}');
+  }
+});
+</pre> <p>The stream contains a <code translate="no" dir="ltr">RemoteMessage</code>, detailing various information about the payload, such as where it was from, the unique ID, sent time, whether it contained a notification and more. Since the message was retrieved whilst your application is in the foreground, you can directly access your Flutter application's state and context.</p> <h4 id="foreground-and-notification-messages">Foreground and Notification messages</h4> <p>Notification messages which arrive while the application is in the foreground won't display a visible notification by default, on both Android and iOS. It is, however, possible to override this behavior:</p> <ul> <li>On Android, you must create a "High Priority" notification channel.</li> <li>On iOS, you can update the presentation options for the application.</li> </ul> <h3 id="background-messages">Background messages</h3> <p>The process of handling background messages is different on Android, Apple, and web based platforms.</p> <h4 id="apple-android-platforms">Apple platforms and Android</h4> <p>Handle background messages by registering a <code translate="no" dir="ltr">onBackgroundMessage</code> handler. When messages are received, an isolate is spawned (Android only, iOS/macOS does not require a separate isolate) allowing you to handle messages even when your application is not running.</p> <p>There are a few things to keep in mind about your background message handler:</p> <ol> <li>It must not be an anonymous function.</li> <li>It must be a top-level function (e.g. not a class method which requires initialization).</li> <li>When using Flutter version 3.3.0 or higher, the message handler must be annotated with <code translate="no" dir="ltr">@pragma('vm:entry-point')</code> right above the function declaration (otherwise it may be removed during tree shaking for release mode).</li> </ol> 
+<pre>@pragma('vm:entry-point')
+Future&lt;void&gt; _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // If you're going to use other Firebase services in the background, such as Firestore,
+  // make sure you call `initializeApp` before using other Firebase services.
+  await Firebase.initializeApp();
+
+  print("Handling a background message: ${message.messageId}");
+}
+
+void main() {
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  runApp(MyApp());
+}
+</pre> <p>Since the handler runs in its own isolate outside your applications context, it is not possible to update application state or execute any UI impacting logic. You can, however, perform logic such as HTTP requests, perform IO operations (e.g. updating local storage), communicate with other plugins etc.</p> <p>It is also recommended to complete your logic as soon as possible. Running long, intensive tasks impacts device performance and may cause the OS to terminate the process. If tasks run for longer than 30 seconds, the device may automatically kill the process.</p> <h4 id="web">Web</h4> <p>On the Web, write a JavaScript <a href="https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API">Service Worker</a> which runs in the background. Use the service worker to handle background messages.</p> <p>To get started, create a new file in the your <code translate="no" dir="ltr">web</code> directory, and call it <code translate="no" dir="ltr">firebase-messaging-sw.js</code>:</p> 
+<pre>// See this file for the latest firebase-js-sdk version:
+// https://github.com/firebase/flutterfire/blob/main/packages/firebase_core/firebase_core_web/lib/src/firebase_sdk_version.dart
+importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js");
+
+firebase.initializeApp({
+  apiKey: "...",
+  authDomain: "...",
+  databaseURL: "...",
+  projectId: "...",
+  storageBucket: "...",
+  messagingSenderId: "...",
+  appId: "...",
+});
+
+const messaging = firebase.messaging();
+
+// Optional:
+messaging.onBackgroundMessage((message) =&gt; {
+  console.log("onBackgroundMessage", message);
+});
+</pre> <p>The file must import both the app and messaging SDKs, initialize Firebase and expose the <code translate="no" dir="ltr">messaging</code> variable.</p> <p>Next, the worker must be registered. Within the <code translate="no" dir="ltr">index.html</code> file, register the worker by modifying the <code translate="no" dir="ltr">&lt;script&gt;</code> tag which bootstraps Flutter:</p> 
+<pre>&lt;script src="flutter_bootstrap.js" async&gt;
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('firebase-messaging-sw.js', {
+        scope: '/firebase-cloud-messaging-push-scope',
+      });
+    });
+  }
+&lt;/script&gt;
+</pre> <p>If you are still using the old templating system, you can register the worker by modifying the <code translate="no" dir="ltr">&lt;script&gt;</code> tag which bootstraps Flutter as follows:</p> 
+<pre>&lt;html&gt;
+&lt;body&gt;
+  &lt;script&gt;
+      var serviceWorkerVersion = null;
+      var scriptLoaded = false;
+      function loadMainDartJs() {
+        if (scriptLoaded) {
+          return;
+        }
+        scriptLoaded = true;
+        var scriptTag = document.createElement('script');
+        scriptTag.src = 'main.dart.js';
+        scriptTag.type = 'application/javascript';
+        document.body.append(scriptTag);
+      }
+
+      if ('serviceWorker' in navigator) {
+        // Service workers are supported. Use them.
+        window.addEventListener('load', function () {
+          // Register Firebase Messaging service worker.
+          navigator.serviceWorker.register('firebase-messaging-sw.js', {
+            scope: '/firebase-cloud-messaging-push-scope',
+          });
+
+          // Wait for registration to finish before dropping the &lt;script&gt; tag.
+          // Otherwise, the browser will load the script multiple times,
+          // potentially different versions.
+          var serviceWorkerUrl =
+            'flutter_service_worker.js?v=' + serviceWorkerVersion;
+
+          navigator.serviceWorker.register(serviceWorkerUrl).then((reg) =&gt; {
+            function waitForActivation(serviceWorker) {
+              serviceWorker.addEventListener('statechange', () =&gt; {
+                if (serviceWorker.state == 'activated') {
+                  console.log('Installed new service worker.');
+                  loadMainDartJs();
+                }
+              });
+            }
+            if (!reg.active &amp;&amp; (reg.installing || reg.waiting)) {
+              // No active web worker and we have installed or are installing
+              // one for the first time. Simply wait for it to activate.
+              waitForActivation(reg.installing ?? reg.waiting);
+            } else if (!reg.active.scriptURL.endsWith(serviceWorkerVersion)) {
+              // When the app updates the serviceWorkerVersion changes, so we
+              // need to ask the service worker to update.
+              console.log('New service worker available.');
+              reg.update();
+              waitForActivation(reg.installing);
+            } else {
+              // Existing service worker is still good.
+              console.log('Loading app from service worker.');
+              loadMainDartJs();
+            }
+          });
+
+          // If service worker doesn't succeed in a reasonable amount of time,
+          // fallback to plaint &lt;script&gt; tag.
+          setTimeout(() =&gt; {
+            if (!scriptLoaded) {
+              console.warn(
+                'Failed to load app from service worker. Falling back to plain &lt;script&gt; tag.'
+              );
+              loadMainDartJs();
+            }
+          }, 4000);
+        });
+      } else {
+        // Service workers not supported. Just drop the &lt;script&gt; tag.
+        loadMainDartJs();
+      }
+  &lt;/script&gt;
+&lt;/body&gt;
+</pre> <p>Next restart your Flutter application. The worker will be registered and any background messages will be handled using this file.</p> <h3 id="handling-interaction">Handling Interaction</h3> <p>Since notifications are a visible cue, it is common for users to interact with them (by pressing). The default behavior on both Android and iOS is to open the application. If the application is terminated it will be started; if it is in the background it will be brought to the foreground.</p> <p>Depending on the content of a notification, you might want to handle the user's interaction when the application opens. For example, if a new chat message is sent using a notification and the user presses it, you may want to open the specific conversation when the application opens.</p> <p>The <code translate="no" dir="ltr">firebase-messaging</code> package provides two ways to handle this interaction:</p> <ul> <li>
+<code translate="no" dir="ltr">getInitialMessage()</code>: If the application is opened from a terminated state a <code translate="no" dir="ltr">Future</code> containing a <code translate="no" dir="ltr">RemoteMessage</code> will be returned. Once consumed, the <code translate="no" dir="ltr">RemoteMessage</code> will be removed.</li> <li>
+<code translate="no" dir="ltr">onMessageOpenedApp</code>: A <code translate="no" dir="ltr">Stream</code> which posts a <code translate="no" dir="ltr">RemoteMessage</code> when the application is opened from a background state.</li> </ul> <p>It is recommended that both scenarios are handled to ensure a smooth UX for your users. The following code example outlines how this can be achieved:</p> 
+<pre>class Application extends StatefulWidget {
+  @override
+  State&lt;StatefulWidget&gt; createState() =&gt; _Application();
+}
+
+class _Application extends State&lt;Application&gt; {
+  // It is assumed that all messages contain a data field with the key 'type'
+  Future&lt;void&gt; setupInteractedMessage() async {
+    // Get any messages which caused the application to open from
+    // a terminated state.
+    RemoteMessage? initialMessage =
+        await FirebaseMessaging.instance.getInitialMessage();
+
+    // If the message also contains a data property with a "type" of "chat",
+    // navigate to a chat screen
+    if (initialMessage != null) {
+      _handleMessage(initialMessage);
+    }
+
+    // Also handle any interaction when the app is in the background using a
+    // Stream listener
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+  }
+
+  void _handleMessage(RemoteMessage message) {
+    if (message.data['type'] == 'chat') {
+      Navigator.pushNamed(context, '/chat',
+        arguments: ChatArguments(message),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Run code required to handle interacted messages in an async function
+    // as initState() must not be async
+    setupInteractedMessage();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text("...");
+  }
+}
+</pre> <p>How you handle interaction depends on your application setup. The previous example shows a basic illustration using a StatefulWidget.</p> <h2 id="localize-messages">Localize Messages</h2> <p>You can send localized strings in two different ways:</p> <ul> <li>Store the preferred language of each of your users in your server and send customized notifications for each language</li> <li>Embed localized strings in your app and make use of the operating system's built-in locale settings</li> </ul> <p>Here's how to use the second method:</p> <h3 id="android">Android</h3> <ol> <li>
+<p>Specify your default-language messages in <code translate="no" dir="ltr">resources/values/strings.xml</code>:</p> 
+<pre>&lt;string name="notification_title"&gt;Hello world&lt;/string&gt;
+&lt;string name="notification_message"&gt;This is a message&lt;/string&gt;
+</pre>
+</li> <li>
+<p>Specify the translated messages in the <code translate="no" dir="ltr">values-<var translate="no">language</var></code> directory. For example, specify French messages in <code translate="no" dir="ltr">resources/values-fr/strings.xml</code>:</p> 
+<pre>&lt;string name="notification_title"&gt;Bonjour le monde&lt;/string&gt;
+&lt;string name="notification_message"&gt;C'est un message&lt;/string&gt;
+</pre>
+</li> <li>
+<p>In the server payload, instead of using <code translate="no" dir="ltr">title</code>, <code translate="no" dir="ltr">message</code>, and <code translate="no" dir="ltr">body</code> keys, use <code translate="no" dir="ltr">title_loc_key</code> and <code translate="no" dir="ltr">body_loc_key</code> for your localized message, and set them to the <code translate="no" dir="ltr">name</code> attribute of the message you want to display.</p> <p>The message payload would look like this:</p> 
+<pre>{
+  "android": {
+     "notification": {
+       "title_loc_key": "notification_title",
+       "body_loc_key": "notification_message"
+     }
+  }
+}
+</pre>
+</li> </ol> <h3 id="ios">iOS</h3> <ol> <li>
+<p>Specify your default-language messages in <code translate="no" dir="ltr">Base.lproj/Localizable.strings</code>:</p> 
+<pre>"NOTIFICATION_TITLE" = "Hello World";
+"NOTIFICATION_MESSAGE" = "This is a message";
+</pre>
+</li> <li>
+<p>Specify the translated messages in the <code translate="no" dir="ltr"><var translate="no">language</var>.lproj</code> directory. For example, specify French messages in <code translate="no" dir="ltr">fr.lproj/Localizable.strings</code>:</p> 
+<pre>"NOTIFICATION_TITLE" = "Bonjour le monde";
+"NOTIFICATION_MESSAGE" = "C'est un message";
+</pre> <p>The message payload would look like this:</p> 
+<pre>{
+  "apns": {
+     "payload": {
+       "alert": {
+         "title-loc-key": "NOTIFICATION_TITLE",
+         "loc-key": "NOTIFICATION_MESSAGE"
+       }
+     }
+  }
+}
+</pre>
+</li> </ol> <h2 id="enable-message-delivery">Enable message delivery data export</h2> <p>You can export your message data into BigQuery for further analysis. BigQuery lets you analyze the data using BigQuery SQL, export it to another cloud provider, or use the data for your custom ML models. An export to BigQuery includes all available data for messages, regardless of message type or whether the message is sent using the API or the Notifications composer.</p> <p>To enable the export, first follow the steps in the <a href="../understand-delivery">BigQuery data export</a> document. Programmatically enabling it at the <em>app instance level</em> lets you to ask end users for permission to analyze their message delivery data (recommended). Follow these instructions to programmatically enable the export:</p> <h3 id="android-2">Android</h3> <p>You can use the following code:</p> 
+<pre>await FirebaseMessaging.instance.setDeliveryMetricsExportToBigQuery(true);
+</pre> <h3 id="ios-2">iOS</h3> <p>For iOS, you need to change the <code translate="no" dir="ltr">AppDelegate.m</code> with the following content.</p> 
+<pre>#import "AppDelegate.h"
+#import "GeneratedPluginRegistrant.h"
+#import &lt;Firebase/Firebase.h&gt;
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application
+    didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+  [GeneratedPluginRegistrant registerWithRegistry:self];
+  // Override point for customization after application launch.
+  return [super application:application didFinishLaunchingWithOptions:launchOptions];
+}
+
+- (void)application:(UIApplication *)application
+    didReceiveRemoteNotification:(NSDictionary *)userInfo
+          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
+  [[FIRMessaging extensionHelper] exportDeliveryMetricsToBigQueryWithMessageInfo:userInfo];
+}
+
+@end
+</pre> <h3 id="web-2">Web</h3> <p>For Web, you need to change your service worker in order to use the v9 version of the SDK. The v9 version needs to be bundled, so you need to use a bundler like <code translate="no" dir="ltr">esbuild</code> to get the service worker to work. See <a href="https://github.com/firebase/flutterfire/blob/main/packages/firebase_messaging/firebase_messaging/example/bundled-service-worker">the example app</a> to see how to achieve this.</p> <p>Once you've migrated to the v9 SDK, you can use the following code:</p> 
+<pre>import {
+  experimentalSetDeliveryMetricsExportedToBigQueryEnabled,
+  getMessaging,
+} from 'firebase/messaging/sw';
+...
+
+const messaging = getMessaging(app);
+experimentalSetDeliveryMetricsExportedToBigQueryEnabled(messaging, true);
+</pre> <p>Don't forget to run <code translate="no" dir="ltr">yarn build</code> in order to export the new version of your service worker to the <code translate="no" dir="ltr">web</code> folder.</p> <h2 id="display-images">Display images in notifications on iOS</h2> <p>On Apple devices, in order for incoming FCM Notifications to display images from the FCM payload, you must add an additional notification service extension and configure your app to use it.</p> <p>If you are using Firebase phone authentication, you must add the Firebase Auth pod to your Podfile.</p> <aside class="note"><strong>Note:</strong><span> The iOS simulator does not display images in push notifications. You must test on a physical device.</span></aside> <h3 id="step-1-add-notification-service-extension">Step 1 - Add a notification service extension</h3> <ol> <li>In Xcode, click <strong>File &gt; New &gt; Target...</strong>
+</li> <li>A modal will present a list of possible targets; scroll to or use the filter to select <strong>Notification Service Extension</strong>. Click <strong>Next</strong>.</li> <li>Add a product name (use "ImageNotification" to follow along with this tutorial), select either <code translate="no" dir="ltr">Swift</code> or <code translate="no" dir="ltr">Objective-C</code>, and click <strong>Finish</strong>.</li> <li>Enable the scheme by clicking <strong>Activate</strong>.</li> </ol> <h3 id="step-2-add-target-podfile">Step 2 - Add target to the Podfile</h3> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Ensure that your new extension has access to the <code translate="no" dir="ltr">FirebaseMessaging</code> swift package by adding it to your <code translate="no" dir="ltr">Runner</code> target:</p> <ol> <li><p>From the Navigator, <a href="../../ios/setup#add-sdks">add the Firebase Apple platforms SDK</a>: <strong>File &gt; Add Package Dependencies...</strong></p></li> <li><p>Search or enter package URL: <code translate="no" dir="ltr">none
+https://github.com/firebase/firebase-ios-sdk</code></p></li> <li><p>Add to Project <code translate="no" dir="ltr">Runner</code>: <strong>Add Package</strong></p></li> <li><p>Choose FirebaseMessaging and add to target ImageNotification: <strong>Add Package</strong></p></li> </ol></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+<p>Ensure that your new extension has access to the <code translate="no" dir="ltr">Firebase/Messaging</code> pod by adding it in the Podfile:</p> <ol> <li><p>From the Navigator, open the Podfile: <strong>Pods &gt; Podfile</strong></p></li> <li>
+<p>Go to the bottom of the file and add:</p> 
+<pre data-language="objectivec">target 'ImageNotification' do
+  use_frameworks!
+  pod 'Firebase/Auth' # Add this line if you are using FirebaseAuth phone authentication
+  pod 'Firebase/Messaging'
+end
+</pre>
+</li> <li><p>Install or update your pods using <code translate="no" dir="ltr">pod install</code> from the <code translate="no" dir="ltr">ios</code> or <code translate="no" dir="ltr">macos</code> directory.</p></li> </ol></section> </div> <h3 id="step-3-ext-helper">Step 3 - Use the extension helper</h3> <p>At this point, everything should still be running normally. The final step is invoking the extension helper.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<ol> <li><p>From the navigator, select your ImageNotification extension</p></li> <li><p>Open the <code translate="no" dir="ltr">NotificationService.swift</code> file.</p></li> <li>
+<p>Replace the content of <code translate="no" dir="ltr">NotificationService.swift</code> with:</p> 
+<pre data-language="swift">import UserNotifications
+import FirebaseMessaging
+
+class NotificationService: UNNotificationServiceExtension {
+
+    var contentHandler: ((UNNotificationContent) -&gt; Void)?
+    var bestAttemptContent: UNMutableNotificationContent?
+
+    override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -&gt; Void) {
+        self.contentHandler = contentHandler
+        bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
+
+        Messaging.serviceExtension().populateNotificationContent(bestAttemptContent!, withContentHandler: contentHandler)
+    }
+
+    override func serviceExtensionTimeWillExpire() {
+        if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent {
+            contentHandler(bestAttemptContent)
+        }
+    }
+}
+</pre>
+</li> </ol></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+<ol> <li><p>From the navigator, select your ImageNotification extension</p></li> <li><p>Open the <code translate="no" dir="ltr">NotificationService.m</code> file.</p></li> <li>
+<p>At the top of the file, import <code translate="no" dir="ltr">FirebaseMessaging.h</code> right after the <code translate="no" dir="ltr">NotificationService.h</code>.</p> <p>Replace the content of <code translate="no" dir="ltr">NotificationService.m</code> with:</p> 
+<pre data-language="objectivec">#import "NotificationService.h"
+#import "FirebaseMessaging.h"
+#import &lt;FirebaseAuth/FirebaseAuth-Swift.h&gt; // Add this line if you are using FirebaseAuth phone authentication
+#import &lt;UIKit/UIKit.h&gt; // Add this line if you are using FirebaseAuth phone authentication
+
+@interface NotificationService () &lt;NSURLSessionDelegate&gt;
+
+@property(nonatomic) void (^contentHandler)(UNNotificationContent *contentToDeliver);
+@property(nonatomic) UNMutableNotificationContent *bestAttemptContent;
+
+@end
+
+@implementation NotificationService
+
+/* Uncomment this if you are using Firebase Auth
+- (BOOL)application:(UIApplication *)app
+            openURL:(NSURL *)url
+            options:(NSDictionary&lt;UIApplicationOpenURLOptionsKey, id&gt; *)options {
+  if ([[FIRAuth auth] canHandleURL:url]) {
+    return YES;
+  }
+  return NO;
+}
+
+- (void)scene:(UIScene *)scene openURLContexts:(NSSet&lt;UIOpenURLContext *&gt; *)URLContexts {
+  for (UIOpenURLContext *urlContext in URLContexts) {
+    [FIRAuth.auth canHandleURL:urlContext.URL];
+  }
+}
+*/
+
+- (void)didReceiveNotificationRequest:(UNNotificationRequest *)request withContentHandler:(void (^)(UNNotificationContent * _Nonnull))contentHandler {
+    self.contentHandler = contentHandler;
+    self.bestAttemptContent = [request.content mutableCopy];
+
+    // Modify the notification content here...
+    [[FIRMessaging extensionHelper] populateNotificationContent:self.bestAttemptContent withContentHandler:contentHandler];
+}
+
+- (void)serviceExtensionTimeWillExpire {
+    // Called just before the extension will be terminated by the system.
+    // Use this as an opportunity to deliver your "best attempt" at modified content, otherwise the original push payload will be used.
+    self.contentHandler(self.bestAttemptContent);
+}
+
+@end
+</pre>
+</li> </ol></section> </div> <h3 id="add-image-payload">Step 4 - Add the image to the payload</h3> <p>In your notification payload, you can now add an image. To learn more, see <a href="../customize-messages/cross-platform#notification-custom-image">how to build a send request</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/flutter/receive-messages" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/flutter/receive-messages</a>
+  </p>
+</div>

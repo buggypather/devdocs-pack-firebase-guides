@@ -1,0 +1,91 @@
+<h1>Receive Firebase Dynamic Links in a Flutter app</h1> <aside class="note"> <b>Note:</b> Firebase Dynamic Links is <i>deprecated</i> and should not be used in new projects. The service will be shutting down soon. Follow the <a href="https://firebase.google.com/support/dynamic-links-faq#how_should_i_migrate_from_the_service"> migration guide</a> and see the <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ</a> for more information. </aside> <p>To receive the Firebase Dynamic Links that <a href="../create-links">you created</a>, you must include the Dynamic Links SDK in your app and call the <code translate="no" dir="ltr">FirebaseDynamicLinks.getDynamicLink()</code> method when your app loads to get the data passed in the Dynamic Link.</p> <h2 id="set_up_firebase_and_the_dynamic_links_sdk">Set up Firebase and the Dynamic Links SDK</h2> <ol> <li><p><a href="../../flutter/setup">Install and initialize the Firebase SDKs for Flutter</a> if you haven't already done so.</p></li> <li>
+<p>From the root directory of your Flutter project, run the following command to install the Dynamic Links plugin:</p> 
+<pre>flutter pub add firebase_dynamic_links
+</pre>
+</li> <li><p>If you're building an Android app, open the <a href="https://console.firebase.google.com/project/_/settings/general/">Project settings</a> page of the Firebase console and make sure you've specified your SHA-1 signing key. If you use App Links, also specify your SHA-256 key.</p></li> </ol> <h2 id="platform_integration">Platform integration</h2> <p>Complete the following platform integration steps for the platforms you're building your app for.</p> <h3 id="android">Android</h3> <p>On Android, you must add a new intent filter catch deep links of your domain, since the Dynamic Link will redirect to your domain if your app is installed. This is required for your app to receive the Dynamic Link data after it is installed/updated from the Play Store and one taps on Continue button. In <code translate="no" dir="ltr">AndroidManifest.xml</code>:</p> 
+<pre>&lt;intent-filter&gt;
+    &lt;action android:name="android.intent.action.VIEW"/&gt;
+    &lt;category android:name="android.intent.category.DEFAULT"/&gt;
+    &lt;category android:name="android.intent.category.BROWSABLE"/&gt;
+    &lt;data
+        android:host="example.com"
+        android:scheme="https"/&gt;
+&lt;/intent-filter&gt;
+</pre> <p>When users open a Dynamic Link with a deep link to the scheme and host you specify, your app will start the activity with this intent filter to handle the link.</p> <p>The next step is to ensure the SHA-256 fingerprint of the signing certificate is registered in the Firebase console for the app. You can find more details on how to retrieve your SHA-256 fingerprint on the <a href="https://developers.google.com/android/guides/client-auth">Authenticating Your Client</a> page.</p> <h3 id="apple_platforms">Apple platforms</h3> <ol> <li><p><a href="https://developer.apple.com/programs/enroll/">Create an Apple developer account</a> if you don't already have one.</p></li> <li><p>On the <a href="https://console.firebase.google.com/project/_/settings/general/">Project settings</a> page of the Firebase console, ensure that your iOS app is correctly configured with your App Store ID and Team ID.</p></li> <li><p>On the Apple Developer site, create a provisioning profile for your app with the Associated Domain capability enabled.</p></li> <li>
+<p>In Xcode, do the following:</p> <ol> <li><p>Open your app under the <strong>TARGETS</strong> header.</p></li> <li><p>On the Signing &amp; Capabilities page, ensure your Team is registered, and your Provisioning Profile is set.</p></li> <li>
+<p>On the Signing &amp; Capabilities page, enable <strong>Associated Domains</strong> and add the following to the Associated Domains list (replace example with your domain):</p> 
+<pre>applinks:example.page.link
+</pre>
+</li> <li><p>On the Info page, add a URL Type to your project. Set the URL Schemes field to your app's bundle ID. (The Identifier can be <code translate="no" dir="ltr">Bundle ID</code> or whatever you wish.)</p></li> <li>
+<p>If you have set up a custom domain for your Firebase project, add the Dynamic Link URL prefix into your iOS project's <code translate="no" dir="ltr">Info.plist</code> file using the <code translate="no" dir="ltr">FirebaseDynamicLinksCustomDomains</code> key.</p> 
+<pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+&lt;key&gt;FirebaseDynamicLinksCustomDomains&lt;/key&gt;
+&lt;array&gt;
+    &lt;string&gt;https://custom.domain.io/path1&lt;/string&gt;
+    &lt;string&gt;https://custom.domain.io/path2&lt;/string&gt;
+&lt;/array&gt;
+
+...other settings
+
+&lt;/dict&gt;
+&lt;/plist&gt;
+</pre>
+</li> <li>
+<p><strong>Optional:</strong> Disable the Dynamic Links SDK's use of the iOS pasteboard.</p> <p>By default, the Dynamic Links SDK uses the pasteboard to improve the reliability of post-install deep links. By using the pasteboard, Dynamic Links can make sure that when a user opens a Dynamic Link but needs to install your app first, the user can go immediately to the original linked content when opening the app for the first time after installation.</p> <p>The downside of this is that use of the pasteboard triggers a notification on iOS 14 and later. So, the first time users open your app, if the pasteboard contains a Dynamic Link URL, they will see a notification that your app accessed the pasteboard, which can cause confusion.</p> <p>To disable this behavior, edit your Xcode project's <code translate="no" dir="ltr">Info.plist</code> file and set the <code translate="no" dir="ltr">FirebaseDeepLinkPasteboardRetrievalEnabled</code> key to <code translate="no" dir="ltr">NO</code>.</p> <aside class="note"><strong>Note:</strong><span> When you disable this feature, the Dynamic Links you receive will have a <code translate="no" dir="ltr">matchType</code> of <code translate="no" dir="ltr">weak</code> at best. Adjust your app's logic accordingly.</span></aside>
+</li> </ol>
+</li> </ol> <h2 id="handle_deep_links">Handle deep links</h2> <p>To handle a Dynamic Link in your application, two scenarios require implementing.</p> <aside class="warning"><strong>Warning:</strong><span> You may have unexpected results if you have enabled Flutter deep linking in your app. See <a href="https://docs.flutter.dev/development/ui/navigation/deep-linking#migrating-from-plugin-based-deep-linking">Migrating from plugin-based deep linking</a>. This <a href="https://github.com/firebase/flutterfire/issues/9469">GitHub issue</a> illustrates what you ought to be aware of.</span></aside> <h3 id="terminated_state">Terminated State</h3> <p>Set up the following methods:</p> <ol> <li>
+<code translate="no" dir="ltr">FirebaseDynamicLinks.getInitialLink</code> - returns a <code translate="no" dir="ltr">Future&lt;PendingDynamicLinkData?&gt;</code>
+</li> <li>
+<code translate="no" dir="ltr">FirebaseDynamicLinks.onLink</code> - event handler that returns a <code translate="no" dir="ltr">Stream</code> containing a <code translate="no" dir="ltr">PendingDynamicLinkData?</code>
+</li> </ol> <p>Android will always receive the link via <code translate="no" dir="ltr">FirebaseDynamicLinks.getInitialLink</code> from a terminated state, but on iOS, it is not guaranteed. Therefore, it is worth setting them both up in the following order to ensure your application receives the link:</p> 
+<pre>Future&lt;void&gt; main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseConfig.platformOptions);
+
+  // Check if you received the link via `getInitialLink` first
+  final PendingDynamicLinkData? initialLink = await FirebaseDynamicLinks.instance.getInitialLink();
+
+  if (initialLink != null) {
+    final Uri deepLink = initialLink.link;
+    // Example of using the dynamic link to push the user to a different screen
+    Navigator.pushNamed(context, deepLink.path);
+  }
+
+  FirebaseDynamicLinks.instance.onLink.listen(
+        (pendingDynamicLinkData) {
+          // Set up the `onLink` event listener next as it may be received here
+          if (pendingDynamicLinkData != null) {
+            final Uri deepLink = pendingDynamicLinkData.link;
+            // Example of using the dynamic link to push the user to a different screen
+            Navigator.pushNamed(context, deepLink.path);
+          }
+        },
+      );
+
+  runApp(MyApp(initialLink));
+}
+</pre> <p>Within your application logic, you can then check whether a link was handled and perform an action, for example:</p> 
+<pre>if (initialLink != null) {
+  final Uri deepLink = initialLink.link;
+  // Example of using the dynamic link to push the user to a different screen
+  Navigator.pushNamed(context, deepLink.path);
+}
+</pre> <h3 id="background_foreground_state">Background / Foreground State</h3> <p>Whilst the application is open, or in the background, use the <code translate="no" dir="ltr">FirebaseDynamicLinks.onLink</code> getter:</p> 
+<pre>FirebaseDynamicLinks.instance.onLink.listen((dynamicLinkData) {
+  Navigator.pushNamed(context, dynamicLinkData.link.path);
+}).onError((error) {
+  // Handle errors
+});
+</pre> <p>Alternatively, if you wish to identify if an exact Dynamic Link was used to open the application, pass it to the <code translate="no" dir="ltr">getDynamicLink</code> method instead:</p> 
+<pre>String link = 'https://dynamic-link-domain/ke2Qa';
+
+final PendingDynamicLinkData? initialLink = await FirebaseDynamicLinks.instance.getDynamicLink(Uri.parse(link));
+</pre> <h3 id="testing_a_dynamic_link_on_ios_platform">Testing A Dynamic Link On iOS Platform</h3> <p>To test a dynamic link on iOS, it is required that you use an actual device. You will also need to run the app in release mode (i.e. <code translate="no" dir="ltr">flutter run --release</code>.), if testing a dynamic link from a terminated (i.e. app has been swiped closed.) app state.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/dynamic-links/flutter/receive" class="_attribution-link">https://firebase.google.com/docs/dynamic-links/flutter/receive</a>
+  </p>
+</div>

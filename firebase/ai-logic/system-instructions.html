@@ -1,0 +1,174 @@
+<h1>Use system instructions to steer the behavior of a model</h1> <p><em>System instructions</em> are like a "preamble" that you add before the model gets exposed to any further instructions from the end user. It lets you steer the behavior of the model based on your specific needs and use cases.</p> <p>System instructions are supported by all <span class='\"notranslate\"'>Gemini</span> models.</p> <p><a href="#set-si" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code samples</a> </p> <p><br></p> <p>When you set a system instruction, you give the model additional context to understand the task, provide more customized responses, and adhere to specific guidelines over the full user interaction with the model. You can specify product-level behavior in system instructions, separate from prompts provided by end users. For example, you can include things like the role or persona, contextual information, and formatting instructions.</p> <p>You can use system instructions in many ways, including:</p> <ul> <li>Defining a persona or role (for a chatbot, for example)</li> <li>Defining output format (Markdown, YAML, etc.)</li> <li>Defining output style and tone (for example, verbosity, formality, and target reading level)</li> <li>Defining goals or rules for the task (for example, returning a code snippet without further explanations)</li> <li>Providing additional context for the prompt (for example, a knowledge cutoff)</li> </ul> <p>When a system instruction is set, it applies to the entire request. It works across multiple user and model turns when included in the prompt. Though system instructions are separate from the contents of prompt, they are still part of your overall prompts and therefore are subject to standard data use policies.</p> <aside class="note"><strong>Note:</strong><span> System instructions can help guide the model to follow instructions, but they don't fully prevent jailbreaks or leaks. We recommend exercising caution around putting any sensitive information in system instructions.</span></aside> <h2 id="set-si">Set system instructions</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <aside class="note"><strong>Note:</strong><span> For the majority of use cases when accessing a <span class='\"notranslate\"'>Gemini</span> model, you set system instructions when creating the <code translate="no" dir="ltr">GenerativeModel</code> instance. However, if you're <a href="#si-gemini-live-api">setting system instructions when using the Gemini Live API</a>, you set them when creating the <code translate="no" dir="ltr">LiveModel</code> instance.</span></aside> <h3 id="si-gemini-general">Set system instructions for general use cases</h3> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/FirebaseAI"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Specify the system instructions as part of creating the `GenerativeModel` instance
+let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  systemInstruction: ModelContent(role: "system", parts: "You are a cat. Your name is Neko.")
+)
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/FirebaseVertexAI#generativeModel(kotlin.String,com.google.firebase.vertexai.type.GenerationConfig,kotlin.collections.List,kotlin.collections.List,com.google.firebase.vertexai.type.ToolConfig,com.google.firebase.vertexai.type.Content,com.google.firebase.vertexai.type.RequestOptions)"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="kotlin">
+// Specify the system instructions as part of creating the `GenerativeModel` instance.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+  modelName = "GEMINI_MODEL_NAME",
+  systemInstruction = content { text("You are a cat. Your name is Neko.") }
+)
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/FirebaseVertexAI#generativeModel(kotlin.String,com.google.firebase.vertexai.type.GenerationConfig,kotlin.collections.List,kotlin.collections.List,com.google.firebase.vertexai.type.ToolConfig,com.google.firebase.vertexai.type.Content,com.google.firebase.vertexai.type.RequestOptions)"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="java">
+// Specify the system instructions as part of creating the `GenerativeModel` instance.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+    .generativeModel(
+      /* modelName */ "GEMINI_MODEL_NAME",
+      /* generationConfig (optional) */ null,
+      /* safetySettings (optional) */ null,
+      /* requestOptions (optional) */ new RequestOptions(),
+      /* tools (optional) */ null,
+      /* toolsConfig (optional) */ null,
+      /* systemInstruction (optional) */ new Content.Builder().addText("You are a cat. Your name is Neko.").build()
+    );
+
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelsysteminstruction"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="javascript">
+// ...
+
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Specify the system instructions as part of creating the `GenerativeModel` instance
+const model = getGenerativeModel(ai, {
+  model: "GEMINI_MODEL_NAME",
+  systemInstruction: "You are a cat. Your name is Neko."
+});
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>You specify <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/FirebaseVertexAI/generativeModel.html" class="external"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="dart">
+// ...
+
+// Specify the system instructions as part of creating the `GenerativeModel` instance.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'GEMINI_MODEL_NAME',
+  systemInstruction: Content.system('You are a cat. Your name is Neko.'),
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/firebase-a-i#getgenerativemodel"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="csharp">
+// ...
+
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Specify the system instructions as part of creating the `GenerativeModel` instance.
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  systemInstruction: ModelContent.Text("You are a cat. Your name is Neko.")
+);
+
+</pre></section> </div> <h3 id="si-gemini-live-api">Set system instructions for the Gemini Live API</h3> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/FirebaseAI#parameters_3"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
+<pre data-language="swift">
+// ...
+
+// Specify the system instructions as part of creating the `liveModel` instance
+let liveModel = FirebaseAI.firebaseAI(backend: .googleAI()).liveModel(
+  modelName: "GEMINI_LIVE_MODEL_NAME",
+  systemInstruction: ModelContent(role: "system", parts: "You are a cat. Your name is Neko."),
+  // ...
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/FirebaseVertexAI#liveModel(kotlin.String,com.google.firebase.vertexai.type.LiveGenerationConfig,kotlin.collections.List,com.google.firebase.vertexai.type.Content,com.google.firebase.vertexai.type.RequestOptions)"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
+<pre data-language="kotlin">
+// ...
+
+// Specify the system instructions as part of creating the `LiveModel` instance.
+val liveModel = Firebase.ai(backend = GenerativeBackend.googleAI()).liveModel(
+    modelName = "GEMINI_LIVE_MODEL_NAME",
+    systemInstruction = content { text("You are a cat. Your name is Neko.") },
+    // ...
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/FirebaseVertexAI#liveModel(kotlin.String,com.google.firebase.vertexai.type.LiveGenerationConfig,kotlin.collections.List,com.google.firebase.vertexai.type.Content,com.google.firebase.vertexai.type.RequestOptions)"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
+<pre data-language="java">
+// ...
+
+// Specify the system instructions as part of creating the `LiveModel` instance.
+LiveGenerativeModel lm = FirebaseAI.getInstance(GenerativeBackend.googleAI()).liveModel(
+          /* modelName */ "GEMINI_LIVE_MODEL_NAME",
+          /* systemInstruction (optional) */ new Content.Builder().addText("You are a cat. Your name is Neko.").build()
+          // ...
+);
+
+LiveModelFutures liveModel = LiveModelFutures.from(lm);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/js/ai.livegenerativemodel#livegenerativemodelsysteminstruction"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">LiveGenerativeModel</code> instance.</p> 
+<pre data-language="javascript">
+// ...
+
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Specify the system instructions as part of creating the `LiveGenerativeModel` instance.
+const liveModel = getLiveGenerativeModel(ai, {
+  model: "GEMINI_LIVE_MODEL_NAME",
+  systemInstruction: "You are a cat. Your name is Neko.",
+  // ...
+});
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>You specify <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/FirebaseVertexAI/liveGenerativeModel.html" class="external"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">LiveGenerativeModel</code> instance.</p> 
+<pre data-language="dart">
+// ...
+
+// Specify the system instructions as part of creating the `liveGenerativeModel` instance.
+final liveModel = FirebaseAI.googleAI().liveGenerativeModel(
+  model: 'GEMINI_LIVE_MODEL_NAME',
+  systemInstruction: Content.system('You are a cat. Your name is Neko.'),
+  // ...
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>You specify <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/firebase-a-i#getlivemodel"><code translate="no" dir="ltr">systemInstruction</code></a> when you create a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
+<pre data-language="csharp">
+// ...
+
+// Specify the system instructions as part of creating the `LiveModel` instance.
+var liveModel = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI()).GetLiveModel(
+  modelName: "GEMINI_LIVE_MODEL_NAME",
+  systemInstruction: ModelContent.Text("You are a cat. Your name is Neko."),
+  // ...
+);
+
+// ...
+
+</pre></section> </div> <h2 id="examples">Examples of system instructions</h2> <p>Here are some examples of system instructions that help steer the expected behavior of the model. Some examples also show an example prompt for which the system instruction would be helpful.</p> <h3 id="code-generation">Code generation</h3> <ul> <li><p><strong>System instruction:</strong> <br> You are a coding expert that specializes in rendering code for frontend interfaces. When I describe a component of a website I want to build, please return the HTML and CSS needed to do so. Do not give an explanation for this code. Also offer some UI design suggestions.</p></li> <li><p><strong>User prompt:</strong> <br> Create a box in the middle of the page that contains a rotating selection of images each with a caption. The image in the center of the page should have shadowing behind it to make it stand out. It should also link to another page of the site. Leave the URL blank so that I can fill it in.</p></li> </ul> <h3 id="music-chatbot">Music chatbot</h3> <ul> <li><p><strong>System instruction:</strong> <br> You will respond as a music historian, demonstrating comprehensive knowledge across diverse musical genres and providing relevant examples. Your tone will be upbeat and enthusiastic, spreading the joy of music. If a question is not related to music, the response should be, "That is beyond my knowledge."</p></li> <li><p><strong>User prompt:</strong> <br> If a person was born in the sixties, what was the most popular music genre being played? List five songs by bullet point.</p></li> </ul> <h3 id="formatted-data">Formatted data generation</h3> <aside class="note"><strong>Note:</strong><span> If you want more control and consistency for the generation of structured content (like JSON output), we recommend providing a <code translate="no" dir="ltr">responseSchema</code> in your request. Learn more about <a href="generate-structured-output">generating structured output</a>.</span></aside> <ul> <li>
+<p><strong>System instruction:</strong> <br> You are an assistant for home cooks. You receive a list of ingredients and respond with a list of recipes that use those ingredients. Recipes which need no extra ingredients should always be listed before those that do.</p> <p>Your response must be a JSON object containing 3 recipes. A recipe object has the following schema:</p> <ul> <li>name: The name of the recipe</li> <li>usedIngredients: Ingredients in the recipe that were provided in the list</li> <li>otherIngredients: Ingredients in the recipe that were not provided in the list (omitted if there are no other ingredients)</li> <li>description: A brief description of the recipe, written positively as if to sell it</li> </ul>
+</li> <li>
+<p><strong>User prompt:</strong></p> <ul> <li>1 lb bag frozen broccoli</li> <li>1 pint heavy cream</li> <li>1 lb pack cheese ends and pieces</li> </ul>
+</li> </ul> <h2 id="other-options-to-control-generation">Other options to control content generation</h2> <ul> <li> Learn more about <a href="prompt-design">prompt design</a> so that you can influence the model to generate output specific to your needs. </li> <li> Configure <a href="model-parameters">model parameters</a> to control how the model generates a response, like max output tokens, the probability of repeated output tokens, etc. </li> <li> Use <a href="safety-settings">safety settings</a> to adjust the likelihood of getting responses that may be considered harmful, including hate speech and sexually explicit content. </li> <li> Pass a <a href="generate-structured-output"><i>response schema</i></a> along with the prompt to specify a specific output schema. This feature is most commonly used when <a href="generate-structured-output#generate-json-basic">generating JSON output</a>, but it can also be used for <a href="generate-structured-output#generate-enum-basic">classification tasks</a> (like when you want the model to use specific labels or tags). </li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/system-instructions" class="_attribution-link">https://firebase.google.com/docs/ai-logic/system-instructions</a>
+  </p>
+</div>

@@ -1,0 +1,23 @@
+<h1>Use App Check with the debug provider in Unity</h1> <p>After App Check is enforced for a backend service, your app's features that depend on that backend service won't run in an emulator or from a continuous integration (CI) environment because these environments don't qualify as valid devices. To run your app in these environments during development and testing, you need to create a debug build of your app that uses the App Check <em>debug provider</em> instead of a production attestation provider.</p> <aside class="warning"><strong>Warning:</strong><span> <strong>Keep your debug token and debug build private.</strong> A valid debug token and the debug provider in your debug build allow access to your backend services from unverified devices. Do <strong><em>not</em></strong> commit your debug token to a public repository, and do <strong><em>not</em></strong> ship your debug token or debug build in production builds of your app. If a registered token is ever compromised, delete it immediately in the Firebase console.</span></aside> <h2 id="configuration_via_code">Configuration via code</h2> <p>Here's how to use the debug provider while running your app in an emulator interactively (for example, during local development):</p> <ol> <li>
+<p>In the Firebase console, create a debug token:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>App Check</strong> &gt; <a href="https://console.firebase.google.com/project/_/appcheck/apps/" class="external"><strong>Apps</strong> tab</a>.</p></li> <li><p>Find your app, click the three-dot overflow menu (<span class="material-icons" aria-hidden="true" translate="no">more_vert</span>), and then select <strong>Manage debug tokens</strong>.</p></li> <li><p>Follow the on-screen instructions to create a new debug token.</p></li> </ol> <p>This token allows access to your backend services without a valid device, so it's crucial that you keep it private. Do <em><strong>not</strong></em> commit it to a public repository or ship it in production builds of your app. If a registered token is ever compromised, delete it immediately using <strong>Manage debug tokens</strong> in the Firebase console.</p> <p><img src="https://firebase.google.com/static/docs/app-check/manage-debug-tokens.png" alt="Screenshot of the Manage Debug Tokens menu item" class="screenshot"></p>
+</li> <li>
+<p>In your app's initialization code, add the following:</p> 
+<pre>using Firebase.AppCheck;
+
+void InitializeFirebase() {
+  // Configure the Debug Provider factory with your debug token.
+  DebugAppCheckProviderFactory.Instance.SetDebugToken("YOUR_DEBUG_TOKEN");
+
+  // Set App Check to use the debug provider factory
+  FirebaseAppCheck.SetAppCheckProviderFactory(
+    DebugAppCheckProviderFactory.Instance);
+
+  // Proceed to initialize Firebase as normal
+}
+</pre>
+</li> </ol> <h2 id="other_configuration_options">Other configuration options</h2> <p>Other configuration options are available based on platform, for example using the platforms environment variables. For more information, refer to the <a href="../ios/debug-provider">iOS+</a> or <a href="../android/debug-provider">Android</a> debug provider documentation.</p> <p>This token allows access to your backend services without a valid device, so it's crucial that you keep it private. Do <em><strong>not</strong></em> commit it to a public repository or ship it in production builds of your app. If a registered token is ever compromised, delete it immediately using <strong>Manage debug tokens</strong> in the Firebase console.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/unity/debug-provider" class="_attribution-link">https://firebase.google.com/docs/app-check/unity/debug-provider</a>
+  </p>
+</div>

@@ -1,0 +1,116 @@
+<h1>Get started using App Check with a custom provider on Android</h1> <p>This page shows you how to enable App Check in an Android app, using <a href="custom-provider">your custom App Check provider</a>. When you enable App Check, you help ensure that only your app can access your project's Firebase resources.</p> <p>If you want to use App Check with the default Play Integrity provider, see <a href="play-integrity-provider">Enable App Check with Play Integrity on Android</a>.</p> <h2 id="before_you_begin">Before you begin</h2> <ul> <li><p><a href="../../android/setup">Add Firebase to your Android project</a> if you haven’t already done so.</p></li> <li><p><a href="../custom-provider">Implement your custom App Check provider's server-side logic</a>.</p></li> </ul> <h2 id="install-sdk">1. Add the App Check library to your app</h2> In your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the dependency for the App Check library for Android. We recommend using the <a href="../../android/learn-more#bom">Firebase Android BoM</a> to control library versioning. 
+<pre>dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Add the dependency for the App Check library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-appcheck")
+}</pre> <p>By using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, your app will always use compatible versions of Firebase Android libraries. </p>  <p class="showalways"><em>(Alternative)</em> Add Firebase library dependencies <em>without</em> using the BoM </p> <p>If you choose not to use the Firebase BoM, you must specify each Firebase library version in its dependency line.</p> <p><strong>Note that if you use <em>multiple</em> Firebase libraries in your app, we strongly recommend using the BoM to manage library versions, which ensures that all versions are compatible.</strong> </p> 
+<pre>dependencies {
+    // Add the dependency for the App Check library
+    // When NOT using the BoM, you must specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-appcheck:20.0.0")
+}</pre>  <h2 id="implement-classes">2. Implement the App Check interfaces</h2> <p>First, you need to create classes that implement the <code translate="no" dir="ltr">AppCheckProvider</code> and <code translate="no" dir="ltr">AppCheckProviderFactory</code> interfaces.</p> <p>Your <code translate="no" dir="ltr">AppCheckProvider</code> class must have a <code translate="no" dir="ltr">getToken()</code> method, which collects whatever information your custom App Check provider requires as proof of authenticity, and sends it to your token acquisition service in exchange for an App Check token. The App Check SDK handles token caching, so always get a new token in your implementation of <code translate="no" dir="ltr">getToken()</code>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">class YourCustomAppCheckToken(
+    private val token: String,
+    private val expiration: Long,
+) : AppCheckToken() {
+    override fun getToken(): String = token
+    override fun getExpireTimeMillis(): Long = expiration
+}
+
+class YourCustomAppCheckProvider(firebaseApp: FirebaseApp) : AppCheckProvider {
+    override fun getToken(): Task&lt;AppCheckToken&gt; {
+        // Logic to exchange proof of authenticity for an App Check token and
+        //   expiration time.
+        // ...
+
+        // Refresh the token early to handle clock skew.
+        val expMillis = expirationFromServer * 1000L - 60000L
+
+        // Create AppCheckToken object.
+        val appCheckToken: AppCheckToken = YourCustomAppCheckToken(tokenFromServer, expMillis)
+        return Tasks.forResult(appCheckToken)
+    }
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">public class YourCustomAppCheckToken extends AppCheckToken {
+    private String token;
+    private long expiration;
+
+    YourCustomAppCheckToken(String token, long expiration) {
+        this.token = token;
+        this.expiration = expiration;
+    }
+
+    @NonNull
+    @Override
+    public String getToken() {
+        return token;
+    }
+
+    @Override
+    public long getExpireTimeMillis() {
+        return expiration;
+    }
+}
+
+public class YourCustomAppCheckProvider implements AppCheckProvider {
+    public YourCustomAppCheckProvider(FirebaseApp firebaseApp) {
+        // ...
+    }
+
+    @NonNull
+    @Override
+    public Task&lt;AppCheckToken&gt; getToken() {
+        // Logic to exchange proof of authenticity for an App Check token and
+        //   expiration time.
+        // ...
+
+        // Refresh the token early to handle clock skew.
+        long expMillis = expirationFromServer * 1000L - 60000L;
+
+        // Create AppCheckToken object.
+        AppCheckToken appCheckToken =
+                new YourCustomAppCheckToken(tokenFromServer, expMillis);
+
+        return Tasks.forResult(appCheckToken);
+    }
+}</pre></section> </div> <p>Also, implement a <code translate="no" dir="ltr">AppCheckProviderFactory</code> class that creates instances of your <code translate="no" dir="ltr">AppCheckProvider</code> implementation:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">class YourCustomAppCheckProviderFactory : AppCheckProviderFactory {
+    override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
+        // Create and return an AppCheckProvider object.
+        return YourCustomAppCheckProvider(firebaseApp)
+    }
+}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">public class YourCustomAppCheckProviderFactory implements AppCheckProviderFactory {
+    @NonNull
+    @Override
+    public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
+        // Create and return an AppCheckProvider object.
+        return new YourCustomAppCheckProvider(firebaseApp);
+    }
+}</pre></section> </div> <h2 id="initialize">3. Initialize App Check</h2> <p>Add the following initialization code to your app so that it runs before you use any other Firebase SDKs:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">Firebase.initialize(context)
+Firebase.appCheck.installAppCheckProviderFactory(
+    YourCustomAppCheckProviderFactory(),
+)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+
+<pre data-language="java">FirebaseApp.initializeApp(/*context=*/ context);
+FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();
+firebaseAppCheck.installAppCheckProviderFactory(
+        new YourCustomAppCheckProviderFactory());</pre></section> </div> <h2 id="next_steps">Next steps</h2> <p>Once the App Check library is installed in your app, start distributing the updated app to your users.</p> <p>The updated client app will begin sending App Check tokens along with every request it makes to Firebase, but Firebase products will not require the tokens to be valid until you enable enforcement in the App Check section of the Firebase console.</p> <h3 id="monitor">Monitor metrics and enable enforcement</h3> <p>Before you enable enforcement, however, you should make sure that doing so won't disrupt your existing legitimate users. On the other hand, if you're seeing suspicious use of your app resources, you might want to enable enforcement sooner.</p> <p>To help make this decision, you can look at App Check metrics for the services you use:</p> <ul> <li>
+<a href="../monitor-metrics">Monitor App Check request metrics</a> for <span class='\"notranslate\"'>Firebase AI Logic</span>, SQL Connect, Realtime Database, Cloud Firestore, Cloud Storage, Authentication, Google Identity for iOS, Maps JavaScript API, and Places API (New).</li> <li>
+<a href="../monitor-functions-metrics">Monitor App Check request metrics for Cloud Functions</a>.</li> </ul> <h3 id="enforce">Enable App Check enforcement</h3> <p>When you understand how App Check will affect your users and you're ready to proceed, you can enable App Check enforcement:</p> <ul> <li>
+<a href="../enable-enforcement">Enable App Check enforcement</a> for <span class='\"notranslate\"'>Firebase AI Logic</span>, SQL Connect, Realtime Database, Cloud Firestore, Cloud Storage, Authentication, Google Identity for iOS, Maps JavaScript API, and Places API (New).</li> <li>
+<a href="../cloud-functions">Enable App Check enforcement for Cloud Functions</a>.</li> </ul> <h3 id="debug">Use App Check in debug environments</h3> <p>If, after you have registered your app for App Check, you want to run your app in an environment that App Check would normally not classify as valid, such as an emulator during development, or from a continuous integration (CI) environment, you can create a debug build of your app that uses the App Check debug provider instead of a real attestation provider.</p> <p>See <a href="debug-provider">Use App Check with the debug provider on Android</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/android/custom-provider" class="_attribution-link">https://firebase.google.com/docs/app-check/android/custom-provider</a>
+  </p>
+</div>

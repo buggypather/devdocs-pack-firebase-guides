@@ -1,0 +1,63 @@
+<h1>Pricing</h1> <p>The Firestore Enterprise edition introduces a <a href="https://cloud.google.com/firestore/enterprise/pricing">pricing model</a> that shifts billing from a "per document" basis to a "per unit" (or tranche) basis, and separating the cost of real-time updates.</p> <aside class="note"><strong>Note:</strong><span> For more information on supported regions, see <a href="../pipelines/locations">Locations</a>.</span></aside> <p>The following table details the cost per unit for both editions. The price shown is for us-central1.</p> <table> <tr> <td style="background-color: #efefef">
+<strong>Unit</strong> </td> <td style="background-color: #efefef">
+<strong>Standard edition<br></strong> </td> <td style="background-color: #efefef">
+<strong>Enterprise edition</strong> </td> </tr> <tr> <td>
+<strong>Reads</strong> </td> <td>
+<strong>$0.03 per 100k reads </strong>or<strong> $0.30 per million reads</strong> charged per document </td> <td>
+<strong>$0.05 per million read units<br></strong>Read units are data processed (documents or indexes) when you read data from your database, calculated in 4 KiB tranches. </td> </tr> <tr> <td>
+<strong>Writes</strong> </td> <td>
+<strong>$0.09 per 100k writes </strong>or<strong> $0.90 per million writes</strong> charged per document </td> <td>
+<strong>$0.26 per million write units</strong> <p> Writes are measured in 1 KiB units.<br>Index writes now cost write units. Note that indexing fields consume separate write units, so indexing a field with a 2KiB String incurs 2 write units.</p> </td> </tr> <tr> <td>
+<strong>Deletes</strong> </td> <td>
+<strong>$0.01 per 100k deletes</strong> or <strong>$0.10 per million deletes</strong> </td> <td>Utilizes Write units </td> </tr> <tr> <td>
+<strong>Real-time updates</strong> </td> <td>
+<strong>$0.03 per 100k reads </strong>or<strong> $0.30 per million reads</strong> charged per document </td> <td>
+<strong>$0.30 per million read units</strong> <br>Real-time updates have a new, separate SKU. </td> </tr> <tr> <td>
+<strong>Stored Data</strong> </td> <td>$0.00020 per GiB hour </td> <td>$0.00032 per GiB hour </td> </tr> <tr> <td>
+<strong>Backup data</strong> </td> <td>$0.00004 per GiB hour </td> <td>$0.00004 per GiB hour </td> </tr> <tr> <td>
+<strong>Restore operation</strong> </td> <td>$0.20 per GiB </td> <td>$0.20 per GiB </td> </tr> <tr> <td>
+<strong>PITR Data</strong> </td> <td>$0.00020 per GiB hour </td> <td>$0.00020 per GiB hour </td> </tr> <tr> <td>
+<strong>Clone operation</strong> </td> <td>$0.20 per GiB </td> <td>$0.20 per GiB </td> </tr> </table> <h2 id="free-tier">Free Tier</h2> <p>The following table shows details for the free tier:</p> <table> <tr> <td style="background-color: #efefef">
+<strong>Unit</strong> </td> <td style="background-color: #efefef">
+<strong>Standard edition (free tier per day)</strong> </td> <td style="background-color: #efefef">
+<strong>Enterprise edition (free tier per day)</strong> </td> </tr> <tr> <td>Reads </td> <td>50,000 </td> <td>50,000 </td> </tr> <tr> <td>Writes </td> <td>20,000 </td> <td>40,000 </td> </tr> <tr> <td>Deletes </td> <td>20,000 </td> <td>Included in Writes </td> </tr> <tr> <td>Real-time updates </td> <td>Included in Reads SKU </td> <td>50,000 </td> </tr> <tr> <td>Stored data </td> <td>1GB Storage </td> <td>1GB Storage </td> </tr> </table> <h2 id="pricing-summary-with-pipeline-operations">Pricing Summary with Pipeline Operations</h2> <h3 id="read-write-units-based-on-document-size">Read and Write Units: Based on Document Size</h3> <p>One of the differences in pricing between editions lies in how reads and writes are measured. In the Standard edition, costs are generally charged per document. In the Enterprise edition, costs are charged per unit based on document size: <strong>reads are in units of 4KiB</strong>, and <strong>writes are in units of 1KiB</strong>.</p> <table> <tr> <td style="background-color: #efefef">
+<strong>Scenario (Reading documents)</strong> </td> <td style="background-color: #efefef">
+<strong>Standard edition (Charged per document)</strong> </td> <td style="background-color: #efefef">
+<strong>Enterprise edition<br> (Charged per unit)</strong> </td> <td style="background-color: #efefef">
+<strong>Pricing highlights</strong> </td> </tr> <tr> <td>
+<strong>Reading a large 8KiB document</strong> </td> <td>Cost accrues <strong>1 read</strong>. </td> <td>Cost accrues <strong>2 read units</strong> (8KiB /4KiB units, rounded up to 2 units). </td> <td>Enterprise edition is cheaper. While Enterprise edition consumes more read units than Standard edition, the starting price for Enterprise edition read units is $0.05 per million read units v.s. $0.30 per million reads in Standard edition.</td> </tr> <tr> <td>
+<strong>Scanning a collection with 20 documents at 1KiB each</strong> </td> <td>Cost accrues <strong>20 reads</strong> </td> <td>Collection scan: Cost accrues <strong>5 read units</strong> (20 documents * 1KiB = 20KiB total; <br>20KiB / 4KiB units = 5 units) <p>Indexed scan: Cost accrues <strong>21 read units </strong> (20 document each at 1KiB looked up, 1 index read)</p> </td> <td>Enterprise edition is significantly cheaper when documents are small (1–2KiB average document size). </td> </tr> </table> <h3 id="indexing-cost-index-writes-consume-units">Indexing Cost: Index Writes Consume Units</h3> <p>In the Enterprise edition, indexes are not free; they consume write units when a document is written. An <strong>additional write unit</strong> is accrued for each index-related field a document has.</p> <table> <tr> <td style="background-color: #efefef">
+<strong>Scenario (Writing a document)</strong> </td> <td style="background-color: #efefef">
+<strong>Standard edition (No index write cost)</strong> </td> <td style="background-color: #efefef"><strong>Enterprise edition (Index writes charged per 1KiB unit)</strong></td> <td style="background-color: #efefef">
+<strong>Pricing highlights</strong> </td> </tr> <tr> <td>
+<strong>Writing a 5KiB document with 5 single-field indexes</strong> </td> <td>Cost accrues <strong>1 write</strong>. </td> <td>The document itself accrues <strong>5 write units</strong> (5KiB / 1KiB per unit) with <strong>5 additional write</strong> units for the 5 indexes, totaling to <strong>10 write units</strong>. </td> <td>Indexing overhead makes large writes with multiple indexes incur more write units on Enterprise edition. While Enterprise edition consumes more write units than Standard edition, the starting price for Enterprise edition write units is $0.26 per million write units v.s. $0.90 per million writes in Standard edition. </td> </tr> </table> <h3 id="real-time-listen-queries-pricing">Real-time Listen Queries Pricing</h3> <p>Real-time queries are divided into two distinct steps with separate pricing structure:</p> <ul> <li>
+<strong>Initial query to sync results: </strong>Retrieves the initial set of data and is charged using Read Units.</li> <li>
+<strong>Real-time updates:</strong> Subsequent updates that reflect document changes after the initial query and are charged using real-time update units.</li>
+</ul> <p> For each updated document, you pay one real-time update unit per 4KiB of data. </p> <p> You are also charged one real-time update unit when a document is removed from the result set. In contrast, when a document is deleted, you are not charged for a read. </p> <p> Billing of listeners in the mobile and web SDKS also depends on whether offline persistence is enabled or not:</p> <ul> <li> If offline persistence is enabled and the listener is disconnected for more than 30 minutes (for example, if the user goes offline), you will be charged as if you had issued a brand-new query and real-time updates thereafter.</li> <li>If offline persistence is disabled, you will be charged for documents and index entries read as if you had issued a brand-new query whenever the listener disconnects and reconnects and real-time updates thereafter.</li> </ul> <h4 id="free_tier_usage_for_real-time_updates">Free tier usage for Real-time updates</h4> <p>The free tier applies to only one Firestore database per project. The first database that is created in a project without a free tier database will get the free tier. The free tier for real-time update queries is 50,000 units per day.</p> <p>After Free quota is consumed, the following pricing is applicable for Real-time Read Units.</p> <table> <tr> <td style="background-color: #efefef">
+<strong>Regions</strong> </td> <td style="background-color: #efefef">
+<strong>Default* (USD)</strong> </td> <td style="background-color: #efefef">
+<strong>Cloud Firestore CUD - 1 Year* (USD)</strong> </td> <td style="background-color: #efefef">
+<strong>Cloud Firestore CUD - 3 Year* (USD)</strong> </td> </tr> <tr> <td>North America 5 (nam5) </td> <td>
+<p style="text-align: right"> $0.6 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> $0.48 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> 0.36 / 1,000,000 count</p> </td> </tr> <tr> <td>Northern Virginia (us-east4) </td> <td>
+<p style="text-align: right"> $0.3 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> $0.24 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> 0.18 / 1,000,000 count</p> </td> </tr> <tr> <td>Netherlands (europe-west4) </td> <td>
+<p style="text-align: right"> $0.315 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> $0.252 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> 0.189 / 1,000,000 count</p> </td> </tr> <tr> <td>Taiwan (asia-east1) </td> <td>
+<p style="text-align: right"> $0.347 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> $0.277 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> 0.208/ 1,000,000 count</p> </td> </tr> <tr> <td>Mumbai (asia-south1) </td> <td>
+<p style="text-align: right"> $0.312 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> $0.249 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> 0.187/ 1,000,000 count</p> </td> </tr> <tr> <td>Sao Paulo (southamerica-east1) </td> <td>
+<p style="text-align: right"> $0.476 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> $0.381 / 1,000,000 count</p> </td> <td>
+<p style="text-align: right"> 0.285 / 1,000,000 count</p> </td> </tr> </table> <p>Customers are also eligible for a broader free-tier for Firestore Enterprise edition. Details available on <a href="https://cloud.google.com/firestore/enterprise/pricing">Firestore Enterprise edition pricing</a>. This includes a free tier for read units of 50,000 per units per day. For more information on how these pricing models work, see <a href="https://firebase.google.com/firestore/pipelines/pricing-examples">Pricing examples</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/enterprise/pricing" class="_attribution-link">https://firebase.google.com/docs/firestore/enterprise/pricing</a>
+  </p>
+</div>

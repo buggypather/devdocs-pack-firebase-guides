@@ -1,0 +1,323 @@
+<h1>Understand and configure safety settings</h1> <p><span class='\"notranslate\"'>Gemini</span> models are designed to prioritize safety. However, they can still generate harmful responses, especially when they're explicitly prompted. To further enhance safety and minimize misuse, you can configure safety filters to block potentially harmful responses.</p> <p>Two layers of safety protections are provided:</p> <ul> <li>
+<p><strong>Built-in core protections</strong>:</p> <ul> <li>All <span class='\"notranslate\"'>Gemini</span> models feature <strong>built-in protections</strong> against severe harms (such as child exploitation, cyberattacks, and dangerous weapons).</li> <li>These protections are <strong>always active</strong>, applied automatically to all prompts and responses, and can't be modified or disabled.</li> </ul>
+</li> <li>
+<p><strong>Configurable safety filters</strong>:</p> <ul> <li>The <span class='\"notranslate\"'>Gemini API</span> provides additional <strong>configurable safety filters</strong> which you define using <strong>safety settings</strong> in your app.</li> <li>These settings let you control the <em>threshold</em> at which content is blocked across four main <a href="#harm-categories"><em>harm categories</em></a>: Harassment, Hate speech, Sexually explicit content, and Dangerous content.</li> </ul>
+</li> </ul> <aside class="special"><strong>Important:</strong><span> The model's default behavior and built-in protections cover most safety use cases due to inherent safety and alignment training. Given this, you should only configure explicit safety settings (as described on this page) if your app serves sensitive audiences (such as children) or has strict compliance requirements.</span></aside> <p><a href="#configure-safety-settings" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code samples</a> </p> <h3 id="safety-concepts" class="hide-from-toc">Important safety concepts</h3> <p>When working with safety for <span class='\"notranslate\"'>Gemini</span> models, here are some important concepts to understand:</p> <ul> <li><p><strong>Safety settings</strong>: The configuration you define in your app code specifying which <a href="#harm-categories">harm categories</a> to monitor and at what <a href="#block-thresholds">threshold</a> to block content.</p></li> <li><p><strong>Safety filters</strong>: The server-side classifiers that evaluate prompts and model responses against Google's safety dimensions. The filters block content based on your configured safety settings.</p></li> <li><p><strong>Safety ratings</strong>: The evaluation metadata returned by the model in the response object. The ratings indicate the probability and severity of potential harm detected for each harm category.</p></li> </ul> <aside class="note"><strong>Note:</strong><span> By default, configurable safety filters for harm categories that aren't specified in your app are <strong><code translate="no" dir="ltr">OFF</code></strong>. However, built-in core protections remain active (for example, protections against severe harms (such as child exploitation, cyberattacks, and dangerous weapons)).</span></aside> <h3 id="supported-models" class="hide-from-toc">Supported models</h3> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li>
+<code translate="no" dir="ltr">gemini-3.8-flash</code> (and the older <code translate="no" dir="ltr">gemini-3.7-flash</code>, <code translate="no" dir="ltr">gemini-3.6-flash</code>, and <code translate="no" dir="ltr">gemini-3.5-flash</code>)</li> <li>
+<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> <li>
+<code translate="no" dir="ltr">gemini-nano-banana-2.1</code> (<span class='\"notranslate\"'>Nano Banana 2.1</span>)</li> <li>
+<code translate="no" dir="ltr">gemini-3.1-flash-image</code> (<span class='\"notranslate\"'>Nano Banana 2</span>)</li> <li>
+<code translate="no" dir="ltr">gemini-3.1-flash-lite-image</code> (<span class='\"notranslate\"'>Nano Banana 2 Lite</span>)</li> <li>
+<code translate="no" dir="ltr">gemini-3-pro-image</code> (<span class='\"notranslate\"'>Nano Banana Pro</span>)</li> </ul> <p>The <code translate="no" dir="ltr">gemini-3.1-pro-preview</code> model as well as the general-use and image-generating <span class='\"notranslate\"'>Gemini 2.5</span> models (which are deprecated) also support this capability.</p> <p><br></p> <hr> <h2 id="configure-safety-settings">Configure safety settings in your app</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>You configure safety settings as part of initializing a <code translate="no" dir="ltr">GenerativeModel</code> instance. The configuration is maintained for the lifetime of that model instance.</p> <p>Learn about the available <a href="#harm-categories">harm categories</a> and the <a href="#block-thresholds">thresholds</a> that you can set for each category later on this page.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Configure <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/SafetySetting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
+<pre data-language="swift">
+import FirebaseAILogic
+
+let safetySettings = [
+  SafetySetting(harmCategory: .harassment, threshold: .blockOnlyHigh),
+  SafetySetting(harmCategory: .hateSpeech, threshold: .blockMediumAndAbove)
+]
+
+// Specify the safety settings as part of creating the `GenerativeModel` instance.
+let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  safetySettings: safetySettings
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Configure <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/SafetySetting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
+<pre data-language="kotlin">
+// ...
+
+val safetySettings = listOf(
+    SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.ONLY_HIGH),
+    SafetySetting(HarmCategory.HATE_SPEECH, HarmBlockThreshold.MEDIUM_AND_ABOVE)
+)
+
+// Specify the safety settings as part of creating the `GenerativeModel` instance.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = "GEMINI_MODEL_NAME",
+    safetySettings = safetySettings
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>Configure <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/SafetySetting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
+<pre data-language="java">
+// ...
+
+List safetySettings = List.of(
+    new SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.ONLY_HIGH),
+    new SafetySetting(HarmCategory.HATE_SPEECH, HarmBlockThreshold.MEDIUM_AND_ABOVE)
+);
+
+// Specify the safety settings as part of creating the `GenerativeModel` instance.
+GenerativeModelFutures model = GenerativeModelFutures.from(
+    FirebaseAI.getInstance(GenerativeBackend.googleAI())
+        .generativeModel(
+            /* modelName */ "GEMINI_MODEL_NAME",
+            /* generationConfig is optional */ null,
+            safetySettings
+        )
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Configure <a href="https://firebase.google.com/docs/reference/js/ai.safetysetting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
+<pre data-language="javascript">
+import { HarmBlockThreshold, HarmCategory, getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// ...
+
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+const safetySettings = [
+  {
+    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+    threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+  },
+  {
+    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+    threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+  },
+];
+
+// Specify the safety settings as part of creating the `GenerativeModel` instance.
+const model = getGenerativeModel(ai, {
+  model: "GEMINI_MODEL_NAME",
+  safetySettings,
+});
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>Configure <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/SafetySetting-class.html" class="external"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+
+final safetySettings = [
+  SafetySetting(HarmCategory.harassment, HarmBlockThreshold.high),
+  SafetySetting(HarmCategory.hateSpeech, HarmBlockThreshold.medium),
+];
+
+// Specify the safety settings as part of creating the `GenerativeModel` instance.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'GEMINI_MODEL_NAME',
+  safetySettings: safetySettings,
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Configure <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/safety-setting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
+<pre data-language="csharp">
+// ...
+
+var safetySettings = new SafetySetting[] {
+  new SafetySetting(HarmCategory.Harassment, SafetySetting.HarmBlockThreshold.OnlyHigh),
+  new SafetySetting(HarmCategory.HateSpeech, SafetySetting.HarmBlockThreshold.MediumAndAbove)
+};
+
+// Specify the safety settings as part of creating the `GenerativeModel` instance.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  safetySettings: safetySettings
+);
+
+// ...
+
+</pre></section> </div> <p><br></p> <hr> <h2 id="harm-categories">Available harm categories</h2> <p>The safety filters evaluate prompts and model responses against the following configurable <em>harm categories</em>:</p> <table> <thead> <tr> <th width="30%">Harm category</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">HARM_CATEGORY_HARASSMENT</code></td> <td> Negative, threatening, intimidating, bullying, or abusive comments targeting an individual or identity. </td> </tr> <tr> <td><code translate="no" dir="ltr">HARM_CATEGORY_HATE_SPEECH</code></td> <td> Content that attacks, demeans, promotes hatred, or incites violence against individuals or groups based on protected attributes (such as race, ethnic origin, religion, disability, age, nationality, veteran status, sexual orientation, or gender identity). </td> </tr> <tr> <td><code translate="no" dir="ltr">HARM_CATEGORY_SEXUALLY_EXPLICIT</code></td> <td> Contains references to sexual acts, pornography, or other lewd and erotic content. </td> </tr> <tr> <td><code translate="no" dir="ltr">HARM_CATEGORY_DANGEROUS_CONTENT</code></td> <td> Promotes, facilitates, encourages, or provides instructions for harmful acts, illegal goods and services, weapons, self-harm, or dangerous activities. </td> </tr> <tr> <td><code translate="no" dir="ltr">HARM_CATEGORY_CIVIC_INTEGRITY</code></td> <td> Content that might be used to mislead voters or undermine civic and electoral processes. <em>(Supported in select models and regions)</em>. </td> </tr> </tbody> </table> <h3 id="non-configurable-filters">Non-configurable safety filters</h3> <p>In addition to configurable categories, all requests pass through system-level filters that can't be adjusted:</p> <ul> <li><p><strong>Child Sexual Abuse Material (CSAM) / Prohibited content</strong>: Prompts or responses flagged for prohibited content are immediately blocked (<code translate="no" dir="ltr">PROHIBITED_CONTENT</code>).</p></li> <li><p><strong>Sensitive Personally Identifiable Information (SPII)</strong>: Responses that risk exposing sensitive personal data (such as financial account numbers or national IDs) are blocked (<code translate="no" dir="ltr">SPII</code>).</p></li> </ul> <p><br></p> <hr> <h2 id="set-thresholds">Set thresholds</h2> <p>For each harm category that you want to control for in your app, you need to set a <em>threshold</em>. If the evaluated content meets or exceeds that threshold, the content is blocked.</p> <h3 id="probability-vs-severity">How safety evaluation works: Probability vs. severity</h3> <p>Safety filters evaluate content across two distinct dimensions:</p> <ul> <li><p><strong>Probability</strong>: The model's confidence that content falls within a given harm category.</p></li> <li><p><strong>Severity</strong>: The magnitude or degree of potential harm should the content be harmful.</p></li> </ul> <p>Each dimension is assigned one of these levels: <code translate="no" dir="ltr">NEGLIGIBLE</code>, <code translate="no" dir="ltr">LOW</code>, <code translate="no" dir="ltr">MEDIUM</code>, or <code translate="no" dir="ltr">HIGH</code>.</p> <p>Content can have a <strong>high probability with low severity level</strong> (for example, mild comedic banter or friendly insults) or <strong>low probability with high severity level</strong> (for example, medical or historical discussions mentioning violence).</p> <h3 id="block-thresholds">Available harm block thresholds</h3> <p>You can set any of the following <em>thresholds</em> for the harm categories that you want to control for in your app:</p> <table> <thead> <tr> <th width="30%">Threshold</th> <th>Description</th> <th width="22%">Allowed levels</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">BLOCK_LOW_AND_ABOVE</code></td> <td> Most restrictive.<br> Blocks content when probability (or severity) is <code translate="no" dir="ltr">LOW</code>, <code translate="no" dir="ltr">MEDIUM</code>, or <code translate="no" dir="ltr">HIGH</code>. </td> <td> Allows only <code translate="no" dir="ltr">NEGLIGIBLE</code> </td> </tr> <tr> <td><code translate="no" dir="ltr">BLOCK_MEDIUM_AND_ABOVE</code></td> <td> Moderate restriction.<br> Blocks content when probability (or severity) is <code translate="no" dir="ltr">MEDIUM</code> or <code translate="no" dir="ltr">HIGH</code>. </td> <td> Allows <code translate="no" dir="ltr">NEGLIGIBLE</code> and <code translate="no" dir="ltr">LOW</code>
+</td> </tr> <tr> <td><code translate="no" dir="ltr">BLOCK_ONLY_HIGH</code></td> <td> Least restrictive active filter.<br> Blocks content only when probability (or severity) is <code translate="no" dir="ltr">HIGH</code>. </td> <td> Allows <code translate="no" dir="ltr">NEGLIGIBLE</code>, <code translate="no" dir="ltr">LOW</code>, and <code translate="no" dir="ltr">MEDIUM</code> </td> </tr> <tr> <td><code translate="no" dir="ltr">BLOCK_NONE</code></td> <td> Automated response blocking is disabled for this category. Safety ratings metadata is still calculated and returned with the response so your app can perform custom moderation. </td> <td>All content allowed</td> </tr> <tr> <td><code translate="no" dir="ltr">OFF</code></td> <td> Turns off the safety filter for this category completely. No automated blocking occurs and no safety rating metadata is returned. </td> <td>All content allowed</td> </tr> </tbody> </table> <aside class="note"><strong>Note:</strong><span> By default, configurable safety filters for harm categories that aren't specified in your app are <strong><code translate="no" dir="ltr">OFF</code></strong>. However, built-in core protections remain active (for example, protections against severe harms (such as child exploitation, cyberattacks, and dangerous weapons)).</span></aside> <p><br></p> <hr> <h2 id="handle-blocked-content">Inspect safety ratings and handle blocked content</h2> <p>Content can be blocked at two stages during a request:</p> <ol> <li><p><strong>Prompt blocked (<code translate="no" dir="ltr">PromptFeedback</code>)</strong>: The input prompt violated safety filters before the model generated any output. No response candidates are returned.</p></li> <li><p><strong>Response candidate blocked (<code translate="no" dir="ltr">finishReason == SAFETY</code>)</strong>: The model evaluated or generated a candidate response that exceeded your configured threshold. The generated candidate text is cleared or redacted.</p></li> </ol> <h3 id="safety-rating-structure">The <code translate="no" dir="ltr">SafetyRating</code> object</h3> <p>Every evaluated prompt or response candidate contains an array of <code translate="no" dir="ltr">SafetyRating</code> objects. Each rating provides the following:</p> <ul> <li>
+<p>Properties available with both <span class='\"notranslate\"'>Gemini Developer API</span> and <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>:</p> <ul> <li><p><strong><code translate="no" dir="ltr">category</code></strong>: The evaluated <a href="#harm-categories"><code translate="no" dir="ltr">HarmCategory</code></a>.</p></li> <li><p><strong><code translate="no" dir="ltr">probability</code></strong>: A discrete rating (<code translate="no" dir="ltr">NEGLIGIBLE</code>, <code translate="no" dir="ltr">LOW</code>, <code translate="no" dir="ltr">MEDIUM</code>, or <code translate="no" dir="ltr">HIGH</code>).</p></li> <li><p><strong><code translate="no" dir="ltr">blocked</code></strong>: <code translate="no" dir="ltr">true</code> if this specific rating caused the content to be blocked.</p></li> </ul>
+</li> <li>
+<p>Additional properties available with the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>:</p> <ul> <li><p><strong><code translate="no" dir="ltr">probabilityScore</code></strong>: A floating-point confidence score from <code translate="no" dir="ltr">0.0</code> to <code translate="no" dir="ltr">1.0</code>.</p></li> <li><p><strong><code translate="no" dir="ltr">severity</code></strong>: A discrete severity level (<code translate="no" dir="ltr">NEGLIGIBLE</code>, <code translate="no" dir="ltr">LOW</code>, <code translate="no" dir="ltr">MEDIUM</code>, or <code translate="no" dir="ltr">HIGH</code>).</p></li> <li><p><strong><code translate="no" dir="ltr">severityScore</code></strong>: A floating-point severity score from <code translate="no" dir="ltr">0.0</code> to <code translate="no" dir="ltr">1.0</code>.</p></li> </ul>
+</li> </ul> <h4 id="safety-rating-structure-example">Example <code translate="no" dir="ltr">SafetyRating</code> object</h4> <p>The following example illustrates the raw JSON response payload when a candidate is blocked by safety filters:</p> 
+<pre>{
+  "candidates": [
+    {
+      "finishReason": "SAFETY",
+      "safetyRatings": [
+        {
+          "category": "HARM_CATEGORY_HARASSMENT",
+          "probability": "NEGLIGIBLE",
+          "blocked": false
+        },
+        {
+          "category": "HARM_CATEGORY_HATE_SPEECH",
+          "probability": "NEGLIGIBLE",
+          "blocked": false
+        },
+        {
+          "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          "probability": "NEGLIGIBLE",
+          "blocked": false
+        },
+        {
+          "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+          "probability": "HIGH",
+          "blocked": true
+        }
+      ]
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 24,
+    "totalTokenCount": 24
+  }
+}
+</pre> <h3 id="catch-safety-errors">Catch safety errors in code</h3> <p>When content is blocked, the client SDKs surface the block as an exception or error code so your app can handle it gracefully.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>You can catch <code translate="no" dir="ltr">GenerateContentError.promptBlocked</code> or <code translate="no" dir="ltr">GenerateContentError.responseStoppedEarly</code>:</p> 
+<pre data-language="swift">do {
+  let response = try await model.generateContent("Your prompt here")
+  print(response.text ?? "No text generated.")
+} catch GenerateContentError.promptBlocked(let response) {
+  // The input prompt was blocked
+  if let feedback = response.promptFeedback {
+    let reason = feedback.blockReason?.rawValue ?? "unknown"
+    print("Prompt blocked for reason: \(reason)")
+    for rating in feedback.safetyRatings {
+      let cat = rating.category.rawValue
+      let prob = rating.probability.rawValue
+      print("Category: \(cat), probability: \(prob)")
+    }
+  }
+} catch GenerateContentError.responseStoppedEarly(let reason, let response) {
+  // Candidate response was blocked or stopped early
+  if reason == .safety {
+    print("Response blocked due to safety.")
+    if let candidate = response.candidates.first {
+      for rating in candidate.safetyRatings where rating.blocked {
+        print("Blocked by category: \(rating.category.rawValue)")
+      }
+    }
+  }
+} catch {
+  print("Unexpected error: \(error)")
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>You can catch <code translate="no" dir="ltr">PromptBlockedException</code> or inspect <code translate="no" dir="ltr">candidate.finishReason</code>:</p> 
+<pre data-language="kotlin">try {
+  val response = model.generateContent("Your prompt here")
+  val candidate = response.candidates.firstOrNull()
+
+  if (candidate?.finishReason == FinishReason.SAFETY) {
+    val blockedRating =
+      candidate.safetyRatings.firstOrNull { it.blocked }
+    println("Response blocked by category: ${blockedRating?.category}")
+  } else {
+    println(response.text)
+  }
+} catch (e: PromptBlockedException) {
+  val reason = e.response?.promptFeedback?.blockReason
+  println("Prompt was blocked: $reason")
+} catch (e: Exception) {
+  println("Error generating content: ${e.message}")
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>You can catch <code translate="no" dir="ltr">PromptBlockedException</code> or inspect <code translate="no" dir="ltr">candidate.getFinishReason()</code>:</p> 
+<pre data-language="java">try {
+  GenerateContentResponse response = model.generateContent("Your prompt here").get();
+  Candidate candidate = response.getCandidates().isEmpty() ? null : response.getCandidates().get(0);
+
+  if (candidate != null &amp;&amp; candidate.getFinishReason() == FinishReason.SAFETY) {
+    SafetyRating blockedRating = null;
+    for (SafetyRating rating : candidate.getSafetyRatings()) {
+      if (Boolean.TRUE.equals(rating.getBlocked())) {
+        blockedRating = rating;
+        break;
+      }
+    }
+    System.out.println("Response blocked by category: " +
+        (blockedRating != null ? blockedRating.getCategory() : "unknown"));
+  } else {
+    System.out.println(response.getText());
+  }
+} catch (ExecutionException e) {
+  if (e.getCause() instanceof PromptBlockedException) {
+    PromptBlockedException pbe = (PromptBlockedException) e.getCause();
+    GenerateContentResponse blockedResponse = pbe.getResponse();
+    String reason = (blockedResponse != null &amp;&amp; blockedResponse.getPromptFeedback() != null)
+        ? String.valueOf(blockedResponse.getPromptFeedback().getBlockReason())
+        : "unknown";
+    System.out.println("Prompt was blocked: " + reason);
+  } else {
+    System.out.println("Error generating content: " + e.getMessage());
+  }
+} catch (InterruptedException e) {
+  System.out.println("Generation was interrupted: " + e.getMessage());
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>You can inspect <code translate="no" dir="ltr">promptFeedback</code> and <code translate="no" dir="ltr">candidate.finishReason</code>:</p> 
+<pre data-language="javascript">try {
+  const response = await model.generateContent("Your prompt here");
+
+  // Check if the prompt was blocked
+  if (response.promptFeedback?.blockReason) {
+    console.warn(`Prompt blocked: ${response.promptFeedback.blockReason}`);
+    return;
+  }
+
+  const candidate = response.candidates?.[0];
+  if (candidate?.finishReason === "SAFETY") {
+    const blockedRating = candidate.safetyRatings?.find((r) =&gt; r.blocked);
+    console.warn(`Response blocked by category: ${blockedRating?.category}`);
+  } else {
+    console.log(response.text);
+  }
+} catch (error) {
+  console.error("Error generating content:", error);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>You can inspect <code translate="no" dir="ltr">promptFeedback</code> and <code translate="no" dir="ltr">candidate.finishReason</code>:</p> 
+<pre data-language="dart">try {
+  final response = await model.generateContent([Content.text('Your prompt here')]);
+
+  // Check if the prompt was blocked
+  if (response.promptFeedback?.blockReason != null) {
+    print('Prompt blocked: ${response.promptFeedback?.blockReason}');
+    return;
+  }
+
+  final candidate = response.candidates.firstOrNull;
+  if (candidate?.finishReason == FinishReason.safety) {
+    final blockedRating =
+        candidate?.safetyRatings?.where((r) =&gt; r.isBlocked == true).firstOrNull;
+    print('Response blocked by category: ${blockedRating?.category.name}');
+  } else {
+    print(response.text);
+  }
+} catch (e) {
+  print('Error generating content: $e');
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>You can inspect <code translate="no" dir="ltr">PromptFeedback</code> and <code translate="no" dir="ltr">candidate.FinishReason</code>:</p> 
+<pre data-language="csharp">try {
+  var response = await model.GenerateContentAsync("Your prompt here");
+
+  // Check if the prompt was blocked
+  if (response.PromptFeedback?.BlockReason != null) {
+    Debug.LogWarning($"Prompt blocked: {response.PromptFeedback.BlockReason}");
+    return;
+  }
+
+  var candidate = response.Candidates.FirstOrDefault();
+  if (candidate?.FinishReason == FinishReason.Safety) {
+    var blockedRating = candidate.SafetyRatings?.FirstOrDefault(r =&gt; r.Blocked);
+    Debug.LogWarning($"Response blocked by category: {blockedRating?.Category}");
+  } else {
+    Debug.Log(response.Text);
+  }
+} catch (Exception ex) {
+  Debug.LogError($"Error generating content: {ex.Message}");
+}
+</pre></section> </div> <p><br></p> <hr> <h2 id="best-practices">Best practices for responsible app design</h2> <ul> <li><p><strong>Defense in depth</strong>: Safety filters are a guardrail, not an instruction. Combine safety settings with explicit <a href="system-instructions">system instructions</a> and targeted <a href="prompt-design">prompt design</a> to guide tone and scope.</p></li> <li><p><strong>Graceful user feedback</strong>: Never crash or show a blank screen when content is blocked. Detect <code translate="no" dir="ltr">finishReason == SAFETY</code> or <code translate="no" dir="ltr">PromptBlockedException</code> and display a friendly message informing the user that the request couldn't be fulfilled under your content guidelines.</p></li> <li><p><strong>Use <code translate="no" dir="ltr">BLOCK_NONE</code> for custom moderation</strong>: If you already have your own client-side or server-side moderation pipeline, set thresholds to <code translate="no" dir="ltr">BLOCK_NONE</code> to receive the model's <code translate="no" dir="ltr">safetyRatings</code> without automated blocking, allowing your app to enforce custom moderation policies.</p></li> <li><p><strong>Review Terms of Service</strong>: If you use less restrictive settings (<code translate="no" dir="ltr">BLOCK_ONLY_HIGH</code> or <code translate="no" dir="ltr">BLOCK_NONE</code>), ensure your app continues to comply with Google's <a href="https://policies.google.com/terms/generative-ai/use-policy" class="external">Prohibited Use Policy</a>.</p></li> </ul> <h2 id="other-options-to-control-generation" class="hide-from-toc">Other options to control content generation</h2> <ul> <li> Learn more about <a href="prompt-design">prompt design</a> so that you can influence the model to generate output specific to your needs. </li> <li> Configure <a href="model-parameters">model parameters</a> to control how the model generates a response, like max output tokens, the probability of repeated output tokens, etc. </li> <li> Set <a href="system-instructions">system instructions</a> to steer the behavior of the model. This feature is like a preamble that you add before the model gets exposed to any further instructions from the end user. </li> <li> Pass a <a href="generate-structured-output"><i>response schema</i></a> along with the prompt to specify a specific output schema. This feature is most commonly used when <a href="generate-structured-output#generate-json-basic">generating JSON output</a>, but it can also be used for <a href="generate-structured-output#generate-enum-basic">classification tasks</a> (like when you want the model to use specific labels or tags). </li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/safety-settings" class="_attribution-link">https://firebase.google.com/docs/ai-logic/safety-settings</a>
+  </p>
+</div>

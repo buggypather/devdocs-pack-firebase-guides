@@ -1,0 +1,27 @@
+<h1>Get Started with Realtime Database</h1> <h2 id="prerequisites">Prerequisites</h2> <ol> <li>
+<a href="../../flutter/setup">Install <code translate="no" dir="ltr">firebase_core</code></a> and add the initialization code to your app if you haven't already.</li> <li>Add your app to your Firebase project in the <a href="https://console.firebase.google.com/">Firebase console</a>.</li> </ol> <h2 id="create_a_database">Create a Database</h2> <ol> <li><p>In the Firebase console, navigate to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/database/" class="external"><strong>Realtime Database</strong></a>.</p></li> <li><p>Click <strong>Create database</strong>.</p></li> <li>
+<p>Select a starting mode for your Firebase Security Rules:</p> <p><strong>Test mode</strong></p> <p>Good for getting started with the mobile and web client libraries, but allows anyone to read and overwrite your data. After testing, <strong>make sure to review the <a href="../security">Understand Firebase Realtime Database Rules</a> section.</strong></p> <aside class="note"><strong>Note:</strong><span> If you create a database in Test mode and make no changes to the default world-readable and world-writeable security rules within a trial period, you will be alerted by email, then your database rules will deny all requests. Note the expiration date during the Firebase console setup flow.</span></aside> <p>To get started, select testmode.</p> <p><strong>Locked mode</strong></p> <p>Denies all reads and writes from mobile and web clients. Your authenticated application servers can still access your database.</p>
+</li> <li><p>Choose a region for the database. Depending on your choice of region, the database namespace will be of the form <code translate="no" dir="ltr">&lt;databaseName&gt;.firebaseio.com</code> or <code translate="no" dir="ltr">&lt;databaseName&gt;.&lt;region&gt;.firebasedatabase.app</code>. For more information, see <a href="../../projects/locations#rtdb-locations">select locations for your project</a>.</p></li> <li><p>Click <strong>Done</strong>.</p></li> </ol> <p>When you enable Realtime Database, it also enables the API in the <a href="https://console.cloud.google.com/projectselector/apis/api/firebasedatabase.googleapis.com/overview">Cloud API Manager</a>.</p> <h2 id="add_firebase_realtime_database_to_your_app">Add Firebase Realtime Database to your app</h2> <ol> <li>
+<p>From the root of your Flutter project, run the following command to install the plugin:</p> 
+<pre>flutter pub add firebase_database
+</pre>
+</li> <li>
+<p>Once complete, rebuild your Flutter application:</p> 
+<pre>flutter run
+</pre>
+</li> </ol> <h2 id="configure_database_rules">Configure database rules</h2> <p>The Realtime Database provides a declarative rules language that allows you to define how your data should be structured, how it should be indexed, and when your data can be read from and written to.</p> <aside class="note"><strong>Note:</strong><span> By default, read and write access to your database is restricted so only authenticated users can read or write data. To get started without setting up Firebase Authentication, you can <a href="../../rules/basics#default_rules_locked_mode">configure your rules for public access</a>. This does make your database open to anyone, even people not using your app, so be sure to restrict your database again when you set up authentication.</span></aside> <h2 id="initialize_the_firebase_realtime_database_package">Initialize the Firebase Realtime Database package</h2> <p>To start using the Realtime Database package within your project, import it at the top of your project files:</p> 
+<pre>import 'package:firebase_database/firebase_database.dart';
+</pre> <p>To use the default Database instance, call the <code translate="no" dir="ltr">instance</code> getter on <code translate="no" dir="ltr">FirebaseDatabase</code>:</p> 
+<pre>FirebaseDatabase database = FirebaseDatabase.instance;
+</pre> <p>If you'd like to use it with a secondary Firebase App, use the static <code translate="no" dir="ltr">instanceFor</code> method:</p> 
+<pre>FirebaseApp secondaryApp = Firebase.app('SecondaryApp');
+FirebaseDatabase database = FirebaseDatabase.instanceFor(app: secondaryApp);
+</pre> <p>If you'd like to use a different RTDB instance on the same project, you can pass in a <code translate="no" dir="ltr">databaseUrl</code> using the static <code translate="no" dir="ltr">instanceFor</code> method:</p> 
+<pre>final firebaseApp = Firebase.app();
+final rtdb = FirebaseDatabase.instanceFor(app: firebaseApp, databaseURL: 'https://your-realtime-database-url.firebaseio.com/');
+</pre> <h2 id="next_steps">Next Steps</h2> <ul> <li><p>Learn how to <a href="structure-data">structure data</a> for Realtime Database.</p></li> <li><p><a href="../usage/sharding">Scale your data across multiple database instances.</a></p></li> <li><p><a href="read-and-write">Read and write data.</a></p></li> <li><p><a href="https://console.firebase.google.com/project/_/database/data">View your database in the Firebase console.</a></p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/flutter/start" class="_attribution-link">https://firebase.google.com/docs/database/flutter/start</a>
+  </p>
+</div>

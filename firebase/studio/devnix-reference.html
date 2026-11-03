@@ -1,0 +1,96 @@
+<h1>dev.nix Reference</h1> <p>This page includes details on the schema for your workspace environment configuration file, which should always be located at <code translate="no" dir="ltr">.idx/dev.nix</code>.</p> <p>To learn about the Nix language, see the <a href="https://nix.dev/tutorials/nix-language" class="external">official Nix language tutorial</a>.</p> <h2 id="packages">packages</h2> <p>Packages to install in the environment.</p> <p>You can use the <code translate="no" dir="ltr">pkgs</code> argument to select packages to install, for example <code translate="no" dir="ltr">pkgs.python3</code>. Note that the contents of <code translate="no" dir="ltr">pkgs</code> depends on the selected <code translate="no" dir="ltr">channel</code> channel option.</p> <p>Example:</p> 
+<pre>{pkgs, ...}: {
+  channel = "stable-24.11";
+  packages = [pkgs.vim];
+}
+</pre> <p>You can search for available packages here: <a href="https://search.nixos.org/packages">stable</a> or <a href="https://search.nixos.org/packages">unstable</a>.</p> <p><em>Type:</em> list of package</p> <p><em>Default:</em> <code translate="no" dir="ltr">[ ]</code></p> <h2 id="channel">channel</h2> <p>nixpkgs channel to use.</p> <p>This channel defines the contents of the <code translate="no" dir="ltr">pkgs</code> argument.</p> <p><em>Type:</em> string (for example, "stable-24.11", "stable-25.05", "unstable")</p> <p><em>Default:</em> <code translate="no" dir="ltr">"stable-24.11"</code></p> <h2 id="env">env</h2> <p>Environment variables that are set inside the developer environment.</p> <p>These are propagated to all of your shells and the preview server. Environment variables can be especially useful if your application requires a specific set of variables.</p> <p>The value of each variable can be either a string or a list of strings. The latter is concatenated, interspersed with colon characters.</p> <p><code translate="no" dir="ltr">PATH</code> must be a list, as it's always extended and never replaced completely.</p> <p>Example:</p> 
+<pre>{pkgs, ...}: {
+  env = {
+    HELLO = "world";
+    # append an entry to PATH
+    PATH = ["/some/path/bin"];
+  };
+}
+</pre> <p><em>Type:</em> attribute set of ((list of string) or anything)</p> <p><em>Default:</em> <code translate="no" dir="ltr">{ }</code></p> <h2 id="idxextensions">idx.extensions</h2> <p>Code extensions you want to install in your IDX workspace.</p> <p>This is a list of fully qualified extension ids, for example <code translate="no" dir="ltr">${publisherId}.${extensionId}</code>.</p> <p>You can find a list of available extensions on the <a href="https://open-vsx.org/">Open VSX Registry</a> and enter them in your <code translate="no" dir="ltr">dev.nix</code> file by <code translate="no" dir="ltr">${publisherId}.${extensionId}</code>.</p> <p><em>Type:</em> list of (non-empty string or path)</p> <p><em>Default:</em> <code translate="no" dir="ltr">[ ]</code></p> <h2 id="idxpreviewsenable">idx.previews.enable</h2> <p>Set this to <code translate="no" dir="ltr">true</code> to enable IDX Previews.</p> <p>This feature provides a way to run and reload your apps automatically as you are developing them.</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">true</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h2 id="idxpreviewspreviews">idx.previews.previews</h2> <p>Preview configurations.</p> <p>Define the commands IDX executes in your developer environment.</p> <p>Example:</p> 
+<pre>{pkgs, ...}: {
+  idx.previews = {
+    enable = true;
+    previews = {
+      web = {
+        command = ["yes"];
+        cwd = "subfolder";
+        manager = "web";
+        env = {
+          HELLO = "world";
+        };
+      };
+    };
+  };
+}
+</pre> <p><em>Type:</em> attribute set of (submodule)</p> <p><em>Default:</em> <code translate="no" dir="ltr">{ }</code></p> <h2 id="idxpreviewspreviewsnameactivity">idx.previews.previews.&lt;name&gt;.activity</h2> <p>Android Launch Activity</p> <p><em>Type:</em> string</p> <p><em>Default:</em> <code translate="no" dir="ltr">""</code></p> <h2 id="idxpreviewspreviewsnamecommand">idx.previews.previews.&lt;name&gt;.command</h2> <p>Command to execute</p> <p><em>Type:</em> list of string</p> <p><em>Default:</em> <code translate="no" dir="ltr">[ ]</code></p> <h2 id="idxpreviewspreviewsnamecwd">idx.previews.previews.&lt;name&gt;.cwd</h2> <p>Working directory</p> <p><em>Type:</em> string</p> <p><em>Default:</em> <code translate="no" dir="ltr">""</code></p> <h2 id="idxpreviewspreviewsnameenv">idx.previews.previews.&lt;name&gt;.env</h2> <p>Environment variables to set.</p> <p><em>Type:</em> attribute set of string</p> <p><em>Default:</em> <code translate="no" dir="ltr">{ }</code></p> <h2 id="idxpreviewspreviewsnamemanager">idx.previews.previews.&lt;name&gt;.manager</h2> <p>Manager</p> <p><em>Type:</em> one of "web", "flutter", "android", "gradle"</p> <h2 id="idxworkspaceoncreate">idx.workspace.onCreate</h2> <p>Commands to execute when the workspace is created and opened for the first time.</p> <p>This can be useful to setup the development environment. For example, here we are specifying <code translate="no" dir="ltr">npm install</code> to run:</p> 
+<pre>{pkgs, ...}: {
+  idx.workspace.onCreate = {
+    npm-install = "npm install";
+    # files to open when the workspace is first opened.
+    default.openFiles = [ "src/index.ts" ];
+  };
+}
+</pre> <p><em>Type:</em> attribute set of (path or string or ({ openFiles = [ string ];}))</p> <p><em>Default:</em> <code translate="no" dir="ltr">{ }</code></p> <h2 id="idxworkspaceonstart">idx.workspace.onStart</h2> <p>Commands to execute whenever the workspace is opened.</p> <p>This can be useful to start build watchers. For example, here we are specifying 2 commands to run:</p> 
+<pre>{pkgs, ...}: {
+  idx.workspace.onStart = {
+    npm-watch-fe = "npm run watch:frontend";
+    npm-watch-be = "npm run watch:backend";
+    # files to open when the workspace is (re)opened.
+    default.openFiles = [ "src/index.ts" ];
+  };
+}
+</pre> <p><em>Type:</em> attribute set of (path or string or ({ openFiles = [ string ];}))</p> <p><em>Default:</em> <code translate="no" dir="ltr">{ }</code></p> <h2 id="imports">imports</h2> <p>You can extend your dev.nix file with an imported file.</p> 
+<pre># dev.nix
+{ pkgs, ... }: {
+  imports = [
+    ./some-file.nix
+  ];
+  # ...
+}
+# some-file.nix
+{ pkgs, ... }: {
+  packages = [
+    pkgs.python3
+  ];
+  # ...
+}
+</pre> <p>There are multiple reasons you may want to import a custom <code translate="no" dir="ltr">.nix</code> file in <code translate="no" dir="ltr">dev.nix</code>:</p> <ol> <li>
+<p>Your <code translate="no" dir="ltr">dev.nix</code> file is large and you want to modularize it to improve maintainability.</p> 
+<pre>{ pkgs, ... }: {
+  channel = "stable-24.11";
+  # ...
+  imports = [
+    ./env-cfg.nix
+    ./preview-config.nix
+  ];
+}
+</pre>
+</li> <li>
+<p>You want to configure options specific to your local environment and add the file to your <code translate="no" dir="ltr">.gitignore</code> list.</p> 
+<pre># dev.nix
+{ pkgs, lib, ... }: {
+  # ...
+
+  imports = lib.optionals (builtins.pathExists ./dev.local.nix ) [ ./dev.local.nix ];
+}
+</pre>
+
+<pre>#.gitignore
+.idx/dev.local.nix
+</pre>
+</li> </ol> <p><em>Type:</em> list of path</p> <p><em>Default:</em> <code translate="no" dir="ltr">[ ]</code></p> <h2 id="services">services</h2> <p>Common services to enable when the workspace opens.</p> <p>For example, to enable Postgres and use the <code translate="no" dir="ltr">pgvector</code> extension, add the following to <code translate="no" dir="ltr">dev.nix</code>:</p> 
+<pre>    services.postgres = {
+      extensions = ["pgvector"];
+      enable = true;
+    };
+</pre> <p>The following sections list all supported services and their configurable options.</p> <h3 id="servicesdockerenable">services.docker.enable</h3> <p>Whether to enable Rootless docker.</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">false</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h3 id="servicesmongodbenable">services.mongodb.enable</h3> <p>Whether to enable MongoDB server.</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">false</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h3 id="servicesmongodbpackage">services.mongodb.package</h3> <p>MongoDB package to use.</p> <p><em>Type:</em> package</p> <p><em>Default:</em> <code translate="no" dir="ltr">&lt;derivation mongodb-6.0.11&gt;</code></p> <h3 id="servicesmongodbport">services.mongodb.port</h3> <p>Configures the port Mongod will listen on.</p> <p>By default tcp is disabled and Mongod only listens on /tmp/mongodb/mongodb.sock.</p> <p>To connect, use the connection string <code translate="no" dir="ltr">mongodb://%2Ftmp%2Fmongodb%2Fmongodb.sock</code>.</p> <p><em>Type:</em> 16 bit unsigned integer; between 0 and 65535 (both inclusive)</p> <p><em>Default:</em> <code translate="no" dir="ltr">0</code></p> <h3 id="servicesmysqlenable">services.mysql.enable</h3> <p>Whether to enable MySQL server.</p> <p>The server is initialized with a passwordless user root. So to create additional users and create databases use <code translate="no" dir="ltr">mysql -u root</code>.</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">false</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h3 id="servicesmysqlpackage">services.mysql.package</h3> <p>MySQL package to use.</p> <p><em>Type:</em> package</p> <p><em>Default:</em> <code translate="no" dir="ltr">pkgs.mysql</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">pkgs.mysql80</code></p> <h3 id="servicespostgresenable">services.postgres.enable</h3> <p>Whether to enable PostgreSQL server.</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">false</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h3 id="servicespostgresenabletcp">services.postgres.enableTcp</h3> <p>Whether to enable Postgres to listen on TCP.</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">true</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h3 id="servicespostgrespackage">services.postgres.package</h3> <p>PostgreSQL package to use.</p> <p><em>Type:</em> package</p> <p><em>Default:</em> <code translate="no" dir="ltr">pkgs.postgresql</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">pkgs.postgresql_15</code></p> <h3 id="servicespostgresextensions">services.postgres.extensions</h3> <p>Postgres extensions to install.</p> <p><em>Type:</em> list of (one of "age", "apache_datasketches", "cstore_fdw", "hypopg", "jsonb_deep_sum", "periods", "pg_auto_failover", "pg_bigm", "pg_cron", "pg_ed25519", "pg_embedding", "pg_hint_plan", "pg_hll", "pg_ivm", "pg_net", "pg_partman", "pg_rational", "pg_relusage", "pg_repack", "pg_safeupdate", "pg_similarity", "pg_topn", "pg_uuidv7", "pgaudit", "pgjwt", "pgroonga", "pgrouting", "pgsql-http", "pgtap", "pgvector", "plpgsql_check", "plr", "plv8", "postgis", "promscale_extension", "repmgr", "rum", "smlar", "tds_fdw", "temporal_tables", "timescaledb", "timescaledb-apache", "timescaledb_toolkit", "tsearch_extras", "tsja", "wal2json")</p> <p><em>Default:</em> <code translate="no" dir="ltr">[ ]</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">[ "pgvector" "postgis" ];</code></p> <h3 id="servicespubsubenable">services.pubsub.enable</h3> <p>Whether to enable Google Pub/Sub emulator.</p> <p>More documentation on using the emulator can be found here: https://cloud.google.com/pubsub/docs/emulator#using_the_emulator .</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">false</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h3 id="servicespubsubport">services.pubsub.port</h3> <p>Configures the port Pub/Sub will listen on.</p> <p><em>Type:</em> 16 bit unsigned integer; between 0 and 65535 (both inclusive)</p> <p><em>Default:</em> <code translate="no" dir="ltr">8085</code></p> <h3 id="servicespubsubproject-id">services.pubsub.project-id</h3> <p>Project ID to use to run the Pub/Sub emulator. This project is for testing only, it does not have to exist and is only used locally.</p> <p><em>Type:</em> string matching the pattern [a-z][a-z0-9-]{5,29}</p> <p><em>Default:</em> <code translate="no" dir="ltr">"idx-pubsub-emulator"</code></p> <h3 id="servicesredisenable">services.redis.enable</h3> <p>Whether to enable Redis server.</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">false</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h3 id="servicesredisport">services.redis.port</h3> <p>Configures the port Redis will listen on.</p> <p>By default tcp is disabled and redis only listens on /tmp/redis/redis.sock.</p> <p><em>Type:</em> 16 bit unsigned integer; between 0 and 65535 (both inclusive)</p> <p><em>Default:</em> <code translate="no" dir="ltr">0</code></p> <h3 id="servicesspannerenable">services.spanner.enable</h3> <p>Whether to enable Google Cloud Spanner Emulator.</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">false</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h3 id="servicesspannerfault-injection">services.spanner.fault-injection</h3> <p>Whether to enable random fault injection into transactions.</p> <p><em>Type:</em> boolean</p> <p><em>Default:</em> <code translate="no" dir="ltr">false</code></p> <p><em>Example:</em> <code translate="no" dir="ltr">true</code></p> <h3 id="servicesspannergrpc-port">services.spanner.grpc-port</h3> <p>The TCP port to which the emulator should be bound.</p> <p><em>Type:</em> 16 bit unsigned integer; between 0 and 65535 (both inclusive)</p> <p><em>Default:</em> <code translate="no" dir="ltr">9010</code></p> <h3 id="servicesspannerrest-port">services.spanner.rest-port</h3> <p>The port at which REST requests are served</p> <p><em>Type:</em> 16 bit unsigned integer; between 0 and 65535 (both inclusive)</p> <p><em>Default:</em> <code translate="no" dir="ltr">9020</code></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/studio/devnix-reference" class="_attribution-link">https://firebase.google.com/docs/studio/devnix-reference</a>
+  </p>
+</div>

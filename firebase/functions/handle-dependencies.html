@@ -1,0 +1,67 @@
+<h1>Handling dependencies</h1> <table> <tr class="alt"> <td width="20%" style="vertical-align: middle;"><strong>Select language:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="#nodejs">Node.js</a> <a class="button" href="#python">Python</a> </td> </tr> </table> <p>A Cloud Functions function can use external modules and local dependencies. How you specify and manage dependencies depends on your runtime language.</p> <h2 id="nodejs">Node.js</h2> <p>A function is allowed to use external Node.js modules as well as local data. Dependencies in Node.js are managed with <a href="https://docs.npmjs.com/">npm</a> and expressed in a metadata file called <a href="https://docs.npmjs.com/files/package.json"><code translate="no" dir="ltr">package.json</code></a>. The Cloud Functions Node.js runtimes support installing using <a href="https://docs.npmjs.com/">npm</a>, <a href="https://yarnpkg.com/en/">yarn</a>, or <a href="https://pnpm.io/">pnpm</a>.</p> <p>To specify a dependency for your function, add it to your <code translate="no" dir="ltr">package.json</code> file.</p> <aside class="note"><strong>Note:</strong><span> If a <code translate="no" dir="ltr">package-lock.json</code>, <code translate="no" dir="ltr">yarn.lock</code>, or <code translate="no" dir="ltr">pnpm-lock.yaml</code> file is found within your project, that lock file will be respected when dependencies are installed using <code translate="no" dir="ltr">npm ci</code>, <code translate="no" dir="ltr">yarn install</code> or <code translate="no" dir="ltr">pnpm install</code>.</span></aside> <p>In this example, a dependency is listed in the <code translate="no" dir="ltr">package.json</code> file:</p> 
+<pre>{
+  "dependencies": {
+    "escape-html": "^1.0.3"
+  }
+}</pre> <p>The dependency is then imported in the function:</p> <div> <section><p class="_firebase-tab"><strong>JavaScript</strong></p>
+
+<pre data-language="">const onRequest = require("firebase-functions/https");
+const escapeHtml = require("escape-html");
+
+// Return a greeting with the input HTML-escaped.
+exports.hello = onRequest((req, res) =&gt; {
+  res.send(`Hello ${escapeHtml(req.query.name || req.body.name || "World")}!`);
+});
+</pre></section> <section><p class="_firebase-tab"><strong>TypeScript</strong></p>
+
+<pre data-language="typescript">import { onRequest } from "firebase-functions/https";
+import * as escapeHtml from "escape-html";
+
+// Return a greeting with the input HTML-escaped.
+export let hello = onRequest((req, res) =&gt; {
+  res.send(`Hello ${escapeHtml(req.query.name || req.body.name || "World")}!`);
+});
+</pre></section> </div> <h3 id="including_local_nodejs_modules">Including local Node.js modules</h3> <p>You can also include local Node.js modules as part of your function. You can achieve this by declaring your module in <code translate="no" dir="ltr">package.json</code> using the <a href="https://docs.npmjs.com/files/package.json#local-paths"><code translate="no" dir="ltr">file:</code> prefix</a>. In the following example, <code translate="no" dir="ltr">mymodule</code> refers to your module name and <code translate="no" dir="ltr">mymoduledir</code> is the directory containing your module:</p> 
+<pre>{
+  "dependencies": {
+    "mymodule": "file:mymoduledir"
+  }
+}</pre> <p>The code for this local module should be stored somewhere other than the <code translate="no" dir="ltr">node_modules</code> folder within your function's root directory.</p> <aside class="note"><strong>Note:</strong><span> The Firebase CLI ignores the local <code translate="no" dir="ltr">node_modules</code> folder when deploying your function.</span></aside> <h4 id="additional_steps_for_typescript">Additional steps for TypeScript</h4> <p>TypeScript helps you most when you use libraries that have type information. This lets TypeScript catch syntax errors and lets editors give you better autocomplete suggestions. Some libraries, like <code translate="no" dir="ltr">firebase-admin</code> and <code translate="no" dir="ltr">firebase-functions</code>, ship with TypeScript definitions included.</p> <p>Many libraries do not provide their own TypeScript definition. The <a href="https://github.com/DefinitelyTyped/DefinitelyTyped">DefinitelyTyped</a> project provides community-maintained definitions for the most popular node libraries. DefinitelyTyped publishes these definitions under the same NPM package name, but inside the "@types" organization. For example, you can install the type information for the <code translate="no" dir="ltr">uuid</code> library with the following:</p> 
+<pre>npm install @types/uuid
+</pre> <p>As you become more familiar with TypeScript, you might find yourself combining both installs:</p> 
+<pre>npm install uuid @types/uuid
+</pre> <p>Type dependencies should be the same kind as the library dependency. For example, you should not save <code translate="no" dir="ltr">uuid</code> as a normal dependency and <code translate="no" dir="ltr">@types/uuid</code> as a dev dependency or peer dependency.</p> <h3 id="loading_nodejs_modules">Loading Node.js modules</h3> <p>Use the Node.js <a href="https://nodejs.org/api/modules.html#modules_require"><code translate="no" dir="ltr">require()</code></a> function to load any Node.js module you have installed. You can also use the <code translate="no" dir="ltr">require()</code> function to import local files you deploy alongside your function.</p> <p>If you are writing functions in TypeScript, use the <a href="https://www.typescriptlang.org/docs/handbook/modules.html#import"><code translate="no" dir="ltr">import</code></a> statement in the same way to load any Node.js module you have installed.</p> <h3 id="using_private_modules">Using private modules</h3> <p>You can use a <a href="https://docs.npmjs.com/private-modules/intro">private npm module</a> by providing settings for authenticating with the registry in a <code translate="no" dir="ltr">.npmrc</code> file in the function's directory. If you're using Yarn v2 or higher as your package manager, this file is named <code translate="no" dir="ltr">.yarnrc.yml</code>.</p> <h4 id="private_modules_from_artifact_registry">Private modules from Artifact Registry</h4> <p>An <a href="https://docs.cloud.google.com/artifact-registry/docs/nodejs/store-nodejs">Artifact Registry Node.js package repository</a> can host private modules for your function. When you deploy a Google Cloud Functions function, the build process automatically generates Artifact Registry credentials for the <a href="https://docs.cloud.google.com/build/docs/cloud-build-service-account">Cloud Build service account</a>. You only need to list the Artifact Registry repository in your <code translate="no" dir="ltr">.npmrc</code> without generating additional credentials. For example:</p> 
+<pre>@SCOPE:registry=https://REGION_ID-npm.pkg.dev/PROJECT_ID/REPOSITORY_NAME
+//REGION_ID-npm.pkg.dev/PROJECT_ID/REPOSITORY_NAME:always-auth=true
+</pre> <p>This approach also works for the Yarn v1 package manager. If you're using Yarn v2 or higher, you only need to list the Artifact Registry repository in your <code translate="no" dir="ltr">.yarnrc.yml</code> without additional credentials. For example:</p> 
+<pre>npmScopes:
+  SCOPE:
+    npmRegistryServer: https://REGION_ID-npm.pkg.dev/PROJECT_ID/REPOSITORY_NAME
+    npmAlwaysAuth: true
+</pre> <h4 id="private_modules_from_other_repositories">Private modules from other repositories</h4> <p>The <a href="https://docs.npmjs.com/getting-started/working_with_tokens">npm documentation</a> explains how to create custom read-only access tokens. We discourage using the <code translate="no" dir="ltr">.npmrc</code> file created in the home directory because it contains a read-write token. Write permissions are not required during deployment, and could pose a security risk.</p> <p>Do not include the <code translate="no" dir="ltr">.npmrc</code> file if you're not using private repositories, as it can increase the deployment time for your functions.</p> <aside class="note"><strong>Note:</strong><span> If you're using any custom permissions (such as those necessary for <a href="https://docs.cloud.google.com/run/docs/configuring/connecting-vpc">VPC</a>), make sure that you explicitly allow your functions to access the target private repository.</span></aside> <h5 id="file_format">File format</h5> <p>If you're using an <code translate="no" dir="ltr">.npmrc</code> file to set a custom auth token, it should include the line shown below.</p> 
+<pre>//REGISTRY_DOMAIN/:_authToken=AUTH_TOKEN
+</pre> <p>Replace:</p> <ul> <li>
+<var translate="no">REGISTRY_DOMAIN</var>: the domain name of your private npm registry. If your repository is hosted with <code translate="no" dir="ltr">npmjs.org</code>, set this field to <code translate="no" dir="ltr">registry.npmjs.org</code>.</li> <li>
+<p><var translate="no">AUTH_TOKEN</var>: the authorization token for your npm registry. This can either be the literal text value of the token or the text string <code translate="no" dir="ltr">${NPM_TOKEN}</code>, which <code translate="no" dir="ltr">npm</code> replaces with the actual token value from the environment.</p> <p>You can set the <code translate="no" dir="ltr">$NPM_TOKEN</code> environment variable with the <a href="https://docs.cloud.google.com/run/docs/configuring/services/environment-variables"><code translate="no" dir="ltr">--set-build-env-vars</code></a> argument to your <a href="https://docs.cloud.google.com/sdk/gcloud/reference/functions/deploy"><code translate="no" dir="ltr">gcloud functions deploy</code></a> command. See the <a href="https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow#create-and-check-in-a-project-specific-npmrc-file">NPM tutorial on private modules</a> for more details of the NPM auth token.</p>
+</li> </ul> <hr> <h2 id="python">Python</h2> <p>There are two ways to specify dependencies for Cloud Functions written in Python: using the <a href="https://pip.pypa.io/en/stable/">pip</a> package manager's <code translate="no" dir="ltr">requirements.txt</code> file or packaging local dependencies alongside your function.</p> <p>Dependency specification using the Pipfile/Pipfile.lock standard is not supported. Your project should not include these files.</p> <h3 id="specifying_dependencies_with_pip">Specifying dependencies with pip</h3> <p>Dependencies in Python are managed with pip and expressed in a metadata file called <a href="https://pip.pypa.io/en/stable/user_guide/#requirements-files"><code translate="no" dir="ltr">requirements.txt</code></a>. This file must be in the same directory as the <code translate="no" dir="ltr">main.py</code> file that contains your function code.</p> <p>When you deploy or redeploy your function, Cloud Functions uses pip to download and install the latest version of your dependencies as declared in the <code translate="no" dir="ltr">requirements.txt</code> file. The <code translate="no" dir="ltr">requirements.txt</code> file contains one line per package. Each line contains the package name, and optionally, the requested version. For more details, see the <a href="https://pip.pypa.io/en/stable/user_guide/#requirements-files" target="external" track-type="concept" track-name="externalLink" track-metadata-position="body"><code translate="no" dir="ltr">requirements.txt</code> reference</a>.</p> <p>To prevent your build from being affected by dependency version changes, consider pinning your dependency packages to a specific version.</p> <p>The following is an example <code translate="no" dir="ltr">requirements.txt</code> file:</p> 
+<pre>
+functions-framework
+requests==2.20.0
+numpy
+</pre> <h3 id="packaging_local_dependencies">Packaging local dependencies</h3> <p>You can also package and deploy dependencies alongside your function. This approach is useful if your dependency is not available via the pip package manager or if your Cloud Functions environment's internet access is restricted.</p> <aside class="note"><strong>Note:</strong><span> You can still use a <code translate="no" dir="ltr">requirements.txt</code> file to specify additional dependencies you haven't packaged alongside your function.</span></aside> <p>For example, you might use a directory structure such as the following:</p> 
+<pre>
+myfunction/
+├── main.py
+└── localpackage/
+    ├── __init__.py
+    └── script.py
+</pre> <p>You can then import the code as usual from <code translate="no" dir="ltr">localpackage</code> using the following <code translate="no" dir="ltr">import</code> statement.</p> 
+<pre data-language="py">
+# Code in main.py
+from localpackage import script
+</pre> <p>Note that this approach will <em>not</em> run any <code translate="no" dir="ltr">setup.py</code> files. Packages with those files can still be bundled, but may not run correctly on Cloud Functions.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/handle-dependencies" class="_attribution-link">https://firebase.google.com/docs/functions/handle-dependencies</a>
+  </p>
+</div>

@@ -1,0 +1,75 @@
+<h1>Deploy multiple environments from a codebase</h1> <p>It's common to have multiple environments deployed from the same codebase, each with slightly different configuration. For example, you might want to assign less CPU and RAM to your staging environment, or you might want to make sure your production environment keeps at least 1 instance active and ready to serve requests. You might also want to specify different environment variables and secrets depending on the environment and resources you want to use.</p> <p>This guide describes how to deploy a production and staging environment, each to a separate Firebase project. Following the same principles, you can deploy to other different kinds of environments. To learn more about environments, check out the <a href="../projects/dev-workflows/overview-environments">Overview of environments</a> and <a href="../projects/dev-workflows/general-best-practices">General best practices for setting up Firebase projects</a>.</p> <h3 id="prerequisites">Prerequisites</h3> <ul> <li>Your application code is already stored in GitHub.</li> <li>You have already created a distinct project for each of your environments—for example <code translate="no" dir="ltr">my-production-firebase-project</code> and <code translate="no" dir="ltr">my-staging-firebase-project</code>. Make sure to tag your production Firebase project with the <a href="../projects/dev-workflows/overview-environments#prod-environment">"production" environment type</a>.</li> <li>In each project, you've created an App Hosting backend, with the live branch set to the GitHub branch you want to deploy (such as <code translate="no" dir="ltr">main</code>). See <a href="get-started">Get started with App Hosting</a> for more information.</li> </ul> <aside class="note"><strong>Note:</strong><span> While it's technically possible to deploy multiple environments to multiple backends created in the same project, it isn't recommended. See <a href="https://cloud.google.com/dataflow/docs/guides/develop-and-test-pipelines#deployment-environment">GCP guidance</a> and <a href="../projects/dev-workflows/overview-environments">Firebase guidance</a> on setting up and deploying across multiple environments.</span></aside> <h3 id="step-0">Step 0: Create a default configuration in apphosting.yaml</h3> <p>App Hosting supports a configuration file called <code translate="no" dir="ltr">apphosting.yaml</code> to manage runtime settings (CPU, concurrency, memory limits, etc.) and environment variables for your app. It also supports references to secrets managed with Cloud Secret Manager, making it safe to check into source control. For more information, see <a href="configure#configure-backend">Configure a backend</a>.</p> <p>To get started, create an <code translate="no" dir="ltr">apphosting.yaml</code> file in your app's root directory. This is the fallback configuration file that is used when an environment-specific configuration file isn't found. The values stored in <code translate="no" dir="ltr">apphosting.yaml</code> should be defaults that are safe to use for all environments.</p> <p>The next sections explain how to override default values in <code translate="no" dir="ltr">apphosting.yaml</code> for specific environments. This example flow creates a staging environment.</p> <h3 id="step-1">Step 1: Set Environment name</h3> <p>Each App Hosting backend has an <strong>Environment name</strong> setting. This field is used to map your backend to an environment-specific configuration file, and can be changed at any time. You can only set one environment name per backend.</p> <p>To set your backend's environment name,</p> <ol> <li>In the Firebase console, select your staging project (in this example, <code translate="no" dir="ltr">my-staging-firebase-project</code>).</li> <li>Navigate to <strong>Hosting &amp; Serverless</strong> &gt; <a href="https://console.firebase.google.com/project/_/apphosting/" class="external"><strong>App Hosting</strong></a>.</li> <li>Click <strong>View</strong> on your chosen backend.</li> <li>In the <strong>Settings</strong> tab, select <strong>Environment</strong>.</li> <li>Under <strong>Environment name,</strong> enter the name of your environment. You can name the environment whatever you like. In this example, it's <strong>staging</strong>.</li> <li>Click <strong>Save</strong>.</li> </ol> <p>When an App Hosting rollout is triggered for your backend (either on git push or manually through the Firebase console), App Hosting will check for an <code translate="no" dir="ltr">apphosting.<var translate="no">ENVIRONMENT_NAME</var>.yaml</code> file before falling back to <code translate="no" dir="ltr">apphosting.yaml</code>.</p> <h3 id="step-2">Step 2: Create your environment-specific <code translate="no" dir="ltr">apphosting.yaml</code> file</h3> <p>For your environment-specific configuration, create a file with the name <code translate="no" dir="ltr">apphosting.<var translate="no">ENVIRONMENT_NAME</var>.yaml</code> in order to specify environment-specific overrides. This file has the same format as the default <a href="configure"><code translate="no" dir="ltr">apphosting.yaml</code></a> and must be located in your app's root directory alongside <code translate="no" dir="ltr">apphosting.yaml</code>.</p> <p>At build time, App Hosting merges these two files, with priority given to values in the environment-specific YAML file over the base <code translate="no" dir="ltr">apphosting.yaml</code> file.</p> <p>In this example, you'll create a file named <code translate="no" dir="ltr">apphosting.staging.yaml</code> in the app's root directory:</p> 
+<pre>
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  concurrency: 5
+
+env:
+-   variable: API_URL
+    value: api.staging.service.com
+    availability:
+      -   BUILD
+
+-   variable: DATABASE_URL
+    secret: secretStagingDatabaseURL
+</pre> <p>Suppose you already had an <code translate="no" dir="ltr">apphosting.yaml</code> that looked like:</p> 
+<pre>runConfig:
+  cpu: 3
+  memoryMiB: 1024
+  maxInstances: 4
+  minInstances: 0
+  concurrency: 100
+
+env:
+-   variable: API_URL
+    value: api.service.com
+    availability:
+      -   BUILD
+      -   RUNTIME
+
+-   variable: STORAGE_BUCKET
+    value: mybucket.firebasestorage.app
+    availability:
+      -   RUNTIME
+
+-   variable: API_KEY
+    secret: secretIDforAPI
+</pre> <p>The final merged output, which you can inspect in your Cloud Build logs, would look like this:</p> 
+<pre>runConfig:
+  cpu: 1
+  memoryMiB: 512
+  maxInstances: 4
+  minInstances: 0
+  concurrency: 5
+
+env:
+-   variable: API_URL
+    value: api.staging.service.com
+    availability:
+      -   BUILD
+
+-   variable: STORAGE_BUCKET
+    value: mybucket.firebasestorage.app
+    availability:
+      -   RUNTIME
+
+-   variable: API_KEY
+    secret: secretIDforAPI
+
+-   variable: DATABASE_URL
+    secret: secretStagingDatabaseURL
+</pre> <p>Note that certain <code translate="no" dir="ltr">runConfig</code> values such as CPU have been overwritten as well as any overlapping environment variables.</p> <aside class="note"><strong>Note:</strong><span> You'll still need to grant the proper service accounts access to any secrets that you create, the same as you would for <code translate="no" dir="ltr">apphosting.yaml</code> secrets. See <a href="configure#secret-parameters">store and access secret parameters</a> for more information.</span></aside> <h3 id="step-3">Step 3: Deploy your codebase</h3> <p>Once you're finished editing your environment-specific <code translate="no" dir="ltr">apphosting.<var translate="no">ENVIRONMENT_NAME</var>.yaml</code> file, push your file to GitHub:</p> 
+<pre>$ git add apphosting.&lt;ENVIRONMENT_NAME&gt;.yaml
+$ git commit -m "Added environment specific yaml file"
+$ git push
+</pre> <p>Any backends tagged with this environment name will use the specific override values you have specified in its corresponding YAML file, and fall back to <code translate="no" dir="ltr">apphosting.yaml</code> when a value isn't found. For backends without an associated environment name, you can continue to use apphosting.yaml.</p> <h2 id="next-steps">Next steps</h2> <ul> <li>Go deeper: walk through a Firebase codelab that integrates a hosted app with Firebase Authentication and <span class='\"notranslate\"'>Gemini API</span> features: <a href="https://firebase.google.com/codelabs/firebase-nextjs">Next.js</a> | <a href="https://firebase.google.com/codelabs/firebase-web">Angular</a>
+</li> <li>
+<a href="custom-domain">Connect a custom domain</a>.</li> <li>
+<a href="configure">Configure your backend</a>.</li> <li>
+<a href="rollouts">Monitor rollouts, site usage, and logs</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-hosting/multiple-environments" class="_attribution-link">https://firebase.google.com/docs/app-hosting/multiple-environments</a>
+  </p>
+</div>

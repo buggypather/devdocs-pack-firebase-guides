@@ -1,0 +1,92 @@
+<h1>Set up a custom domain for Dynamic Links</h1> <aside class="note"> <b>Note:</b> Firebase Dynamic Links is <i>deprecated</i> and should not be used in new projects. The service will be shutting down soon. Follow the <a href="https://firebase.google.com/support/dynamic-links-faq#how_should_i_migrate_from_the_service"> migration guide</a> and see the <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ</a> for more information. </aside> <p>You can have greater control over your Dynamic Links' branding by using your own domain instead of a <code translate="no" dir="ltr">page.link</code> subdomain. With custom domains, you can create Dynamic Links like the following examples:</p> 
+<pre>
+https://example.com/link-suffix
+https://example.com/links/promos/link-suffix
+https://links.example.com/link-suffix
+https://ex.amp.le/link-suffix
+</pre> <p>The part of the URL before <var translate="no">link-suffix</var> is called the <em>URL prefix</em>, and contains both your custom Dynamic Link domain and a path prefix. You will need to provide a URL prefix when you create Dynamic Links.</p> <p>Setting up a custom domain requires Editor or Owner permission on your Firebase project.</p> <aside class="note"><strong>Note:</strong><span> To use a custom domain for Dynamic Links, the domain must point to Firebase Hosting. If you have a domain you want to use with Dynamic Links and the domain points to a different host, you can either move to Firebase Hosting or create a subdomain hosted by Firebase, which you can use for Dynamic Links.</span></aside> <h2 id="use_web_domain">Using your web domain for Dynamic Links</h2> <p>You can use the same domain for your Dynamic Links and your web pages, Universal Links, and App Links, but if you do, you must take care that your Dynamic Link URLs don't conflict with your web URLs. When you configure Dynamic Links to use a particular URL prefix, all URLs that begin with that prefix are treated as Dynamic Links, so you can't use URLs with that prefix to point to ordinary hosted content.</p> <p>For example, if you want to create a Dynamic Link to the resource <code translate="no" dir="ltr">https://example.com/my-resource</code> (a web page, Universal Link, or App Link), you can't use <code translate="no" dir="ltr">https://example.com/</code> as the Dynamic Links URL prefix, because doing so would cause <code translate="no" dir="ltr">https://example.com/my-resource</code> to be treated as a Dynamic Link. Instead, you must use a URL prefix with either a different domain or a different path prefix.</p> <p>So, the following long-form Dynamic Links (and equivalent short links) won't work as intended because the URLs specified by the <code translate="no" dir="ltr">link</code> parameter start with the Dynamic Link URL prefix, <code translate="no" dir="ltr">https://example.com/</code>:</p> 
+<pre>
+ https://example.com/?link=https://example.com/my-resource
+ https://example.com/?link=https://example.com/resources/my-resource
+</pre> <p>But the following long-form Dynamic Links (and equivalent short links) can work, because the URL prefixes don't conflict with the <code translate="no" dir="ltr">link</code> URLs:</p> 
+<pre>
+ https://link.example.com/?link=https://example.com/my-resource
+ https://example.com/links/?link=https://example.com/my-resource
+ https://ex.amp.le/?link=https://example.com/my-resource
+</pre> <h2 id="console">Set up a custom domain in the Firebase console</h2> <p>You can usually set up a custom domain completely in the Firebase console. To do so:</p> <ol> <li><p>If you haven't set up Firebase Hosting for your project, open the <a href="https://console.firebase.google.com/project/_/hosting/">Hosting page</a> of the Firebase console, click <strong>Get Started</strong>, and click through the setup instructions. You don't have to complete the indicated steps at this time.</p></li> <li><p>Open the <a href="https://console.firebase.google.com/project/_/durablelinks/">Dynamic Links page</a> of the Firebase console.</p></li> <li>
+<p>If you haven't used Dynamic Links before, click <strong>Get Started</strong>. Otherwise, click <strong>Add URL prefix</strong> from the drop-down menu.</p> <p>Then, complete the setup wizard, specifying the domain and path prefix you want to use when prompted.</p> <aside class="note"><strong>Note:</strong><span> You can't use the same URL prefix for both Dynamic Links and regular hosting. If you want to use the same branding for both, consider using a path prefix (for example, example.com/links) or subdomain (links.example.com/) in your Dynamic Links URL prefix.</span></aside>
+</li> <li>
+<p><strong>iOS only</strong>: In your Xcode project's <code translate="no" dir="ltr">Info.plist</code> file, create a key called <code translate="no" dir="ltr">FirebaseDynamicLinksCustomDomains</code> and set it to your app's Dynamic Links URL prefixes. For example:</p> 
+<pre>&lt;key&gt;FirebaseDynamicLinksCustomDomains&lt;/key&gt;
+&lt;array&gt;
+  &lt;string&gt;https://example.com/link&lt;/string&gt;
+  &lt;string&gt;https://example.com/promos&lt;/string&gt;
+&lt;/array&gt;
+</pre>
+</li> </ol> <h2 id="manual">Set up a custom domain manually</h2> <p>In some situations, such as when you already have a custom domain set up for Dynamic Links and want to add another domain, or when you are adding a domain already connected to a Hosting site, you have to set up your custom domain manually.</p> <p>To do so:</p> <ol> <li>
+<p><a href="../hosting/custom-domain">Connect your domain to Firebase Hosting</a> if you haven't already done so.</p> <p>Setting up your domain with Firebase Hosting includes creating the configuration file <a href="../cli#the_firebasejson_file"><code translate="no" dir="ltr">firebase.json</code></a> in your local project directory.</p>
+</li> <li><p><a href="../cli#update-cli">Update to the latest version of the Firebase CLI</a> (v6.5.0 or later).</p></li> <li>
+<p>Configure your Hosting site for Dynamic Links in your project's <code translate="no" dir="ltr">firebase.json</code> file. If your project has multiple sites, be sure to configure the site connected to the domain you want to use.</p> <ul> <li><p>Set <code translate="no" dir="ltr">appAssociation</code> to <code translate="no" dir="ltr">AUTO</code>. With this setting, Hosting dynamically generates <code translate="no" dir="ltr">assetlinks.json</code> and <code translate="no" dir="ltr">apple-app-site-association</code> files when they are requested.</p></li> <li>
+<p>Specify the path prefixes you want to use for Dynamic Links by setting rewrite rules with <code translate="no" dir="ltr">dynamicLinks</code> set to <code translate="no" dir="ltr">true</code>. Requests to these paths get proxied to Dynamic Links.</p> <p>Unlike rules that rewrite paths to URLs, Dynamic Link rewrite rules can't contain regular expressions.</p> <p>If you have multiple rewrite rules for your site, be aware that Hosting executes the first rewrite rule that matches the request.</p>
+</li> </ul> <p>For example:</p> 
+<pre>"hosting": {
+  // ...
+  "appAssociation": "AUTO",
+  "rewrites": [
+    {
+      "source": "/promos/**",
+      "dynamicLinks": true
+    },
+    {
+      "source": "/links/share/**",
+      "dynamicLinks": true
+    }
+  ]
+}
+</pre> <p>With the above configuration, you can create Dynamic Links with URL prefixes like the following examples: </p>
+
+<pre>
+https://your-domain/promos/link-suffix
+https://your-domain/links/share/link-suffix
+</pre> <aside class="note"><strong>Note:</strong><span> You can't use the same URL prefix for both Dynamic Links and regular hosting. If you want to use the same branding for both, consider using a path prefix (for example, example.com/links) or subdomain (links.example.com/) in your Dynamic Links URL prefix.</span></aside> <p>If you use this domain only for Dynamic Links, you can use a source path of <code translate="no" dir="ltr">/**</code> to create Dynamic Links with no path prefix:</p> 
+<pre>{
+  "source": "/**",
+  "dynamicLinks": true
+}
+</pre> <p>With the above rule, you can create Dynamic Links like the following example: </p>
+
+<pre>https://your-domain/link-suffix</pre>
+</li> <li>
+<p>Deploy your Hosting configuration changes: </p>
+
+<pre>firebase deploy --only hosting</pre> <p><em>(optional)</em> You can check the deployed <code translate="no" dir="ltr">firebase.json</code> content using the <a href="../hosting/reference/rest/v1beta1/sites.releases/list">Hosting REST API</a>.</p>
+</li> <li>
+<p><strong>iOS only</strong>: In your Xcode project's <code translate="no" dir="ltr">Info.plist</code> file, create a key called <code translate="no" dir="ltr">FirebaseDynamicLinksCustomDomains</code> and set it to your app's Dynamic Links URL prefixes. For example:</p> 
+<pre>&lt;key&gt;FirebaseDynamicLinksCustomDomains&lt;/key&gt;
+&lt;array&gt;
+  &lt;string&gt;https://example.com/promos&lt;/string&gt;
+  &lt;string&gt;https://example.com/links/share&lt;/string&gt;
+&lt;/array&gt;
+</pre>
+</li> </ol> <h3 id="priority_order">Priority order for Dynamic Links and Hosting</h3> <p>For Dynamic Links, be particularly aware of <a href="../hosting/full-config#hosting_priority_order">hosting priority order</a>.</p> <ul> <li>Ensure that your Dynamic Links URL prefix doesn't conflict with higher priority hosting configurations (for example, hosted static content always has priority over rewrites).</li> <li>Within the <code translate="no" dir="ltr">rewrites</code> attribute, the Hosting response will obey the rule specified by the <em>first <code translate="no" dir="ltr">source</code> glob that captures the requested path</em>.</li> </ul> <p>For example, if you set up a Dynamic Link for <code translate="no" dir="ltr"><var translate="no">your-domain</var>/<var translate="no">source-path</var>/<var translate="no">link-suffix</var></code> but you also have static content at <code translate="no" dir="ltr"><var translate="no">your-domain</var>/<var translate="no">source-path</var>/index.html</code>, the static content takes precedence. An end-user will see <code translate="no" dir="ltr">index.html</code> rather than the Dynamic Link. Similarly, if you have static content at <code translate="no" dir="ltr"><var translate="no">your-domain</var>/<var translate="no">source-path</var>/<var translate="no">link-suffix</var></code>, the end-user will see the static content rather than the Dynamic Link.</p> <p>If you want to use the same branding for both Dynamic Links and Hosting, consider one of the following options for your Dynamic Links URL prefix:</p> <ul> <li>
+<p>Set your <code translate="no" dir="ltr">source</code> attribute to match a path prefix. For example, if you have a custom domain of <code translate="no" dir="ltr">example.com</code>, your rewrite rule could be:</p> 
+<pre>// Domain is example.com
+"rewrites": [ {
+  "source": "/links/**",  // Dynamic Links start with "https://example.com/links/"
+  "dynamicLinks": true
+} ]
+</pre>
+</li> <li>
+<p>Set up a subdomain to use for Dynamic Links, then set your <code translate="no" dir="ltr">source</code> attribute to match that subdomain. For example, if you have a subdomain of <code translate="no" dir="ltr">links.example.com</code>, your rewrite rule could be:</p> 
+<pre>// Domain is links.example.com
+"rewrites": [ {
+  "source": "/**",  // Dynamic Links start with "https://links.example.com/"
+  "dynamicLinks": true
+} ]
+</pre>
+</li> </ul> <aside class="note"><strong>Note:</strong><span> You can check the deployed <code translate="no" dir="ltr">firebase.json</code> content using the <a href="../hosting/reference/rest/v1beta1/sites.releases/list">Hosting REST API</a>.</span></aside><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/dynamic-links/custom-domains" class="_attribution-link">https://firebase.google.com/docs/dynamic-links/custom-domains</a>
+  </p>
+</div>

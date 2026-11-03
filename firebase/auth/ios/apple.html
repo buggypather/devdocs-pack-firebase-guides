@@ -1,0 +1,345 @@
+<h1>Authenticate Using Apple</h1> <p>You can let your users authenticate with Firebase using their Apple ID by using the Firebase SDK to carry out the end-to-end OAuth 2.0 sign-in flow.</p> <aside> <p><b>Important</b>: To sign in with an Apple account, users must:</p> <ul> <li>Have an Apple ID with two-factor authentication (2FA) enabled.</li> <li>Be signed in to iCloud on an Apple device.</li> </ul> <p>See <a class="external" href="https://support.apple.com/en-us/HT210318">How to use Sign in with Apple</a>. You will also need to meet these requirements to test your integration with Sign In with Apple.</p> </aside> <h2 id="before-you-begin">Before you begin</h2>  <p>To sign in users using Apple, first configure Sign In with Apple on Apple's developer site, then enable Apple as a sign-in provider for your Firebase project.</p> <h3 id="join-the-apple-developer-program">Join the Apple Developer Program</h3> <p>Sign In with Apple can only be configured by members of the <a href="https://developer.apple.com/programs/">Apple Developer Program</a>.</p> <h3 id="configure_sign_in_with_apple">Configure Sign In with Apple</h3> <ol> <li>Enable Sign In with Apple for your app on the <a href="https://developer.apple.com/account/resources" class="external">Certificates, Identifiers &amp; Profiles</a> page of Apple's developer site.</li> <li>Associate your website with your app as described in the first section of <a href="https://developer.apple.com/help/account/configure-app-capabilities/configure-sign-in-with-apple-for-the-web" class="external">Configure Sign In with Apple for the web</a>. When prompted, register the following URL as a Return URL: 
+<pre>https://YOUR_FIREBASE_PROJECT_ID.firebaseapp.com/__/auth/handler</pre> You can get your Firebase project ID on the <a href="https://console.firebase.google.com/project/_/settings/general/">Firebase console settings page</a>. When you're done, take note of your new Service ID, which you'll need in the next section.</li> <li>
+<a href="https://developer.apple.com/help/account/configure-app-capabilities/create-a-sign-in-with-apple-private-key/" class="external">Create a Sign In with Apple private key</a>. You'll need your new private key and key ID in the next section.</li> <li>If you use any of Firebase Authentication's features that send emails to users, including email link sign-in, email address verification, account change revocation, and others, <a href="https://developer.apple.com/help/account/configure-app-capabilities/configure-private-email-relay-service/" class="external">configure the Apple private email relay service</a> and register <code translate="no" dir="ltr">noreply@<var translate="no">YOUR_FIREBASE_PROJECT_ID</var>.firebaseapp.com</code> (or your customized email template domain) so Apple can relay emails sent by Firebase Authentication to anonymized Apple email addresses.</li> </ol> <h3 id="enable-apple-as-a-sign-in-provider">Enable Apple as a sign-in provider</h3> <ol> <li>
+<a href="../../ios/setup">Add Firebase to your Apple project</a>. Be sure to register your app's bundle ID when you set up your app in the Firebase console. </li> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Apple</b> sign-in provider. Specify the Service ID you created in the previous section. Also, in the <b>OAuth code flow configuration section</b>, specify your Apple Team ID and the private key and key ID you created in the previous section. </li> </ol> <h2 id="comply-with-apple-anonymized-data-requirements">Comply with Apple anonymized data requirements</h2> <p>Sign In with Apple gives users the option of anonymizing their data, including their email address, when signing in. Users who choose this option have email addresses with the domain <code translate="no" dir="ltr">privaterelay.appleid.com</code>. When you use Sign In with Apple in your app, you must comply with any applicable developer policies or terms from Apple regarding these anonymized Apple IDs.</p> <p>This includes obtaining any required user consent before you associate any directly identifying personal information with an anonymized Apple ID. When using Firebase Authentication, this may include the following actions:</p> <ul> <li>Link an email address to an anonymized Apple ID or vice versa.</li> <li>Link a phone number to an anonymized Apple ID or vice versa</li> <li>Link a non-anonymous social credential (Facebook, Google, etc) to an anonymized Apple ID or vice versa.</li> </ul> <p>The above list is not exhaustive. Refer to the Apple Developer Program License Agreement in the Membership section of your developer account to make sure your app meets Apple's requirements.</p> <h2 id="sign_in_with_apple_and_authenticate_with_firebase">Sign in with Apple and authenticate with Firebase</h2> <p>To authenticate with an Apple account, first sign the user in to their Apple account using Apple's <a href="https://developer.apple.com/documentation/authenticationservices" class="external"><code translate="no" dir="ltr">AuthenticationServices</code> framework</a>, and then use the ID token from Apple's response to create a Firebase <code translate="no" dir="ltr">AuthCredential</code> object:</p> <ol> <li>
+<p>For every sign-in request, generate a random string—a "nonce"—which you will use to make sure the ID token you get was granted specifically in response to your app's authentication request. This step is important to prevent replay attacks.</p> <p>You can generate a cryptographically secure nonce with <code translate="no" dir="ltr">SecRandomCopyBytes(_:_:_)</code>, as in the following example:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">private func randomNonceString(length: Int = 32) -&gt; String {
+  precondition(length &gt; 0)
+  var randomBytes = [UInt8](repeating: 0, count: length)
+  let errorCode = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &amp;randomBytes)
+  if errorCode != errSecSuccess {
+    fatalError(
+      "Unable to generate nonce. SecRandomCopyBytes failed with OSStatus \(errorCode)"
+    )
+  }
+
+  let charset: [Character] =
+    Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+
+  let nonce = randomBytes.map { byte in
+    // Pick a random character from the set, wrapping around if needed.
+    charset[Int(byte) % charset.count]
+  }
+
+  return String(nonce)
+}
+
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">// Adapted from https://auth0.com/docs/api-auth/tutorials/nonce#generate-a-cryptographically-random-nonce
+- (NSString *)randomNonce:(NSInteger)length {
+  NSAssert(length &gt; 0, @"Expected nonce to have positive length");
+  NSString *characterSet = @"0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._";
+  NSMutableString *result = [NSMutableString string];
+  NSInteger remainingLength = length;
+
+  while (remainingLength &gt; 0) {
+    NSMutableArray *randoms = [NSMutableArray arrayWithCapacity:16];
+    for (NSInteger i = 0; i &lt; 16; i++) {
+      uint8_t random = 0;
+      int errorCode = SecRandomCopyBytes(kSecRandomDefault, 1, &amp;random);
+      NSAssert(errorCode == errSecSuccess, @"Unable to generate nonce: OSStatus %i", errorCode);
+
+      [randoms addObject:@(random)];
+    }
+
+    for (NSNumber *random in randoms) {
+      if (remainingLength == 0) {
+        break;
+      }
+
+      if (random.unsignedIntValue &lt; characterSet.length) {
+        unichar character = [characterSet characterAtIndex:random.unsignedIntValue];
+        [result appendFormat:@"%C", character];
+        remainingLength--;
+      }
+    }
+  }
+
+  return [result copy];
+}
+    </pre> </section> </div> <p>You will send the SHA256 hash of the nonce with your sign-in request, which Apple will pass unchanged in the response. Firebase validates the response by hashing the original nonce and comparing it to the value passed by Apple.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">@available(iOS 13, *)
+private func sha256(_ input: String) -&gt; String {
+  let inputData = Data(input.utf8)
+  let hashedData = SHA256.hash(data: inputData)
+  let hashString = hashedData.compactMap {
+    String(format: "%02x", $0)
+  }.joined()
+
+  return hashString
+}
+
+    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">- (NSString *)stringBySha256HashingString:(NSString *)input {
+  const char *string = [input UTF8String];
+  unsigned char result[CC_SHA256_DIGEST_LENGTH];
+  CC_SHA256(string, (CC_LONG)strlen(string), result);
+
+  NSMutableString *hashed = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH * 2];
+  for (NSInteger i = 0; i &lt; CC_SHA256_DIGEST_LENGTH; i++) {
+    [hashed appendFormat:@"%02x", result[i]];
+  }
+  return hashed;
+}
+    </pre> </section> </div>
+</li> <li>
+<p>Start Apple's sign-in flow, including in your request the SHA256 hash of the nonce and the delegate class that will handle Apple's response (see the next step):</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">import CryptoKit
+
+// Unhashed nonce.
+fileprivate var currentNonce: String?
+
+@available(iOS 13, *)
+func startSignInWithAppleFlow() {
+  let nonce = randomNonceString()
+  currentNonce = nonce
+  let appleIDProvider = ASAuthorizationAppleIDProvider()
+  let request = appleIDProvider.createRequest()
+  request.requestedScopes = [.fullName, .email]
+  request.nonce = sha256(nonce)
+
+  let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+  authorizationController.delegate = self
+  authorizationController.presentationContextProvider = self
+  authorizationController.performRequests()
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">@import CommonCrypto;
+
+- (void)startSignInWithAppleFlow {
+  NSString *nonce = [self randomNonce:32];
+  self.currentNonce = nonce;
+  ASAuthorizationAppleIDProvider *appleIDProvider = [[ASAuthorizationAppleIDProvider alloc] init];
+  ASAuthorizationAppleIDRequest *request = [appleIDProvider createRequest];
+  request.requestedScopes = @[ASAuthorizationScopeFullName, ASAuthorizationScopeEmail];
+  request.nonce = [self stringBySha256HashingString:nonce];
+
+  ASAuthorizationController *authorizationController =
+      [[ASAuthorizationController alloc] initWithAuthorizationRequests:@[request]];
+  authorizationController.delegate = self;
+  authorizationController.presentationContextProvider = self;
+  [authorizationController performRequests];
+}
+</pre></section> </div>
+</li> <li>
+<p>Handle Apple's response in your implementation of <code translate="no" dir="ltr">ASAuthorizationControllerDelegate</code>. If sign-in was successful, use the ID token from Apple's response with the unhashed nonce to authenticate with Firebase:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">@available(iOS 13.0, *)
+extension MainViewController: ASAuthorizationControllerDelegate {
+
+  func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+    if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+      guard let nonce = currentNonce else {
+        fatalError("Invalid state: A login callback was received, but no login request was sent.")
+      }
+      guard let appleIDToken = appleIDCredential.identityToken else {
+        print("Unable to fetch identity token")
+        return
+      }
+      guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
+        print("Unable to serialize token string from data: \(appleIDToken.debugDescription)")
+        return
+      }
+      // Initialize a Firebase credential, including the user's full name.
+      let credential = OAuthProvider.appleCredential(withIDToken: idTokenString,
+                                                        rawNonce: nonce,
+                                                        fullName: appleIDCredential.fullName)
+      // Sign in with Firebase.
+      Auth.auth().signIn(with: credential) { (authResult, error) in
+        if error {
+          // Error. If error.code == .MissingOrInvalidNonce, make sure
+          // you're sending the SHA256-hashed nonce as a hex string with
+          // your request to Apple.
+          print(error.localizedDescription)
+          return
+        }
+        // User is signed in to Firebase with Apple.
+        // ...
+      }
+    }
+  }
+
+  func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+    // Handle error.
+    print("Sign in with Apple errored: \(error)")
+  }
+
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">- (void)authorizationController:(ASAuthorizationController *)controller
+   didCompleteWithAuthorization:(ASAuthorization *)authorization API_AVAILABLE(ios(13.0)) {
+  if ([authorization.credential isKindOfClass:[ASAuthorizationAppleIDCredential class]]) {
+    ASAuthorizationAppleIDCredential *appleIDCredential = authorization.credential;
+    NSString *rawNonce = self.currentNonce;
+    NSAssert(rawNonce != nil, @"Invalid state: A login callback was received, but no login request was sent.");
+
+    if (appleIDCredential.identityToken == nil) {
+      NSLog(@"Unable to fetch identity token.");
+      return;
+    }
+
+    NSString *idToken = [[NSString alloc] initWithData:appleIDCredential.identityToken
+                                              encoding:NSUTF8StringEncoding];
+    if (idToken == nil) {
+      NSLog(@"Unable to serialize id token from data: %@", appleIDCredential.identityToken);
+    }
+
+    // Initialize a Firebase credential, including the user's full name.
+    FIROAuthCredential *credential = [FIROAuthProvider appleCredentialWithIDToken:IDToken
+                                                                         rawNonce:self.appleRawNonce
+                                                                         fullName:appleIDCredential.fullName];
+
+    // Sign in with Firebase.
+    [[FIRAuth auth] signInWithCredential:credential
+                              completion:^(FIRAuthDataResult * _Nullable authResult,
+                                           NSError * _Nullable error) {
+      if (error != nil) {
+        // Error. If error.code == FIRAuthErrorCodeMissingOrInvalidNonce,
+        // make sure you're sending the SHA256-hashed nonce as a hex string
+        // with your request to Apple.
+        return;
+      }
+      // Sign-in succeeded!
+    }];
+  }
+}
+
+- (void)authorizationController:(ASAuthorizationController *)controller
+           didCompleteWithError:(NSError *)error API_AVAILABLE(ios(13.0)) {
+  NSLog(@"Sign in with Apple errored: %@", error);
+}
+</pre></section> </div>
+</li> </ol> <p>Unlike other providers supported by Firebase Auth, Apple does not provide a photo URL.</p> <p>Also, when the user chooses not to share their email with the app, Apple provisions a unique email address for that user (of the form <code translate="no" dir="ltr">xyz@privaterelay.appleid.com</code>), which it shares with your app. If you configured the private email relay service, Apple forwards emails sent to the anonymized address to the user's real email address.</p> <aside class="special"><strong>Important:</strong><span> Apple only shares user information such as the display name with apps the first time a user signs in. Use <code translate="no" dir="ltr">OAuthProvider.appleCredential(withIDToken:rawNonce:fullName:)</code> to make sure Firebase stores the display name the first time a user signs in with Apple. You can later retrieve the user's full name with <code translate="no" dir="ltr">Auth.auth().currentUser.displayName</code>. However, if you previously used Apple to sign a user in to the app without using Firebase, Apple will not provide Firebase with the user's display name.</span></aside> <h3 id="reauthentication_and_account_linking">Reauthentication and account linking</h3> <p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithCredential()</code>, which you can use to retrieve a fresh credential for sensitive operations that require recent sign-in:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Initialize a fresh Apple credential with Firebase.
+let credential = OAuthProvider.credential(
+  withProviderID: "apple.com",
+  IDToken: appleIdToken,
+  rawNonce: rawNonce
+)
+// Reauthenticate current Apple user with fresh Apple credential.
+Auth.auth().currentUser.reauthenticate(with: credential) { (authResult, error) in
+  guard error != nil else { return }
+  // Apple user successfully re-authenticated.
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">FIRAuthCredential *credential = [FIROAuthProvider credentialWithProviderID:@"apple.com",
+                                                                   IDToken:appleIdToken,
+                                                                  rawNonce:rawNonce];
+[[FIRAuth auth].currentUser
+    reauthenticateWithCredential:credential
+                      completion:^(FIRAuthDataResult * _Nullable authResult,
+                                   NSError * _Nullable error) {
+  if (error) {
+    // Handle error.
+  }
+  // Apple user successfully re-authenticated.
+  // ...
+}];
+</pre></section> </div> <p>And, you can use <code translate="no" dir="ltr">linkWithCredential()</code> to link different identity providers to existing accounts.</p> <p>Note that Apple requires you to get explicit consent from users before you link their Apple accounts to other data.</p> <p>Sign in with Apple will not allow you to reuse an auth credential to link to an existing account. If you want to link a Sign in with Apple credential to another account, you must first attempt to link the accounts using the old Sign in with Apple credential and then examine the error returned to find a new credential. The new credential will be located in the error's <code translate="no" dir="ltr">userInfo</code> dictionary and can be accessed via the <code translate="no" dir="ltr">AuthErrorUserInfoUpdatedCredentialKey</code> key.</p> <p>For example, to link a Facebook account to the current Firebase account, use the access token you got from signing the user in to Facebook:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">// Initialize a Facebook credential with Firebase.
+let credential = FacebookAuthProvider.credential(
+  withAccessToken: AccessToken.current!.tokenString
+)
+// Assuming the current user is an Apple user linking a Facebook provider.
+Auth.auth().currentUser.link(with: credential) { (authResult, error) in
+  // Facebook credential is linked to the current Apple user.
+  // The user can now sign in with Facebook or Apple to the same Firebase
+  // account.
+  // ...
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<pre data-language="objectivec">// Initialize a Facebook credential with Firebase.
+FacebookAuthCredential *credential = [FIRFacebookAuthProvider credentialWithAccessToken:accessToken];
+// Assuming the current user is an Apple user linking a Facebook provider.
+[FIRAuth.auth linkWithCredential:credential completion:^(FIRAuthDataResult * _Nullable authResult, NSError * _Nullable error) {
+  // Facebook credential is linked to the current Apple user.
+  // The user can now sign in with Facebook or Apple to the same Firebase
+  // account.
+  // ...
+}];
+</pre></section> </div> <h2 id="token_revocation">Token revocation</h2> <p>Apple requires that apps that support account creation must let users initiate deletion of their account within the app, as described in the <a href="https://developer.apple.com/app-store/review/guidelines/#5.1.1v" class="external">App Store Review Guidelines</a> </p> <p>To meet this requirement, implement the following steps:</p> <ol> <li><p>Make sure you filled out the <em>Services ID</em> and <em>OAuth code flow configuration</em> section of the Sign in with Apple provider configuration, as outlined in the <a href="#configure_sign_in_with_apple">Configure Sign in with Apple</a> section.</p></li> <li>
+<p>Since Firebase does not store user tokens when users are created with Sign in with Apple, you must ask the user to sign in again before revoking their token and deleting the account.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">private var currentNonce: String?
+
+private func deleteCurrentUser() {
+  do {
+    let nonce = try CryptoUtils.randomNonceString()
+    currentNonce = nonce
+    let appleIDProvider = ASAuthorizationAppleIDProvider()
+    let request = appleIDProvider.createRequest()
+    request.requestedScopes = [.fullName, .email]
+    request.nonce = CryptoUtils.sha256(nonce)
+
+    let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+    authorizationController.delegate = self
+    authorizationController.presentationContextProvider = self
+    authorizationController.performRequests()
+  } catch {
+    // In the unlikely case that nonce generation fails, show error view.
+    displayError(error)
+  }
+}</pre></section> </div>
+</li> <li>
+<p>Obtain the authorization code from the <code translate="no" dir="ltr">ASAuthorizationAppleIDCredential</code>, and use it to call <code translate="no" dir="ltr">Auth.auth().revokeToken(withAuthorizationCode:)</code> to revoke the user's tokens.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">private var user: User?
+
+func authorizationController(controller: ASAuthorizationController,
+                             didCompleteWithAuthorization authorization: ASAuthorization) {
+  guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential
+  else {
+    print("Unable to retrieve AppleIDCredential")
+    return
+  }
+
+  guard let _ = currentNonce else {
+    fatalError("Invalid state: A login callback was received, but no login request was sent.")
+  }
+
+  guard let appleAuthCode = appleIDCredential.authorizationCode else {
+    print("Unable to fetch authorization code")
+    return
+  }
+
+  guard let authCodeString = String(data: appleAuthCode, encoding: .utf8) else {
+    print("Unable to serialize auth code string from data: \(appleAuthCode.debugDescription)")
+    return
+  }
+
+  Task {
+    do {
+      try await Auth.auth().revokeToken(withAuthorizationCode: authCodeString)
+      try await user?.delete()
+      self.updateUI()
+    } catch {
+      self.displayError(error)
+    }
+  }
+}</pre></section> </div>
+</li> <li><p>Finally, <a href="manage-users#delete_a_user">delete the user account</a> (and all associated data)</p></li> </ol> <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_user"><code translate="no" dir="ltr">User</code> </a> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_auth#ab0d5111f05c3f1906243852cc8ef41b1"> <code translate="no" dir="ltr">signOut:</code></a>.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">let firebaseAuth = Auth.auth()
+do {
+  try firebaseAuth.signOut()
+} catch let signOutError as NSError {
+  print("Error signing out: %@", signOutError)
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+<pre data-language="objectivec">NSError *signOutError;
+BOOL status = [[FIRAuth auth] signOut:&amp;signOutError];
+if (!status) {
+  NSLog(@"Error signing out: %@", signOutError);
+  return;
+}</pre> </section> </div> <p>You may also want to add error handling code for the full range of authentication errors. See <a href="errors">Handle Errors</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/ios/apple" class="_attribution-link">https://firebase.google.com/docs/auth/ios/apple</a>
+  </p>
+</div>

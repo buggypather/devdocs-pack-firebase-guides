@@ -1,0 +1,54 @@
+<h1>Migrate to using the Kotlin extensions (KTX) APIs in the main modules</h1> <p>Firebase is increasing its commitment to Kotlin, and we're working to modernize our Android ecosystem to make Kotlin more accessible and easy-to-use with Firebase.</p> <p>To accomplish this modernization, we're making a few changes to our Firebase SDKs for Android. This page describes important information about this change, including:</p> <ul> <li><a href="#ktx-apis-to-main-whats-changing">What's changing</a></li> <li><a href="#ktx-apis-to-main-why-making-change">The reason we're making this change</a></li> <li><a href="#ktx-apis-to-main-important-dates">Important dates for this change</a></li> <li><a href="#ktx-apis-to-main-how-to-migrate">How to migrate to use KTX APIs from the main module</a></li> </ul> <p><br> <a href="#ktx-apis-to-main-how-to-migrate" class="button-blue button">Learn how to migrate your app</a> </p> <aside class="warning">In <a href="https://firebase.google.com/support/release-notes/android#2025-07-21">July 2025</a>, we stopped releasing new versions of the KTX modules and removed the KTX libraries from the Firebase Android BoM (v34.0.0). </aside> <h2 id="ktx-apis-to-main-whats-changing">What's changing?</h2> <p>The Kotlin extensions (KTX) APIs have been added to their respective main modules. For example, all the APIs from <code translate="no" dir="ltr">firebase-perf-ktx</code> have been added to <code translate="no" dir="ltr">firebase-perf</code> under the <code translate="no" dir="ltr">com.google.firebase.perf</code> package.</p> <p><strong>This change means that Kotlin developers can now depend on the main modules instead of the KTX modules</strong> (when using <a href="https://firebase.google.com/support/release-notes/android#bom_v32-5-0">Firebase BoM v32.5.0+</a> or main module versions listed in BoM v32.5.0+).</p> <p>In July 2025, we stopped releasing new versions of the KTX modules and removed the KTX libraries from the Firebase Android BoM (v34.0.0).</p> <aside class="note"><strong>Note:</strong><span> Any currently or previously released versions of the KTX modules or BoM will still function.<br>However, we recommend that you <a href="#ktx-apis-to-main-how-to-migrate">migrate your app to use KTX APIs from the main module</a> to ensure that you continue to get fixes and can take advantage of changes and new features now that new versions of the KTX modules are no longer released.</span></aside> <h2 id="ktx-apis-to-main-why-making-change">Why are we making this change?</h2> <p>Firebase is committed to a <a href="https://developer.android.com/kotlin/first" class="external">Kotlin-first</a> ecosystem for Android developers. This packaging modernization provides the following advantages:</p> <ul> <li><p><strong>Simplified dependency management:</strong> You now only need to depend on a single module, eliminating the need to switch between the main module and the Kotlin extensions or to depend on both.</p></li> <li><p><strong>Enhanced Kotlin support:</strong> All of our Firebase SDKs for Android will now provide better support for Kotlin. We'll include all the new Kotlin-friendly features directly in our main modules.</p></li> </ul> <h2 id="ktx-apis-to-main-important-dates">Important dates for this change</h2> <aside class="note"> We recommend that you <a href="#ktx-apis-to-main-how-to-migrate">migrate your app to use KTX APIs from the main module</a> to ensure that you continue to get fixes and can take advantage of changes and new features now that the KTX modules are no longer released. </aside> <h4 id="ktx-apis-to-main-deprecation-date"><strong>In October 2023</strong></h4> <p>In October 2023, the Kotlin extensions (KTX) APIs were added to their respective main modules, which means that you can now use the KTX APIs directly from the main modules when using <a href="https://firebase.google.com/support/release-notes/android#bom_v32-5-0">Firebase BoM v32.5.0+</a> or main module versions listed in BoM v32.5.0+.</p> <p>In parallel, the Kotlin extension (KTX) APIs <em>in the KTX modules</em> were deprecated (see the <a href="https://firebase.google.com/support/release-notes/android#2023-10-30">release notes</a> describing this change). During the <a href="https://firebase.google.com/policies/changes-to-firebase/introducing-and-communicating-changes#deprecated-phase">deprecated phase</a>, the deprecated APIs in the KTX modules will continue to function and be maintained.</p> <h4 id="ktx-apis-to-main-stop-releasing-date"><strong>In July 2025</strong></h4> <p>In July 2025, we stopped releasing new versions of the KTX modules, and we removed the KTX modules from the Firebase BoM (starting with <a href="https://firebase.google.com/support/release-notes/android#bom_v34-0-0">BoM v34.0.0</a>).</p> <p>Any previously released version of a KTX module or the BoM will continue to function, but they're now <a href="https://firebase.google.com/policies/changes-to-firebase/introducing-and-communicating-changes#end-of-maintenance">end-of-maintenance</a>. This means that we won't add bug fixes, backwards-compatible changes, or new features to the KTX modules. Instead, all future development for Firebase on Android will only be done in the <em>main modules</em> (for both Java and Kotlin).</p> <h2 id="ktx-apis-to-main-how-to-migrate">How to migrate to use KTX APIs from the main modules</h2> <p>If you use Kotlin extensions (KTX) APIs, make the following updates in your app to start using the APIs from the main modules instead of the KTX modules.</p> <ol> <li>
+<p>Revise your Gradle dependencies to rely on the main module rather than the KTX module. For example, if you use the Firebase Android BoM <em>(recommended)</em>:</p> <p><strong>BEFORE</strong></p> 
+<pre>dependencies {
+  // ...
+
+  // Import the Firebase BoM
+  implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+  // Using KTX libraries for Authentication and Cloud Firestore
+  implementation("com.google.firebase:firebase-auth-ktx")
+  implementation("com.google.firebase:firebase-firestore-ktx")
+}</pre> <p><strong>AFTER</strong></p> 
+<pre>dependencies {
+  // ...
+
+  // Import the Firebase BoM as usual
+  // Make sure to use Firebase BoM v32.5.0 or higher
+  implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+  // No need to use the KTX libraries; everything is now in the main module
+  implementation("com.google.firebase:firebase-auth")
+  implementation("com.google.firebase:firebase-firestore")
+}</pre> <p><section class="expandable" id="ktx-apis-revise-gradle-dependencies-no-bom"> <p class="showalways"> <b>If you don't use the Firebase Android BoM</b> </p></section></p> <p><strong>BEFORE</strong></p> 
+<pre>dependencies {
+  // ...
+
+  // Using KTX libraries for Authentication and Cloud Firestore
+  implementation("com.google.firebase:firebase-auth-ktx:23.2.1")
+  implementation("com.google.firebase:firebase-firestore-ktx:25.1.4")
+}</pre> <p><strong>AFTER</strong></p> 
+<pre>dependencies {
+  // ...
+
+  // No need to use the KTX libraries, everything is now in the main module
+  // Make sure to use a version listed in Firebase BoM v32.5.0 or higher
+  implementation("com.google.firebase:firebase-auth:25.0.0")
+  implementation("com.google.firebase:firebase-firestore:27.1.0")
+}</pre> <p> <br></p>
+</li> <li>
+<p>Update your code to replace all occurrences of the KTX APIs with the relocated APIs in the main module under the <code translate="no" dir="ltr">com.google.firebase</code> package.</p> <p><strong>BEFORE</strong></p> 
+<pre>import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.ktx.Firebase</pre> <p><strong>AFTER</strong></p> 
+<pre>import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.toObject
+import com.google.firebase.Firebase</pre>
+</li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/android/kotlin-migration" class="_attribution-link">https://firebase.google.com/docs/android/kotlin-migration</a>
+  </p>
+</div>

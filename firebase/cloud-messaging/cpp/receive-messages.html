@@ -1,0 +1,25 @@
+<h1>Receive messages in C++ apps</h1>     <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/receive-messages">iOS+</a> <a class="button" href="../android/receive-messages">Android</a> <a class="button" href="../web/receive-messages">Web</a> <a class="button" href="../flutter/receive-messages">Flutter</a> <a class="button" href="../unity/receive-messages">Unity</a> <a class="button button-primary" href="receive-messages">C++</a> </td> </tr> </table> <p><br></p> <p>To receive downstream messages, each client app needs to implement the methods on the <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/messaging/listener"><code translate="no" dir="ltr">firebase::messaging::Listener</code></a> API.</p> <h2 id="initialize">Initialize FCM</h2> <p>Before you can use FCM to get access to your registration token or receive messages it must be initialized.</p> <p>To initialize FCM, call <a href="https://firebase.google.com/docs/reference/cpp/namespace/firebase/messaging#initialize"><code translate="no" dir="ltr">::firebase::messaging::Initialize</code></a> and supply it with your <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/app"><code translate="no" dir="ltr">::firebase::App</code></a> object as well as an implementation of the <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/messaging/listener"><code translate="no" dir="ltr">::firebase::messaging::Listener</code></a> class.</p> 
+<pre>MyListener my_listener_implementation;
+::firebase::messaging::Initialize(app, &amp;my_listener_implementation);
+</pre> <h2 id="access-token">Access the registration token</h2> <p>On initial startup of your app, the FCM SDK generates a registration token for the client app instance. If you want to target single devices, or create device groups for FCM, you'll need to access this token.</p> <p>You can access the token's value through the <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/messaging/listener#ontokenreceived"><code translate="no" dir="ltr">::firebase::messaging::Listener::OnTokenReceived</code></a> virtual function.</p> 
+<pre>void OnTokenReceived(const char* token) {
+  LogMessage("The registration token is `%s`", token);
+
+  // TODO: If necessary send token to application server.
+}
+</pre> <h2 id="receive-messages">Receive and handle messages</h2> <p>To receive messages, your Listener class must implement the <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/messaging/listener#onmessage"><code translate="no" dir="ltr">OnMessage</code></a> virtual function.</p> <h4 id="override-onmessage">Override <code translate="no" dir="ltr">OnMessage</code>
+</h4> <p>By overriding the method <a href="https://firebase.google.com/docs/reference/cpp/class/firebase/messaging/listener#onmessage"><code translate="no" dir="ltr">::firebase::messaging::Listener::OnMessage</code></a>, you can perform actions based on the received message and get the message data:</p> 
+<pre>void OnMessage(const ::firebase::messaging::Message&amp; message) {
+  LogMessage(TAG, "From: %s", message.from.c_str());
+  LogMessage(TAG, "Message ID: %s", message.message_id.c_str());
+}
+</pre> <p>Messages can represent different kinds of incoming data. Most commonly, messages are sent to the app after being initiated by the developer. Messages are also sent to your app to represent message sent events, message send error events, and messages deleted events. These special events can be differentiated by checking the <code translate="no" dir="ltr">Message::message_type</code> field.</p> <h4 id="messages-deleted">Messages Deleted</h4> <p>Sent to your app when the FCM server deletes pending messages. <code translate="no" dir="ltr">Message::message_type</code> will be <code translate="no" dir="ltr">"deleted_messages"</code>. Messages may be deleted due to:</p> <ol> <li>
+<p>Too many messages stored on the FCM server.</p> <p>This can occur when an app's servers send a bunch of <a href="../customize-messages/collapsible-message-types">non-collapsible messages</a> to FCM servers while the device is offline.</p>
+</li> <li>
+<p>The device hasn't connected in a long time and the app server has recently (within the last 4 weeks) sent a message to the app on that device.</p> <p>It is recommended that the app do a full sync with the app server after receiving this call.</p>
+</li> </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/cpp/receive-messages" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/cpp/receive-messages</a>
+  </p>
+</div>

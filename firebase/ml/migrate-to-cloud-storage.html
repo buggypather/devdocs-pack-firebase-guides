@@ -1,0 +1,65 @@
+<h1>Migrate TensorFlow Lite models from Firebase ML to Cloud Storage</h1> <p>If you use Firebase Machine Learning to host <a href="use-custom-models">custom models</a>, you must migrate to another solution before the Firebase ML hosting service is shut down on June 15, 2027.</p> <p>One alternative you might use is to host your models using Cloud Storage for Firebase instead. Follow this guide to migrate your models from Firebase ML to Cloud Storage.</p> <h2 id="download-tflite-models">Download your TensorFlow Lite models</h2> <p>If you don't already have your models stored locally, download them from your Firebase project. You have two options for doing so:</p> <h3 id="download-firebase-console">Download them one at a time from the Firebase console</h3> <ol> <li>Open the <a href="https://console.firebase.google.com/project/_/ml/custom"><strong>Machine Learning</strong></a> page section in the Firebase console.</li> <li>For each model you want to migrate, click its three-dot overflow menu, then click <strong>Download model</strong>.</li> </ol> <h3 id="download-models-bulk">Download all of your hosted models in bulk</h3> <ol> <li>Open the <a href="https://console.firebase.google.com/project/_/ml/custom"><strong>Machine Learning</strong></a> page in the Firebase console.</li> <li>Click the <strong>Get command for bulk download</strong> button to get a <code translate="no" dir="ltr">curl</code> command that downloads all of the models in the project. These URLs will expire in 7 days.</li> <li>Run the command in your local terminal or in <a href="../cloud-shell">Cloud Shell</a>. If using Cloud Shell, note its <a href="https://docs.cloud.google.com/shell/docs/quotas-limits#disk_storage">5GB disk storage limit</a>. The command will download your models to a local folder named <code translate="no" dir="ltr">hosted_models</code>.</li> </ol> <h2 id="host-models-cloud-storage">Host your models using Cloud Storage</h2> <p>Once you have your models locally, you need to upload them to a Cloud Storage bucket.</p> <p>Choose the upload method that matches your needs:</p> <h3 id="upload-models-one-at-a-time">Upload your models one at a time</h3> <ol> <li>Create a Storage bucket: in the Firebase console, navigate to <strong>Databases &amp; Storage &gt; <a href="https://console.firebase.google.com/project/_/storage">Storage</a></strong> and follow the onboarding steps to create a bucket if you haven't already. Note that this requires a billing account; see <a href="https://firebase.google.com/pricing">Firebase pricing</a> for details.</li> <li>Still in the <strong>Storage</strong> section, upload your <code translate="no" dir="ltr">.tflite</code> model files to the desired path.</li> </ol> <h3 id="upload-models-bulk">Upload your models in bulk</h3> <ol> <li>Create a Storage bucket: in the Firebase console, navigate to <strong>Databases &amp; Storage &gt; <a href="https://console.firebase.google.com/project/_/storage">Storage</a></strong> and follow the onboarding steps to create a bucket if you haven't already. Note that this requires a billing account; see <a href="https://firebase.google.com/pricing">Firebase pricing</a> for details.</li> <li>
+<p>Use the following <code translate="no" dir="ltr">gcloud</code> command to upload all models from your local <code translate="no" dir="ltr">hosted_models</code> folder:</p> 
+<pre>gcloud storage rsync --recursive ./hosted_models gs://&lt;your-storage-bucket&gt;/models/</pre>
+</li> </ol> <h2 id="configure-security-app-integration">Configure security and app integration</h2> <ol> <li><p>Ensure your <a href="../storage/security">Storage security rules</a> allow your app to read the model files. For example, you can restrict access to authenticated users.</p></li> <li><p>Add Storage to your app: follow the setup guides for <a href="../storage/android/start">Android</a>, <a href="../storage/ios/start">Apple</a>, or <a href="../storage/flutter/start">Flutter</a>.</p></li> <li>
+<p>Update your application code to download the <code translate="no" dir="ltr">.tflite</code> files from your new Storage bucket.</p> <div> <section><p class="_firebase-tab"><strong>Android</strong></p>
+
+<pre data-language="java">modelRef = storage.getReferenceFromUrl("gs://YOUR_BUCKET/path/to/model.tflite")
+
+val localFile = File.createTempFile("models", "tflite")
+
+modelRef.getFile(localFile).addOnSuccessListener {
+    // Local temp file has been created
+}.addOnFailureListener {
+    // Handle any errors
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Apple</strong></p>
+
+<pre data-language="">let gsReference = storage.reference(forURL: "gs://YOUR_BUCKET/path/to/model.tflite")
+
+// Create local filesystem URL
+let localURL = URL(string: "path/to/model.tflite")!
+
+// Download to the local filesystem
+let downloadTask = gsReference.write(toFile: localURL) { url, error in
+  if let error = error {
+    // Uh-oh, an error occurred!
+  } else {
+    // Local file URL for "model.tflite" is returned
+  }
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Flutter</strong></p>
+
+<pre data-language="dart">final modelRef = FirebaseStorage.instance.refFromURL("gs://YOUR_BUCKET/path/to/model.tflite");
+
+final appDocDir = await getApplicationDocumentsDirectory();
+final filePath = "${appDocDir.absolute}/models/model.tflite";
+final file = File(filePath);
+
+final downloadTask = modelRef.writeToFile(file);
+downloadTask.snapshotEvents.listen((taskSnapshot) {
+  switch (taskSnapshot.state) {
+    case TaskState.running:
+      // TODO: Handle this case.
+      break;
+    case TaskState.paused:
+      // TODO: Handle this case.
+      break;
+    case TaskState.success:
+      // TODO: Handle this case.
+      break;
+    case TaskState.canceled:
+      // TODO: Handle this case.
+      break;
+    case TaskState.error:
+      // TODO: Handle this case.
+      break;
+  }
+});
+</pre></section> </div> <p>Once the model is downloaded, you can use your existing Tensorflow Lite library to load the model and use it.</p>
+</li> <li><p>(Optional) Consider using <a href="../remote-config">Firebase Remote Config</a> to dynamically update model paths in your app without requiring a new release.</p></li> </ol> <h2 id="migrate-litert">Optional: Migrate to the LiteRT CompiledModel API</h2> <p>If your app still uses the legacy TensorFlow Lite <code translate="no" dir="ltr">Interpreter</code> API, consider migrating to the <a href="https://developers.google.com/edge/litert/inference">LiteRT <code translate="no" dir="ltr">CompiledModel</code> API</a>, which offers improved hardware acceleration support and other improvements over the legacy API.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ml/migrate-to-cloud-storage" class="_attribution-link">https://firebase.google.com/docs/ml/migrate-to-cloud-storage</a>
+  </p>
+</div>

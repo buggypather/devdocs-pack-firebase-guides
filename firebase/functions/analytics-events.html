@@ -1,0 +1,26 @@
+<h1>Google Analytics triggers</h1> <p>Google Analytics provides event reports that help you understand how users interact with your app. With Cloud Functions (1st gen), you can access conversion events you have logged from Apple and Android devices and trigger functions based on those events.</p> <aside class="caution">Only Apple platform and Android events marked as conversion events are currently supported by Cloud Functions; Web conversion events are not currently available. You can specify which events are conversion events in the <b>Analytics</b> &gt; <a href="https://console.firebase.google.com/project/_/analytics/events" class="external"><b>Events</b> page</a> of the Firebase console. </aside> <aside class="note"><strong>Note:</strong><span> Cloud Functions for Firebase (2nd gen) does not provide support for the events and triggers described in this guide. Because 1st gen and 2nd gen functions can coexist side-by-side in the same source file, you can still develop and deploy this functionality together with 2nd gen functions.</span></aside> <h2 id="trigger_a_function">Trigger a Google Analytics function</h2> <p>Cloud Functions supports the Google Analytics <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.analytics.analyticsevent"><code translate="no" dir="ltr">AnalyticsEvent</code></a>. This event is triggered whenever user activity generates a conversion event. For example, you could write a function that triggers when the <code translate="no" dir="ltr">in_app_purchase</code> event is generated, indicating that an in-app purchase has occurred. You must specify the Analytics event that you want to trigger your function using the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.analytics.analyticsevent"><code translate="no" dir="ltr">functions.analytics.event()</code></a> method, and handle the event within the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.analytics.analyticseventbuilder#analyticsanalyticseventbuilderonlog"><code translate="no" dir="ltr">onLog()</code></a> event handler:</p> 
+
+<pre>exports.sendCouponOnPurchase = functions.analytics.event('in_app_purchase').onLog((event) =&gt; {
+  // ...
+});</pre> <h2 id="access_event_attributes">Access event attributes</h2> <p>With each Analytics event, you have access to all relevant parameters and user properties. These include information about the user, the device, the app, and geographical information for the event. For the complete list of parameters and user properties, see the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.analytics"><code translate="no" dir="ltr">functions.analytics</code></a> reference.</p> <p>For a purchase-triggered function as illustrated in <a href="https://github.com/firebase/functions-samples/tree/main/Node-1st-gen/coupon-on-purchase">this sample</a>, you might want to access user attributes such as the user's language and the event's value (<a href="https://firebase.google.com/docs/reference/functions/firebase-functions.analytics.analyticsevent#analyticsanalyticseventvalueinusd"><code translate="no" dir="ltr">valueInUSD</code></a>). This second attribute allows the sample function to test whether this is a high-value conversion event, in order to send a higher-value coupon to valuable customers.</p> 
+
+<pre>/**
+ * After a user has completed a purchase, send them a coupon via FCM valid on their next purchase.
+ */
+exports.sendCouponOnPurchase = functions.analytics.event('in_app_purchase').onLog((event) =&gt; {
+  const user = event.user;
+  const uid = user.userId; // The user ID set via the setUserId API.
+  const purchaseValue = event.valueInUSD; // Amount of the purchase in USD.
+  const userLanguage = user.deviceInfo.userDefaultLanguage; // The user language in language-country format.
+
+  // For purchases above 500 USD, we send a coupon of higher value.
+  if (purchaseValue &gt; 500) {
+    return sendHighValueCouponViaFCM(uid, userLanguage);
+  }
+  return sendCouponViaFCM(uid, userLanguage);
+});</pre> <h2 id="next_steps">Next steps</h2> <p>To learn more about handling Analytics events in Cloud Functions, see the <a href="../analytics">Google Analytics documentation</a> and the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.analytics"><code translate="no" dir="ltr">functions.analytics</code></a> reference, and try running the code sample <a href="https://github.com/firebase/functions-samples/tree/main/Node-1st-gen/coupon-on-purchase">coupon-on-purchase</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/analytics-events" class="_attribution-link">https://firebase.google.com/docs/functions/analytics-events</a>
+  </p>
+</div>

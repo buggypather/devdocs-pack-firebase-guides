@@ -1,0 +1,516 @@
+<h1>Add multi-factor authentication to your web app</h1> <p>If you've upgraded to Firebase Authentication with Identity Platform, you can add SMS multi-factor authentication to your web app.</p> <p>Multi-factor authentication increases the security of your app. While attackers often compromise passwords and social accounts, intercepting a text message is more difficult.</p> <h2 id="before_you_begin">Before you begin</h2> <ol> <li><p>Enable at least one provider that supports multi-factor authentication. Every provider supports MFA, <strong>except</strong> phone auth, anonymous auth, and Apple Game Center.</p></li> <li><p>Enable the regions where you plan to use SMS authentication. Authentication uses a fully blocking SMS region policy, which helps to create your projects in a more secure state by default.</p></li> <li><p>Ensure your app is verifying user emails. MFA requires email verification. This prevents malicious actors from registering for a service with an email they don't own, and then locking out the real owner by adding a second factor.</p></li> </ol> <h3 id="using_multi-tenancy">Using multi-tenancy</h3> <p>If you are enabling multi-factor authentication for use in a <a href="https://cloud.google.com/identity-platform/docs/multi-tenancy">multi-tenant</a> environment, make sure to complete the following steps (in addition to the rest of the instructions in this document):</p> <ol> <li><p>In the Google Cloud console, select the tenant you want to work with.</p></li> <li>
+<p>In your code, set the <code translate="no" dir="ltr">tenantId</code> field on the <code translate="no" dir="ltr">Auth</code> instance to your tenant's ID. For example:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { getAuth } from "firebase/auth";
+
+const auth = getAuth(app);
+auth.tenantId = "myTenantId1";
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">firebase.auth().tenantId = 'myTenantId1';
+</pre></section> </div>
+</li> </ol> <h2 id="enabling_multi-factor_authentication">Enabling multi-factor authentication</h2> <ol> <li><p>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><strong>Authentication</strong></a>.</p></li> <li>
+<p>In the <strong>Sign-in method</strong> tab, in the <strong>Advanced</strong> section, enable <strong>SMS Multi-factor Authentication</strong>.</p> <p>You should also enter the phone numbers you'll be testing your app with. While optional, registering test phone numbers is strongly recommended to avoid throttling during development.</p>
+</li> <li>
+<p>If you haven't already, authorize your app's domain:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/settings" class="external"><strong>Settings</strong> tab</a>.</p></li> <li><p>In the <strong>Authorized domains</strong> section, click <strong>Add domain</strong>, and add your domain.</p></li> </ol>
+</li> </ol> <h2 id="choosing_an_enrollment_pattern">Choosing an enrollment pattern</h2> <p>You can choose whether your app requires multi-factor authentication, and how and when to enroll your users. Some common patterns include:</p> <ul> <li><p>Enroll the user's second factor as part of registration. Use this method if your app requires multi-factor authentication for all users.</p></li> <li><p>Offer a skippable option to enroll a second factor during registration. Apps that want to encourage, but not require, multi-factor authentication may prefer this approach.</p></li> <li><p>Provide the ability to add a second factor from the user's account or profile management page, instead of the sign up screen. This minimizes friction during the registration process, while still making multi-factor authentication available for security-sensitive users.</p></li> <li><p>Require adding a second factor incrementally when the user wants to access features with increased security requirements.</p></li> </ul> <h2 id="setting_up_the_recaptcha_verifier">Setting up the reCAPTCHA verifier</h2> <p>Before you can send SMS codes, you need to configure a reCAPTCHA verifier. Authentication uses reCAPTCHA to prevent abuse by ensuring that phone number verification requests come from one of your app's allowed domains.</p> <p>You don't need to manually set up a reCAPTCHA client; the client SDK's <code translate="no" dir="ltr">RecaptchaVerifier</code> object automatically creates and initializes any necessary client keys and secrets.</p> <h3 id="using_invisible_recaptcha">Using invisible reCAPTCHA</h3> <p>The <code translate="no" dir="ltr">RecaptchaVerifier</code> object supports <a href="https://www.google.com/recaptcha/intro/invisible.html">invisible reCAPTCHA</a>, which can often verify the user without requiring any interaction. To use an invisible reCAPTCHA, create a <code translate="no" dir="ltr">RecaptchaVerifier</code> with the <code translate="no" dir="ltr">size</code> parameter set to <code translate="no" dir="ltr">invisible</code>, and specify the ID of the UI element that starts multi-factor enrollment:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { RecaptchaVerifier, getAuth } from "firebase/auth";
+
+const recaptchaVerifier = new RecaptchaVerifier(getAuth(), "sign-in-button", {
+    "size": "invisible",
+    "callback": function(response) {
+        // reCAPTCHA solved, you can proceed with
+        // phoneAuthProvider.verifyPhoneNumber(...).
+        onSolvedRecaptcha();
+    }
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var recaptchaVerifier = new firebase.auth.RecaptchaVerifier('sign-in-button', {
+'size': 'invisible',
+'callback': function(response) {
+  // reCAPTCHA solved, you can proceed with phoneAuthProvider.verifyPhoneNumber(...).
+  onSolvedRecaptcha();
+}
+});
+</pre></section> </div> <h3 id="using_the_recaptcha_widget">Using the reCAPTCHA widget</h3> <p>To use a visible reCAPTCHA widget, create an HTML element to contain the widget, then create a <code translate="no" dir="ltr">RecaptchaVerifier</code> object with the ID of the UI container. You can also optionally set callbacks that are invoked when the reCAPTCHA is solved or expires:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { RecaptchaVerifier, getAuth } from "firebase/auth";
+
+const recaptchaVerifier = new RecaptchaVerifier(
+    getAuth(),
+    "recaptcha-container",
+
+    // Optional reCAPTCHA parameters.
+    {
+      "size": "normal",
+      "callback": function(response) {
+        // reCAPTCHA solved, you can proceed with
+        // phoneAuthProvider.verifyPhoneNumber(...).
+        onSolvedRecaptcha();
+      },
+      "expired-callback": function() {
+        // Response expired. Ask user to solve reCAPTCHA again.
+        // ...
+      }
+    }
+);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+  'recaptcha-container',
+  // Optional reCAPTCHA parameters.
+  {
+    'size': 'normal',
+    'callback': function(response) {
+      // reCAPTCHA solved, you can proceed with phoneAuthProvider.verifyPhoneNumber(...).
+      // ...
+      onSolvedRecaptcha();
+    },
+    'expired-callback': function() {
+      // Response expired. Ask user to solve reCAPTCHA again.
+      // ...
+    }
+  });
+</pre></section> </div> <h3 id="pre-rendering_the_recaptcha">Pre-rendering the reCAPTCHA</h3> <p>Optionally, you can pre-render the reCAPTCHA before starting two-factor enrollment:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">recaptchaVerifier.render()
+    .then(function (widgetId) {
+        window.recaptchaWidgetId = widgetId;
+    });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">recaptchaVerifier.render()
+  .then(function(widgetId) {
+    window.recaptchaWidgetId = widgetId;
+  });
+</pre></section> </div> <p>After <code translate="no" dir="ltr">render()</code> resolves, you get the reCAPTCHA's widget ID, which you can use to make calls to the <a href="https://developers.google.com/recaptcha/intro">reCAPTCHA API</a>:</p> 
+<pre>var recaptchaResponse = grecaptcha.getResponse(window.recaptchaWidgetId);
+</pre> <p>RecaptchaVerifier abstracts this logic away with the <a href="https://firebase.google.com/docs/reference/js/auth.recaptchaverifier.md#recaptchaverifierverify">verify</a> method, so you need not handle the <code translate="no" dir="ltr">grecaptcha</code> variable directly.</p> <h2 id="enrolling_a_second_factor">Enrolling a second factor</h2> <p>To enroll a new secondary factor for a user:</p> <ol> <li><p>Re-authenticate the user.</p></li> <li>
+<p>Ask the user enter their phone number.</p> <aside class="note"><strong>Note:</strong><span> Google stores and uses phone numbers to improve spam and abuse prevention across all Google services. Ensure you obtain appropriate consent from your users before sending their phone numbers to Authentication.</span></aside>
+</li> <li>
+<p>Initialize the reCAPTCHA verifier as illustrated in the previous section. Skip this step if a RecaptchaVerifier instance is already configured:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { RecaptchaVerifier, getAuth } from "firebase/auth";
+
+const recaptchaVerifier = new RecaptchaVerifier(
+  getAuth(),'recaptcha-container-id', undefined);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container-id');
+</pre></section> </div>
+</li> <li>
+<p>Get a multi-factor session for the user:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { multiFactor } from "firebase/auth";
+
+multiFactor(user).getSession().then(function (multiFactorSession) {
+    // ...
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">user.multiFactor.getSession().then(function(multiFactorSession) {
+  // ...
+})
+</pre></section> </div>
+</li> <li>
+<p>Initialize a <code translate="no" dir="ltr">PhoneInfoOptions</code> object with the user's phone number and the multi-factor session:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// Specify the phone number and pass the MFA session.
+const phoneInfoOptions = {
+  phoneNumber: phoneNumber,
+  session: multiFactorSession
+};
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">// Specify the phone number and pass the MFA session.
+var phoneInfoOptions = {
+  phoneNumber: phoneNumber,
+  session: multiFactorSession
+};
+</pre></section> </div>
+</li> <li>
+<p>Send a verification message to the user's phone:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { PhoneAuthProvider } from "firebase/auth";
+
+const phoneAuthProvider = new PhoneAuthProvider(auth);
+phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+    .then(function (verificationId) {
+        // verificationId will be needed to complete enrollment.
+    });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+// Send SMS verification code.
+return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+  .then(function(verificationId) {
+    // verificationId will be needed for enrollment completion.
+  })
+</pre></section> </div> <p>While not required, it's a best practice to inform users beforehand that they will receive an SMS message, and that standard rates apply.</p>
+</li> <li>
+<p>If the request fails, reset the reCAPTCHA, then repeat the previous step so the user can try again. Note that <code translate="no" dir="ltr">verifyPhoneNumber()</code> will automatically reset the reCAPTCHA when it throws an error, as reCAPTCHA tokens are one-time use only.</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">recaptchaVerifier.clear();
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">recaptchaVerifier.clear();
+</pre></section> </div>
+</li> <li>
+<p>Once the SMS code is sent, ask the user to verify the code:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// Ask user for the verification code. Then:
+const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">// Ask user for the verification code. Then:
+var cred = firebase.auth.PhoneAuthProvider.credential(verificationId, verificationCode);
+</pre></section> </div>
+</li> <li>
+<p>Initialize a <code translate="no" dir="ltr">MultiFactorAssertion</code> object with the <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { PhoneMultiFactorGenerator } from "firebase/auth";
+
+const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+</pre></section> </div>
+</li> <li>
+<p>Complete the enrollment. Optionally, you can specify a display name for the second factor. This is useful for users with multiple second factors, since the phone number is masked during the authentication flow (for example, +1******1234).</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// Complete enrollment. This will update the underlying tokens
+// and trigger ID token change listener.
+multiFactor(user).enroll(multiFactorAssertion, "My personal phone number");
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">// Complete enrollment. This will update the underlying tokens
+// and trigger ID token change listener.
+user.multiFactor.enroll(multiFactorAssertion, 'My personal phone number');
+</pre></section> </div>
+</li> </ol> <p>The code below shows a complete example of enrolling a second factor:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import {
+    multiFactor, PhoneAuthProvider, PhoneMultiFactorGenerator,
+    RecaptchaVerifier, getAuth
+} from "firebase/auth";
+
+const recaptchaVerifier = new RecaptchaVerifier(getAuth(),
+    'recaptcha-container-id', undefined);
+multiFactor(user).getSession()
+    .then(function (multiFactorSession) {
+        // Specify the phone number and pass the MFA session.
+        const phoneInfoOptions = {
+            phoneNumber: phoneNumber,
+            session: multiFactorSession
+        };
+
+        const phoneAuthProvider = new PhoneAuthProvider(auth);
+
+        // Send SMS verification code.
+        return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier);
+    }).then(function (verificationId) {
+        // Ask user for the verification code. Then:
+        const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
+        const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+
+        // Complete enrollment.
+        return multiFactor(user).enroll(multiFactorAssertion, mfaDisplayName);
+    });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container-id');
+user.multiFactor.getSession().then(function(multiFactorSession) {
+  // Specify the phone number and pass the MFA session.
+  var phoneInfoOptions = {
+    phoneNumber: phoneNumber,
+    session: multiFactorSession
+  };
+  var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+  // Send SMS verification code.
+  return phoneAuthProvider.verifyPhoneNumber(
+      phoneInfoOptions, recaptchaVerifier);
+})
+.then(function(verificationId) {
+  // Ask user for the verification code.
+  var cred = firebase.auth.PhoneAuthProvider.credential(verificationId, verificationCode);
+  var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+  // Complete enrollment.
+  return user.multiFactor.enroll(multiFactorAssertion, mfaDisplayName);
+});
+</pre></section> </div> <p>Congratulations! You successfully registered a second authentication factor for a user.</p> <aside class="special"><strong>Important:</strong><span> You should strongly encourage your users to register more than one second factor for account recovery purposes. If a user only registers a single second factor and later loses access to it, they will be locked out of their account.</span></aside> <h2 id="signing_users_in_with_a_second_factor">Signing users in with a second factor</h2> <p>To sign in a user with two-factor SMS verification:</p> <ol> <li>
+<p>Sign the user in with their first factor, then catch the <code translate="no" dir="ltr">auth/multi-factor-auth-required</code> error. This error contains a resolver, hints on the enrolled second factors, and an underlying session proving the user successfully authenticated with the first factor.</p> <p>For example, if the user's first factor was an email and password:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { getAuth, signInWithEmailAndPassword, getMultiFactorResolver} from "firebase/auth";
+
+const auth = getAuth();
+signInWithEmailAndPassword(auth, email, password)
+    .then(function (userCredential) {
+        // User successfully signed in and is not enrolled with a second factor.
+    })
+    .catch(function (error) {
+        if (error.code == 'auth/multi-factor-auth-required') {
+            // The user is a multi-factor user. Second factor challenge is required.
+            resolver = getMultiFactorResolver(auth, error);
+            // ...
+        } else if (error.code == 'auth/wrong-password') {
+            // Handle other errors such as wrong password.
+        }
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">firebase.auth().signInWithEmailAndPassword(email, password)
+  .then(function(userCredential) {
+    // User successfully signed in and is not enrolled with a second factor.
+  })
+  .catch(function(error) {
+    if (error.code == 'auth/multi-factor-auth-required') {
+      // The user is a multi-factor user. Second factor challenge is required.
+      resolver = error.resolver;
+      // ...
+    } else if (error.code == 'auth/wrong-password') {
+      // Handle other errors such as wrong password.
+    } ...
+  });
+</pre></section> </div> <p>If the user's first factor is a federated provider, such as OAuth, SAML, or OIDC, catch the error after calling <code translate="no" dir="ltr">signInWithPopup()</code> or <code translate="no" dir="ltr">signInWithRedirect()</code>.</p>
+</li> <li>
+<p>If the user has multiple secondary factors enrolled, ask them which one to use:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// Ask user which second factor to use.
+// You can get the masked phone number via resolver.hints[selectedIndex].phoneNumber
+// You can get the display name via resolver.hints[selectedIndex].displayName
+
+if (resolver.hints[selectedIndex].factorId ===
+    PhoneMultiFactorGenerator.FACTOR_ID) {
+    // User selected a phone second factor.
+    // ...
+} else if (resolver.hints[selectedIndex].factorId ===
+           TotpMultiFactorGenerator.FACTOR_ID) {
+    // User selected a TOTP second factor.
+    // ...
+} else {
+    // Unsupported second factor.
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">// Ask user which second factor to use.
+// You can get the masked phone number via resolver.hints[selectedIndex].phoneNumber
+// You can get the display name via resolver.hints[selectedIndex].displayName
+if (resolver.hints[selectedIndex].factorId === firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
+  // User selected a phone second factor.
+  // ...
+} else if (resolver.hints[selectedIndex].factorId === firebase.auth.TotpMultiFactorGenerator.FACTOR_ID) {
+  // User selected a TOTP second factor.
+  // ...
+} else {
+  // Unsupported second factor.
+}
+</pre></section> </div>
+</li> <li>
+<p>Initialize the reCAPTCHA verifier as illustrated in the previous section. Skip this step if a RecaptchaVerifier instance is already configured:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import { RecaptchaVerifier, getAuth } from "firebase/auth";
+
+recaptchaVerifier = new RecaptchaVerifier(getAuth(),
+    'recaptcha-container-id', undefined);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container-id');
+</pre></section> </div>
+</li> <li>
+<p>Initialize a <code translate="no" dir="ltr">PhoneInfoOptions</code> object with the user's phone number and the multi-factor session. These values are contained in the <code translate="no" dir="ltr">resolver</code> object passed to the <code translate="no" dir="ltr">auth/multi-factor-auth-required</code> error:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">const phoneInfoOptions = {
+    multiFactorHint: resolver.hints[selectedIndex],
+    session: resolver.session
+};
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var phoneInfoOptions = {
+  multiFactorHint: resolver.hints[selectedIndex],
+  session: resolver.session
+};
+</pre></section> </div>
+</li> <li>
+<p>Send a verification message to the user's phone:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// Send SMS verification code.
+const phoneAuthProvider = new PhoneAuthProvider(auth);
+phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+    .then(function (verificationId) {
+        // verificationId will be needed for sign-in completion.
+    });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+// Send SMS verification code.
+return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+  .then(function(verificationId) {
+    // verificationId will be needed for sign-in completion.
+  })
+</pre></section> </div>
+</li> <li>
+<p>If the request fails, reset the reCAPTCHA, then repeat the previous step so the user can try again:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">recaptchaVerifier.clear();
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">recaptchaVerifier.clear();
+</pre></section> </div>
+</li> <li>
+<p>Once the SMS code is sent, ask the user to verify the code:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">// Ask user for the verification code. Then:
+var cred = firebase.auth.PhoneAuthProvider.credential(verificationId, verificationCode);
+</pre></section> </div>
+</li> <li>
+<p>Initialize a <code translate="no" dir="ltr">MultiFactorAssertion</code> object with the <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">const multiFactorAssertion = PhoneMultiFactorGenerator.assertion(cred);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var multiFactorAssertion = firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+</pre></section> </div>
+</li> <li>
+<p>Call <code translate="no" dir="ltr">resolver.resolveSignIn()</code> to complete secondary authentication. You can then access the original sign-in result, which includes the standard provider-specific data and authentication credentials:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">// Complete sign-in. This will also trigger the Auth state listeners.
+resolver.resolveSignIn(multiFactorAssertion)
+    .then(function (userCredential) {
+        // userCredential will also contain the user, additionalUserInfo, optional
+        // credential (null for email/password) associated with the first factor sign-in.
+
+        // For example, if the user signed in with Google as a first factor,
+        // userCredential.additionalUserInfo will contain data related to Google
+        // provider that the user signed in with.
+        // - user.credential contains the Google OAuth credential.
+        // - user.credential.accessToken contains the Google OAuth access token.
+        // - user.credential.idToken contains the Google OAuth ID token.
+    });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">// Complete sign-in. This will also trigger the Auth state listeners.
+resolver.resolveSignIn(multiFactorAssertion)
+  .then(function(userCredential) {
+    // userCredential will also contain the user, additionalUserInfo, optional
+    // credential (null for email/password) associated with the first factor sign-in.
+    // For example, if the user signed in with Google as a first factor,
+    // userCredential.additionalUserInfo will contain data related to Google provider that
+    // the user signed in with.
+    // user.credential contains the Google OAuth credential.
+    // user.credential.accessToken contains the Google OAuth access token.
+    // user.credential.idToken contains the Google OAuth ID token.
+  });
+</pre></section> </div>
+</li> </ol> <p>The code below shows a complete example of signing in a multi-factor user:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">import {
+    getAuth,
+    getMultiFactorResolver,
+    PhoneAuthProvider,
+    PhoneMultiFactorGenerator,
+    RecaptchaVerifier,
+    signInWithEmailAndPassword
+} from "firebase/auth";
+
+const recaptchaVerifier = new RecaptchaVerifier(getAuth(),
+    'recaptcha-container-id', undefined);
+
+const auth = getAuth();
+signInWithEmailAndPassword(auth, email, password)
+    .then(function (userCredential) {
+        // User is not enrolled with a second factor and is successfully
+        // signed in.
+        // ...
+    })
+    .catch(function (error) {
+        if (error.code == 'auth/multi-factor-auth-required') {
+            const resolver = getMultiFactorResolver(auth, error);
+            // Ask user which second factor to use.
+            if (resolver.hints[selectedIndex].factorId ===
+                PhoneMultiFactorGenerator.FACTOR_ID) {
+                const phoneInfoOptions = {
+                    multiFactorHint: resolver.hints[selectedIndex],
+                    session: resolver.session
+                };
+                const phoneAuthProvider = new PhoneAuthProvider(auth);
+                // Send SMS verification code
+                return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+                    .then(function (verificationId) {
+                        // Ask user for the SMS verification code. Then:
+                        const cred = PhoneAuthProvider.credential(
+                            verificationId, verificationCode);
+                        const multiFactorAssertion =
+                            PhoneMultiFactorGenerator.assertion(cred);
+                        // Complete sign-in.
+                        return resolver.resolveSignIn(multiFactorAssertion)
+                    })
+                    .then(function (userCredential) {
+                        // User successfully signed in with the second factor phone number.
+                    });
+            } else if (resolver.hints[selectedIndex].factorId ===
+                       TotpMultiFactorGenerator.FACTOR_ID) {
+                // Handle TOTP MFA.
+                // ...
+            } else {
+                // Unsupported second factor.
+            }
+        } else if (error.code == 'auth/wrong-password') {
+            // Handle other errors such as wrong password.
+        }
+    });
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+
+<pre data-language="javascript">var resolver;
+firebase.auth().signInWithEmailAndPassword(email, password)
+  .then(function(userCredential) {
+    // User is not enrolled with a second factor and is successfully signed in.
+    // ...
+  })
+  .catch(function(error) {
+    if (error.code == 'auth/multi-factor-auth-required') {
+      resolver = error.resolver;
+      // Ask user which second factor to use.
+      if (resolver.hints[selectedIndex].factorId ===
+          firebase.auth.PhoneMultiFactorGenerator.FACTOR_ID) {
+        var phoneInfoOptions = {
+          multiFactorHint: resolver.hints[selectedIndex],
+          session: resolver.session
+        };
+        var phoneAuthProvider = new firebase.auth.PhoneAuthProvider();
+        // Send SMS verification code
+        return phoneAuthProvider.verifyPhoneNumber(phoneInfoOptions, recaptchaVerifier)
+          .then(function(verificationId) {
+            // Ask user for the SMS verification code.
+            var cred = firebase.auth.PhoneAuthProvider.credential(
+                verificationId, verificationCode);
+            var multiFactorAssertion =
+                firebase.auth.PhoneMultiFactorGenerator.assertion(cred);
+            // Complete sign-in.
+            return resolver.resolveSignIn(multiFactorAssertion)
+          })
+          .then(function(userCredential) {
+            // User successfully signed in with the second factor phone number.
+          });
+      } else if (resolver.hints[selectedIndex].factorId ===
+        firebase.auth.TotpMultiFactorGenerator.FACTOR_ID) {
+        // Handle TOTP MFA.
+        // ...
+      } else {
+        // Unsupported second factor.
+      }
+    } else if (error.code == 'auth/wrong-password') {
+      // Handle other errors such as wrong password.
+    } ...
+  });
+</pre></section> </div> <p>Congratulations! You successfully signed in a user using multi-factor authentication.</p> <h2 id="whats_next">What's next</h2> <ul> <li>
+<a href="../admin/manage-mfa-users">Manage multi-factor users</a> programmatically with the Admin SDK.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/web/multi-factor" class="_attribution-link">https://firebase.google.com/docs/auth/web/multi-factor</a>
+  </p>
+</div>

@@ -1,0 +1,67 @@
+<h1>Best practices for Remote Config fetch efficiency</h1> <p>Firebase Remote Config gives you flexible control over your app's behavior and appearance. This enables capabilities like feature rollouts and cross-platform A/B testing for your apps, all without deploying new versions or navigating multiple app store updates.</p> <p>Whether you're prototyping, running a growing startup, or managing an enterprise application at scale, managing your network fetch volume is key to delivering a fast, responsive user experience. Efficient configuration management reduces cold-start latency, saves client data and battery usage, and prevents unnecessary network overhead. In addition, if your user base expands rapidly and drives up usage in the future, streamlining your Remote Config integration helps ensure that your usage remains efficient.</p> <p>You can reduce client-side network request traffic significantly by refining how and when apps fetch parameters and when they activate them.</p> <h2 id="fetch-for-next-session">Shift to the "fetch for next session" pattern</h2> <p>A common pattern to avoid is using the <code translate="no" dir="ltr">fetchAndActivate</code> call—which both fetches new values over the network and activates them—on every app launch combined with a short cache expiration period for previously fetched values (for example, 15 minutes to an hour). The mental model behind this approach is that every time a user opens the app, they always have the latest values fetched and applied. While there are times when an immediate update is necessary (for example, running a daily sales campaign or game promotion), it's important to balance that goal with the impact on your app's performance and fetch usage.</p> <p>This approach forces fresh network calls every time the cache expires, generating high fetch volume for users who open the app multiple times a day.</p> <p>Instead, consider using <code translate="no" dir="ltr">fetch</code> and <code translate="no" dir="ltr">activate</code> calls separately with a higher minimum fetch interval to adopt a "fetch for next session" model. You can still use <code translate="no" dir="ltr">fetchAndActivate</code> with a higher minimum fetch interval since <code translate="no" dir="ltr">fetch</code> only executes a network request if the cache is invalidated, but using the two calls separately helps solidify the pattern and establish it as a standard practice in your application development process. Additionally, by activating separately, you don't run the risk of applying configuration values mid-session and disrupting the user experience.</p> <h3 id="how-fetch-next-session-works">How this approach works</h3> <ul> <li>
+<strong>Activate immediately on launch:</strong> Apply configurations cached from the <em>previous</em> session instantly (0 ms network delay).</li> <li>
+<strong>Fetch in the background with a longer cache (for example, more than 12 or 24 hours):</strong> Request updated configurations asynchronously to refresh the local cache for the <em>next</em> session.</li> </ul> <h3 id="how-this-optimizes-fetch-volume">How this optimizes fetch volume</h3> <p>A longer minimum fetch interval results in fewer fetch requests. Fetching new values for the <em>next</em> session and activating cached values for the current session means that your app loads instantly from the local cache over a longer validation period, leading to better user experiences.</p> <p>For example, if you set <code translate="no" dir="ltr">minimumFetchInterval</code> to 24 hours and a user opens your app 5 or 10 times in a single day, the SDK automatically satisfies launches 2 through 10 directly from the local cache—reducing that user's daily network request count from 10 or more fetches down to 1.</p> <aside class="note"><strong>Note:</strong><span> This example uses 24 hours, but in practice, make sure that your <code translate="no" dir="ltr">minimumFetchInterval</code> values work for your use case and aren't arbitrarily high or low.</span></aside> <p>The following examples show what this implementation looks like for Android, Apple platforms, and web apps:</p> <div> <section><p class="_firebase-tab"><strong>Android</strong></p>
+
+<pre data-language="java">val remoteConfig = Firebase.remoteConfig
+
+// Set a 24-hour minimum fetch interval (86,400 seconds)
+val configSettings = remoteConfigSettings {
+    minimumFetchIntervalInSeconds = 86400
+}
+remoteConfig.setConfigSettingsAsync(configSettings)
+
+// 1. Instantly activate values cached from the LAST session
+remoteConfig.activate().addOnCompleteListener {
+    applyAppConfigurations()
+}
+
+// 2. Fetch new values in the background for the NEXT session
+remoteConfig.fetch().addOnCompleteListener { task -&gt;
+    if (task.isSuccessful) {
+        // Optional: Activate values if needed
+    }
+}</pre></section> <section><p class="_firebase-tab"><strong>iOS+</strong></p>
+
+<pre data-language="">let remoteConfig = RemoteConfig.remoteConfig()
+
+// Set a 24-hour minimum fetch interval (86,400 seconds)
+let settings = RemoteConfigSettings()
+settings.minimumFetchInterval = 86400
+remoteConfig.configSettings = settings
+
+// 1. Instantly activate values cached from the LAST session
+remoteConfig.activate { changed, error in
+    guard error == nil else { return }
+    DispatchQueue.main.async {
+        self.applyAppConfigurations()
+    }
+}
+
+// 2. Fetch new values in the background for the NEXT session
+remoteConfig.fetch { status, error in
+    if status == .success {
+        // Optional: Activate values if needed
+    }
+}</pre></section> <section><p class="_firebase-tab"><strong>Web</strong></p>
+
+<pre data-language="javascript">import { getRemoteConfig, fetchConfig, activate } from "firebase/remote-config";
+
+const remoteConfig = getRemoteConfig(app);
+
+// Set a 24-hour minimum fetch interval (86,400,000 ms)
+remoteConfig.settings.minimumFetchIntervalMillis = 86400000;
+
+// 1. Instantly activate values cached from the LAST session
+activate(remoteConfig).then(() =&gt; {
+    applyAppConfigurations();
+});
+
+// 2. Fetch new values in the background for the NEXT session
+fetchConfig(remoteConfig).then(() =&gt; {
+    // Optional: Activate values if needed
+});</pre></section> </div> <h2 id="conditional-smart-fetching">Implement conditional "smart" fetching</h2> <p>If the "fetch for next session" pattern introduces too much latency between when you need to update Remote Config values and when they become available in your client apps, consider adopting conditional "smart" fetching.</p> <p>To implement this effectively, avoid attaching <code translate="no" dir="ltr">fetch</code> triggers to broad UI lifecycle hooks, such as every time a screen loads, a tab switches, or a view gains focus.</p> <p>Instead, trigger fetch requests selectively based on explicit app actions or states, such as:</p> <ul> <li>User sign-in events</li> <li>Transitioning into specific user flows where your parameters are used (for example, entering a checkout funnel or leveling up in a game)</li> </ul> <p>Conversely, avoid triggering fetch requests for routine actions like:</p> <ul> <li>When a user opens the app or starts a new session</li> <li>When the app transitions between background and foreground states</li> </ul> <h2 id="next-steps">Next steps</h2> <ul> <li>Learn how to <a href="real-time-best-practices">use real-time Remote Config strategically</a>.</li> <li>Explore <a href="loading">Firebase Remote Config loading strategies</a>.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/remote-config/optimization-best-practices" class="_attribution-link">https://firebase.google.com/docs/remote-config/optimization-best-practices</a>
+  </p>
+</div>

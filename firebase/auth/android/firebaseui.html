@@ -1,0 +1,157 @@
+<h1>Easily add sign-in to your Android app with FirebaseUI</h1> <p><img src="https://firebase.google.com/static/docs/auth/images/firebaseui-android.png" class="attempt-right" style="max-width: calc((100% - 40px)/3);"></p> <p><a href="https://github.com/firebase/firebaseui-android" class="external">FirebaseUI</a> Auth is a library built on top of the Firebase Authentication SDK that provides drop-in UI flows for use in your app.</p> <aside class="caution"><strong>Caution:</strong><span> Version 10.x is currently a <strong>beta release</strong>. This means that the functionality might change in backward-incompatible ways or have limited support. A beta release is not subject to any SLA or deprecation policy.</span></aside> <p>The recommended sign-in flow uses Compose screens. For apps that still use Activities, see the <a href="#existing-activity-based-apps">Existing Activity-based apps</a> section.</p> <p>FirebaseUI Auth provides the following benefits:</p> <ul> <li>
+<strong>Multiple Providers</strong> — sign-in flows for email/password, phone, Google, Facebook, Apple, GitHub, Microsoft, Yahoo, Twitter, anonymous auth, and custom OAuth.</li> <li>
+<strong>Account Management</strong> — flows to handle account management tasks, such as account creation and password resets.</li> <li>
+<strong>Account Linking</strong> — flows to safely link user accounts across identity providers.</li> <li>
+<strong>Anonymous User Upgrading</strong> — flows to safely upgrade anonymous users.</li> <li>
+<strong>Custom Themes</strong> — Material 3 UI support that can inherit your app theme. Also, because FirebaseUI is open source, you can fork the project and customize it exactly to your needs.</li> <li>
+<strong>Credential Manager</strong> — automatic integration with <a href="https://developer.android.com/identity/sign-in/credential-manager" class="external">Credential Manager</a> for fast cross-device sign-in.</li> <li>
+<strong>Multi-Factor Authentication</strong> — SMS and TOTP support for additional security.</li> </ul> <h2 id="before-you-begin">Before you begin</h2> <ol> <li>If you haven't already, <a href="https://firebase.google.com/android/setup">add Firebase to your Android project</a>.</li> <li>In the <a href="https://console.firebase.google.com/">Firebase console</a>, enable the sign-in methods you want to support.</li> <li>Add FirebaseUI Auth to your app module:</li> </ol> 
+<pre>dependencies {
+    // Check Maven Central for the latest version:
+    // https://central.sonatype.com/artifact/com.firebaseui/firebase-ui-auth/versions
+    implementation("com.firebaseui:firebase-ui-auth:10.0.0-beta02")
+
+    // Required only if Facebook login support is required
+    // Find the latest Facebook SDK releases here: https://goo.gl/Ce5L94
+    implementation("com.facebook.android:facebook-android-sdk:8.x")
+}
+</pre> <h2 id="set-up-sign-in-methods">Set up sign-in methods</h2> <h3 id="google_sign-in">Google Sign-In</h3> <p>Google Sign-In configuration is automatically provided by the <a href="../../android/google-services-plugin-and-file"><code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file</a>. Ensure you have enabled Google Sign-In in the <a href="https://console.firebase.google.com/project/_/authentication/providers">Firebase console</a>.</p> <h3 id="facebook_login">Facebook Login</h3> <p>If using Facebook Login, add your Facebook App ID to <code translate="no" dir="ltr">strings.xml</code>:</p> 
+<pre>&lt;resources&gt;
+    &lt;string name="facebook_application_id" translatable="false"&gt;YOUR_FACEBOOK_APP_ID&lt;/string&gt;
+    &lt;string name="facebook_login_protocol_scheme" translatable="false"&gt;fbYOUR_FACEBOOK_APP_ID&lt;/string&gt;
+    &lt;string name="facebook_client_token" translatable="false"&gt;CHANGE-ME&lt;/string&gt;
+&lt;/resources&gt;
+</pre> <p>See the <a href="https://developers.facebook.com/" class="external">Facebook for Developers</a> documentation for setup instructions.</p> <h3 id="other_providers">Other Providers</h3> <p>Twitter, GitHub, Microsoft, Yahoo, and Apple providers require configuration in the Firebase Console but no additional Android-specific setup. See the <a href="https://firebase.google.com/auth">Firebase Auth documentation</a> for provider-specific instructions.</p> <p>Choose the providers you want inside <code translate="no" dir="ltr">authUIConfiguration</code>:</p> 
+<pre>val configuration = authUIConfiguration {
+    context = applicationContext
+    providers {
+        provider(AuthProvider.Email())
+        provider(
+            AuthProvider.Phone(
+                defaultCountryCode = "US",
+            )
+        )
+        provider(
+            AuthProvider.Google(
+                scopes = listOf("email"),
+                serverClientId = null,
+            )
+        )
+        provider(AuthProvider.Facebook())
+    }
+}
+</pre> <h3 id="email_link_sign-in">Email link sign-in</h3> <p>Email link sign-in lives in the email provider configuration:</p> 
+<pre>val configuration = authUIConfiguration {
+    context = applicationContext
+    providers {
+        provider(
+            AuthProvider.Email(
+                isEmailLinkSignInEnabled = true,
+                emailLinkActionCodeSettings = actionCodeSettings {
+                    url = "https://example.com/auth"
+                    handleCodeInApp = true
+                    setAndroidPackageName(
+                        "com.example.app",
+                        true,
+                        null,
+                    )
+                },
+            )
+        )
+    }
+}
+</pre> <p>For the full deep-link handling flow, see <a href="https://github.com/firebase/FirebaseUI-Android/blob/master/auth/README.md#email-link-sign-in" class="external">the Email Link Sign-In section of the README in GitHub</a>.</p> <h2 id="sign-in">Sign in</h2> <p>Create an <code translate="no" dir="ltr">AuthUIConfiguration</code>, then show <code translate="no" dir="ltr">FirebaseAuthScreen</code>.</p> 
+<pre>class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val authUI = FirebaseAuthUI.getInstance()
+
+        setContent {
+            MyAppTheme {
+                val configuration = authUIConfiguration {
+                    context = applicationContext
+                    theme = AuthUITheme.fromMaterialTheme()
+                    providers {
+                        provider(AuthProvider.Email())
+                        provider(
+                            AuthProvider.Google(
+                                scopes = listOf("email"),
+                                serverClientId = null,
+                            )
+                        )
+                    }
+                }
+
+                if (authUI.isSignedIn()) {
+                    HomeScreen()
+                } else {
+                    FirebaseAuthScreen(
+                        configuration = configuration,
+                        authUI = authUI,
+                        onSignInSuccess = { result -&gt;
+                            // User signed in successfully
+                        },
+                        onSignInFailure = { exception -&gt;
+                            // Sign in failed
+                        },
+                        onSignInCancelled = {
+                            finish()
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+</pre> <p>This gives you a complete authentication flow with:</p> <ul> <li>Password Authentication.</li> <li>Google Sign-In.</li> <li>Password reset.</li> <li>Material 3 styling.</li> <li>Credential Manager support.</li> <li>Error handling through direct callbacks.</li> </ul> <h2 id="sign-out">Sign out</h2> <p>FirebaseUI Auth provides convenience methods for sign-out and account deletion:</p> 
+<pre>lifecycleScope.launch {
+    FirebaseAuthUI.getInstance().signOut(applicationContext)
+}
+</pre>
+
+<pre>lifecycleScope.launch {
+    FirebaseAuthUI.getInstance().delete(applicationContext)
+}
+</pre> <h2 id="customization">Customization</h2> <p>FirebaseUI Auth is customizable, and the simplest way to get started is to set a theme directly in <code translate="no" dir="ltr">authUIConfiguration</code>:</p> 
+<pre>val configuration = authUIConfiguration {
+    context = applicationContext
+    providers {
+        provider(AuthProvider.Email())
+        provider(AuthProvider.Google(scopes = listOf("email"), serverClientId = null))
+    }
+    theme = AuthUITheme.Adaptive
+}
+</pre> <p>You can also:</p> <ul> <li>Use <code translate="no" dir="ltr">AuthUITheme.Default</code>, <code translate="no" dir="ltr">AuthUITheme.DefaultDark</code>, or <code translate="no" dir="ltr">AuthUITheme.Adaptive</code>.</li> <li>Inherit your app theme with <code translate="no" dir="ltr">AuthUITheme.fromMaterialTheme()</code>.</li> <li>Customize the default theme with <code translate="no" dir="ltr">.copy()</code>.</li> <li>Build a fully custom <code translate="no" dir="ltr">AuthUITheme</code>.</li> <li>Set a logo, Terms of Service URL, and Privacy Policy URL in <code translate="no" dir="ltr">authUIConfiguration</code>.</li> </ul> <p>For full theming and customization details, including theme precedence, provider button styling, and custom themes, see <a href="https://github.com/firebase/FirebaseUI-Android/blob/master/auth/README.md#theming--customization" class="external">the Theming and Customization section of the readme in GitHub</a>.</p> <h2 id="existing-activity-based-apps">Existing Activity-based apps</h2> <p>If your app still uses Activities and the Activity Result API, you can keep an Activity-based launch flow by using <code translate="no" dir="ltr">AuthFlowController</code>:</p> 
+<pre>private val authLauncher = registerForActivityResult(
+    ActivityResultContracts.StartActivityForResult(),
+) { result -&gt;
+    if (result.resultCode == RESULT_OK) {
+        val user = FirebaseAuth.getInstance().currentUser
+        // ...
+    } else {
+        // User cancelled or sign-in failed
+    }
+}
+
+val configuration = authUIConfiguration {
+    context = applicationContext
+    providers {
+        provider(AuthProvider.Email())
+        provider(
+            AuthProvider.Google(
+                scopes = listOf("email"),
+                serverClientId = null,
+            )
+        )
+    }
+}
+
+val controller = FirebaseAuthUI.getInstance().createAuthFlow(configuration)
+authLauncher.launch(controller.createIntent(this))
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/android/firebaseui" class="_attribution-link">https://firebase.google.com/docs/auth/android/firebaseui</a>
+  </p>
+</div>

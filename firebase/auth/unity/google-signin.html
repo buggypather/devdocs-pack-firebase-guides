@@ -1,0 +1,100 @@
+<h1>Authenticate Using Google Sign-In and Unity</h1> <p>You can let your users authenticate with Firebase using their Google Accounts by integrating Google Sign-In into your app.</p> <h2 id="before-you-begin">Before you begin</h2> <h3 id="set-up-unity-project">Set up your Unity project</h3> <p>Before you can use <a href="https://firebase.google.com/docs/reference/unity/namespace/firebase/auth">Firebase Authentication</a>, you need to:</p> <ul> <li>
+<p>Register your Unity project and configure it to use Firebase.</p> <ul> <li><p>If your Unity project already uses Firebase, then it's already registered and configured for Firebase.</p></li> <li><p>If you don't have a Unity project, you can download a <a href="https://github.com/google/mechahamster">sample app</a>.</p></li> </ul>
+</li> <li><p>Add the <a href="https://firebase.google.com/download/unity">Firebase Unity SDK</a> (specifically, <code translate="no" dir="ltr">FirebaseAuth.unitypackage</code>) to your Unity project.</p></li> </ul> <aside class="objective"><strong>Find detailed instructions for these initial setup tasks in <a href="../../unity/setup#prerequisites">Add Firebase to your Unity project</a>.</strong> </aside> <p>Note that adding Firebase to your Unity project involves tasks both in the <a href="https://console.firebase.google.com/">Firebase console</a> and in your open Unity project (for example, you download Firebase config files from the console, then move them into your Unity project).</p> <h3 id="set-up-firebase-project">Set up your Firebase project and credentials</h3> <ol> <li>
+<p><strong>Android:</strong> Specify your app's SHA-1 fingerprint in the Firebase console:</p> <ol> <li>In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><strong>General</strong> tab</a>.</li> <li>
+<p>Go to the <strong>Your apps</strong> card, select your Android app, and add your SHA-1 fingerprint in the <strong>SHA certificate fingerprints</strong> field.</p> <p>You can retrieve your keystore's SHA-1 fingerprint using <code translate="no" dir="ltr">keytool</code>:</p> 
+<pre>keytool -keystore path-to-keystore.keystore -list -v
+</pre> <p>See <a href="https://developers.google.com/android/guides/client-auth">Authenticating Your Client</a> for more details on getting your app's SHA fingerprint.</p>
+</li> </ol>
+</li> <li>
+<p><strong>Enable Google Sign-In and copy your Web client ID:</strong></p> <ol> <li>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><strong>Authentication</strong></a>.</li> <li>In the <strong>Sign-in method</strong> tab, enable the <strong>Google</strong> sign-in provider.</li> <li>Expand the <strong>Web SDK configuration</strong> section and copy your <strong>Web client ID</strong> (for example, <code translate="no" dir="ltr">123456-abc.apps.googleusercontent.com</code>). This represents the audience (<code translate="no" dir="ltr">aud</code>) claim of your ID tokens and is required for both Android and iOS.</li> <li>Click <strong>Save</strong>.</li> </ol> <aside class="note"><b>Tip:</b> If you prefer to use the <a href="../../cli">Firebase CLI</a>, run <code translate="no" dir="ltr">firebase init auth</code> to configure authentication providers, and then run <code translate="no" dir="ltr">firebase deploy --only auth</code> to deploy the changes to your project. </aside> <aside class="note"><strong>Note:</strong><span> Enabling Google Sign-In in the Firebase console automatically provisions OAuth 2.0 client IDs for your registered apps. You can also view and manage your OAuth consent screen and client IDs on the <a href="https://console.cloud.google.com/apis/credentials" class="external"><strong>Credentials</strong> page</a> in the Google Cloud console.</span></aside>
+</li> <li>
+<p><strong>Update your Firebase config files and copy your iOS reversed client ID:</strong></p> <ol> <li>Download the latest Firebase configuration files from the Firebase console (<code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> for Android and <code translate="no" dir="ltr"><nobr>GoogleService-Info.plist</nobr></code> for iOS) and replace any older copies in your Unity project. (See <a href="../../unity/setup#add-config-file">Add Firebase to your Unity project</a>.)</li> <li>
+<strong>iOS:</strong> Open your <code translate="no" dir="ltr"><nobr>GoogleService-Info.plist</nobr></code> file and copy the value of the <code translate="no" dir="ltr">REVERSED_CLIENT_ID</code> key (for example, <code translate="no" dir="ltr">com.googleusercontent.apps.12345-abc</code>). This value is required to configure the iOS redirect URL scheme.</li> </ol>
+</li> </ol> <h2 id="integrate-plugin">Integrate the Google Sign-In plugin into your Unity project</h2> <ol> <li>
+<p><strong>Import the plugin:</strong></p> <ol> <li>If you are integrating into an existing project, back up your project and remove any older Google Sign-In plugins before proceeding.</li> <li>Download <code translate="no" dir="ltr">GoogleSignInNative.unitypackage</code> <a href="https://github.com/googlesamples/siwg-mobile-unity-plugin">from GitHub</a> and import it into your Unity project (<strong>Assets &gt; Import Package &gt; Custom Package</strong>). Ensure all files are selected and click <strong>Import</strong>.</li> </ol> <aside class="caution"><strong>Caution:</strong><span> This plugin includes <code translate="no" dir="ltr">baseProjectTemplate.gradle</code> and <code translate="no" dir="ltr">settingsTemplate.gradle</code>. If your project does not already have custom Gradle templates, they are added automatically. If your project already uses custom Gradle templates, Unity won't overwrite them; you must manually merge the Kotlin <code translate="no" dir="ltr">1.9.24</code> definitions from the plugin into your existing templates.</span></aside>
+</li> <li>
+<p><strong>Configure plugin settings:</strong></p> <ol> <li>In the Unity Editor, go to <strong>Window &gt; Google Sign-In Native &gt; Settings</strong>.</li> <li>Paste your <strong>Web Client ID</strong> into the first field.</li> <li>Paste your <strong>iOS Reversed Client ID</strong> into the second field.</li> <li>Click <strong>Save Settings</strong>.</li> </ol>
+</li> <li>
+<p><strong>Resolve native dependencies:</strong></p> <ol> <li>Go to <strong>Assets &gt; External Dependency Manager &gt; Android Resolver &gt; Force Resolve</strong>.</li> <li>Wait for the success message. This downloads the native <code translate="no" dir="ltr">googleid</code> and <code translate="no" dir="ltr">androidx</code> Credential Manager libraries.</li> </ol>
+</li> </ol> <h2 id="access-firebaseauth">Access the <code translate="no" dir="ltr">Firebase.Auth.FirebaseAuth</code> class</h2> The <code translate="no" dir="ltr">FirebaseAuth</code> class is the gateway for all API calls. It is accessible through <a href="https://firebase.google.com/docs/reference/unity/class/firebase/auth/firebase-auth#defaultinstance">FirebaseAuth.DefaultInstance</a>. 
+<pre>Firebase.Auth.FirebaseAuth auth = Firebase.Auth.FirebaseAuth.DefaultInstance;</pre> <h2 id="authenticate_with_firebase">Authenticate with Firebase</h2> <ol> <li>
+<p><strong>Set up <code translate="no" dir="ltr">GoogleSignInManager</code> in your scene:</strong></p> <ol> <li>Create an empty <code translate="no" dir="ltr">GameObject</code> in your initial scene named <code translate="no" dir="ltr">GoogleSignInManager</code>.</li> <li>Attach the <code translate="no" dir="ltr">GoogleSignInManager.cs</code> script to it.</li> <li>Drag the <code translate="no" dir="ltr">GoogleSignInNativeSettings</code> asset (located in <code translate="no" dir="ltr">Assets/GoogleSignInNative/Resources</code>) into the <strong>Sign In Settings</strong> slot on the script.</li> </ol>
+</li> <li>
+<p><strong>Trigger Google Sign-In and exchange the ID token for a Firebase credential:</strong></p> <p>Create a controller script that subscribes to <code translate="no" dir="ltr">GoogleSignInManager.OnSignInCompleted</code> and <code translate="no" dir="ltr">GoogleSignInManager.OnSignInFailed</code>, triggers sign-in with <code translate="no" dir="ltr">GoogleSignInManager.Instance.StartSignIn()</code>, and exchanges the resulting Google ID token for a Firebase credential using <code translate="no" dir="ltr">GoogleAuthProvider.GetCredential</code>:</p> 
+<pre>using Firebase.Auth;
+using Firebase.Extensions;
+using UnityEngine;
+
+public class MyAuthController : MonoBehaviour
+{
+    private FirebaseAuth auth;
+
+    private void Awake()
+    {
+        auth = FirebaseAuth.DefaultInstance;
+    }
+
+    private void OnEnable()
+    {
+        GoogleSignInManager.OnSignInCompleted += HandleSignInSuccess;
+        GoogleSignInManager.OnSignInFailed += HandleSignInFailure;
+    }
+
+    private void OnDisable()
+    {
+        GoogleSignInManager.OnSignInCompleted -= HandleSignInSuccess;
+        GoogleSignInManager.OnSignInFailed -= HandleSignInFailure;
+    }
+
+    public void OnSignInButtonClick()
+    {
+        GoogleSignInManager.Instance.StartSignIn();
+    }
+
+    private void HandleSignInSuccess(string idToken)
+    {
+        Debug.Log("[Auth] Google Sign-In succeeded. Authenticating with Firebase...");
+
+        Credential credential = GoogleAuthProvider.GetCredential(idToken, null);
+        auth.SignInAndRetrieveDataWithCredentialAsync(credential).ContinueWithOnMainThread(task =&gt; {
+            if (task.IsCanceled)
+            {
+                Debug.LogError("SignInAndRetrieveDataWithCredentialAsync was canceled.");
+                return;
+            }
+            if (task.IsFaulted)
+            {
+                Debug.LogError("SignInAndRetrieveDataWithCredentialAsync encountered an error: " + task.Exception);
+                return;
+            }
+
+            AuthResult result = task.Result;
+            Debug.LogFormat("User signed in successfully: {0} ({1})",
+                result.User.DisplayName, result.User.UserId);
+        });
+    }
+
+    private void HandleSignInFailure(string error)
+    {
+        Debug.LogError($"[Auth] Google Sign-In failed: {error}");
+    }
+}
+</pre>
+</li> </ol> <h2 id="build-your-app">Build your app</h2> <h3 id="build-android">Android</h3> <ul> <li>Ensure your <strong>Package Name</strong> in <strong>Player Settings</strong> matches your Firebase and Google Cloud OAuth credentials exactly.</li> <li>Ensure your <strong>Minimum API Level</strong> is set to <strong>34</strong> or higher.</li> <li>Click <strong>Build and Run</strong>.</li> </ul> <h3 id="build-ios">iOS</h3> <ul> <li>Build your project in Unity to generate an Xcode project, then open the generated <code translate="no" dir="ltr">.xcworkspace</code> file.</li> <li>In Xcode, go to the <strong>Signing &amp; Capabilities</strong> tab and select your <strong>Development Team</strong>.</li> <li>The plugin automatically adds the custom URL scheme (<code translate="no" dir="ltr">REVERSED_CLIENT_ID</code>) to your Xcode project. Build and run on a physical device.</li> </ul> <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/unity/class/firebase/auth/firebase-user"> <code translate="no" dir="ltr">Firebase.Auth.FirebaseUser</code></a> object:</p> 
+<pre>Firebase.Auth.FirebaseUser user = auth.CurrentUser;
+if (user != null) {
+  string name = user.DisplayName;
+  string email = user.Email;
+  System.Uri photo_url = user.PhotoUrl;
+  // The user's Id, unique to the Firebase project.
+  // Do NOT use this value to authenticate with your backend server, if you
+  // have one; use User.TokenAsync() instead.
+  string uid = user.UserId;
+}</pre> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/unity/class/firebase/auth/firebase-auth#signout"> <code translate="no" dir="ltr">SignOut()</code></a>:</p> 
+<pre>auth.SignOut();</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/unity/google-signin" class="_attribution-link">https://firebase.google.com/docs/auth/unity/google-signin</a>
+  </p>
+</div>

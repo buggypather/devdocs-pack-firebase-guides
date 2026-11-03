@@ -1,0 +1,33 @@
+<h1>Remote Config triggers (1st gen)</h1> <aside class="note"><strong>Note:</strong><span> The 1st-gen functionality described in this page is also supported in Cloud Functions (2nd gen) with improved features and performance. For more information about 2nd gen, see the <a href="../version-comparison">version comparison</a>. To go directly to the 2nd gen guide for this feature, see <a href="../rc-events">Remote Config triggers</a>.</span></aside> <p>You can trigger a function in response to <a href="../../remote-config">Firebase Remote Config</a> events, including the publication of a new config version or the rollback to an older version. This guide describes how to create a Remote Config background function that performs a diff of two template versions.</p> <h2 id="trigger_a_remote_config_function">Trigger a Remote Config function</h2> <p>To define a handler for Remote Config events, use the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.remoteconfig"><code translate="no" dir="ltr">functions.remoteConfig</code></a> module's <code translate="no" dir="ltr">onUpdate()</code> function. The <code translate="no" dir="ltr">TemplateVersion</code> object returned by <code translate="no" dir="ltr">onUpdate</code> contains the key metadata fields for a template update such as the version number and time of the update. You can also retrieve the email for the user who made the update, with name and an image if available.</p> <p>Here's an example of a Remote Config function that returns a diff of each updated version and the version it replaced. The function examines the <code translate="no" dir="ltr">versionNumber</code> field of the template object and retrieves the current (newly updated) version together with the version one number lower:</p> 
+<pre>exports.showConfigDiff = functions.remoteConfig.onUpdate(versionMetadata =&gt; {
+  return applicationDefault().getAccessToken()
+    .then(accessTokenObj =&gt; {
+      return accessTokenObj.access_token;
+    })
+    .then(accessToken =&gt; {
+      const currentVersion = versionMetadata.versionNumber;
+      const templatePromises = [];
+      templatePromises.push(getTemplate(currentVersion, accessToken));
+      templatePromises.push(getTemplate(currentVersion - 1, accessToken));
+
+      return Promise.all(templatePromises);
+    })
+    .then(results =&gt; {
+      const currentTemplate = results[0];
+      const previousTemplate = results[1];
+
+      const diff = jsonDiff.diffString(previousTemplate, currentTemplate);
+
+      functions.logger.log(diff);
+
+      return null;
+    }).catch(error =&gt; {
+      functions.logger.error(error);
+      return null;
+    });
+});</pre> <p>This sample uses the <a href="https://www.npmjs.com/package/json-diff"><code translate="no" dir="ltr">json-diff</code></a> and <a href="https://www.npmjs.com/package/request-promise"><code translate="no" dir="ltr">request-promise</code></a> modules to create the diff and build the request to get the template object. For a sample that incorporates Remote Config client logic as well as Firebase Cloud Messaging, see <a href="../../remote-config/propagate-updates-realtime">Propagate Remote Config updates in real time</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/1st-gen/rc-events-1st" class="_attribution-link">https://firebase.google.com/docs/functions/1st-gen/rc-events-1st</a>
+  </p>
+</div>

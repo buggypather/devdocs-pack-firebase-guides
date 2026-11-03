@@ -1,0 +1,87 @@
+<h1>Use generated Flutter SDKs</h1> <p>Firebase SQL Connect client SDKs let you call your server-side queries and mutations directly from a Firebase app. You generate a custom client SDK in parallel as you design the schemas, queries and mutations you deploy to your SQL Connect service. Then, you integrate methods from this SDK into your client logic.</p> <p>As we've mentioned elsewhere, it's important to note that SQL Connect queries and mutations are not submitted by client code and executed on the server. Instead, when deployed, SQL Connect operations are stored on the server like Cloud Functions. This means you need to deploy corresponding client-side changes to avoid breaking existing users (for example, on older app versions).</p> <p>That's why SQL Connect provides you with a developer environment and tooling that lets you prototype your server-deployed schemas, queries and mutations. It also generates client-side SDKs automatically, while you prototype.</p> <p>When you've iterated updates to your service and client apps, both server- and client-side updates are ready to deploy.</p> <h2 id="summarize-workflow">What is the client development workflow?</h2> <p>If you followed the <a href="quickstart">Get started</a>, you were introduced to the overall development flow for SQL Connect. In this guide, you'll find more detailed information about generating Flutter SDKs from your schema and working with client queries and mutations.</p> <p>To summarize, to use generated Flutter SDKs in your client apps, you'll follow these prerequisite steps:</p> <ol> <li>Add Firebase to your <a href="../flutter/setup">Flutter</a> app.</li> <li>Install the flutterfire CLI <code translate="no" dir="ltr">dart pub global activate flutterfire_cli</code>.</li> <li>Run <code translate="no" dir="ltr">flutterfire configure</code>.</li> </ol> <p>Then:</p> <ol> <li>Develop your app schema.</li> <li>
+<p>Set up SDK generation:</p> <ul> <li>With the <strong>Add SDK to app</strong> button in our SQL Connect VS Code extension</li> <li>By <a href="#generate-flutter">updating your <code translate="no" dir="ltr">connector.yaml</code></a>.</li> </ul>
+</li> <li><p><a href="#set-client">Initialize your client code and import libraries</a>.</p></li> <li><p><a href="#using-queries">Implement calls to queries</a> and <a href="#using-mutations">mutations</a>.</p></li> <li><p><a href="#prototype-and">Set up and use the SQL Connect emulator</a> and iterate.</p></li> </ol> <h2 id="generate-flutter">Generate your Flutter SDK</h2> <p>Use the Firebase CLI to set up SQL Connect generated SDKs in your apps. The <code translate="no" dir="ltr">init</code> command should detect all apps in the current folder and install generated SDKs automatically.</p> 
+<pre>firebase init dataconnect:sdk
+</pre> <h3 id="update_sdks_while_prototyping">Update SDKs while prototyping</h3> <p>If you have SQL Connect VS Code extension installed, it will always keep generated SDKs up to date.</p> <p>If you don't use SQL Connect VS Code extension, you can use Firebase CLI to keep generated SDKs up to date.</p> 
+<pre>firebase dataconnect:sdk:generate --watch</pre> <h3 id="generate_sdks_in_build_pipelines">Generate SDKs in build pipelines</h3> <p>You can use the Firebase CLI to generate SQL Connect SDKs in CI/CD build processes.</p> 
+<pre>firebase dataconnect:sdk:generate</pre> <h2 id="set-client">Set up client code</h2> <h3 id="use-core">Initialize your SQL Connect app</h3> <p>First, initialize your app using the <a href="../flutter/setup">standard Firebase setup instructions</a>.</p> <p>Then, install the SQL Connect plugin:</p> 
+<pre>flutter pub add firebase_data_connect</pre> <h3 id="initialize-sdk">Initialize the SQL Connect Flutter SDK</h3> <p>Initialize your SQL Connect instance using the information you used to set up SQL Connect. Find this information in the <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/dataconnect" class="external"><strong>SQL Connect</strong> page</a> of the Firebase console.</p> <h4 id="import_libraries">Import libraries</h4> <p>There are two sets of imports needed to initialize your client code, general SQL Connect imports and specific, generated SDK imports.</p> 
+<pre>// general imports
+import 'package:firebase_data_connect/firebase_data_connect.dart';
+
+// generated queries and mutations from SDK
+import 'generated/movies.dart';
+</pre> <h2 id="using-queries">Use queries on the client side</h2> <p>The generated code will already come with predefined Query Refs. All you need to do is import and call <code translate="no" dir="ltr">execute</code> on them.</p> 
+<pre>import 'generated/movies.dart';
+
+await MoviesConnector.instance.listMovies().execute();
+</pre> <h3 id="call-sdk">Call SDK query methods</h3> <p>Here's an example using these action shortcut functions:</p> 
+<pre>import 'generated/movies.dart';
+
+function onBtnClick() {
+  // This will call the generated Dart from the CLI and then make an HTTP request to the server.
+  MoviesConnector.instance.listMovies().execute().then(data =&gt; showInUI(data)); // == MoviesConnector.instance.listMovies().ref().execute();
+}
+</pre> <h4 id="optional_fields">Optional fields</h4> <p>Some queries may have optional fields. In these cases, the Flutter SDK exposes a builder method, and will have to be set separately.</p> <p>For example, the field <code translate="no" dir="ltr">rating</code> is optional when calling <code translate="no" dir="ltr">createMovie</code>, so you need to provide it in the builder function.</p> 
+<pre>await MoviesConnector.instance.createMovie( title: 'Empire Strikes Back', releaseYear: 1980, genre: 'Sci-Fi').rating(5).execute();
+</pre> <h3 id="subscribing-changes">Subscribe to changes</h3> <p>See <a href="realtime">Get real-time updates from SQL Connect</a>.</p> <h3 id="enum-queries">Handle changes to enumeration fields</h3> <p>An app's schema can <a href="schemas-guide#enumeration-fields">contain enumerations</a>, which can be accessed by your <a href="queries-guide#query-enumerations">GraphQL queries</a>.</p> <p>As an app's design changes, you may add new enum supported values. For example, imagine that later in your application’s lifecycle you decide to add a FULLSCREEN value to the <code translate="no" dir="ltr">AspectRatio</code> enum.</p> <p>In the SQL Connect workflow, you can use local development tooling to update your queries and SDKs.</p> <p>However, before you release an updated version of your clients, older deployed clients may break.</p> <h4 id="example_resilient_implementation">Example resilient implementation</h4> <p>The generated SDK forces handling of unknown values. That is, client code must unwrap the <code translate="no" dir="ltr">EnumValue</code> object into either <code translate="no" dir="ltr">Known</code> or <code translate="no" dir="ltr">Unknown</code>.</p> 
+<pre>final result = await MoviesConnector.instance.listMovies().execute();
+
+if (result.data != null &amp;&amp; result.data!.isNotEmpty) {
+  handleEnumValue(result.data![0].aspectratio);
+}
+
+void handleEnumValue(EnumValue&lt;AspectRatio&gt; aspectValue) {
+  if (aspectValue.value != null) {
+    switch(aspectValue.value!) {
+      case AspectRatio.ACADEMY:
+        print('This movie is in Academy aspect');
+        break;
+      case AspectRatio.WIDESCREEN:
+        print('This movie is in Widescreen aspect');
+        break;
+      case AspectRatio.ANAMORPHIC:
+        print('This movie is in Anamorphic aspect');
+        break;
+      case AspectRatio.IMAX:
+        print('This movie is in IMAX aspect');
+    }
+  } else {
+    print('Unknown aspect ratio detected: ${aspectValue.stringValue}');
+  }
+}
+</pre> <h2 id="caching">Enable client-side caching</h2> <p>SQL Connect has an optional client-side caching feature, which you can enable by editing the <code translate="no" dir="ltr">connector.yaml</code> file. When this feature is enabled, the generated client SDKs will locally cache query responses, which can reduce the number of database requests your app makes and enables the database-dependent portions of your app to work when network availability is interrupted.</p> <p>To enable client-side caching, add a client caching configuration to your connector configuration:</p> 
+
+<pre>generate:
+  javascriptSdk:
+    outputDir: ../dart/
+    package: "dataconnect_generated"
+    clientCache:
+      maxAge: 5s
+      storage: memory
+</pre> <p>This configuration has two parameters, both optional:</p> <ul> <li>
+<p><code translate="no" dir="ltr">maxAge</code>: The maximum age a cached response can be before the client SDK fetches fresh values. Examples: "0", "30s", "1h30m".</p> <p>The default value for <code translate="no" dir="ltr">maxAge</code> is <code translate="no" dir="ltr">0</code>, which means that responses are cached, but the client SDK will always fetch fresh values. The cached values will only be used when <code translate="no" dir="ltr">CACHE_ONLY</code> is specified to <code translate="no" dir="ltr">execute()</code> and the initial result returned from <code translate="no" dir="ltr">subscribe()</code>.</p>
+</li> <li><p><code translate="no" dir="ltr">storage</code>: The client SDK can be configured to cache responses either in <code translate="no" dir="ltr">persistent</code> storage or in <code translate="no" dir="ltr">memory</code>. Results cached in <code translate="no" dir="ltr">persistent</code> storage will persist across app restarts. When targeting Android or iOS, the default is <code translate="no" dir="ltr">persistent</code>. When targeting web browsers, only <code translate="no" dir="ltr">memory</code> storage is supported.</p></li> </ul> <p>After you update your connector's caching configuration, regenerate your client SDKs and rebuild your app. Once you have done so, <code translate="no" dir="ltr">execute()</code> and <code translate="no" dir="ltr">subscribe()</code> will cache responses and use cached values according to the policy you configured. This generally happens automatically, without any additional steps on your part; however, note the following:</p> <ul> <li>
+<p>The default behavior of <code translate="no" dir="ltr">execute()</code> is as described above: if a result is cached for a query and the cached value is not older than <code translate="no" dir="ltr">maxAge</code>, then use the cached value. This default behavior is called the <code translate="no" dir="ltr">PREFER_CACHE</code> policy.</p> <p>You can also specify to individual invocations of <code translate="no" dir="ltr">execute()</code> to either only serve cached values (<code translate="no" dir="ltr">CACHE_ONLY</code>) or to unconditionally fetch fresh values from the server (<code translate="no" dir="ltr">SERVER_ONLY</code>).</p> 
+
+<pre>await queryRef.execute(fetchPolicy: QueryFetchPolicy.cacheOnly);
+</pre>
+
+<pre>await queryRef.execute(fetchPolicy: QueryFetchPolicy.serverOnly);
+</pre> </li> <li><p>When you call <code translate="no" dir="ltr">subscribe()</code>, it will always immediately return the cached content if it exists, regardless of the <code translate="no" dir="ltr">maxAge</code> setting. Subsequent calls to <code translate="no" dir="ltr">execute()</code> will notify listeners according to the configured <code translate="no" dir="ltr">maxAge</code>.</p></li> </ul> <h2 id="using-mutations">Use mutations on the client side</h2> <p>Mutations are accessible in the same way as queries.</p> 
+<pre>await MoviesConnector.instance.createMovie({ title: 'Empire Strikes Back', releaseYear: 1980, genre: "Sci-Fi" }).rating(5).execute();
+</pre> <h2 id="prototype-and">Prototype and test your Flutter apps</h2> <h3 id="instrument-clients">Instrument clients to use a local emulator</h3> <p>You can use the SQL Connect emulator, whether from the SQL Connect VS Code extension or from the CLI.</p> <p>Instrumenting the app to connect to the emulator is the same for both scenarios.</p> 
+<pre>import 'package:firebase_data_connect/firebase_data_connect.dart';
+import 'generated/movies.dart';
+
+MoviesConnector.instance.dataConnect
+          .useDataConnectEmulator('127.0.0.1', 9399);
+
+// Make calls from your app
+QueryRef&lt;ListMoviesData, void&gt; ref = MoviesConnector.instance.listMovies.ref();
+</pre> <p>To switch to production resources, comment out lines for connecting to the emulator.</p> <h2 id="data-types">Data types in the Dart SDK</h2> <p>The SQL Connect server represents common GraphQL data types. These are represented in the SDK as follows.</p> <table> <thead> <tr> <th>SQL Connect Type</th> <th>Dart</th> </tr> </thead> <tbody> <tr> <td>Timestamp</td> <td>firebase_data_connect.Timestamp</td> </tr> <tr> <td>Int (32-bit)</td> <td>int</td> </tr> <tr> <td>Date</td> <td>DateTime</td> </tr> <tr> <td>UUID</td> <td>string</td> </tr> <tr> <td>Int64</td> <td>int</td> </tr> <tr> <td>Float</td> <td>double</td> </tr> <tr> <td>Boolean</td> <td>bool</td> </tr> <tr> <td>Any</td> <td>firebase_data_connect.AnyValue</td> </tr> </tbody> </table><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/flutter-sdk" class="_attribution-link">https://firebase.google.com/docs/sql-connect/flutter-sdk</a>
+  </p>
+</div>

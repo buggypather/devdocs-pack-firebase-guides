@@ -1,0 +1,121 @@
+<h1>Get started with Firebase Cloud Messaging in Web apps</h1>     <table> <tr class="alt"> <td width="15%" style="vertical-align: middle;"><strong>Select platform:</strong></td> <td style="vertical-align: middle;"> <a class="button" href="../ios/get-started">iOS+</a> <a class="button" href="../android/get-started">Android</a> <a class="button button-primary" href="../web/get-started">Web</a> <a class="button" href="../flutter/get-started">Flutter</a> <a class="button" href="../unity/get-started">Unity</a> <a class="button" href="../cpp/get-started">C++</a> </td> </tr> </table> <p><br> </p> <p>This guide describes how to get started with Firebase Cloud Messaging in your Web client apps so that you can reliably send messages.</p> <p>The FCM JavaScript API lets you receive notification messages in web apps running in browsers that support the <a href="https://www.w3.org/TR/push-api/">Push API</a>. This includes the browser versions listed in this <a href="https://caniuse.com/#feat=push-api">support matrix</a> and Chrome extensions using the Push API.</p> <p>The FCM SDK is supported only in pages served over HTTPS. This is due to its use of service workers, which are available only on HTTPS sites. If you need a provider, <a href="../../hosting/quickstart">Firebase App Hosting</a> is recommended and provides a no-cost tier for HTTPS hosting on your own domain.</p> <p>To get started with the FCM JavaScript API, you'll need to add Firebase to your web app and add logic to access <a href="../../projects/manage-installations">Firebase Installation IDs</a>, which lets you designate the recipient for your notifications.</p> <h2 id="add-initialize-sdk">Add and initialize the FCM SDK</h2> <ol> <li><p>If you haven't already, <a href="../../web/setup#add-sdk-and-initialize"> install the Firebase JS SDK and initialize Firebase</a>.</p></li> <li><p>Add the Firebase Cloud Messaging JS SDK and initialize Firebase Cloud Messaging:</p></li> </ol> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular web API and <a href="../../web/modular-upgrade">upgrade</a> from the namespaced API. </aside></p> 
+<pre data-language="javascript">import { initializeApp } from "firebase/app";
+import { getMessaging } from "firebase/messaging";
+
+// TODO: Replace the following with your app's Firebase project configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+
+// Initialize Firebase Cloud Messaging and get a reference to the service
+const messaging = getMessaging(app);
+</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+<p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular web API and <a href="../../web/modular-upgrade">upgrade</a> from the namespaced API. </aside></p> 
+<pre data-language="javascript">import firebase from "firebase/compat/app";
+import "firebase/compat/messaging";
+
+// TODO: Replace the following with your app's Firebase project configuration
+// See: https://firebase.google.com/docs/web/learn-more#config-object
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+
+// Initialize Firebase Cloud Messaging and get a reference to the service
+const messaging = firebase.messaging();
+</pre></section> </div> <p>If you are using FCM for web and want to upgrade to SDK 6.7.0 or later, you must enable the <a href="https://console.cloud.google.com/apis/library/fcmregistrations.googleapis.com">FCM Registration API</a> for your project in the Google Cloud console. When you enable the API, make sure you are logged in to the Google Cloud console with the same Google Account you use for Firebase, and make sure to select the correct project. New projects adding the FCM SDK have this API enabled by default.</p> <h2 id="configure-web-credentials">Configure web credentials with FCM</h2> <p>The FCM Web interface uses Web credentials called Voluntary Application Server Identification, or VAPID keys, to authorize send requests to supported web push services. To subscribe your app to push notifications, you need to associate a pair of keys with your Firebase project. You can either generate a new key pair or import your existing key pair through the Firebase console.</p> <h3 id="generate-new-key-pair">Generate a new key pair</h3> <ol> <li><p>In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <strong>General</strong>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><strong>Cloud Messaging</strong> tab</a> </p></li> <li><p>Go to the <strong>Web configuration</strong> section.</p></li> <li>
+<p>In the <strong>Web Push certificates</strong> tab, click <strong>Generate Key Pair</strong>.</p> <p>The console displays a notice that the key pair was generated, and it displays the public key string and date added.</p>
+</li> </ol> <h3 id="import-existing-key-pair">Import an existing key pair</h3> <p>If you have an existing key pair you are already using with your web app, you can import it to FCM so that you can reach your existing web app instances through FCM APIs. To import keys, you must have owner-level access to the Firebase project. Import your existing public and private key in base64 URL safe encoded form:</p> <ol> <li><p>In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <strong>General</strong>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><strong>Cloud Messaging</strong> tab</a> </p></li> <li><p>Go to the <strong>Web configuration</strong> section.</p></li> <li><p>In the <strong>Web Push certificates</strong> tab, find and select the link text: <strong>import an existing key pair</strong>.</p></li> <li>
+<p>In the <strong>Import a key pair</strong> dialog, provide your public and private keys in the corresponding fields and click <strong>Import</strong>.</p> <p>The console displays the public key string and date added.</p>
+</li> </ol> <p>For instructions on how to add the key to your app, see <a href="#configure-web-credentials-in-app">Configure Web credentials in your app</a>. For more information about the format of the keys and how to generate them, see <a href="https://developers.google.com/web/fundamentals/push-notifications/web-push-protocol#application_server_keys">Application server keys</a>.</p> <h2 id="configure-web-credentials-in-app">Configure Web credentials in your app</h2> <p>The method <a href="https://firebase.google.com/docs/reference/js/messaging#register_795bb8a"><code translate="no" dir="ltr">register(): Promise&lt;void&gt;</code></a> allows FCM to use the VAPID key credential when sending message requests to different push services. Using the key you generated or imported according to the instructions in <a href="#configure-web-credentials">Configure Web Credentials with FCM</a>, add it in your code after the messaging object is retrieved:</p> 
+<pre>import { getMessaging, register } from "firebase/messaging";
+
+const messaging = getMessaging();
+// Add the public key generated from the Firebase console here.
+register(messaging, {vapidKey: "BKagOny0KF_2pCJQ3m....moL0ewzQ8rZu"});
+</pre>
+<aside class="note"><strong>Note:</strong><span> If you are using <a href="#access-registration-token">the deprecated token APIs</a>, you should pass the VAPID key to <code translate="no" dir="ltr">getToken()</code> instead of <code translate="no" dir="ltr">register()</code>.</span></aside> <h2 id="request-notification-permission">Request notification permission and configure the service worker</h2> <p>When you need to target an app instance with FCM, first request notification permissions from the user with <code translate="no" dir="ltr">Notification.requestPermission()</code>. When called as shown, this returns the permission state if granted:</p> 
+<pre>function requestPermission() {
+  console.log('Requesting permission...');
+  Notification.requestPermission().then((permission) =&gt; {
+    if (permission === 'granted') {
+      console.log('Notification permission granted.');
+    }
+  });
+}</pre> <p>FCM requires a <code translate="no" dir="ltr">firebase-messaging-sw.js</code> file. Unless you already have a <code translate="no" dir="ltr">firebase-messaging-sw.js</code> file, create an empty file with that name and place it in the root of your domain before registering. You can add meaningful content to the file later in the client setup process.</p> <h2 id="access-firebase-installation-id">Access the Firebase Installation ID</h2> <aside class="caution"><strong>Caution:</strong><span> Don't use both the Firebase Installation ID APIs and the deprecated <a href="#access-registration-token">registration token APIs</a> for registration management at the same time. We recommend using Firebase Installation IDs (FIDs) to segment or target your app instances.</span></aside><aside class="tip"><strong>Tip:</strong><span> See <a href="../manage-tokens">Best practices for FCM registration management</a> for tips on managing registrations.</span></aside> <p> To register the app instance and retrieve the Firebase Installation ID (FID) for message targeting: </p> 
+<pre>import { getMessaging, onRegistered, register } from "firebase/messaging";
+
+const messaging = getMessaging();
+
+// 1. Implement callback to receive the Firebase installation ID upon registration.
+// This is triggered every time a manual register() finishes, a FID change
+// is detected, or a pushsubscriptionchange event is fired.
+onRegistered(messaging, (installationId) =&gt; {
+  console.log('Registered installation ID:', installationId);
+
+  // Send the Firebase Installation ID to your app server and update the UI if needed.
+  sendRegistrationToServer(installationId);
+});
+
+// 2. You can also manually trigger registration (recommended on app startup)
+register(messaging, {
+  vapidKey: '&lt;YOUR_PUBLIC_VAPID_KEY_HERE&gt;'
+}).then(() =&gt; {
+  // Success! The Firebase Installation ID can be used to target messages to this app
+  // instance and will be delivered asynchronously to your onRegistered() callback.
+}).catch((err) =&gt; {
+  console.error('An error occurred while registering', err);
+});</pre> <p> The <a href="https://firebase.google.com/docs/reference/js/messaging#onregistered_f8a466e"><code translate="no" dir="ltr">onRegistered</code></a> callback is triggered in three scenarios: </p> <ol> <li> Every time a manual <a href="https://firebase.google.com/docs/reference/js/messaging#register_795bb8a"><code translate="no" dir="ltr">register()</code></a> call finishes. </li> <li>A Firebase Installation ID change is detected.</li> <li> A <a href="https://www.w3.org/TR/push-api/#the-pushsubscriptionchange-event"><code translate="no" dir="ltr">pushsubscriptionchange</code></a> event is fired. </li> </ol> <p> After you've obtained the Firebase Installation ID, send it to your app server and store it using your preferred method. </p> <h2 id="access-registration-token">Access the registration token (deprecated)</h2> <aside class="caution"><strong>Caution:</strong><span> This feature is deprecated. Use <a href="#access-firebase-installation-id">Firebase Installation IDs</a>, as this method will be removed in a future release.</span></aside><aside class="tip"><strong>Tip:</strong><span> See <a href="../manage-tokens">Best practices for FCM registration management</a> for tips on managing registrations.</span></aside> <p>To retrieve the current token:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getMessaging, getToken } from "firebase/messaging";
+
+// Get registration token. Initially this makes a network call, once retrieved
+// subsequent calls to getToken will return from cache.
+const messaging = getMessaging();
+getToken(messaging, { vapidKey: '&lt;YOUR_PUBLIC_VAPID_KEY_HERE&gt;' }).then((currentToken) =&gt; {
+  if (currentToken) {
+    // Send the token to your server and update the UI if necessary
+    // ...
+  } else {
+    // Show permission request UI
+    console.log('No registration token available. Request permission to generate one.');
+    // ...
+  }
+}).catch((err) =&gt; {
+  console.log('An error occurred while retrieving token. ', err);
+  // ...
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">// Get registration token. Initially this makes a network call, once retrieved
+// subsequent calls to getToken will return from cache.
+messaging.getToken({ vapidKey: '&lt;YOUR_PUBLIC_VAPID_KEY_HERE&gt;' }).then((currentToken) =&gt; {
+  if (currentToken) {
+    // Send the token to your server and update the UI if necessary
+    // ...
+  } else {
+    // Show permission request UI
+    console.log('No registration token available. Request permission to generate one.');
+    // ...
+  }
+}).catch((err) =&gt; {
+  console.log('An error occurred while retrieving token. ', err);
+  // ...
+});</pre> </section> </div> <p>After you've obtained the token, send it to your app server and store it using your preferred method.</p> <h2 id="send-notification-message">Send a test notification message</h2> <ol> <li><p>Install and run the app on the target device. On Apple devices, you'll need to accept the request for permission to receive remote notifications.</p></li> <li><p>Check that the app is in the background on the device.</p></li> <li><p>In the Firebase console, go to <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/messaging/" class="external"><strong>Messaging</strong></a> </p></li> <li>
+<p>Create a campaign.</p> <ul> <li>
+<p>If this is your first message:</p> <ol> <li><p>Select <strong>Create your first campaign</strong>.</p></li> <li><p>Select <strong>Firebase Notification messages</strong> and select <strong>Create</strong>.</p></li> </ol>
+</li> <li>
+<p>If you have previously created campaigns:</p> <ol> <li><p>On the <strong>Campaigns</strong> tab, select <strong>New campaign</strong>.</p></li> <li><p>Click <strong>Notifications</strong>.</p></li> </ol>
+</li> </ul>
+</li> <li><p>Enter the message text.</p></li> <li><p>Select <strong>Send test message</strong> from the right pane.</p></li> <li><p>In the field labeled <strong>Add an FCM registration token</strong>, enter your registration token.</p></li> <li><p>Select <strong>Test</strong>.</p></li> </ol> <p>After you select <strong>Test</strong>, the targeted client device, with the app in the background, should receive the notification.</p> <h2 id="next-steps">Next steps</h2> <p>After you have completed the setup steps, here are a few options for moving forward with FCM for Web (JavaScript):</p> <ul> <li><a href="../server-environment">Send messages to devices</a></li> <li><a href="../receive-messages">Receive messages in a JavaScript Client</a></li> <li><a href="../topic-messaging">Send messages to topics</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/cloud-messaging/js/client" class="_attribution-link">https://firebase.google.com/docs/cloud-messaging/js/client</a>
+  </p>
+</div>

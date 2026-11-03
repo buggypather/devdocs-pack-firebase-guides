@@ -1,0 +1,86 @@
+<h1>Realtime Database triggers (1st gen)</h1> <aside class="note"><strong>Note:</strong><span> The 1st-gen functionality described in this page is also supported in Cloud Functions (2nd gen) with improved features and performance. For more information about 2nd gen, see the <a href="../version-comparison">version comparison</a>. To go directly to the 2nd gen guide for this feature, see <a href="../database-events">Realtime Database triggers</a>.</span></aside>  <p>With Cloud Functions, you can handle events in the Firebase Realtime Database with no need to update client code. Cloud Functions lets you run Realtime Database operations with full administrative privileges, and ensures that each change to Realtime Database is processed individually. You can make Firebase Realtime Database changes via the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database.datasnapshot"><code translate="no" dir="ltr">DataSnapshot</code></a> or via the <a href="../../database/admin/start">Admin SDK</a>.</p> <p>In a typical lifecycle, a Firebase Realtime Database function does the following:</p> <ol> <li>Waits for changes to a particular Realtime Database location.</li> <li>Triggers when an event occurs and performs its tasks (see <a href="../use-cases">What can I do with Cloud Functions?</a> for examples of use cases).</li> <li>Receives a data object that contains a snapshot of the data stored in the specified document.</li> </ol> <h2 id="trigger-database-function">Trigger a Realtime Database function</h2> <p>Create new functions for Realtime Database events with <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database"><code translate="no" dir="ltr">functions.database</code></a>. To control when the function triggers, specify one of the event handlers, and specify the Realtime Database path where it will listen for events.</p> <h3 id="set-event-handler">Set the event handler</h3> <p>Functions let you handle Realtime Database events at two levels of specificity; you can listen for specifically for only creation, update, or deletion events, or you can listen for any change of any kind to a path. Cloud Functions supports these event handlers for Realtime Database:</p> <ul> <li>
+<a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database.refbuilder#databaserefbuilderonwrite"><code translate="no" dir="ltr">onWrite()</code></a>, which triggers when data is created, updated, or deleted in Realtime Database.</li> <li>
+<a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database.refbuilder#databaserefbuilderoncreate"><code translate="no" dir="ltr">onCreate()</code></a>, which triggers when new data is created in Realtime Database.</li> <li>
+<a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database.refbuilder#databaserefbuilderonupdate"><code translate="no" dir="ltr">onUpdate()</code></a>, which triggers when data is updated in Realtime Database .</li> <li>
+<a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database.refbuilder#databaserefbuilderondelete"><code translate="no" dir="ltr">onDelete()</code></a>, which triggers when data is deleted from Realtime Database .</li> </ul> <h3 id="specify-instance-path">Specify the instance and path</h3> <p>To control when and where your function should trigger, call <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database#databaseref"><code translate="no" dir="ltr">ref(path)</code></a> to specify a path, and optionally specify a Realtime Database instance with <code translate="no" dir="ltr">instance('INSTANCE_NAME')</code>. If you do not specify an instance, the function deploys to the default Realtime Database instance for the Firebase project For example:</p> <ul> <li>Default Realtime Database instance: <code translate="no" dir="ltr">functions.database.ref('/foo/bar')</code>
+</li> <li>Instance named "my-app-db-2": <code translate="no" dir="ltr">functions.database.instance('my-app-db-2').ref('/foo/bar')</code>
+</li> </ul> <p>These methods direct your function to handle writes at a certain path within the Realtime Database instance. Path specifications match <em>all</em> writes that touch a path, including writes that happen anywhere below it. If you set the path for your function as <code translate="no" dir="ltr">/foo/bar</code>, it matches events at both of these locations:</p> 
+<pre> /foo/bar
+ /foo/bar/baz/really/deep/path
+</pre> <p>In either case, Firebase interprets that the event occurs at <code translate="no" dir="ltr">/foo/bar</code>, and the event data includes the old and new data at <code translate="no" dir="ltr">/foo/bar</code>. If the event data might be large, consider using multiple functions at deeper paths instead of a single function near the root of your database. For the best performance, only request data at the deepest level possible.</p> <p>You can specify a path component as a wildcard by surrounding it with curly brackets; <code translate="no" dir="ltr">ref('foo/{bar}')</code> matches any child of <code translate="no" dir="ltr">/foo</code>. The values of these wildcard path components are available within the <a href="https://firebase.google.com/docs/reference/functions/cloud_functions.eventcontext#params"><code translate="no" dir="ltr">EventContext.params</code></a> object of your function. In this example, the value is available as <code translate="no" dir="ltr">context.params.bar</code>.</p> <p>Paths with wildcards can match multiple events from a single write. An insert of</p> 
+<pre>{
+  "foo": {
+    "hello": "world",
+    "firebase": "functions"
+  }
+}
+</pre> <p>matches the path <code translate="no" dir="ltr">"/foo/{bar}"</code> twice: once with <code translate="no" dir="ltr">"hello": "world"</code> and again with <code translate="no" dir="ltr">"firebase": "functions"</code>.</p> <h2 id="handle-event-data">Handle event data</h2> <p>When handling a Realtime Database event, the data object returned is a <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database.datasnapshot"><code translate="no" dir="ltr">DataSnapshot</code></a>. For <code translate="no" dir="ltr">onWrite</code> or <code translate="no" dir="ltr">onUpdate</code> events, the first parameter is a <code translate="no" dir="ltr">Change</code> object that contains two snapshots that represent the data state before and after the triggering event. For <code translate="no" dir="ltr">onCreate</code> and <code translate="no" dir="ltr">onDelete</code> events, the data object returned is a snapshot of the data created or deleted.</p> <p>In this example, the function retrieves the snapshot for the specified path, converts the string at that location to uppercase, and writes that modified string to the database:</p> 
+
+<pre>// Listens for new messages added to /messages/:pushId/original and creates an
+// uppercase version of the message to /messages/:pushId/uppercase
+exports.makeUppercase = functions.database.ref('/messages/{pushId}/original')
+    .onCreate((snapshot, context) =&gt; {
+      // Grab the current value of what was written to the Realtime Database.
+      const original = snapshot.val();
+      functions.logger.log('Uppercasing', context.params.pushId, original);
+      const uppercase = original.toUpperCase();
+      // You must return a Promise when performing asynchronous tasks inside a Functions such as
+      // writing to the Firebase Realtime Database.
+      // Setting an "uppercase" sibling in the Realtime Database returns a Promise.
+      return snapshot.ref.parent.child('uppercase').set(uppercase);
+    });</pre> <h3 id="access-user-auth-info">Access user authentication information</h3> <p>From <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.eventcontext#eventcontextauth"><code translate="no" dir="ltr">EventContext.auth</code></a> and <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.eventcontext#eventcontextauthtype"><code translate="no" dir="ltr">EventContext.authType</code></a>, you can access the user information, including permissions, for the user that triggered a function. This can be useful for enforcing security rules, allowing your function to complete different operations based on the user's level of permissions:</p> 
+<pre>const functions = require('firebase-functions/v1');
+const admin = require('firebase-admin');
+
+exports.simpleDbFunction = functions.database.ref('/path')
+    .onCreate((snap, context) =&gt; {
+      if (context.authType === 'ADMIN') {
+        // do something
+      } else if (context.authType === 'USER') {
+        console.log(snap.val(), 'written by', context.auth.uid);
+      }
+    });
+</pre> <p>Also, you can leverage user authentication information to "impersonate" a user and perform write operations on the user's behalf. Make sure to delete the app instance as shown below in order to prevent concurrency issues:</p> 
+<pre>exports.impersonateMakeUpperCase = functions.database.ref('/messages/{pushId}/original')
+    .onCreate((snap, context) =&gt; {
+      const appOptions = JSON.parse(process.env.FIREBASE_CONFIG);
+      appOptions.databaseAuthVariableOverride = context.auth;
+      const app = admin.initializeApp(appOptions, 'app');
+      const uppercase = snap.val().toUpperCase();
+      const ref = snap.ref.parent.child('uppercase');
+
+      const deleteApp = () =&gt; app.delete().catch(() =&gt; null);
+
+      return app.database().ref(ref).set(uppercase).then(res =&gt; {
+        // Deleting the app is necessary for preventing concurrency leaks
+        return deleteApp().then(() =&gt; res);
+      }).catch(err =&gt; {
+        return deleteApp().then(() =&gt; Promise.reject(err));
+      });
+    });
+</pre> <h3 id="read-previous-value">Read the previous value</h3> <p>The <code translate="no" dir="ltr">Change</code> object has a <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.change#changebefore"><code translate="no" dir="ltr">before</code></a> property that lets you inspect what was saved to Realtime Database <em>before</em> the event. The <code translate="no" dir="ltr">before</code> property returns a <code translate="no" dir="ltr">DataSnapshot</code> where all methods (for example, <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database.datasnapshot#databasedatasnapshotval"><code translate="no" dir="ltr">val()</code></a> and <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.database.datasnapshot#databasedatasnapshotexists"><code translate="no" dir="ltr">exists()</code></a>) refer to the previous value. You can read the new value again by either using the original <code translate="no" dir="ltr">DataSnapshot</code> or reading the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.change#changeafter"><code translate="no" dir="ltr">after</code></a> property. This property on any <code translate="no" dir="ltr">Change</code> is another <code translate="no" dir="ltr">DataSnapshot</code> representing the state of the data <em>after</em> the event happened.</p> <p>For example, the <code translate="no" dir="ltr">before</code> property can be used to make sure the function only uppercases text when it is first created:</p> 
+<pre>exports.makeUppercase = functions.database.ref('/messages/{pushId}/original')
+    .onWrite((change, context) =&gt; {
+      // Only edit data when it is first created.
+      if (change.before.exists()) {
+        return null;
+      }
+      // Exit when the data is deleted.
+      if (!change.after.exists()) {
+        return null;
+      }
+      // Grab the current value of what was written to the Realtime Database.
+      const original = change.after.val();
+      console.log('Uppercasing', context.params.pushId, original);
+      const uppercase = original.toUpperCase();
+      // You must return a Promise when performing asynchronous tasks inside a Functions such as
+      // writing to the Firebase Realtime Database.
+      // Setting an "uppercase" sibling in the Realtime Database returns a Promise.
+      return change.after.ref.parent.child('uppercase').set(uppercase);
+    });
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/1st-gen/database-events-1st" class="_attribution-link">https://firebase.google.com/docs/functions/1st-gen/database-events-1st</a>
+  </p>
+</div>

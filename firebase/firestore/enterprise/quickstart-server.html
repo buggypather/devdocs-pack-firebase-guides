@@ -1,0 +1,183 @@
+<h1>Get started with Firestore Enterprise edition using server client libraries</h1> <p>This quickstart shows you how to set up Cloud Firestore, add data, then use either Core operations or Pipeline operations to query the data you just added in the Firebase console using server client libraries for Java, Node.js, and Python.</p> <p>Use these client libraries to set up privileged server environments with full access to your database..</p> <aside class="note"><strong>Note:</strong><span> Before getting started with these features, make sure you're familiar with the <a href="pipelines-overview#features-of-firestore-pipeline-operations">differences between Core and Pipeline operations</a>.</span></aside> <h2 id="create">Create a Cloud Firestore database</h2> <ol> <li><p>If you haven't already, create a Firebase project: In the <a href="https://console.firebase.google.com/">Firebase console</a>, click <strong>Add project</strong>, then follow the on-screen instructions to create a Firebase project or to add Firebase services to an existing Google Cloud project.</p></li> <li><p>In the left panel, go to <strong>Databases &amp; Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/firestore/" class="gc-analytics-event external" data-category="firebasedb_test_0220" data-label="console_firestore_creation_event_test_0220"><b>Firestore</b></a>.</p></li> <li><p>Click <strong>Create database</strong>.</p></li> <li><p>Select <strong>Enterprise</strong> for the database mode.</p></li> <li>
+<p>Select <strong>Firestore in Native Mode</strong> for the operation mode, which supports Core and Pipeline operations.</p> <aside class="note"><strong>Note:</strong><span> You can create a database in either Native mode or MongoDB compatibility mode. For more information about MongoDB compatibility mode, see the <a href="create-and-query-database">quickstart for creating MongoDB compatible databases</a>.</span></aside>
+</li> <li><p>Select a <a href="../pipelines/locations#types">location</a> for your database.</p></li> <li>
+<p>Select a starting mode for your Cloud Firestore Security Rules:</p> <dl> <dt>Test mode</dt> <dd><p>Good for getting started with the mobile and web client libraries, but allows anyone to read and overwrite your data. After testing, <strong>make sure to review the <a href="#secure_your_data">Secure your data</a> section.</strong></p></dd> <dd><p>To get started with the web, Apple platforms, or Android SDK, select test mode.</p></dd> <dt>Production mode</dt> <dd><p>Denies all reads and writes from mobile and web clients. Your authenticated application servers (Node.js, Python, Java) can still access your database. </p></dd> </dl> <p>Your initial set of Cloud Firestore Security Rules will apply to your default Cloud Firestore database. If you create multiple databases for your project, you can deploy Cloud Firestore Security Rules for each database.</p>
+</li> <li><p>Click <strong>Create</strong>.</p></li> </ol> <aside class="note"> <strong>Cloud Firestore and App Engine:</strong> With support for multiple databases, you can use both Cloud Firestore and Datastore in the same project. If you use App Engine, note that only the <code translate="no" dir="ltr">(default)</code> database in standard mode with Datastore or Firestore Native APIs can be used with App Engine. </aside> <p>When you enable Cloud Firestore, it also enables the API in the <a href="https://console.cloud.google.com/projectselector/apis/api/firestore.googleapis.com/overview">Cloud API Manager</a>.</p> <h2 id="setup">Set up your development environment</h2> <p>Add the required dependencies and client libraries to your app.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> <ol> <li> Add the Firebase Admin SDK to your app: 
+<pre data-language="javascript">npm install firebase-admin --save</pre> </li> <li> Follow the instructions below to initialize Cloud Firestore with the proper credentials in your environment. </li> </ol> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> <ol>  <li>Add the Firebase Admin SDK to your Python app: 
+<pre data-language="python">pip install --upgrade firebase-admin</pre> </li> <li>Follow the instructions below to initialize Cloud Firestore with the proper credentials in your environment.</li>  </ol> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> <ol> <li>Add the Firebase Admin SDK to your app: <ul>
+<li> <b>Using Gradle:</b> 
+<pre data-language="java">implementation 'com.google.firebase:firebase-admin:9.11.0'</pre> </li> <li> <b>Using Maven:</b> 
+<pre data-language="java">&lt;dependency&gt;
+  &lt;groupId&gt;com.google.firebase&lt;/groupId&gt;
+  &lt;artifactId&gt;firebase-admin&lt;/artifactId&gt;
+  &lt;version&gt;9.11.0&lt;/version&gt;
+&lt;/dependency&gt;
+     </pre> </li>
+</ul> </li> <li>Follow the instructions below to initialize Cloud Firestore with the proper credentials in your environment.</li>  </ol> </section> </div> <h2 id="initialize">Initialize Cloud Firestore</h2> <p>Initialize an instance of Cloud Firestore:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> The Cloud Firestore SDK is initialized in different ways depending on your environment. Below are the most common methods. For a complete reference, see <a href="../../admin/setup#initialize-sdk">Initialize the Admin SDK</a>. <ul> <li> <b>Initialize on Cloud Functions</b> 
+<pre data-language="javascript">const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
+const { getFirestore, Timestamp, FieldValue, Filter } = require('firebase-admin/firestore');</pre> 
+<pre data-language="javascript">initializeApp();
+
+const db = getFirestore();
+</pre> </li> <li> <b>Initialize on Google Cloud</b> 
+<pre data-language="javascript">const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
+const { getFirestore, Timestamp, FieldValue, Filter } = require('firebase-admin/firestore');</pre> 
+<pre data-language="javascript">initializeApp({
+  credential: applicationDefault()
+});
+
+const db = getFirestore();</pre> </li> <li> <b>Initialize on your own server</b> <p> To use the Firebase Admin SDK on your own server (or any other Node.js environment), use a <a href="https://cloud.google.com/compute/docs/authentication">service account</a>. Go to <a href="https://console.cloud.google.com/iam-admin/serviceaccounts"><b>IAM &amp; admin &gt; Service accounts</b></a> in the Google Cloud console. Generate a new private key and save the JSON file. Then use the file to initialize the SDK: </p> 
+<pre data-language="javascript">const { initializeApp, applicationDefault, cert } = require('firebase-admin/app');
+const { getFirestore, Timestamp, FieldValue, Filter } = require('firebase-admin/firestore');</pre> 
+<pre data-language="javascript">const serviceAccount = require('./path/to/serviceAccountKey.json');
+
+initializeApp({
+  credential: cert(serviceAccount)
+});
+
+const db = getFirestore();
+</pre> </li> </ul> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> The Cloud Firestore SDK is initialized in different ways depending on your environment. Below are the most common methods. For a complete reference, see <a href="../../admin/setup#initialize-sdk">Initialize the Admin SDK</a>. <li> <b>Initialize on Google Cloud</b> 
+<pre data-language="python">import firebase_admin
+from firebase_admin import firestore
+
+# Application Default credentials are automatically created.
+app = firebase_admin.initialize_app()
+db = firestore.client()</pre> <p>An existing application default credential can also be used to initialize the SDK.</p> 
+<pre data-language="python">import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
+
+# Use the application default credentials.
+cred = credentials.ApplicationDefault()
+
+firebase_admin.initialize_app(cred)
+db = firestore.client()</pre> </li> <li> <b>Initialize on your own server</b> <p> To use the Firebase Admin SDK on your own server, use a <a href="https://cloud.google.com/compute/docs/authentication">service account</a>.</p> <p>Go to <a href="https://console.cloud.google.com/iam-admin/serviceaccounts"><b>IAM &amp; admin &gt; Service accounts</b></a> in the Google Cloud console. Generate a new private key and save the JSON file. Then use the file to initialize the SDK: </p> 
+<pre data-language="python">import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
+
+# Use a service account.
+cred = credentials.Certificate('path/to/serviceAccount.json')
+
+app = firebase_admin.initialize_app(cred)
+
+db = firestore.client()</pre> </li></section> <section> <p class="_firebase-tab"><strong>Java</strong></p> The Cloud Firestore SDK is initialized in different ways depending on your environment. Below are the most common methods. For a complete reference, see <a href="../../admin/setup#initialize-sdk">Initialize the Admin SDK</a>. <li> <b>Initialize on Google Cloud</b> 
+<pre data-language="java">import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.Firestore;
+
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+
+// Use the application default credentials
+GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
+FirebaseOptions options = new FirebaseOptions.Builder()
+    .setCredentials(credentials)
+    .setProjectId(projectId)
+    .build();
+FirebaseApp.initializeApp(options);
+
+Firestore db = FirestoreClient.getFirestore();</pre> </li> <li> <b>Initialize on your own server</b> <p> To use the Firebase Admin SDK on your own server, use a <a href="https://cloud.google.com/compute/docs/authentication">service account</a>.</p> <p>Go to <a href="https://console.cloud.google.com/iam-admin/serviceaccounts"><b>IAM &amp; admin &gt; Service accounts</b></a> in the Google Cloud console. Generate a new private key and save the JSON file. Then use the file to initialize the SDK: </p> 
+<pre data-language="java">import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.firestore.Firestore;
+
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+
+// Use a service account
+InputStream serviceAccount = new FileInputStream("path/to/serviceAccount.json");
+GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
+FirebaseOptions options = new FirebaseOptions.Builder()
+    .setCredentials(credentials)
+    .build();
+FirebaseApp.initializeApp(options);
+
+Firestore db = FirestoreClient.getFirestore();</pre> </li></section> </div> <h2 id="add-core">Add data using Core operations</h2> <p>In order to explore Core operations and Pipeline operations for querying data, add data to your database using Core operations.</p> <p>Cloud Firestore stores data in Documents, which are stored in Collections. Cloud Firestore creates collections and documents implicitly the first time you add data to the document. You don't need to explicitly create collections or documents.</p> <p>Create a new collection and a document using the following example code.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="javascript">const docRef = db.collection('users').doc('alovelace');
+
+await docRef.set({
+  first: 'Ada',
+  last: 'Lovelace',
+  born: 1815
+});</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="java">DocumentReference docRef = db.collection("users").document("alovelace");
+// Add document data  with id "alovelace" using a hashmap
+Map&lt;String, Object&gt; data = new HashMap&lt;&gt;();
+data.put("first", "Ada");
+data.put("last", "Lovelace");
+data.put("born", 1815);
+//asynchronously write data
+ApiFuture&lt;WriteResult&gt; result = docRef.set(data);
+// ...
+// result.get() blocks on response
+System.out.println("Update time : " + result.get().getUpdateTime());</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="python">doc_ref = db.collection("users").document("alovelace")
+doc_ref.set({"first": "Ada", "last": "Lovelace", "born": 1815})</pre> </div> </section> </div> <h2 id="read-core">Read data using Core operations</h2> <p>Use the data viewer in the <a href="https://console.firebase.google.com/project/_/firestore/data">Firebase console</a> to quickly verify that you've added data to Cloud Firestore.</p> <p>You can also use the "get" method to retrieve the entire collection.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="javascript">const snapshot = await db.collection('users').get();
+snapshot.forEach((doc) =&gt; {
+  console.log(doc.id, '=&gt;', doc.data());
+});</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+<pre data-language="python">users_ref = db.collection("users")
+docs = users_ref.stream()
+
+for doc in docs:
+    print(f"{doc.id} =&gt; {doc.to_dict()}")</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> <div class="github-docwidget-gitinclude-code"> 
+<pre data-language="java">// asynchronously retrieve all users
+ApiFuture&lt;QuerySnapshot&gt; query = db.collection("users").get();
+// ...
+// query.get() blocks on response
+QuerySnapshot querySnapshot = query.get();
+List&lt;QueryDocumentSnapshot&gt; documents = querySnapshot.getDocuments();
+for (QueryDocumentSnapshot document : documents) {
+  System.out.println("User: " + document.getId());
+  System.out.println("First: " + document.getString("first"));
+  if (document.contains("middle")) {
+    System.out.println("Middle: " + document.getString("middle"));
+  }
+  System.out.println("Last: " + document.getString("last"));
+  System.out.println("Born: " + document.getLong("born"));
+}</pre> </div> </section> </div> <h2 id="read-pipelines">Read data using Pipeline operations</h2> <p>Now you can compare the Pipeline query experience with the Core query experience.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">const readDataPipeline = db.pipeline()
+  .collection("users");
+
+// Execute the pipeline and handle the result
+try {
+  const querySnapshot = await readDataPipeline.execute();
+  querySnapshot.results.forEach((result) =&gt; {
+    console.log(`${result.id} =&gt; ${result.data()}`);
+  });
+} catch (error) {
+    console.error("Error getting documents: ", error);
+}</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+<pre data-language="python">pipeline = client.pipeline().collection("users")
+for result in pipeline.execute():
+    print(f"{result.id} =&gt; {result.data()}")</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<pre data-language="java">Pipeline pipeline = firestore.pipeline().collection("users");
+ApiFuture&lt;Pipeline.Snapshot&gt; future = pipeline.execute();
+for (com.google.cloud.firestore.PipelineResult result : future.get().getResults()) {
+  System.out.println(result.getId() + " =&gt; " + result.getData());
+}
+// or, asynchronously
+pipeline.execute(
+    new ApiStreamObserver&lt;com.google.cloud.firestore.PipelineResult&gt;() {
+      @Override
+      public void onNext(com.google.cloud.firestore.PipelineResult result) {
+        System.out.println(result.getId() + " =&gt; " + result.getData());
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        System.err.println(t);
+      }
+
+      @Override
+      public void onCompleted() {
+        System.out.println("done");
+      }
+    });</pre> </section> </div> <h2 id="next-steps">Next steps</h2> <p>Deepen your knowledge of Core and Pipeline operations with the following topics:</p> <ul> <li>Make sure you're familiar with the <a href="pipelines-overview#features-of-firestore-pipeline-operations">differences between the Core and Pipeline operations</a>
+</li> <li>Learn more about querying with <a href="get-data-core">Core operations</a>
+</li> <li>Learn more about querying with <a href="../pipelines/get-started-with-pipelines">Pipeline operations</a>. </li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/enterprise/quickstart-server" class="_attribution-link">https://firebase.google.com/docs/firestore/enterprise/quickstart-server</a>
+  </p>
+</div>

@@ -1,0 +1,170 @@
+<h1>Write and view logs</h1> <p>Logging is an important tool for debugging and monitoring code. Cloud Functions gives you the option of using the logger SDK for <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.logger">Node.js</a> or <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/python/firebase_functions.logger">Python</a>, or the <code translate="no" dir="ltr">console</code> object standard for developing for the web.</p> <p>Cloud Logging is a chargeable service; you may be billed if you exceed the no-cost quota. For more information, see <a href="https://cloud.google.com/stackdriver/pricing">Cloud Logging pricing</a>.</p> <h2 id="writing_logs">Writing logs</h2> <h3 id="logger-sdk">Using the Cloud Functions logger SDK</h3> <p>The Cloud Functions logger SDK provides a standard interface to report status from functions to Cloud Logging. You can use this SDK to log events with <a href="https://cloud.google.com/logging/docs/structured-logging">structured data</a>, enabling easier analysis and monitoring.</p> <p>Import from the <code translate="no" dir="ltr">logger</code> subpackage:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// All available logging functions
+const {
+  log,
+  info,
+  debug,
+  warn,
+  error,
+  write,
+} = require("firebase-functions/logger");
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions import logger
+</pre></section> </div> <ul> <li><p><code translate="no" dir="ltr">logger.log()</code> commands have the <strong>INFO</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.info()</code> commands have the <strong>INFO</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.warn()</code> commands have the <strong>WARNING</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.error()</code> commands have the <strong>ERROR</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.debug()</code> commands have the <strong>DEBUG</strong> log level.</p></li> <li><p>Internal system messages have the <strong>DEBUG</strong> log level.</p></li> </ul> <p>This example demonstrates a function writing a basic log:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.helloWorld = onRequest((request, response) =&gt; {
+  // sends a log to Cloud Logging
+  log("Hello logs!");
+
+  response.send("Hello from Firebase!");
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@https_fn.on_request()
+def hello_world(req: https_fn.Request) -&gt; https_fn.Response:
+    # sends a log to Cloud Logging
+    logger.log("Hello logs!")
+
+    return https_fn.Response("Hello from Firebase!")
+</pre></section> </div> <p>Use different log levels for different types of log in your function code. Structured data can be attached to a log as the last argument. Here is an example of how a function can use each log type:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.getInspirationalQuote = onRequest(async (request, response) =&gt; {
+  const db = getFirestore();
+  const today = new Date();
+  const quoteOfTheMonthRef = db
+      .collection("quotes")
+      .doc(`${today.getFullYear()}`)
+      .collection("months")
+      .doc(`${today.getMonth()}`);
+
+  const DEFAULT_QUOTE =
+      "You miss 100% of the shots you don't take. -Wayne Gretzky";
+  let quote;
+  try {
+    const quoteOfTheMonthDocSnap = await quoteOfTheMonthRef.get();
+
+    // Attach relevant debugging information with debug()
+    debug("Monthly quote fetch result", {
+      docRef: quoteOfTheMonthRef.path,
+      exists: quoteOfTheMonthDocSnap.exists,
+      createTime: quoteOfTheMonthDocSnap.createTime,
+    });
+
+    if (quoteOfTheMonthDocSnap.exists) {
+      quote = quoteOfTheMonthDocSnap.data().text;
+    } else {
+      // Use warn() for lower-severity issues than error()
+      warn("Quote not found for month, sending default instead", {
+        docRef: quoteOfTheMonthRef.path,
+        dateRequested: today.toLocaleDateString("en-US"),
+      });
+
+      quote = DEFAULT_QUOTE;
+    }
+  } catch (err) {
+    // Attach an error object as the second argument
+    error("Unable to read quote from Firestore, sending default instead",
+        err);
+
+    quote = DEFAULT_QUOTE;
+  }
+
+  // Attach relevant structured data to any log
+  info("Sending a quote!", {quote: quote});
+  response.json({inspirationalQuote: quote});
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@https_fn.on_request()
+def get_inspirational_quote(req: https_fn.Request) -&gt; https_fn.Response:
+    firestore_client = firestore.client()
+    today = datetime.date.today()
+    quote_of_the_month_ref = (
+        firestore_client.collection("quotes")
+        .doc(str(today.year))
+        .collection("months")
+        .doc(str(today.month))
+    )
+
+    default_quote = "Python has been an important part of Google since the beginning, and remains so as the system grows and evolves."
+
+    quote = None
+    try:
+        quote_of_the_month = quote_of_the_month_ref.get()
+
+        # Attach relevant debugging information with debug()
+        logger.debug(
+            "Monthly quote fetch result",
+            docRef=quote_of_the_month.path,
+            exists=quote_of_the_month.exists,
+            createTime=quote_of_the_month.createTime,
+        )
+
+        if quote_of_the_month.exists:
+            quote = quote_of_the_month.to_dict()["text"]
+        else:
+            # Use warn() for lower-severity issues than error()
+            logger.warn(
+                "Quote not found for month, sending default instead",
+                doc_reference=quote_of_the_month.path,
+                date_requested=today.strftime("%Y-%m-%d"),
+            )
+            quote = default_quote
+    except:
+        e = sys.exc_info()[0]
+        # Attach an error object as the second argument
+        logger.error("Unable to read quote from Firestore, sending default instead", error=e)
+        quote = default_quote
+
+    # Attach relevant structured data to any log
+    logger.info("Sending a quote!", quote=quote)
+    return https_fn.Response("Hello from Firebase!")
+</pre></section> </div> <p>With <code translate="no" dir="ltr">logger.write()</code>, you can write log entries with additional log severity levels of <code translate="no" dir="ltr">CRITICAL</code>, <code translate="no" dir="ltr">ALERT</code>, and <code translate="no" dir="ltr">EMERGENCY</code>. See <a href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity">LogSeverity</a>.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.appHasARegression = onRegressionAlertPublished((event) =&gt; {
+  write({
+    // write() lets you set additional severity levels
+    // beyond the built-in logger functions
+    severity: "EMERGENCY",
+    message: "Regression in production app",
+    issue: event.data.payload.issue,
+    lastOccurred: event.data.payload.resolveTime,
+  });
+});
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@crashlytics_fn.on_regression_alert_published()
+def app_has_regression(alert: crashlytics_fn.CrashlyticsRegressionAlertEvent) -&gt; None:
+    logger.write(
+        severity="EMERGENCY",
+        message="Regression in production app",
+        issue=alert.data.payload.issue,
+        last_occurred=alert.data.payload.resolve_time,
+    )
+    print(alert)
+</pre></section> </div> <h3 id="console-log">Using <code translate="no" dir="ltr">console.log</code>
+</h3> <p>The recommended solution for logging from a function is to use the logger SDK for your platform. With Node.js, you can instead use standard JavaScript logging calls such as <code translate="no" dir="ltr">console.log</code> and <code translate="no" dir="ltr">console.error</code>, but you first need to require a special module to patch the standard methods to work correctly:</p> 
+<pre>require("firebase-functions/logger/compat");
+</pre> <p>Once you have required the logger compatibility module, you can use <code translate="no" dir="ltr">console.log()</code> methods as normal in your code:</p> 
+<pre>exports.helloError = functions.https.onRequest((request, response) =&gt; {
+  console.log('I am a log entry!');
+  response.send('Hello World...');
+});
+</pre> <ul> <li>
+<code translate="no" dir="ltr">console.log()</code> commands have the <strong>INFO</strong> log level.</li> <li>
+<code translate="no" dir="ltr">console.info()</code> commands have the <strong>INFO</strong> log level.</li> <li>
+<code translate="no" dir="ltr">console.warn()</code> commands have the <strong>ERROR</strong> log level.</li> <li>
+<code translate="no" dir="ltr">console.error()</code> commands have the <strong>ERROR</strong> log level.</li> <li>Internal system messages have the <strong>DEBUG</strong> log level.</li> </ul> <h2 id="viewing_logs">Viewing logs</h2> <p>Logs for Cloud Functions are viewable either in the <a href="https://console.cloud.google.com/functions/list">Google Cloud console</a>, Cloud Logging UI, or via the <code translate="no" dir="ltr">firebase</code> command-line tool.</p> <h3 id="using_the_firebase_cli">Using the Firebase CLI</h3> <p>To view logs with the <code translate="no" dir="ltr">firebase</code> tool, use the <code translate="no" dir="ltr">functions:log</code> command:</p> 
+<pre>firebase functions:log
+</pre> <p>To view logs for a specific function, provide the function name as an argument:</p> 
+<pre>firebase functions:log --only &lt;FUNCTION_NAME&gt;
+</pre> <p>For the full range of log viewing options, view the help for <code translate="no" dir="ltr">functions:log</code>:</p> 
+<pre>firebase help functions:log
+</pre> <h3 id="using_the_cloud_console">Using the Google Cloud console</h3> <p>You can view logs for functions in the <a href="https://console.cloud.google.com/functions/list">Google Cloud console</a>.</p> <h3 id="using_the_ui">Using the Cloud Logging UI</h3> <p>You can <a href="https://console.cloud.google.com/project/_/logs">view logs for Cloud Functions</a> in the Cloud Logging UI.</p> <h2 id="analyzing_logs">Analyzing logs</h2> <p>Cloud Logging offers a powerful suite of logs analysis tools that you can use to monitor your Cloud Functions. </p> <h3 id="charts_and_alerts">Charts and alerts</h3> <p>Once you have created logs-based metrics to monitor your functions, you can create charts and alerts based on these metrics. For example, you could create a chart to visualize latency over time, or create an alert to let you know if a certain error occurs too often.</p> <p>See <a href="https://cloud.google.com/logging/docs/logs-based-metrics/charts-and-alerts">Creating Charts and Alerts</a> for detailed information on how to use logs-based metrics in charts and alerting policies.</p> <h2 id="execution-ids">Understand and use execution IDs</h2> <p>By default, Cloud Run functions (2nd gen) supports concurrent execution of multiple requests within a single function instance. This means logs from different requests can be interleaved, making it harder to follow the flow of a single execution.</p> <p>To help with this, functions deployed using Firebase CLI version 13.33.0 and later automatically deploy with an option to associate an execution ID with each log entry emitted during handling of that execution.</p> <p>The execution ID uniquely identifies all logs associated with a single request handled by your function. No code changes are required; the execution ID will be automatically added to your logs.</p> <p>To disable logging execution ID in your log entries, set the <a href="config-env#env-variables">environment variable</a> <code translate="no" dir="ltr">LOG_EXECUTION_ID</code> to false in your dotenv file.</p> <h3 id="find-correlate-logs">Find and correlate logs by execution ID</h3> <p>You can inspect and correlate logs by execution ID in Cloud Logs Explorer.</p> <ol> <li><p>Expand the log entry from your function. The execution ID is located within the structured log data, nested under labels as <code translate="no" dir="ltr">labels.execution_id</code>.</p></li> <li><p>Click the value of the <code translate="no" dir="ltr">execution_id</code> and select "Show matching entries" from the drop-down menu to see all other logs associated with that same function execution.</p></li> </ol> <p>By using the execution ID, you can group together all log messages related to a single request, even if your function is handling multiple requests concurrently.</p> <h3 id="custom-log-fields">Enhance log visibility with custom summary fields</h3> <p>To make the execution ID more readily visible in the Logs Explorer, you can add it as a [custom summary field][cloud-logging-preference]. After you add execution ID as a summary field, every log entry will show execution ID as a chip at the beginning of the log line. similar to the way 1st Gen functions surfaced execution ID for all log entries.</p> <p>To add execution ID to summary field:</p> <ol> <li><p>Click the value of the execution ID in the structured log entry under <code translate="no" dir="ltr">labels.execution_id</code>.</p></li> <li><p>Select "Add field to summary line" from the drop-down menu.</p></li> </ol> <p>Each log entry now displays the <code translate="no" dir="ltr">executionId</code> prominently in the summary field, making it easier to identify and group logs associated with a specific execution ID.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/writing-and-viewing-logs" class="_attribution-link">https://firebase.google.com/docs/functions/writing-and-viewing-logs</a>
+  </p>
+</div>

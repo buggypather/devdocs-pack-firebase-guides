@@ -1,0 +1,197 @@
+<h1>Authenticate with Firebase in a Chrome extension</h1> <p>This document shows you how to use Firebase Authentication to sign users into a Chrome extension that uses <a href="https://developer.chrome.com/docs/extensions/mv3/intro/">Manifest V3</a>.</p> <p>Firebase Authentication provides multiple authentication methods to sign in users from a Chrome extension, some requiring more development effort than others.</p> <p>To use the following methods in a Manifest V3 Chrome extension, you need only <a href="#use-web-extension">import them from <code translate="no" dir="ltr">firebase/auth/web-extension</code></a>:</p> <ul> <li>Sign in with email and password (<code translate="no" dir="ltr">createUserWithEmailAndPassword</code> and <code translate="no" dir="ltr">signInWithEmailAndPassword</code>)</li> <li>Sign in with email link (<code translate="no" dir="ltr">sendSignInLinkToEmail</code>, <code translate="no" dir="ltr">isSignInWithEmailLink</code>, and <code translate="no" dir="ltr">signInWithEmailLink</code>)</li> <li>Sign in anonymously (<code translate="no" dir="ltr">signInAnonymously</code>)</li> <li>Sign in with a custom authentication system (<code translate="no" dir="ltr">signInWithCustomToken</code>)</li> <li>Handle provider sign-in independently then use <code translate="no" dir="ltr">signInWithCredential</code>
+</li> </ul> <p>The following sign in methods are also supported but require some additional work:</p> <ul> <li>Sign in with a pop-up window (<code translate="no" dir="ltr">signInWithPopup</code>, <code translate="no" dir="ltr">linkWithPopup</code>, and <code translate="no" dir="ltr">reauthenticateWithPopup</code>)</li> <li>Sign in by redirecting to the sign-in page (<code translate="no" dir="ltr">signInWithRedirect</code>, <code translate="no" dir="ltr">linkWithRedirect</code>, and <code translate="no" dir="ltr">reauthenticateWithRedirect</code>)</li> <li>Sign in with Phone Number with reCAPTCHA</li> <li>SMS multi-factor authentication with reCAPTCHA</li> <li>reCAPTCHA Enterprise protection</li> </ul> <p>To use these methods in a Manifest V3 Chrome extension, you must use <a href="#use_offscreen_documents">Offscreen Documents</a>.</p> <h2 id="use-web-extension">Use the firebase/auth/web-extension entry point</h2> <p>Importing from <code translate="no" dir="ltr">firebase/auth/web-extension</code> makes signing in users from a Chrome extension similar to a web app.</p> <p>firebase/auth/web-extension is only supported on the Web SDK versions v10.8.0 and above.</p> 
+<pre>import { getAuth, signInWithEmailAndPassword } from 'firebase/auth/web-extension';
+
+const auth = getAuth();
+signInWithEmailAndPassword(auth, email, password)
+  .then((userCredential) =&gt; {
+    // Signed in
+    const user = userCredential.user;
+    // ...
+  })
+  .catch((error) =&gt; {
+    const errorCode = error.code;
+    const errorMessage = error.message;
+  });</pre> <h2 id="use_offscreen_documents">Use Offscreen Documents</h2> <p>Some authentication methods, such as <code translate="no" dir="ltr">signInWithPopup</code>, <code translate="no" dir="ltr">linkWithPopup</code>, and <code translate="no" dir="ltr">reauthenticateWithPopup</code>, aren't directly compatible with Chrome extensions, because they require code to be loaded from outside of the extension package. Starting in Manifest V3, this isn't allowed and will be blocked by the extension platform. To get around this, you can load that code within an iframe using an <a href="https://developer.chrome.com/docs/extensions/reference/api/offscreen">offscreen document</a>. In the offscreen document, implement the normal authentication flow and proxy the result from the offscreen document back to the extension.</p> <p>This guide uses <code translate="no" dir="ltr">signInWithPopup</code> as an example, but the same concept applies to other authentication methods.</p> <h3 id="before-begin">Before you begin</h3> <p>This technique requires you to set up a web page that is available on the web, that you will load in an iframe. Any host works for this, including <a href="../../hosting/quickstart">Firebase Hosting</a>. Create a website with the following content:</p> 
+<pre>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;signInWithPopup&lt;/title&gt;
+    &lt;script src="signInWithPopup.js"&gt;&lt;/script&gt;
+  &lt;/head&gt;
+  &lt;body&gt;&lt;h1&gt;signInWithPopup&lt;/h1&gt;&lt;/body&gt;
+&lt;/html&gt;</pre> <h4 id="federated-sign-in">Federated sign in</h4> <p>If you are using federated sign in, such as sign in with Google, Apple, SAML, or OIDC, you must add your Chrome extension ID to the list of authorized domains:</p> <ol> <li><p>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><strong>Authentication</strong></a>.</p></li> <li>
+<p>In the <strong>Settings</strong> tab, in the <strong>Authorized domains</strong> section, click <strong>Add domain</strong>, then add a URI like the following: </p>
+
+<pre>chrome-extension://CHROME_EXTENSION_ID</pre>
+</li> </ol> <p>In your Chrome extension's manifest file make sure that you add the following URLs to the <code translate="no" dir="ltr">content_security_policy</code> allowlist:</p> <ul> <li><code translate="no" dir="ltr">https://apis.google.com</code></li> <li><code translate="no" dir="ltr">https://www.gstatic.com</code></li> <li><code translate="no" dir="ltr">https://www.googleapis.com</code></li> <li><code translate="no" dir="ltr">https://securetoken.googleapis.com</code></li> </ul> <h3 id="implement-authentication">Implement authentication</h3> <p>In your HTML document, signInWithPopup.js is the JavaScript code that handles authentication. There are two different ways to implement a method that is directly supported in the extension:</p> <ul> <li>Use <code translate="no" dir="ltr">firebase/auth/web-extension</code> in your extension code such as background scripts, service workers, or popup scripts. Use <code translate="no" dir="ltr">firebase/auth</code> only inside your offscreen iframe, because that iframe runs in a standard web page context.</li> <li>Wrap the authentication logic in a <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage"><code translate="no" dir="ltr">postMessage</code></a> listener, in order to proxy the authentication request and response.</li> </ul> 
+<pre>import { signInWithPopup, GoogleAuthProvider, getAuth } from'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import firebaseConfig from './firebaseConfig.js'
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+
+// This code runs inside of an iframe in the extension's offscreen document.
+// This gives you a reference to the parent frame, i.e. the offscreen document.
+// You will need this to assign the targetOrigin for postMessage.
+const PARENT_FRAME = document.location.ancestorOrigins[0];
+
+// This demo uses the Google auth provider, but any supported provider works.
+// Make sure that you enable any provider you want to use in the Firebase Console.
+// https://console.firebase.google.com/project/_/authentication/providers
+const PROVIDER = new GoogleAuthProvider();
+
+function sendResponse(result) {
+  globalThis.parent.self.postMessage(JSON.stringify(result), PARENT_FRAME);
+}
+
+globalThis.addEventListener('message', function({data}) {
+  if (data.initAuth) {
+    // Opens the Google sign-in page in a popup, inside of an iframe in the
+    // extension's offscreen document.
+    // To centralize logic, all respones are forwarded to the parent frame,
+    // which goes on to forward them to the extension's service worker.
+    signInWithPopup(auth, PROVIDER)
+      .then(sendResponse)
+      .catch(sendResponse)
+  }
+});</pre> <h3 id="build-chrome-extension">Build your Chrome Extension</h3> <p>After your website is live, you can use it in your Chrome Extension.</p>
+
+<ol type="1"> <li>Add the <code translate="no" dir="ltr">offscreen</code> permission to your manifest.json file:</li> 
+<pre>    {
+      "name": "signInWithPopup Demo",
+      "manifest_version" 3,
+      "background": {
+        "service_worker": "background.js"
+      },
+      "permissions": [
+        "offscreen"
+      ]
+    }
+    </pre> <li>Create the offscreen document itself. This is a minimal HTML file inside of your extension package that loads the logic of your offscreen document JavaScript:</li> 
+<pre>    &lt;!DOCTYPE html&gt;
+    &lt;script src="./offscreen.js"&gt;&lt;/script&gt;
+    </pre> <li>Include <code translate="no" dir="ltr">offscreen.js</code> in your extension package. It acts as the proxy between the public website set up in step 1 and your extension.</li> 
+<pre>    // This URL must point to the public site
+    const _URL = 'https://example.com/signInWithPopupExample';
+    const iframe = document.createElement('iframe');
+    iframe.src = _URL;
+    document.documentElement.appendChild(iframe);
+    chrome.runtime.onMessage.addListener(handleChromeMessages);
+
+    function handleChromeMessages(message, sender, sendResponse) {
+      // Extensions may have an number of other reasons to send messages, so you
+      // should filter out any that are not meant for the offscreen document.
+      if (message.target !== 'offscreen') {
+        return false;
+      }
+
+      function handleIframeMessage({data}) {
+        try {
+          if (data.startsWith('!_{')) {
+            // Other parts of the Firebase library send messages using postMessage.
+            // You don't care about them in this context, so return early.
+            return;
+          }
+          data = JSON.parse(data);
+          self.removeEventListener('message', handleIframeMessage);
+
+          sendResponse(data);
+        } catch (e) {
+          console.log(`json parse failed - ${e.message}`);
+        }
+      }
+
+      globalThis.addEventListener('message', handleIframeMessage, false);
+
+      // Initialize the authentication flow in the iframed document. You must set the
+      // second argument (targetOrigin) of the message in order for it to be successfully
+      // delivered.
+      iframe.contentWindow.postMessage({"initAuth": true}, new URL(_URL).origin);
+      return true;
+    }
+    </pre> <li>Set up the offscreen document from your background.js service worker.</li> 
+<pre>    import { getAuth } from 'firebase/auth/web-extension';
+
+    const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
+
+    // A global promise to avoid concurrency issues
+    let creatingOffscreenDocument;
+
+    // Chrome only allows for a single offscreenDocument. This is a helper function
+    // that returns a boolean indicating if a document is already active.
+    async function hasDocument() {
+      // Check all windows controlled by the service worker to see if one
+      // of them is the offscreen document with the given path
+      const matchedClients = await clients.matchAll();
+      return matchedClients.some(
+        (c) =&gt; c.url === chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH)
+      );
+    }
+
+    async function setupOffscreenDocument(path) {
+      // If we do not have a document, we are already setup and can skip
+      if (!(await hasDocument())) {
+        // create offscreen document
+        if (creating) {
+          await creating;
+        } else {
+          creating = chrome.offscreen.createDocument({
+            url: path,
+            reasons: [
+                chrome.offscreen.Reason.DOM_SCRAPING
+            ],
+            justification: 'authentication'
+          });
+          await creating;
+          creating = null;
+        }
+      }
+    }
+
+    async function closeOffscreenDocument() {
+      if (!(await hasDocument())) {
+        return;
+      }
+      await chrome.offscreen.closeDocument();
+    }
+
+    function getAuth() {
+      return new Promise(async (resolve, reject) =&gt; {
+        const auth = await chrome.runtime.sendMessage({
+          type: 'firebase-auth',
+          target: 'offscreen'
+        });
+        auth?.name !== 'FirebaseError' ? resolve(auth) : reject(auth);
+      })
+    }
+
+    async function firebaseAuth() {
+      await setupOffscreenDocument(OFFSCREEN_DOCUMENT_PATH);
+
+      const auth = await getAuth()
+        .then((auth) =&gt; {
+          console.log('User Authenticated', auth);
+          return auth;
+        })
+        .catch(err =&gt; {
+          if (err.code === 'auth/operation-not-allowed') {
+            console.error('You must enable an OAuth provider in the Firebase' +
+                          ' console in order to use signInWithPopup. This sample' +
+                          ' uses Google by default.');
+          } else {
+            console.error(err);
+            return err;
+          }
+        })
+        .finally(closeOffscreenDocument)
+
+      return auth;
+    }
+    </pre> <p>Now, when you call <code translate="no" dir="ltr">firebaseAuth()</code> within your service worker, it will create the offscreen document and load the site in an iframe. That iframe will process in the background, and Firebase will go through the standard authentication flow. Once it has either been resolved or rejected, the authentication object will be proxied from your iframe to your service worker, using the offscreen document.</p>  </ol><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/web/chrome-extension" class="_attribution-link">https://firebase.google.com/docs/auth/web/chrome-extension</a>
+  </p>
+</div>

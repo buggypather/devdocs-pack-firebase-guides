@@ -1,0 +1,73 @@
+<h1>Integrate other frameworks with Express.js</h1> <p>With some additional configuration, you can build on the basic framework-aware CLI functionality to extend integration support to frameworks other than Angular and Next.js.</p> <aside class="note"><strong>Note:</strong><span> Framework-aware Hosting is an early public preview. This means that the functionality might change in backward-incompatible ways. A preview release is not subject to any SLA or deprecation policy and may receive limited or no support.</span></aside><aside class="caution"><strong>Caution:</strong><span> For Express.js developers, new participation in the Hosting frameworks experiment has been closed permanently. If you're already using the frameworks experiment in the Firebase CLI, we recommend "graduating" to App Hosting. With App Hosting, you'll have a unified solution to manage everything from CDN to server-side rendering, along with improved GitHub integration.</span></aside> <h2 id="serve_static_content">Serve static content</h2> <p>Before deploying static content, you'll need to configure your application.</p> <h3 id="configure">Configure</h3> <p>In order to know how to deploy your application, the Firebase CLI needs to be able to both build your app and know where your tooling places the assets destined for Hosting. This is accomplished with the npm build script and CJS directories directive in <code translate="no" dir="ltr">package.json</code>.</p> <p>Given the following package.json:</p> 
+<pre>{
+    "name": "express-app",
+    "version": "0.0.0",
+    "scripts": {
+        "build": "spack",
+        "static": "cp static/* dist",
+        "prerender": "ts-node prerender.ts"
+    },
+    …
+}
+</pre> <p>The Firebase CLI only calls your build script, so you’ll need to ensure that your build script is exhaustive.</p> <aside class="tip"><strong>Tip:</strong><span> you can add additional steps using<code translate="no" dir="ltr">&amp;&amp;</code>. If you have a lot of steps, consider a shell script or tooling like <a href="https://www.npmjs.com/package/npm-run-all">npm-run-all</a> or <a href="https://www.npmjs.com/package/wireit">wireit</a>.</span></aside>
+<pre>{
+    "name": "express-app",
+    "version": "0.0.0",
+    "scripts": {
+        "build": "spack &amp;&amp; npm run static &amp;&amp; npm run prerender",
+        "static": "cp static/* dist",
+        "prerender": "ts-node prerender.ts"
+    },
+    …
+}
+</pre> <p>If your framework doesn’t support pre-rendering out of the box, consider using a tool like <a href="https://github.com/GoogleChrome/rendertron">Rendertron</a>. Rendertron will allow you to make headless Chrome requests against a local instance of your app, so you can save the resulting HTML to be served on Hosting.</p> <p>Finally, different frameworks and build tools store their artifacts in different places. Use <code translate="no" dir="ltr">directories.serve</code> to tell the CLI where your build script is outputting the resulting artifacts:</p> 
+<pre>{
+    "name": "express-app",
+    "version": "0.0.0",
+    "scripts": {
+        "build": "spack &amp;&amp; npm run static &amp;&amp; npm run prerender",
+        "static": "cp static/* dist",
+        "prerender": "ts-node prerender.ts"
+    },
+    "directories": {
+        "serve": "dist"
+    },
+    …
+}
+</pre> <h3 id="deploy">Deploy</h3> <p>After configuring your app, you can serve static content with the standard deployment command:</p> 
+<pre>firebase deploy
+</pre> <h2 id="serve_dynamic_content">Serve Dynamic Content</h2> <p>To serve your Express app on Cloud Functions for Firebase, ensure that your Express app (or express-style URL handler) is exported in such a way that Firebase can find it after your library has been npm packed.</p> <p>To accomplish this, ensure that your <code translate="no" dir="ltr">files</code> directive includes everything needed for the server, and that your main entry point is set up correctly in <code translate="no" dir="ltr">package.json</code>:</p> 
+<pre>{
+    "name": "express-app",
+    "version": "0.0.0",
+    "scripts": {
+        "build": "spack &amp;&amp; npm run static &amp;&amp; npm run prerender",
+        "static": "cp static/* dist",
+        "prerender": "ts-node tools/prerender.ts"
+    },
+    "directories": {
+        "serve": "dist"
+    },
+    "files": ["dist", "server.js"],
+    "main": "server.js",
+    ...
+}
+</pre> <p>Export your express app from a function named <code translate="no" dir="ltr">app</code>:</p> 
+<pre>// server.js
+export function app() {
+  const server = express();
+   …
+   return server;
+}
+</pre> <p>Or if you’d rather export an express-style URL handler, name it <code translate="no" dir="ltr">handle</code>:</p> 
+<pre>export function handle(req, res) {
+   res.send(‘hello world’);
+}
+</pre> <h3 id="deploy_2">Deploy</h3> 
+<pre>firebase deploy
+</pre> <p>This deploys your static content to Firebase Hosting and allows Firebase to fall back to your Express app hosted on Cloud Functions for Firebase.</p> <h2 id="optional_integrate_with_firebase_authentication">Optional: integrate with Firebase Authentication</h2> <p>The web framework-aware Firebase deploy tooling will automatically keep client and server state in sync using cookies. To access the authentication context, the Express <code translate="no" dir="ltr">res.locals</code> object optionally contains an authenticated Firebase App instance (<code translate="no" dir="ltr">firebaseApp</code>) and the currently signed in User (<code translate="no" dir="ltr">currentUser</code>).</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/hosting/frameworks/express" class="_attribution-link">https://firebase.google.com/docs/hosting/frameworks/express</a>
+  </p>
+</div>

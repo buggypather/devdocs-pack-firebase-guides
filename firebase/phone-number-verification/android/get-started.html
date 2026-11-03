@@ -1,0 +1,110 @@
+<h1>Get started with Firebase Phone Number Verification on Android</h1> <p>This page describes how to get started using Firebase Phone Number Verification in an Android app. See the <a href="../../phone-number-verification">overview</a> for a general description of this feature.</p> <p>By following the steps on this page, you can quickly get started implementing the user flows for Firebase PNV. For testing purposes, you will generate a testing-only token that resolves to a fake phone number. Using this test token, you can start adding Firebase PNV to your app without needing a billing account or a device with a real SIM.</p> <p>Once you're satisfied with the Firebase PNV user experience in your app, you can follow some additional steps to productionize your app.</p> <h2 id="before-you-begin">Before you begin</h2> <ul> <li><p><a href="../../android/setup">Add Firebase to your Android project</a> if you haven't already done so.</p></li> <li>
+<p>Make sure your app meets the following requirements:</p> <ul> <li>Your app's <code translate="no" dir="ltr">minSdk</code> is 24 (Android 7.0) or higher.</li> <li>The device or emulator runs Android 10 (API level 29) or higher and has Google Play services. For emulators, use an Android 10 or higher system image that includes Google Play.</li> <li>To verify real phone numbers in production, the device must use a SIM from a <a href="../pricing#supported-carriers">supported carrier</a>. Test mode, described on this page, doesn't need a real SIM.</li> </ul>
+</li> </ul> <h2 id="install-sdk">1. Add the Firebase PNV library to your app</h2> In your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the dependency for the Firebase Phone Number Verification library for Android. We recommend using the <a href="../../android/learn-more#bom">Firebase Android BoM</a> to control library versioning. 
+<pre>dependencies {
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+
+    // Add the dependencies for the Firebase Phone Number Verification libraries
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-pnv")
+}</pre> <p>By using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, your app will always use compatible versions of Firebase Android libraries. </p>  <p class="showalways"><em>(Alternative)</em> Add Firebase library dependencies <em>without</em> using the BoM </p> <p>If you choose not to use the Firebase BoM, you must specify each Firebase library version in its dependency line.</p> <p><strong>Note that if you use <em>multiple</em> Firebase libraries in your app, we strongly recommend using the BoM to manage library versions, which ensures that all versions are compatible.</strong> </p> 
+<pre>dependencies {
+    // Add the dependencies for the Firebase Phone Number Verification libraries
+    // When NOT using the BoM, you must specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-pnv:17.0.0")
+}</pre>  <h2 id="test-token">2. Initialize the Firebase PNV library in test mode</h2> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>Phone Verification</strong> &gt; <strong>Settings</strong> &gt; <a href="https://console.firebase.google.com/project/_/phoneverification/settings/testing" class="external"><strong>Testing</strong> tab</a>.</p></li> <li>
+<p>Click <strong>Generate token</strong>, select a country code, and then click <strong>Generate token</strong> again to create and copy your token.</p> <aside class="note"><strong>Note:</strong><span> In order to generate a test token, you'll need the <a href="https://docs.cloud.google.com/iam/docs/roles-permissions/fpnv#fpnv.admin" class="external">Firebase Phone Number Verification Admin IAM role</a>. If you're not signed into the Firebase console as the project owner, you might need to be manually granted this role. This can be done on the <a href="https://console.cloud.google.com/iam-admin/iam" class="external"><strong>IAM</strong> page</a> of the Google Cloud console.</span></aside>
+</li> <li>
+<p>Make the token available to debug builds of your app without hardcoding it in your source code. Treat the token like a credential and keep it out of version control. For example, add it to your project's <code translate="no" dir="ltr">local.properties</code> file, which isn't checked into version control:</p> 
+<pre>fpnv.testToken=COPIED_TOKEN_STRING
+</pre> <p>Then expose it as a <code translate="no" dir="ltr">BuildConfig</code> field in your module (app-level) <code translate="no" dir="ltr">build.gradle.kts</code> file. The following example also reads an <code translate="no" dir="ltr">FPNV_TEST_TOKEN</code> environment variable, which is useful on CI servers that don't have a <code translate="no" dir="ltr">local.properties</code> file. Release builds get an empty value:</p> 
+<pre>// At the top of the file:
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }
+        ?.inputStream()?.use { load(it) }
+}
+val fpnvTestToken = System.getenv("FPNV_TEST_TOKEN")?.takeIf { it.isNotEmpty() }
+    ?: localProperties.getProperty("fpnv.testToken", "")
+
+android {
+    buildFeatures {
+        buildConfig = true
+    }
+    buildTypes {
+        debug {
+            buildConfigField("String", "FPNV_TEST_TOKEN", "\"$fpnvTestToken\"")
+        }
+        release {
+            buildConfigField("String", "FPNV_TEST_TOKEN", "\"\"")
+        }
+    }
+}
+</pre>
+</li> <li>
+<p>In your app, enable a test session once per app process:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><code translate="no" dir="ltr">FirebasePhoneNumberVerification.getInstance()</code> returns the same instance for the default <code translate="no" dir="ltr">FirebaseApp</code> every time you call it, so use it for all Firebase PNV calls.</p> <p>Call <code translate="no" dir="ltr">enableTestSession()</code> only once per app process. A second call throws a <code translate="no" dir="ltr">FirebasePhoneNumberVerificationException</code> with the error code <code translate="no" dir="ltr">TEST_SESSION_ALREADY_ENABLED</code>, so don't call it from an <code translate="no" dir="ltr">Activity</code>, which can be recreated (for example, when the screen rotates). Instead, call it from your <code translate="no" dir="ltr">Application</code> class:</p> 
+<pre data-language="kotlin">import android.app.Application
+import android.util.Log
+import com.google.firebase.pnv.FirebasePhoneNumberVerification
+
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        if (!BuildConfig.DEBUG) return
+        if (BuildConfig.FPNV_TEST_TOKEN.isEmpty()) {
+            Log.w("MyApplication", "No Firebase PNV test token; test mode is off.")
+            return
+        }
+        FirebasePhoneNumberVerification.getInstance()
+            .enableTestSession(BuildConfig.FPNV_TEST_TOKEN)
+    }
+}
+</pre> <p>Register the class in your app manifest:</p> 
+<pre data-language="kotlin">&lt;application
+    android:name=".MyApplication"
+    ... &gt;
+</pre></section> </div>
+</li> </ol> <p>Test tokens have a 7 day TTL; after this period you will need to generate a new token to enable test sessions. An expired token doesn't cause an error until you call <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code>. Test tokens work on physical devices and emulators that have Google Play services, making them ideal for prototyping the UX in your app. You can also use them for testing in CI/CD if you replace the token at least every 7 days.</p> <p>Phone number tokens that your app gets in test mode are signed like production tokens, but they include the claim <code translate="no" dir="ltr">"test_number": true</code>. Make sure your production backend rejects tokens with this claim.</p> <h2 id="test-support">3. Recommended: Check for Firebase PNV support</h2> <p>To help you determine when to show number entry UI or explainer UI, on app launch it is recommended to check if the device and its SIM card support Firebase PNV. This is a pre-check that doesn't require user consent. You can use the result of this test to decide whether to initiate the Firebase PNV flow or to use an alternative method of phone number verification, such as SMS.</p> <p>To check the device for compatibility, call the <code translate="no" dir="ltr">getVerificationSupportInfo()</code> method. While you have a test session active, this method always returns a list containing a single supported entry for the test token, without contacting the Firebase PNV backend. This means you can't exercise your unsupported-device fallback in test mode. Later, after you productionize your app, this method will return a result for each SIM in the device.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">val fpnv = FirebasePhoneNumberVerification.getInstance()
+
+// Check all SIMs for support.
+fpnv.getVerificationSupportInfo()
+    .addOnSuccessListener { results -&gt;
+        if (results.any { it.isSupported() }) {
+            // At least one SIM is supported; okay to call getVerifiedPhoneNumber
+            // (see the next step).
+        } else {
+            // No SIMs are supported, so fall back to SMS verification.
+        }
+    }
+    .addOnFailureListener { e -&gt;
+        // Handle error.
+    }
+</pre></section> </div> <h2 id="initiate-flow">4. Initiate the verification flow</h2> <p>To initiate the Firebase PNV flow, call the <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code> method. Pass an <code translate="no" dir="ltr">Activity</code>, because the method displays the consent screen. A <code translate="no" dir="ltr">Context</code> that isn't an <code translate="no" dir="ltr">Activity</code>, such as your <code translate="no" dir="ltr">Application</code> context, fails with the error code <code translate="no" dir="ltr">ACTIVITY_CONTEXT_REQUIRED</code>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+
+<pre data-language="kotlin">fpnv.getVerifiedPhoneNumber(this@MainActivity)
+    .addOnSuccessListener { result -&gt;
+        // In test mode, this phone number will have a valid country code,
+        // followed by all zeros.
+        val phoneNumber = result.getPhoneNumber() // For display only.
+        val token = result.getToken()
+
+        // Verification successful. Send token to your backend, which reads
+        // the verified phone number from it. (See Next steps.)
+    }
+    .addOnFailureListener { e -&gt;
+        // Handle failures, such as the user declining consent or a network
+        // error.
+    }
+</pre></section> </div> <p>The <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code> method carries out the entire phone number verification flow, including:</p> <ul> <li>Using the Android Credential Manager to acquire user consent to share their phone number.</li> <li>Making the request to the Firebase PNV backend.</li> <li>Returning a token containing the verified phone number for the device (in a production app, this is when billing happens).</li> </ul> <aside class="tip"><strong>Tip:</strong><span> As a UI refinement, you should display a loading spinner before calling <code translate="no" dir="ltr">getVerifiedPhoneNumber</code>, and dismiss the spinner after the operation completes, either successfully or with an error. Design the loading spinner to be smaller than the consent screen so that it is completely obscured by it when the screen is visible.</span></aside> <h2 id="handle-errors">5. Handle errors</h2> <p>When an Firebase PNV call fails, the exception is a <code translate="no" dir="ltr">FirebasePhoneNumberVerificationException</code>. Use its <code translate="no" dir="ltr">errorCode</code> to decide what to do next, for example to fall back to SMS verification when the user declines consent. See <a href="handle-errors">Handle Firebase PNV errors on Android</a> for every error code, when it occurs, and the recommended action.</p> <h2 id="next-steps">Next steps</h2> <ul> <li>
+<p>This page details how to integrate with Firebase PNV using the unified, single-call API. Calling a single method handles the entire Firebase PNV user flow, from obtaining user consent to making the necessary network calls to the Firebase PNV backend. By using this method, you reduce the integration steps to a single method call.</p> <p>This API is recommended for most developers; however, if you have specific requirements not met by the library, see the <a href="custom-flow">Customize the Firebase Phone Number Verification flow</a> page for information on implementing a custom flow.</p>
+</li> <li><p>If you use the verified phone number outside the app client, you should pass around the token instead of the phone number itself so you can verify its integrity when you use it. See <a href="../verify-tokens">Verify Firebase PNV tokens</a>.</p></li> <li><p>To sign users in to Firebase Authentication with their verified phone number, see <a href="sign-in">Authenticate with Firebase using Firebase Phone Number Verification</a>.</p></li> <li><p>For a step-by-step walkthrough that builds a complete sample app, try the <a href="https://firebase.google.com/codelabs/firebase-pnv-android">Firebase Phone Number Verification codelab</a>.</p></li> <li><p>After you have implemented and tested your app's Firebase PNV flow and backend integration, you can put your app into production to start getting real verified phone numbers. See <a href="production-mode">Upgrade to production mode</a>.</p></li> <li><p>For the full API, see the <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/pnv/package-summary">Firebase PNV API reference</a>.</p></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/phone-number-verification/android/get-started" class="_attribution-link">https://firebase.google.com/docs/phone-number-verification/android/get-started</a>
+  </p>
+</div>

@@ -1,0 +1,24 @@
+<h1>Monitor App Check request metrics for Cloud Functions</h1> <p>After you add the App Check SDK to your app, but before you enable App Check enforcement, you should make sure that doing so won't disrupt your existing legitimate users.</p> <p>For Cloud Functions, you can get App Check metrics by examining your functions' logs. Every invocation of a callable function emits a structured log entry like the following example:</p> 
+<pre>{
+  "severity": "INFO",    // INFO, WARNING, or ERROR
+  "logging.googleapis.com/labels": {"firebase-log-type": "callable-request-verification"},
+  "jsonPayload": {
+    "message": "Callable header verifications passed.",
+    "verifications": {
+      // ...
+      "app": "MISSING",  // VALID, INVALID, or MISSING
+    }
+  }
+}
+</pre> <p>You can analyze these metrics in the Google Cloud console by <a href="https://cloud.google.com/logging/docs/logs-based-metrics/counter-metrics">creating a logs-based counter metric</a> with the following metric filter:</p> 
+<pre>
+resource.type="cloud_function"
+resource.labels.function_name="YOUR_CLOUD_FUNCTION"
+resource.labels.region="us-central1"
+labels.firebase-log-type="callable-request-verification"
+</pre> <p><a href="https://cloud.google.com/logging/docs/logs-based-metrics/labels#create-label">Label the metric</a> using the field <code translate="no" dir="ltr">jsonPayload.verifications.appCheck</code>.</p> <h2 id="next_steps">Next steps</h2> <p>When you understand how App Check will affect your users and you're ready to proceed, you can <a href="cloud-functions">enable App Check enforcement</a> for Cloud Functions.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/monitor-functions-metrics" class="_attribution-link">https://firebase.google.com/docs/app-check/monitor-functions-metrics</a>
+  </p>
+</div>

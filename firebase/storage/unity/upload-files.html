@@ -1,0 +1,95 @@
+<h1>Upload files with Cloud Storage for Unity</h1> <p>Cloud Storage for Firebase allows you to quickly and easily upload files to a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket provided and managed by Firebase.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside><aside class="note"><strong>Note:</strong><span> For Spark plan projects, Firebase blocks upload and hosting of certain executable file types for Windows (files with <code translate="no" dir="ltr">.exe</code>, <code translate="no" dir="ltr">.dll</code> and <code translate="no" dir="ltr">.bat</code> extensions), Android (<code translate="no" dir="ltr">.apk</code> extension) and Apple (<code translate="no" dir="ltr">.ipa</code> extension) by Cloud Storage for Firebase and Firebase Hosting. This policy exists to prevent abuse on our platform. Projects on the Blaze plan are not affected. For more information, see <a href="https://firebase.google.com/support/faq#storage-exe-restrictions">this FAQ</a>.</span></aside> <h2 id="create_a_reference">Create a Reference</h2> <p>To upload a file, first <a href="create-reference">create a Cloud Storage reference</a> to the file you want to upload.</p> <p>You can create a reference by appending child paths to the root of your Cloud Storage bucket, or you can create a reference from an existing <code translate="no" dir="ltr">gs://</code> or <code translate="no" dir="ltr">https://</code> URL referencing an object in Cloud Storage.</p> 
+<pre>// Create a root reference
+StorageReference storageRef = storage.RootReference;
+
+// Create a reference to "mountains.jpg"
+StorageReference mountainsRef = storageRef.Child("mountains.jpg");
+
+// Create a reference to 'images/mountains.jpg'
+StorageReference mountainImagesRef =
+    storageRef.Child("images/mountains.jpg");
+
+// While the file names are the same, the references point to different files
+Assert.AreEqual(mountainsRef.Name, mountainImagesRef.Name);
+Assert.AreNotEqual(mountainsRef.Path, mountainImagesRef.Path);</pre> <p>You cannot upload data with a reference to the root of your Cloud Storage bucket. Your reference must point to a child URL.</p> <h2 id="upload_files">Upload Files</h2> <p>Once you have a reference, you can upload files to Cloud Storage in two ways:</p> <ol> <li>Upload from a byte array in memory</li> <li>Upload from a file path representing a file on device</li> </ol> <h3 id="upload_from_data_in_memory">Upload from data in memory</h3> <p>The <code translate="no" dir="ltr">PutBytesAsync()</code> method is the simplest way to upload a file to Cloud Storage. <code translate="no" dir="ltr">PutBytesAsync()</code> takes a byte[] and returns a <code translate="no" dir="ltr">System.Task&lt;Firebase.Storage.StorageMetadata&gt;</code> which will contain information about the file when the task completes. You can optionally use an <code translate="no" dir="ltr">IProgress&lt;UploadState&gt;</code> (typically <code translate="no" dir="ltr">StorageProgress&lt;UploadState&gt;</code>) to monitor your upload status.</p> 
+<pre>// Data in memory
+var customBytes = new byte[] {
+    /*...*/
+};
+
+// Create a reference to the file you want to upload
+StorageReference riversRef = storageRef.Child("images/rivers.jpg");
+
+// Upload the file to the path "images/rivers.jpg"
+riversRef.PutBytesAsync(customBytes)
+    .ContinueWith((Task&lt;StorageMetadata&gt; task) =&gt; {
+        if (task.IsFaulted || task.IsCanceled) {
+            Debug.Log(task.Exception.ToString());
+            // Uh-oh, an error occurred!
+        }
+        else {
+            // Metadata contains file metadata such as size, content-type, and md5hash.
+            StorageMetadata metadata = task.Result;
+            string md5Hash = metadata.Md5Hash;
+            Debug.Log("Finished uploading...");
+            Debug.Log("md5 hash = " + md5Hash);
+        }
+    });</pre> <h3 id="upload_from_a_local_file">Upload from a local file</h3> <p>You can upload local files on the devices, such as photos and videos from the camera, with the <code translate="no" dir="ltr">PutFileAsync()</code> method. <code translate="no" dir="ltr">PutFileAsync()</code> takes a <code translate="no" dir="ltr">string</code> representing the path to the file and returns a <code translate="no" dir="ltr">System.Task&lt;Firebase.Storage.StorageMetadata&gt;</code> which will contain information about the file when the task completes. You can optionally use an <code translate="no" dir="ltr">IProgress&lt;UploadState&gt;</code> (typically <code translate="no" dir="ltr">StorageProgress&lt;UploadState&gt;</code>) to monitor your upload status.</p> 
+<pre>// File located on disk
+string localFile = "...";
+
+// Create a reference to the file you want to upload
+StorageReference riversRef = storageRef.Child("images/rivers.jpg");
+
+// Upload the file to the path "images/rivers.jpg"
+riversRef.PutFileAsync(localFile)
+    .ContinueWith((Task&lt;StorageMetadata&gt; task) =&gt; {
+        if (task.IsFaulted || task.IsCanceled) {
+            Debug.Log(task.Exception.ToString());
+            // Uh-oh, an error occurred!
+        }
+        else {
+            // Metadata contains file metadata such as size, content-type, and download URL.
+            StorageMetadata metadata = task.Result;
+            string md5Hash = metadata.Md5Hash;
+            Debug.Log("Finished uploading...");
+            Debug.Log("md5 hash = " + md5Hash);
+        }
+    });</pre> <p>If you want to actively monitor your upload, you can use a <code translate="no" dir="ltr">StorageProgress</code> class or your own class that implements <code translate="no" dir="ltr">IProgress&lt;UploadState&gt;</code>, with the <code translate="no" dir="ltr">PutFileAsync()</code> or <code translate="no" dir="ltr">PutBytesAsync()</code> methods. See <a href="#manage_uploads">Manage Uploads</a> for more information.</p> <h2 id="add_file_metadata">Add File Metadata</h2> <p>You can also include metadata when you upload files. This metadata contains typical file metadata properties such as <code translate="no" dir="ltr">Name</code>, <code translate="no" dir="ltr">Size</code>, and <code translate="no" dir="ltr">ContentType</code> (commonly referred to as MIME type). The <code translate="no" dir="ltr">PutFileAsync()</code> method automatically infers the content type from the filename extension, but you can override the auto-detected type by specifying <code translate="no" dir="ltr">ContentType</code> in the metadata. If you do not provide a <code translate="no" dir="ltr">ContentType</code> and Cloud Storage cannot infer a default from the file extension, Cloud Storage uses <code translate="no" dir="ltr">application/octet-stream</code>. See the <a href="file-metadata">Use File Metadata</a> section for more information about file metadata.</p> 
+<pre>// Create storage reference
+StorageReference mountainsRef = storageRef.Child("images/mountains.jpg");
+
+byte[] customBytes = new byte[] {
+    /*...*/
+};
+string localFile = "...";
+
+// Create file metadata including the content type
+var newMetadata = new MetadataChange();
+newMetadata.ContentType = "image/jpeg";
+
+// Upload data and metadata
+mountainsRef.PutBytesAsync(customBytes, newMetadata, null,
+    CancellationToken.None); // .ContinueWithOnMainThread(...
+// Upload file and metadata
+mountainsRef.PutFileAsync(localFile, newMetadata, null,
+    CancellationToken.None); // .ContinueWithOnMainThread(...</pre> <h2 id="monitor_upload_progress">Monitor Upload Progress</h2> <p>You can attach listeners to uploads in order to monitor the progress of the upload. The listener follows the standard <code translate="no" dir="ltr">System.IProgress&lt;T&gt;</code> interface. You can use an instance of the <code translate="no" dir="ltr">StorageProgress</code> class, to provide your own <code translate="no" dir="ltr">Action&lt;T&gt;</code> as a callback for progress ticks.</p> 
+<pre>// Start uploading a file
+var task = storageRef.Child("images/mountains.jpg")
+    .PutFileAsync(localFile, null,
+        new StorageProgress&lt;UploadState&gt;(state =&gt; {
+            // called periodically during the upload
+            Debug.Log(String.Format("Progress: {0} of {1} bytes transferred.",
+                state.BytesTransferred, state.TotalByteCount));
+        }), CancellationToken.None, null);
+
+task.ContinueWithOnMainThread(resultTask =&gt; {
+    if (!resultTask.IsFaulted &amp;&amp; !resultTask.IsCanceled) {
+        Debug.Log("Upload finished.");
+    }
+});</pre> <h2 id="error_handling">Error Handling</h2> <p>There are a number of reasons why errors may occur on upload, including the local file not existing, or the user not having permission to upload the desired file. You can find more information about errors in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="next_steps">Next Steps</h2> <p>Now that you've uploaded files, let's learn how to <a href="download-files">download them</a> from Cloud Storage.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/storage/unity/upload-files" class="_attribution-link">https://firebase.google.com/docs/storage/unity/upload-files</a>
+  </p>
+</div>

@@ -1,0 +1,82 @@
+<h1>Firebase Test Lab triggers</h1> <h2 id="import-required">Import the required modules</h2> <p>To get started, import the modules required for handling Firebase Test Lab events:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript"> // The Cloud Functions for Firebase SDK to set up triggers and logging.
+const {onTestMatrixCompleted} = require("firebase-functions/testLab");
+const {logger} = require("firebase-functions");
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python"> # The Cloud Functions for Firebase SDK to set up triggers and logging.
+from firebase_functions import test_lab_fn, params
+
+# The requests library to send web requests to Slack.
+import requests
+</pre></section> </div> <h2 id="trigger-function">Trigger a function on TestMatrix completion</h2> <p>To trigger a Firebase Test Lab function, define a handler for the test matrix completion event. In this example, the function triggers on test completion, retrieves the test matrix data from the CloudEvent object, and sends the corresponding test results to a Slack channel:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.posttestresultstoslack = onTestMatrixCompleted(
+    {secrets: ["SLACK_WEBHOOK_URL"]},
+    async (event) =&gt; {
+    // Obtain Test Matrix properties from the CloudEvent
+      const {testMatrixId, state, outcomeSummary} = event.data;
+
+      // Create the title of the message
+      const title = `${getSlackmoji(state)} ${getSlackmoji(
+          outcomeSummary,
+      )} ${testMatrixId}`;
+
+      // Create the details of the message
+      const details = `Status: *${state}* ${getSlackmoji(
+          state,
+      )}\nOutcome: *${outcomeSummary}* ${getSlackmoji(outcomeSummary)}
+    `;
+
+      // Post the message to slack
+      const slackResponse = await postToSlack(title, details);
+
+      // Log the response
+      logger.log(slackResponse);
+    });
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@test_lab_fn.on_test_matrix_completed(secrets=["SLACK_WEBHOOK_URL"])
+def posttestresultstoslack(
+    event: test_lab_fn.CloudEvent[test_lab_fn.TestMatrixCompletedData],
+) -&gt; None:
+    """Posts a test matrix result to Slack."""
+
+    # Obtain Test Matrix properties from the CloudEvent
+    test_matrix_id = event.data.test_matrix_id
+    state = event.data.state
+    outcome_summary = event.data.outcome_summary
+
+    # Create the title of the message
+    title = f"{slackmoji(state)} {slackmoji(outcome_summary)} {test_matrix_id}"
+
+    # Create the details of the message
+    details = (
+        f"Status: *{state}* {slackmoji(state)}\n"
+        f"Outcome: *{outcome_summary}* {slackmoji(outcome_summary)}"
+    )
+
+    # Post the message to Slack
+    response = post_to_slack(title, details)
+
+    # Log the response
+    print(response.status_code, response.text)
+</pre></section> </div> <h2 id="access-client">Access client details</h2> <p>Test matrices may be created from different sources or workflows. It is therefore often desirable to create functions that perform different actions based on the source or other important context of the test. To help with this, <code translate="no" dir="ltr">gcloud</code> allows you to pass arbitrary information when starting a test that can be accessed later in your function. For example:</p> 
+<pre>gcloud beta firebase test android run \
+    --app=path/to/app.apk \
+    --client-details testType=pr,link=&lt;path/to/pull-request&gt;
+</pre> <p>And then to access the information in your function:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const testType = event.data.clientInfo.details.testType;
+const link = event.data.clientInfo.details.link;
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">test_type: str | None = event.data.client_info.details.get("testType")
+link: str | None = event.data.client_info.details.get("link")
+</pre></section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/test-lab-events" class="_attribution-link">https://firebase.google.com/docs/functions/test-lab-events</a>
+  </p>
+</div>

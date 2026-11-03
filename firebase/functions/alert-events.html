@@ -1,0 +1,191 @@
+<h1>Firebase Alerts triggers</h1> <p>Firebase provides alerting for a wide range of project and app management events. Here are a few example events for when Firebase can send you this type of alert:</p> <ul> <li>For Crashlytics, we can alert you if your app has a dramatic increase in crashes.</li> <li>For Performance Monitoring, we can alert you if your app's start-up time crosses your configured threshold.</li> <li>For App Distribution, we can alert you if one of your testers registers a new iOS device.</li> </ul> <p>Depending on the alert and the <a href="https://support.google.com/firebase/answer/7276542" class="external">preferences set by the project member</a>, Firebase shows these types of alerts in the Firebase console or sends them via email.</p> <p>This page describes how to write functions in Cloud Functions for Firebase (2nd gen) that handle alert events.</p> <h2 id="how-does-it-work">How does it work?</h2> <p>You can trigger functions in response to alert events emitted by these sources:</p> <ul> <li><a href="#handle-app-distribution-alerts">Handle an App Distribution alert event</a></li> <li><a href="#handle-crashlytics-alerts">Handle a Crashlytics alert event</a></li> <li><a href="#handle-performance-alerts">Handle a Performance Monitoring alert event</a></li> </ul> <p>In a typical lifecycle, a function triggered by an alert event does the following:</p> <ol> <li>Listens/waits for a specific alert type to be emitted from Firebase.</li> <li>Triggers when the alert is emitted, and receives the event payload which contains specific information about the event.</li> <li>Invokes your function's code to handle the event payload.</li> </ol> <h2 id="trigger-function-on-alert-events">Trigger a function on alert events</h2> <p>Use the <code translate="no" dir="ltr">firebase-functions/v2/alerts</code> subpackage to write a function that handles alerts events. The following product-specific examples demonstrate a workflow where a function uses a webhook to post a message to a Discord channel when an alert for that product is emitted from Firebase.</p> <aside class="special"><strong>Important:</strong><span> Each of these examples assumes that you've already <a href="get-started">set up Cloud Functions for Firebase</a>.</span></aside> <h3 id="handle-crashlytics-alerts">Handle a Crashlytics alert event</h3> <p>For the following Crashlytics example, you use Cloud Functions for Firebase to handle an alert event of a new fatal crash issue. This function posts the alert information in a message to a Discord channel.</p> <p><img alt="Example crash notification in Discord" src="https://firebase.google.com/static/docs/functions/images/discord-functions.png" width="600" loading="lazy"> <figcaption>Example notification for a new fatal crash issue</figcaption></p> <p>The function listens for the event corresponding to Firebase publishing a new fatal issue:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.postfatalissuetodiscord = onNewFatalIssuePublished(async (event) =&gt; {
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@crashlytics_fn.on_new_fatal_issue_published(secrets=["DISCORD_WEBHOOK_URL"])
+def post_fatal_issue_to_discord(event: crashlytics_fn.CrashlyticsNewFatalIssueEvent) -&gt; None:
+    """Publishes a message to Discord whenever a new Crashlytics fatal issue occurs."""
+</pre></section> </div> <p>The function then parses the returned event object, parsing useful information from the event payload and constructing a message to post to the Discord channel:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">  // construct a helpful message to send to Discord
+  const appId = event.appId;
+  const {id, title, subtitle, appVersion} = event.data.payload.issue;
+  const message = `
+🚨 New fatal issue for ${appId} in version ${appVersion} 🚨
+
+**${title}**
+
+${subtitle}
+
+id: \`${id}\`
+`;
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">    # Construct a helpful message to send to Discord.
+    app_id = event.app_id
+    issue = event.data.payload.issue
+    message = f"""
+🚨 New fatal issue for {app_id} in version {issue.app_version} 🚨
+
+# {issue.title}
+
+{issue.subtitle}
+
+ID: `{issue.id}`
+""".strip()
+</pre></section> </div> <p>Finally, the function sends the constructed message to Discord through an HTTP request:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const response = await postMessageToDiscord("Crashlytics Bot", message);
+if (response.ok) {
+  logger.info(
+      `Posted fatal Crashlytics alert ${id} for ${appId} to Discord`,
+      event.data.payload,
+  );
+} else {
+  throw new Error(`Discord returned status code ${response.status}`);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">response = post_message_to_discord("Crashlytics Bot", message, DISCORD_WEBHOOK_URL.value)
+if response.ok:
+    print(f"Posted fatal Crashlytics alert {issue.id} for {app_id} to Discord.")
+    pprint.pp(event.data.payload)
+else:
+    response.raise_for_status()
+</pre></section> </div> <p>To learn about all the Crashlytics alert events that you can capture, go to the reference documentation for <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.alerts.crashlytics">Crashlytics alerts</a>.</p> <h3 id="handle-performance-alerts">Handle a Performance Monitoring alert event</h3> <p>This example exports a function that listens for performance threshold alert events:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.postperformancealerttodiscord = onThresholdAlertPublished(
+    async (event) =&gt; {
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@performance_fn.on_threshold_alert_published(secrets=["DISCORD_WEBHOOK_URL"])
+def post_performance_alert_to_discord(event: performance_fn.PerformanceThresholdAlertEvent) -&gt; None:
+    """Publishes a message to Discord whenever a performance threshold alert is fired."""
+</pre></section> </div> <p>The function then parses the returned event object, parsing useful information from the event payload and constructing a message to post to the Discord channel:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">      // construct a helpful message to send to Discord
+      const appId = event.appId;
+      const {
+        eventName,
+        metricType,
+        eventType,
+        numSamples,
+        thresholdValue,
+        thresholdUnit,
+        conditionPercentile,
+        appVersion,
+        violationValue,
+        violationUnit,
+        investigateUri,
+      } = event.data.payload;
+      const message = `
+    ⚠️ Performance Alert for ${metricType} of ${eventType}: **${eventName}** ⚠️
+    
+    App id: ${appId}
+    Alert condition: ${thresholdValue} ${thresholdUnit}
+    Percentile (if applicable): ${conditionPercentile}
+    App version (if applicable): ${appVersion}
+    
+    Violation: ${violationValue} ${violationUnit}
+    Number of samples checked: ${numSamples}
+    
+    **Investigate more:** ${investigateUri}
+    `;
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">    # Construct a helpful message to send to Discord.
+    app_id = event.app_id
+    perf = event.data.payload
+    message = f"""
+⚠️ Performance Alert for {perf.metric_type} of {perf.event_type}: **{perf.event_name}** ⚠️
+
+App ID: {app_id}
+Alert condition: {perf.threshold_value} {perf.threshold_unit}
+Percentile (if applicable): {perf.condition_percentile}
+App version (if applicable): {perf.app_version}
+
+Violation: {perf.violation_value} {perf.violation_unit}
+Number of samples checked: {perf.num_samples}
+
+**Investigate more:** {perf.investigate_uri}
+""".strip()
+</pre></section> </div> <p>Finally, the function sends the constructed message to Discord through an HTTP request:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const response = await postMessageToDiscord(
+    "Firebase Performance Bot", message);
+if (response.ok) {
+  logger.info(
+      `Posted Firebase Performance alert ${eventName} to Discord`,
+      event.data.payload,
+  );
+} else {
+  throw new Error(`Discord returned status code ${response.status}`);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">response = post_message_to_discord(
+    "App Performance Bot", message, DISCORD_WEBHOOK_URL.value
+)
+if response.ok:
+    print(f"Posted Firebase Performance alert {perf.event_name} to Discord.")
+    pprint.pp(event.data.payload)
+else:
+    response.raise_for_status()
+</pre></section> </div> <p>To learn about all the performance alert events that you can capture, go to the reference documentation for <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.alerts.performance">Performance Monitoring alerts</a>.</p> <h3 id="handle-app-distribution-alerts">Handle an App Distribution alert event</h3> <p>The example in this section shows you how to write a function for new tester iOS device alerts.</p> <p>In this example, the function listens for events that are sent every time a tester registers a new iOS device. When a new iOS device is registered, you need to update your provisioning profile with that device's UDID and then redistribute the app.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.postnewduuidtodiscord = onNewTesterIosDevicePublished(async (event) =&gt; {
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@app_distribution_fn.on_new_tester_ios_device_published(secrets=["DISCORD_WEBHOOK_URL"])
+def post_new_udid_to_discord(event: app_distribution_fn.NewTesterDeviceEvent) -&gt; None:
+    """Publishes a message to Discord whenever someone registers a new iOS test device."""
+</pre></section> </div> <p>The function then parses the returned object, parsing useful information from the event payload and constructing a message to post to the Discord channel:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">  // construct a helpful message to send to Discord
+  const appId = event.appId;
+  const {
+    testerDeviceIdentifier,
+    testerDeviceModelName,
+    testerEmail,
+    testerName,
+  } = event.data.payload;
+  const message = `
+📱 New iOS device registered by ${testerName} &lt;${testerEmail}&gt; for ${appId}
+
+UDID **${testerDeviceIdentifier}** for ${testerDeviceModelName}
+`;
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">    # Construct a helpful message to send to Discord.
+    app_id = event.app_id
+    app_dist = event.data.payload
+    message = f"""
+📱 New iOS device registered by {app_dist.tester_name} &lt;{app_dist.tester_email}&gt; for {app_id}
+
+UDID **{app_dist.tester_device_identifier}** for {app_dist.tester_device_model_name}
+""".strip()
+</pre></section> </div> <p>Finally, the function sends the constructed message to Discord through an HTTP request:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const response = await postMessageToDiscord("AppDistribution Bot", message);
+if (response.ok) {
+  logger.info(
+      `Posted iOS device registration alert for ${testerEmail} to Discord`,
+  );
+} else {
+  throw new Error(`Discord returned status code ${response.status}`);
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">response = post_message_to_discord("App Distro Bot", message, DISCORD_WEBHOOK_URL.value)
+if response.ok:
+    print(f"Posted iOS device registration alert for {app_dist.tester_email} to Discord.")
+    pprint.pp(event.data.payload)
+else:
+    response.raise_for_status()
+</pre></section> </div> <p>To learn about all the App Distribution alert events that you can capture, go to the reference documentation for <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.alerts.appdistribution">App Distribution alerts</a>.</p> <p>To learn how to use a function triggered by an <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.alerts.appdistribution.inappfeedbackpayload">in-app feedback Firebase alert from App Distribution</a>, see <a href="https://github.com/firebase/functions-samples/tree/main/Node/app-distribution-feedback-to-jira" class="external">Send in-app feedback to Jira</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/alert-events" class="_attribution-link">https://firebase.google.com/docs/functions/alert-events</a>
+  </p>
+</div>

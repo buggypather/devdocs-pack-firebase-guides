@@ -1,0 +1,69 @@
+<h1>Get Started with Firebase Authentication in Unity</h1>  <p>You can use Firebase Authentication to allow users to sign in to your game using one or more sign-in methods, including email address and password sign-in, and federated identity providers such as Google Sign-in and Facebook Login. This tutorial gets you started with Firebase Authentication by showing you how to add email address and password sign-in to your game.</p> <h2 id="before_you_begin">Before you begin</h2> <p>Before you can use <a href="https://firebase.google.com/docs/reference/unity/namespace/firebase/auth">Firebase Authentication</a>, you need to:</p> <ul> <li>
+<p>Register your Unity project and configure it to use Firebase.</p> <ul> <li><p>If your Unity project already uses Firebase, then it's already registered and configured for Firebase.</p></li> <li><p>If you don't have a Unity project, you can download a <a href="https://github.com/google/mechahamster">sample app</a>.</p></li> </ul>
+</li> <li><p>Add the <a href="https://firebase.google.com/download/unity">Firebase Unity SDK</a> (specifically, <code translate="no" dir="ltr">FirebaseAuth.unitypackage</code>) to your Unity project.</p></li> </ul> <aside class="objective"><strong>Find detailed instructions for these initial setup tasks in <a href="../../unity/setup#prerequisites">Add Firebase to your Unity project</a>.</strong> </aside> <p>Note that adding Firebase to your Unity project involves tasks both in the <a href="https://console.firebase.google.com/">Firebase console</a> and in your open Unity project (for example, you download Firebase config files from the console, then move them into your Unity project).</p> <h2 id="sign_up_new_users">Sign up new users</h2> <p>Create a form that allows new users to register with your game using their email address and a password. When a user completes the form, validate the email address and password provided by the user, then pass them to the <code translate="no" dir="ltr">CreateUserWithEmailAndPasswordAsync</code> method:</p> 
+<pre>auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+auth.CreateUserWithEmailAndPasswordAsync(email, password).ContinueWith(task =&gt; {
+  if (task.IsCanceled) {
+    Debug.LogError("CreateUserWithEmailAndPasswordAsync was canceled.");
+    return;
+  }
+  if (task.IsFaulted) {
+    Debug.LogError("CreateUserWithEmailAndPasswordAsync encountered an error: " + task.Exception);
+    return;
+  }
+
+  // Firebase user has been created.
+  Firebase.Auth.AuthResult result = task.Result;
+  Debug.LogFormat("Firebase user created successfully: {0} ({1})",
+      result.User.DisplayName, result.User.UserId);
+});
+</pre> <h2 id="sign_in_existing_users">Sign in existing users</h2> <p>Create a form that allows existing users to sign in using their email address and password. When a user completes the form, call the <code translate="no" dir="ltr">SignInWithEmailAndPasswordAsync</code> method:</p> 
+<pre>auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+auth.SignInWithEmailAndPasswordAsync(email, password).ContinueWith(task =&gt; {
+  if (task.IsCanceled) {
+    Debug.LogError("SignInWithEmailAndPasswordAsync was canceled.");
+    return;
+  }
+  if (task.IsFaulted) {
+    Debug.LogError("SignInWithEmailAndPasswordAsync encountered an error: " + task.Exception);
+    return;
+  }
+
+  Firebase.Auth.AuthResult result = task.Result;
+  Debug.LogFormat("User signed in successfully: {0} ({1})",
+      result.User.DisplayName, result.User.UserId);
+});
+</pre> <h2 id="set_an_authentication_state_change_event_handler_and_get_user_data">Set an authentication state change event handler and get user data</h2> <p>To respond to sign-in and sign-out events, attach an event handler to the global authentication object. This handler gets called whenever the user's sign-in state changes. Because the handler runs only after the authentication object is fully initialized and after any network calls have completed, it is the best place to get information about the signed-in user.</p> <p>Register the event handler using the <code translate="no" dir="ltr">FirebaseAuth</code> object's <code translate="no" dir="ltr">StateChanged</code> field. When a user successfully signs in, you can get information about the user in the event handler.</p> <p>Finally, when this object has <code translate="no" dir="ltr">Destroy</code> called on it, it will automatically call <code translate="no" dir="ltr">OnDestroy</code>. Clean up the Auth object's references in <code translate="no" dir="ltr">OnDestroy</code>.</p> 
+<pre>void InitializeFirebase() {
+  auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+  auth.StateChanged += AuthStateChanged;
+  AuthStateChanged(this, null);
+}
+
+void AuthStateChanged(object sender, System.EventArgs eventArgs) {
+  if (auth.CurrentUser != user) {
+    bool signedIn = user != auth.CurrentUser &amp;&amp; auth.CurrentUser != null
+        &amp;&amp; auth.CurrentUser.IsValid();
+    if (!signedIn &amp;&amp; user != null) {
+      Debug.Log("Signed out " + user.UserId);
+    }
+    user = auth.CurrentUser;
+    if (signedIn) {
+      Debug.Log("Signed in " + user.UserId);
+      displayName = user.DisplayName ?? "";
+      emailAddress = user.Email ?? "";
+      photoUrl = user.PhotoUrl ?? "";
+    }
+  }
+}
+
+void OnDestroy() {
+  auth.StateChanged -= AuthStateChanged;
+  auth = null;
+}
+</pre> <h2 id="next_steps">Next steps</h2> <p>Learn how to add support for other identity providers and anonymous guest accounts:</p> <ul> <li><a href="google-signin">Google Sign-in</a></li> <li><a href="facebook-login">Facebook Login</a></li> <li><a href="twitter-login">Twitter Login</a></li> <li><a href="github-auth">GitHub Login</a></li> <li><a href="../cpp/microsoft-oauth">Microsoft Login</a></li> <li><a href="../cpp/yahoo-oauth">Yahoo Login</a></li> <li><a href="anonymous-auth">Anonymous sign-in</a></li> <li><a href="phone-auth">Phone Authentication</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/unity/start" class="_attribution-link">https://firebase.google.com/docs/auth/unity/start</a>
+  </p>
+</div>

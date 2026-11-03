@@ -1,0 +1,427 @@
+<h1>Migrate Firebase Extensions to Cloud Functions</h1> <p>This guide shows you how to migrate your extensions from the deprecated <a href="../../extensions">Firebase Extensions</a> environment to a function that your users install and deploy in their own <a href="../../functions">Cloud Functions</a> for Firebase (2nd gen) codebase.</p> <p>This is the recommended migration path. Firebase will maintain a list of extensions with official npm equivalents; this guide walks you through creating yours.</p> <p>Throughout this guide, the <a href="https://extensions.dev/extensions/firebase/firestore-bigquery-export">Stream Cloud Firestore to BigQuery</a> extension (<code translate="no" dir="ltr">firestore-bigquery-export</code>) is used as a running example. Each section ends with a <strong>Worked example</strong> that shows what that extension looked like before the migration, and what it looks like after, as the <a href="https://www.npmjs.com/package/@firebase-function-kits/firestore-bigquery-export"><code translate="no" dir="ltr">@firebase-function-kits/firestore-bigquery-export</code></a> package.</p> <aside class="note"><strong>Note:</strong><span> This guide uses <strong>1st gen</strong> and <strong>2nd gen</strong> to refer to Cloud Functions for Firebase versions, except in literal strings such as import paths (for example, <code translate="no" dir="ltr">firebase-functions/v1</code>).</span></aside> <h2 id="sign-up-for-more-information">Sign up to get more information and help on migrating extensions</h2> <p>If you have questions on how to migrate from Firebase Extensions, you can reach us at <a href="mailto:firebase-extensions-migrator-support-external@google.com">firebase-extensions-migrator-support-external@google.com</a>. We will also email this group as we update the guide with more information on packaging, testing, and distributing your 2nd gen functions.</p> <p>To join this group, send a message to <a href="mailto:firebase-extensions-migrator-support-external+subscribe@google.com">firebase-extensions-migrator-support-external+subscribe@google.com</a>, which will respond with a membership request email. You must reply to that email, not click the "Join This Group" button.</p> <h2 id="before-you-begin">Before you begin</h2> <p>To complete this migration as written, you'll use the following features of Cloud Functions:</p> <ul> <li><p><a href="../../functions/config-env#params"><strong>Parameterized Configuration</strong></a><strong>.</strong> Each param that you declare in <code translate="no" dir="ltr">extension.yaml</code> becomes a defined parameter in your package code.</p></li> <li><p><strong>Declarative IAM roles and required APIs.</strong> Each role you declare in <code translate="no" dir="ltr">extension.yaml</code> becomes a <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions#requiresrole"><code translate="no" dir="ltr">requiresRole(...)</code></a> call, and each API becomes a <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions#requiresapi"><code translate="no" dir="ltr">requiresAPI(...)</code></a> call in your package code. At deploy time, the Firebase CLI grants the declared roles to a managed runtime service account and enables the declared APIs on your behalf.</p></li> <li><p><strong>Lifecycle events for Cloud Functions codebases.</strong> Cloud Functions codebases now support <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.lifecycle">lifecycle events</a> analogous to Firebase Extensions. Declare install-time and update-time setup with the lifecycle hooks <code translate="no" dir="ltr">afterFirstDeploy(...)</code> and <code translate="no" dir="ltr">afterRedeploy(...)</code>. These replace the <code translate="no" dir="ltr">lifecycleEvents</code> that you declare in <code translate="no" dir="ltr">extension.yaml</code>.</p></li> </ul> <h2 id="migrate-functions-to-2nd-gen">Migrate Firebase Extensions source to a 2nd gen function</h2> <h3 id="automated-migration-with-agent-skill">(Optional) Automated migration with the Firebase Agent Skill</h3> <p>You can automate <strong>Steps 1 through 8</strong> (inventorying resources, trigger upgrades, param and secret conversions, declarative IAM, lifecycle hooks, and generating the package README) using the official <a href="https://github.com/firebase/agent-skills"><code translate="no" dir="ltr">extension-to-functions-codebase</code></a> AI agent skill.</p> <h4 id="install_the_skill">Install the skill</h4> <p>If you or your AI coding assistant (Gemini in Firebase, Cursor, Claude Code, GitHub Copilot) haven't installed the skill yet, run the following command using the skills CLI:</p> 
+<pre>npx skills add firebase/agent-skills --skill extension-to-functions-codebase
+</pre> <p>Once the skill is installed in your project, your AI coding assistant automatically follows its migration rules and transformation steps. You can use the following prompt:</p> <p><em>"Please migrate this Firebase Extension into a publishable 2nd Gen Function Kit package following the instructions in the <code translate="no" dir="ltr">extension-to-functions-codebase</code> skill."</em></p> <aside class="note"><strong>Note:</strong><span> AI agents operate non-deterministically; complex custom logic may be interpreted differently across separate executions. It is highly recommended that you audit the produced modifications against the manual steps outlined in this guide. Make sure you perform comprehensive testing on your functions (<a href="#test-2nd-gen-function">Step 9</a>) and become acquainted with the new codebase to facilitate future maintenance and updates.</span></aside> <h3 id="inventory-the-extension">1. Inventory the extension</h3> <p>Start by taking an <em>inventory</em> of your extension: a complete list of everything the extension declares, ships, and documents, so that every behavior has a defined destination in the 2nd gen function and nothing is lost in the migration.</p> <p>Review each of the following, and note what you find:</p> <ul> <li><p><a href="../reference/extension-yaml"><code translate="no" dir="ltr">extension.yaml</code></a>, which declares your params, functions, events, IAM roles, required APIs, secrets, and lifecycle hooks.</p></li> <li><p><code translate="no" dir="ltr">functions/</code>, which contains your function code, dependencies, build configuration, triggers, and task queue functions.</p></li> <li><p><code translate="no" dir="ltr">README.md</code>, <code translate="no" dir="ltr">PREINSTALL.md</code>, and <code translate="no" dir="ltr">POSTINSTALL.md</code>, which contain setup steps, warnings, and billing notes.</p></li> <li><p><code translate="no" dir="ltr">scripts/</code>, which contains any import, backfill, IAM, repair, or migration utilities, and any other tooling that you ship alongside the extension.</p></li> </ul> <p>Then, for each item in <a href="../reference/extension-yaml"><code translate="no" dir="ltr">extension.yaml</code></a>, decide where it goes in the npm package:</p> <ul> <li><p>Convert user configuration into Cloud Functions params (<a href="#convert-params-and-secrets">Step 4</a>).</p></li> <li><p>Convert secrets into <a href="../../functions/config-env#secret-manager">Cloud Functions secrets</a> (<a href="#convert-params-and-secrets">Step 4</a>).</p></li> <li><p>Convert IAM roles into <code translate="no" dir="ltr">requiresRole(...)</code> declarations (<a href="#declare-apis-and-roles">Step 6</a>).</p></li> <li><p>Convert required Google APIs into <code translate="no" dir="ltr">requiresAPI(...)</code> declarations where appropriate (<a href="#declare-apis-and-roles">Step 6</a>).</p></li> <li><p>Convert install and update hooks into <code translate="no" dir="ltr">afterFirstDeploy(...)</code> and <code translate="no" dir="ltr">afterRedeploy(...)</code> declarations (<a href="#convert-lifecycle-hooks">Step 7</a>).</p></li> <li><p>Convert instance IDs from <code translate="no" dir="ltr">EXT_INSTANCE_ID</code> to <code translate="no" dir="ltr">FIREBASE_KIT_INSTANCE_ID</code> (<a href="#convert-params-and-secrets">Step 4</a>).</p></li> </ul> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> <p>Reading <code translate="no" dir="ltr">firestore-bigquery-export/extension.yaml</code> and <code translate="no" dir="ltr">functions/</code> produces this inventory:</p> <table> <thead> <tr> <th style="text-align: left">In <code translate="no" dir="ltr">extension.yaml</code>
+</th> <th style="text-align: left">Count / value</th> <th style="text-align: left">Where it goes</th> </tr> </thead> <tbody> <tr> <td style="text-align: left"><code translate="no" dir="ltr">params</code></td> <td style="text-align: left">25 (<code translate="no" dir="ltr">COLLECTION_PATH</code>, <code translate="no" dir="ltr">DATASET_ID</code>, <code translate="no" dir="ltr">TABLE_ID</code>, <code translate="no" dir="ltr">DATASET_LOCATION</code>, <code translate="no" dir="ltr">VIEW_TYPE</code>, …)</td> <td style="text-align: left">Cloud Functions params (<a href="#convert-params-and-secrets">Step 4</a>)</td> </tr> <tr> <td style="text-align: left"><code translate="no" dir="ltr">apis</code></td> <td style="text-align: left"><code translate="no" dir="ltr">bigquery.googleapis.com</code></td> <td style="text-align: left">
+<code translate="no" dir="ltr">requiresAPI(...)</code> (<a href="#declare-apis-and-roles">Step 6</a>)</td> </tr> <tr> <td style="text-align: left"><code translate="no" dir="ltr">roles</code></td> <td style="text-align: left">
+<code translate="no" dir="ltr">bigquery.dataEditor</code>, <code translate="no" dir="ltr">datastore.user</code>, <code translate="no" dir="ltr">bigquery.user</code>
+</td> <td style="text-align: left">
+<code translate="no" dir="ltr">requiresRole(...)</code> (<a href="#declare-apis-and-roles">Step 6</a>)</td> </tr> <tr> <td style="text-align: left"><code translate="no" dir="ltr">resources</code></td> <td style="text-align: left">1 event trigger (<code translate="no" dir="ltr">fsexportbigquery</code>) + task queue functions (<code translate="no" dir="ltr">initBigQuerySync</code>, <code translate="no" dir="ltr">setupBigQuerySync</code>)</td> <td style="text-align: left">Exported package functions (<a href="#upgrade-functions-to-2nd-gen">Step 3</a>)</td> </tr> <tr> <td style="text-align: left"><code translate="no" dir="ltr">lifecycleEvents</code></td> <td style="text-align: left">
+<code translate="no" dir="ltr">onInstall</code> → <code translate="no" dir="ltr">initBigQuerySync</code>; <code translate="no" dir="ltr">onUpdate</code> / <code translate="no" dir="ltr">onConfigure</code> → <code translate="no" dir="ltr">setupBigQuerySync</code>
+</td> <td style="text-align: left">
+<code translate="no" dir="ltr">afterFirstDeploy</code> / <code translate="no" dir="ltr">afterRedeploy</code> (<a href="#convert-lifecycle-hooks">Step 7</a>)</td> </tr> <tr> <td style="text-align: left">Instance ID</td> <td style="text-align: left">Not used (no <code translate="no" dir="ltr">EXT_INSTANCE_ID</code> reads)</td> <td style="text-align: left">Nothing to migrate</td> </tr> <tr> <td style="text-align: left"><code translate="no" dir="ltr">scripts/</code></td> <td style="text-align: left">
+<code translate="no" dir="ltr">import/</code> (backfill), <code translate="no" dir="ltr">gen-schema-view/</code>
+</td> <td style="text-align: left">Kept as scripts (out of scope here)</td> </tr> </tbody> </table> <p><strong><em>Analysis.</em></strong> The extension declares no <code translate="no" dir="ltr">type: secret</code> params, so there's nothing to migrate for secrets in <a href="#convert-params-and-secrets">Step 4</a>. The event trigger is already 2nd gen; only the task queue functions are still 1st gen (relevant in <a href="#upgrade-functions-to-2nd-gen">Step 3</a>).</p> <h3 id="update-package-json">2. Update package.json</h3> <p>Update your extension's <code translate="no" dir="ltr">package.json</code> file. If you're migrating one extension, this can be the root <code translate="no" dir="ltr">package.json</code>. If you're migrating many extensions in one repository, give each extension its own package.</p> <p><strong>Minimum SDK versions:</strong> Declare <a href="https://www.npmjs.com/package/firebase-functions"><code translate="no" dir="ltr">firebase-functions</code></a> <code translate="no" dir="ltr">&gt;=
+7.4.0</code> and <a href="https://www.npmjs.com/package/firebase-admin"><code translate="no" dir="ltr">firebase-admin</code></a> <code translate="no" dir="ltr">&gt;=
+14.2.0</code> as dependencies. Declare your version of <code translate="no" dir="ltr">firebase-functions</code> as a peer dependency as well, so that your users' Cloud Functions project has the same version of the SDK that your library was written with.</p> <aside class="note"><strong>Note:</strong><span> In <code translate="no" dir="ltr">kits/&lt;kit-name&gt;/package.json</code>, specify an exact Node engine version (such as <code translate="no" dir="ltr">"node": "22"</code> or <code translate="no" dir="ltr">"node": "24"</code>). Cloud Functions rejects semver ranges like <code translate="no" dir="ltr">"&gt;=22"</code>.</span></aside>
+<pre>{
+  "name": "&lt;package-name&gt;",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "engines": {
+    "node": "22"
+  },
+  "peerDependencies": {
+    "firebase-functions": "^7.4.0"
+  },
+  "dependencies": {
+    "firebase-functions": "^7.4.0",
+    "firebase-admin": "^14.2.0"
+  }
+}
+</pre> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> <p><strong><em>Before.</em></strong> The extension's <code translate="no" dir="ltr">functions/package.json</code> is private, names the extension ID, and declares <code translate="no" dir="ltr">firebase-functions</code> as a direct dependency:</p> 
+<pre>{
+  "name": "firestore-bigquery-export",
+  "main": "lib/index.js",
+  "private": true,
+  "dependencies": {
+    "@firebaseextensions/firestore-bigquery-change-tracker": "^2.0.4",
+    "firebase-admin": "^14.2.0",
+    "firebase-functions": "^6.3.2"
+  }
+}
+</pre> <p><strong><em>After.</em></strong> A publishable package: scoped name, an <code translate="no" dir="ltr">exports</code> map, and <code translate="no" dir="ltr">firebase-functions</code> moved to <code translate="no" dir="ltr">peerDependencies</code>:</p> 
+<pre>{
+  "name": "@firebase-function-kits/firestore-bigquery-export",
+  "version": "0.1.0",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "engines": {
+    "node": "22"
+  },
+  "peerDependencies": {
+    "firebase-functions": "^7.4.0"
+  },
+  "dependencies": {
+    "@firebaseextensions/firestore-bigquery-change-tracker": "^2.0.4",
+    "firebase-admin": "^14.2.0",
+    "firebase-functions": "^7.4.0"
+  }
+}
+</pre> <h3 id="upgrade-functions-to-2nd-gen">3. Upgrade functions from 1st gen to 2nd gen</h3> <p>If your extension still exports 1st gen functions, convert each trigger to its 2nd gen equivalent. Import from the <code translate="no" dir="ltr">firebase-functions/...</code> modules, and pass runtime settings in the trigger options.</p> <p>See the <a href="../../functions/2nd-gen-upgrade">Cloud Functions 2nd gen upgrade guide</a>. Notably, you can <a href="../../functions/2nd-gen-upgrade#minimize-rewrite-efforts-with-javascript-destructuring">minimize rewrite efforts by using 2nd gen patched event destructuring</a> and avoid rewriting your function logic because the 2nd gen SDK exposes the v1 parameters as fields in the event object, allowing you to use destructured/named parameters and keep your business logic unchanged.</p> <p><strong><em>Before.</em></strong> 1st gen:</p> 
+<pre>import * as functions from "firebase-functions/v1";
+
+export const sync = functions.firestore
+  .document("{collectionId}/{documentId}")
+  .onWrite(async (change, context) =&gt; {
+    await handleWrite(change.before, change.after, context.params);
+  });
+</pre> <p><strong><em>After.</em></strong> 2nd gen:</p> 
+<pre>import { onDocumentWritten } from "firebase-functions/firestore";
+
+export const syncV2 = onDocumentWritten(
+  { document: "{collectionId}/{documentId}" },
+  async ({ change, context }) =&gt;
+    await handleWrite(change.before, change.after, context.params)
+);
+</pre> <p>See the <a href="../../functions/version-comparison">Cloud Functions version comparison</a> for a comprehensive list of differences between 1st gen and 2nd gen functions.</p> <p>A significant difference between 1st and 2nd gen functions is that 2nd gen functions must be co-located with their trigger resources. When users migrate from an extension using 1st gen functions to a kit using 2nd gen functions, they may need to change function locations to meet this requirement.</p> <p>Any Cloud Functions locations that your users selected might break during the migration because the existing location is preserved. If your extension's event triggered functions relied on the user supplied functions location, we suggest adding a new param to your extension to collect the event trigger location and map this to the new function location.</p> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> 
+<pre>defineString("DATABASE_REGION", {
+  label: "Firestore Instance Location",
+  description:
+    "Where is the Firestore database located? You can check your current database location at https://console.cloud.google.com/firestore/databases. The functions in this kit deploy to the Cloud Run region closest to this location.",
+  input: select({
+    "Multi-region (Europe - Belgium and Netherlands)": "eur3",
+    "Multi-region (United States)": "nam5",
+    "Multi-region (Iowa, North Virginia, and Oklahoma)": "nam7",
+    "Iowa (us-central1)": "us-central1",
+    // More locations...
+  })
+});
+
+// Firestore multi-region locations are not Cloud Run regions; deploying a
+// function to one hard-fails, so they map to a region inside the multi-region.
+const MULTI_REGION_TO_FUNCTION_REGION: Record&lt;string, string&gt; = {
+  nam5: "us-central1",
+  nam7: "us-central1",
+  eur3: "europe-west1",
+};
+
+/**
+ * Maps a Firestore database location to the Cloud Run region the functions
+ * should deploy to. The lookup is case-insensitive and ignores surrounding
+ * whitespace, as the CLI's own region handling is. Regional locations pass
+ * through lowercased; an unset or blank location returns `undefined`, meaning
+ * the functions declare no region.
+ */
+export function firestoreLocationToFunctionRegion(
+  location: string | undefined
+): string | undefined {
+  const normalized = location?.trim().toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+  return MULTI_REGION_TO_FUNCTION_REGION[normalized] ?? normalized;
+}
+
+const functionRegion = firestoreLocationToFunctionRegion(
+  process.env.DATABASE_REGION
+);
+
+export const fsexportbigquery = onDocumentWritten(
+  {
+    region: functionRegion,
+    // Other configuration
+  },
+  (event) =&gt; handleDocumentWrite(event, getHandlerContext())
+);
+</pre> <p>On first deployment of the kit, users will be prompted for their <code translate="no" dir="ltr">DATABASE_REGION</code> and the functions will be deployed to the corresponding <code translate="no" dir="ltr">functionRegion</code> above fixing any location problems for their gen2 event triggered functions.</p> <h3 id="convert-params-and-secrets">4. Convert extension params and secrets</h3> <h4 id="params">Params</h4> <p>Each param that you declare in <code translate="no" dir="ltr">extension.yaml</code> becomes a Cloud Functions param.</p> <p>Convert direct environment reads:</p> 
+<pre>const collectionPath = process.env.COLLECTION_PATH;
+</pre> <p>into Cloud Functions params:</p> 
+<pre>import { defineString } from "firebase-functions/params";
+import { onDocumentWritten } from "firebase-functions/firestore";
+
+const collectionPath = defineString("COLLECTION_PATH");
+
+// Pass the param directly when used as a placeholder (e.g. trigger path)
+export const sync = onDocumentWritten(
+  { document: collectionPath },
+  async (event) =&gt; {
+    // Call .value() to read the string inside a handler
+    const path = collectionPath.value();
+    await handleWrite(path, event);
+  }
+);
+</pre> <p>Use <code translate="no" dir="ltr">collectionPath.value()</code> to read the string inside a handler; use <code translate="no" dir="ltr">collectionPath</code> directly where a placeholder is expected, such as a function trigger path.</p> <p>The Firebase CLI discovers your params and reads their values from <code translate="no" dir="ltr">.env</code>, <code translate="no" dir="ltr">.env.&lt;projectId&gt;</code>, or prompts your users during deploy. Keep the same param names, so that values from an existing installation carry over.</p> <p>It is important that you do <strong>not</strong> change the param names declared in your code <strong>at all.</strong> Extension migration preserves existing end-user param values automatically, but only when the names are unchanged.</p> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> <p><strong><em>Before.</em></strong> A param declared in <code translate="no" dir="ltr">extension.yaml</code>, read as a raw environment variable in <code translate="no" dir="ltr">config.ts</code>:</p> 
+<pre># extension.yaml
+- param: COLLECTION_PATH
+  label: Collection path
+  type: string
+  required: true
+</pre>
+
+<pre>// functions/src/config.ts
+collectionPath: process.env.COLLECTION_PATH,
+</pre> <p><strong><em>After.</em></strong> One <code translate="no" dir="ltr">defineString</code>; the CLI discovers it and reads from <code translate="no" dir="ltr">.env</code>:</p> 
+<pre>// src/config.ts
+import { defineString } from "firebase-functions/params";
+
+collectionPath: defineString("COLLECTION_PATH", {
+  label: "Collection path",
+  // We now support "nonEmpty: true" to ensure a value other than the empty string
+  // is entered, analogous to "required: true" in extension.yaml
+  input: { text: { nonEmpty: true } }
+}),
+</pre> <p>The param name is unchanged, so an existing <code translate="no" dir="ltr">.env</code> keeps working.</p> <h4 id="instance_id">Instance ID</h4> <p>Extensions read their instance ID from <code translate="no" dir="ltr">EXT_INSTANCE_ID</code>, injected by the Extensions runtime. Function kits read their instance ID from <code translate="no" dir="ltr">FIREBASE_KIT_INSTANCE_ID</code>, which the Firebase CLI sets for each kit instance to the instance's key in the <code translate="no" dir="ltr">instances</code> map in <code translate="no" dir="ltr">firebase.json</code>. The CLI provides it during deploy-time discovery, in the emulator, and to the deployed functions.</p> <p>The instance ID isn't a param, so don't declare it with <code translate="no" dir="ltr">defineString</code>. In fact, <code translate="no" dir="ltr">FIREBASE_...</code> is a reserved prefix in <code translate="no" dir="ltr">.env</code> files, so users won't be able to set it or override it there. The values the CLI injects are not visible to the params system. Read it directly from the environment:</p> 
+<pre>// Before
+const instanceId = process.env.EXT_INSTANCE_ID;
+
+// After
+const instanceId = process.env.FIREBASE_KIT_INSTANCE_ID;
+</pre> <p>The variable will only be set when your package is deployed as a kit. If your code is also deployed as a standalone codebase (see <a href="#test-2nd-gen-function">Step 9</a>), either treat it as optional or fail fast with a clear message when it's missing. If your extension exposed the instance ID as a user-facing param, you must remove that param, as the Firebase CLI owns the value now.</p> <p><strong>Worked example:</strong> Delete User Data</p> <p>(The Stream Cloud Firestore to BigQuery extension doesn't read its instance ID, so there is nothing to migrate there. The Delete User Data extension uses it to name its Pub/Sub topics.)</p> <p><strong><em>Before.</em></strong> Read as a raw environment variable in <code translate="no" dir="ltr">config.ts</code> with the <code translate="no" dir="ltr">ext-</code> prefix that Extensions used for its resources:</p> 
+<pre>// functions/src/config.ts
+discoveryTopic: `ext-${process.env.EXT_INSTANCE_ID}-discovery`,
+deletionTopic: `ext-${process.env.EXT_INSTANCE_ID}-deletion`,
+</pre> <p><strong><em>After.</em></strong> A plain <code translate="no" dir="ltr">process.env</code> read of <code translate="no" dir="ltr">FIREBASE_KIT_INSTANCE_ID</code> used for two ordinary params so that users can override the topic names:</p> 
+<pre>// src/config.ts
+const instanceId = process.env.FIREBASE_KIT_INSTANCE_ID;
+
+// Non-empty defaults so Pub/Sub trigger bindings resolve during deploy
+// discovery without freezing an empty topic name into the manifest.
+discoveryTopicName: defineString("DISCOVERY_TOPIC_NAME", {
+  default: `kit-${instanceId}-discovery`,
+}),
+deletionTopicName: defineString("DELETION_TOPIC_NAME", {
+  default: `kit-${instanceId}-deletion`,
+}),
+</pre> <p>The defaults must be non-empty because trigger bindings get resolved at discovery time. An empty default would be written into the deploy manifest as the topic name. The kit is also defensive against running outside of the context of a kit. If the variable is missing, the module-level default would evaluate to <code translate="no" dir="ltr">kit-undefined-discovery</code>, so the config loader fails with an explanatory error instead:</p> 
+<pre>// ...
+const instanceId = process.env.FIREBASE_KIT_INSTANCE_ID;
+if (!instanceId) {
+  throw new Error(
+    "FIREBASE_KIT_INSTANCE_ID is not set. It is provided automatically to " +
+      "kit instances by firebase-tools &gt;= 15.32.0; deploy or emulate this " +
+      "kit with a supported CLI version."
+  );
+}
+// ...
+</pre> <p>This check runs when a handler first resolves its config, so a missing variable produces a clear runtime error rather than functions silently bound to <code translate="no" dir="ltr">kit-undefined-*</code> topics. To reject the deploy itself, perform the check at the module scope so it runs during discovery. Because the CLI derives the instance ID from <code translate="no" dir="ltr">firebase.json</code>, there is no configurable <code translate="no" dir="ltr">INSTANCE_ID</code>, and nothing to keep in sync across multiple instances.</p> <h4 id="secrets">Secrets</h4> <p>In <code translate="no" dir="ltr">extension.yaml</code>, you declare secrets with <code translate="no" dir="ltr">type: secret</code>. The Extensions runtime stores and binds them, so your extension code can read <code translate="no" dir="ltr">process.env.PARAM_NAME</code> directly. In a typical Cloud Functions codebase, you declare and bind each secret explicitly:</p> 
+<pre>import { defineSecret } from "firebase-functions/params";
+import { onRequest } from "firebase-functions/https";
+
+const apiKey = defineSecret("API_KEY");
+export const fn = onRequest({ secrets: [apiKey] }, handler);
+</pre> <p>Once your extension is migrated to an npm package/kit, secret references are managed in the end user's <code translate="no" dir="ltr">.env</code> file. It is important that you do <strong>not</strong> change the secret names declared in your code <strong>at all.</strong> During migration, end-user secrets are migrated accordingly.</p> <aside class="warning"><strong>Warning:</strong><span> Secrets could be optional in Extensions but are currently required in Functions. If your users have an unspecified optional secret that exists as a required secret in function kits they'll be forced to add a value for this secret even if unused. If you want to reduce the number of secrets used, we recommend doing this in both an extension and function kit update for a seamless migration.</span></aside> <p><strong>Worked example:</strong> Trigger Email From Cloud Firestore</p> <p><strong><em>Before.</em></strong> <code translate="no" dir="ltr">MAIL_COLLECTION</code> and <code translate="no" dir="ltr">SMTP_PASSWORD</code> read as raw environment variables in <code translate="no" dir="ltr">config.ts</code>:</p> 
+<pre># extension.yaml
+- param: MAIL_COLLECTION
+  label: Email documents collection
+  type: string
+  default: mail
+  required: true
+
+- param: SMTP_PASSWORD
+  label: SMTP password
+  type: secret
+</pre>
+
+<pre>// functions/src/config.ts
+mailCollection: process.env.MAIL_COLLECTION,
+smtpPassword: process.env.SMTP_PASSWORD,
+</pre> <p><strong><em>After.</em></strong> One <code translate="no" dir="ltr">defineString</code> and one <code translate="no" dir="ltr">defineSecret</code>; the CLI discovers both and reads from <code translate="no" dir="ltr">.env</code>:</p> 
+<pre>import { defineString, defineSecret } from "firebase-functions/params";
+import { onDocumentWritten } from "firebase-functions/firestore";
+
+const mailCollection = defineString("MAIL_COLLECTION", {
+  label: "Email documents collection",
+  default: "mail"
+});
+
+const smtpPassword = defineSecret("SMTP_PASSWORD", { label: "SMTP password" });
+
+export const processQueue = onDocumentWritten(
+  { document: `${mailCollection}/{documentId}`, secrets: [smtpPassword] },
+  async (event) =&gt; {
+    const collection = mailCollection.value();
+    const password = smtpPassword.value();
+    // ...
+  }
+);
+</pre> <h3 id="migrate-task-queue-calls">5. Migrate internal task-queue calls</h3> <p>Some extensions enqueue work onto their <em>own</em> task queues from inside their function code, using the Firebase Admin SDK. This is different from <em>receiving</em> a dispatched task (covered in the <em>Upgrade functions</em> and <em>Convert lifecycle hooks</em> sections). Here your code is the <em>producer</em> that calls <code translate="no" dir="ltr">queue.enqueue(...)</code>.</p> <p>Previous versions of the Admin SDK required extensions to pass their own extension instance ID as a second parameter to target a Task Queue function in the same extension. As of <code translate="no" dir="ltr">firebase-admin</code> 14.2.0, this is neither required nor recommended. The Task Queue API now targets task queues in the same context (for example, an extension or kit) by default. It is safe and encouraged to remove this parameter in your code both as an extension and as standalone functions. Removing this parameter ensures portability and forwards compatibility.</p> <p>Everything else about the enqueue call — the <code translate="no" dir="ltr">locations/&lt;region&gt;/functions/&lt;name&gt;</code> resource path, the task payload, and your retry logic — stays the same.</p> <p>See <a href="../../functions/task-functions">Enqueue functions with Cloud Tasks</a> for more details on enqueueing functions with Cloud Tasks.</p> <p><strong><em>Before.</em></strong> 1st gen extension:</p> 
+<pre>import { getFunctions } from "firebase-admin/functions";
+
+const queue = getFunctions().taskQueue(
+  `locations/${config.location}/functions/syncBigQuery`,
+  process.env.EXT_INSTANCE_ID, // extension instance ID, injected by the runtime
+);
+await queue.enqueue(taskData);
+</pre> <p><strong><em>After.</em></strong> 2nd gen extension:</p> 
+<pre>import { getFunctions } from "firebase-admin/functions";
+
+const queue = getFunctions().taskQueue(
+  `locations/${process.env.FUNCTION_REGION}/functions/syncBigQuery`
+);
+await queue.enqueue(taskData);
+</pre> <p>If your enqueue call targets a prefixed codebase, the discovered function name is prefixed too (for example, <code translate="no" dir="ltr">orders-syncBigQuery</code>); see <a href="../users/migrate#review-install-function-kit">Review and install the replacement function kit instance</a> and <a href="#testing-function-kit">Test as a function kit</a>.</p> <h3 id="declare-apis-and-roles">6. Declare required APIs and IAM roles</h3> <p>Move your extension's IAM and API requirements out of <code translate="no" dir="ltr">extension.yaml</code> and into code:</p> 
+<pre>import { requiresAPI, requiresRole } from "firebase-functions";
+
+requiresAPI("bigquery.googleapis.com", "Needed to write changelog rows");
+requiresRole("roles/bigquery.dataEditor");
+requiresRole("roles/bigquery.user");
+</pre> <p>With declarative security, the Firebase CLI creates or updates a managed runtime service account for the codebase, and grants it the union of all declared roles. Document for your users that all functions in the codebase run with those roles, unless the final API supports a narrower model.</p> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> <p><strong><em>Before.</em></strong> Declared in <code translate="no" dir="ltr">extension.yaml</code>; the Extensions runtime enabled the API and granted the roles to a managed account:</p> 
+<pre>apis:
+  - apiName: bigquery.googleapis.com
+roles:
+  - role: bigquery.dataEditor
+  - role: datastore.user
+  - role: bigquery.user
+</pre> <p><strong><em>After.</em></strong> Declared in code with <code translate="no" dir="ltr">requiresAPI</code> and <code translate="no" dir="ltr">requiresRole</code>:</p> 
+<pre>import { requiresAPI, requiresRole } from "firebase-functions";
+
+requiresAPI(
+  "bigquery.googleapis.com",
+  "Needed to write changelog rows and views"
+);
+requiresRole("roles/bigquery.dataEditor");
+requiresRole("roles/datastore.user");
+requiresRole("roles/bigquery.user");
+</pre> <p>If your <a href="https://invertase.io/blog/introducing-extension-events">extension publishes Eventarc events</a>, you <em>also</em> need to set the appropriate required roles and APIs for publishing events. This was previously handled by Extensions without any changes required in your <code translate="no" dir="ltr">extensions.yaml</code>. You can do this conditionally in your code so that the kit only requests these permissions when a custom Eventarc channel is used.</p> 
+<pre>if (!!process.env.EVENTARC_CHANNEL) {
+  requiresRole("roles/eventarc.publisher");
+  requiresAPI(
+    "eventarcpublishing.googleapis.com",
+    "Publishes the extension's custom events to its Eventarc channel."
+  );
+}
+</pre> <h3 id="convert-lifecycle-hooks">7. Convert lifecycle hooks</h3> <p>If your extension calls <strong><code translate="no" dir="ltr">getExtensions().runtime()</code></strong> (for example, <code translate="no" dir="ltr">setProcessingState</code> or <code translate="no" dir="ltr">setFatalError</code>), delete those calls, as they throw an error if called from a normally deployed 2nd gen function. Lifecycle state is now driven by <code translate="no" dir="ltr">afterFirstDeploy</code> and <code translate="no" dir="ltr">afterRedeploy</code>, where this state tracking is not used.</p> <p>Firebase Extensions can run setup when a user installs, updates, or reconfigures an extension. In your npm package, declare equivalent lifecycle actions in code.</p> <p><strong>For one-time setup:</strong></p> 
+<pre>import { afterFirstDeploy } from "firebase-functions/lifecycle";
+import { onTaskDispatched } from "firebase-functions/tasks";
+
+export const runInitialSetup = onTaskDispatched(async (request) =&gt; {
+  await initializeResources(request.data);
+});
+
+afterFirstDeploy({
+  task: {
+    function: "runInitialSetup",
+    body: {}
+  }
+});
+</pre> <p><strong>For config or code updates:</strong></p> 
+<pre>import { afterRedeploy } from "firebase-functions/lifecycle";
+
+afterRedeploy({
+  task: {
+    function: "runInitialSetup",
+    body: { reconcile: true }
+  }
+});
+</pre> <p>Make your lifecycle actions idempotent. Your users may need to rerun them manually if dispatch or execution fails:</p> 
+<pre>firebase functions:lifecycle:run afterFirstDeploy CODEBASE_NAME
+firebase functions:lifecycle:run afterRedeploy CODEBASE_NAME
+</pre> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> <p><strong><em>Before.</em></strong> <code translate="no" dir="ltr">lifecycleEvents</code> in <code translate="no" dir="ltr">extension.yaml</code>, driven by the Extensions runtime:</p> 
+<pre>lifecycleEvents:
+  onInstall:
+    function: initBigQuerySync
+    processingMessage: Configuring BigQuery Sync.
+  onUpdate:
+    function: setupBigQuerySync
+    processingMessage: Configuring BigQuery Sync
+  onConfigure:
+    function: setupBigQuerySync
+    processingMessage: Configuring BigQuery Sync
+</pre> <p><strong><em>After.</em></strong> Declared in code; the task provisions BigQuery on first deploy:</p> 
+<pre>import { afterFirstDeploy, afterRedeploy } from "firebase-functions/lifecycle";
+
+afterFirstDeploy({ task: { function: "initBigQuerySync" } });
+afterRedeploy({ task: { function: "setupBigQuerySync" } });
+</pre> <p>Provisioning is idempotent, so a rerun reconciles the dataset, table, and views. Users can rerun manually with <code translate="no" dir="ltr">firebase functions:lifecycle:run afterFirstDeploy
+CODEBASE_NAME</code>.</p> <h3 id="document-setup-for-users">8. Document setup for your users</h3> <p>Write a package <code translate="no" dir="ltr">README</code> that explains, at a minimum:</p> <ul> <li>The <code translate="no" dir="ltr">.env</code> values that the package requires.</li> <li>The secrets that the package requires, and how to migrate existing secret values.</li> <li>The IAM roles that the package declares with <code translate="no" dir="ltr">requiresRole(...)</code>.</li> <li>The Google APIs that the package enables or requires.</li> <li>The lifecycle hooks that the package declares, and how to rerun them manually.</li> <li>Billing notes.</li> <li>What changed compared to the original extension.</li> <li>How the package obtains its instance ID (<code translate="no" dir="ltr">FIREBASE_KIT_INSTANCE_ID</code> set by the CLI) and that all the instance's functions are deployed with a <code translate="no" dir="ltr">kit-&lt;instanceId&gt;-</code> prefix.</li> </ul> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> <p>The package <code translate="no" dir="ltr">README</code> ships a concrete "what changed" table:</p> <table> <thead> <tr> <th style="text-align: left">Concern</th> <th style="text-align: left">As the extension</th> <th style="text-align: left">As <code translate="no" dir="ltr">@firebase-function-kits/firestore-bigquery-export</code>
+</th> </tr> </thead> <tbody> <tr> <td style="text-align: left">Config</td> <td style="text-align: left">Extension params</td> <td style="text-align: left">Cloud Functions params via <code translate="no" dir="ltr">.env</code>
+</td> </tr> <tr> <td style="text-align: left">IAM</td> <td style="text-align: left">Granted by Extensions</td> <td style="text-align: left">
+<code translate="no" dir="ltr">requiresRole(...)</code>, applied at deploy</td> </tr> <tr> <td style="text-align: left">Provisioning</td> <td style="text-align: left">Lifecycle task by Extensions</td> <td style="text-align: left">
+<code translate="no" dir="ltr">afterFirstDeploy</code> / <code translate="no" dir="ltr">afterRedeploy</code> task</td> </tr> <tr> <td style="text-align: left">Function names</td> <td style="text-align: left"><code translate="no" dir="ltr">ext-&lt;instanceId&gt;-fsexportbigquery</code></td> <td style="text-align: left">
+<code translate="no" dir="ltr">fsexportbigquery</code> (optionally prefixed)</td> </tr> <tr> <td style="text-align: left">Instance ID</td> <td style="text-align: left">
+<code translate="no" dir="ltr">EXT_INSTANCE_ID</code> injected by Extensions</td> <td style="text-align: left">
+<code translate="no" dir="ltr">FIREBASE_KIT_INSTANCE_ID</code>, set by the CLI from <code translate="no" dir="ltr">firebase.json</code>
+</td> </tr> </tbody> </table> <h3 id="test-2nd-gen-function">9. Test your 2nd gen function</h3> <p>You should now have a 2nd gen function that, when deployed, behaves identically to a new installation of your extension. The next step is to verify and fix any issues accidentally introduced along the way.</p> <p>To call <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.globaloptions"><code translate="no" dir="ltr">setGlobalOptions</code></a> to set global options such as a default region or CPU, you must do so only when deploying your kit as a standalone 2nd gen function. When your kit is installed as an npm package, your users call <code translate="no" dir="ltr">setGlobalOptions</code> in their wrapping code to configure these parameters, and they will get warnings if this happens twice. You can guard this call by checking for the <code translate="no" dir="ltr">FIREBASE_KIT_INSTANCE_ID</code> environment variable:</p> 
+<pre>import { setGlobalOptions } from "firebase-functions";
+
+if (!process.env.FIREBASE_KIT_INSTANCE_ID) {
+  setGlobalOptions({
+    region: "us-east1",
+    maxInstances: 10,
+  });
+}
+</pre> <p>Make sure you are using <a href="https://www.npmjs.com/package/firebase-tools"><code translate="no" dir="ltr">firebase-tools</code></a> <code translate="no" dir="ltr">&gt;= 15.32.0</code>, and deploy your converted 2nd gen function into a test project with the appropriate resources to test its behavior. If you already have a test project set up from testing your extension, run the following command:</p> 
+<pre>firebase deploy --only functions
+</pre> <p>Fill out the resulting wizard prompting you for parameter values the same way you would have filled out the installation form in the Firebase console for the extension.</p> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> <p>We verify the Cloud Firestore to BigQuery sync end-to-end:</p> <ol> <li>In the Cloud Firestore page of the Firebase console, create the collection you set as <code translate="no" dir="ltr">COLLECTION_PATH</code> (<code translate="no" dir="ltr">users</code>) if it doesn't already exist.</li> <li>Create a document named <code translate="no" dir="ltr">bigquery-mirror-test</code> containing any fields with any values.</li> <li>
+<p>In the BigQuery page of the Google Cloud console, query the raw changelog table. It should contain a single row logging the document creation:</p> 
+<pre>SELECT * FROM `PROJECT_ID.analytics.users_raw_changelog`
+</pre>
+</li> <li>
+<p>Query the <strong>latest view</strong>, which should return the latest change event for the only document present (<code translate="no" dir="ltr">bigquery-mirror-test</code>):</p> 
+<pre>SELECT * FROM `PROJECT_ID.analytics.users_raw_latest`
+</pre>
+</li> <li>
+<p>Delete the <code translate="no" dir="ltr">bigquery-mirror-test</code> document in Cloud Firestore. It disappears from the latest view, and a <code translate="no" dir="ltr">DELETE</code> event is appended to the raw changelog table.</p> <p>You can inspect the full history of a single document with:</p> 
+<pre>SELECT *
+   FROM `PROJECT_ID.analytics.users_raw_changelog`
+   WHERE document_name = "bigquery-mirror-test"
+   ORDER BY timestamp ASC
+</pre>
+</li> </ol> <p><strong>Differences from testing the extension:</strong></p> <ul> <li>The trigger deploys as <code translate="no" dir="ltr">fsexportbigquery</code> (no prefix when deploying as a typical 2nd gen function and not a kit), not <code translate="no" dir="ltr">ext-&lt;instanceId&gt;-fsexportbigquery</code>. Look for that name in the Cloud Functions dashboard and logs.</li> <li>Your code now runs in the Firebase Local Emulator Suite as normal functions. You can set the value of parameters to use in the emulator with <code translate="no" dir="ltr">.env.local</code>. You can also unit test your code using the <code translate="no" dir="ltr">firebase-functions-test</code> SDK as described in <a href="../../functions/unit-testing">Unit testing of Cloud Functions</a>.</li> <li>Provisioning is no longer driven by the Extensions runtime. If the changelog table is missing after deploy, rerun the setup task manually: <code translate="no" dir="ltr">firebase
+functions:lifecycle:run afterFirstDeploy CODEBASE_NAME</code>. The task is idempotent, so rerunning it reconciles the dataset, table, and views.</li> <li>Param values come from <code translate="no" dir="ltr">.env</code> rather than the installation form, so reruns of <code translate="no" dir="ltr">firebase deploy</code> are non-interactive once <code translate="no" dir="ltr">.env</code> is complete.</li> </ul> <h3 id="publish-function-kit-on-npm">10. Publish your function kit on npm</h3> <p>Once you've validated your conversion from extension to 2nd gen function, you can publish a release candidate to npm for end-to-end testing using one of the following guides:</p> <ul> <li><a href="https://docs.npmjs.com/creating-and-publishing-unscoped-public-packages">Creating and publishing unscoped public packages</a></li> <li><a href="https://docs.npmjs.com/creating-and-publishing-scoped-public-packages">Creating and publishing scoped public packages</a></li> </ul> <p>When your kit is published to npm, it can be installed with <a href="#testing-function-kit"><code translate="no" dir="ltr">firebase functions:kits:install</code></a> and listed as the official replacement for your extension.</p> <p>We highly recommend publishing a release candidate first. Kits are installed by package name and version, so a pre-release lets you test the real installation flow against the registry without exposing an unfinished package to users who install with the default <code translate="no" dir="ltr">latest</code> tag.</p> <p>Before you publish:</p> <ol> <li>Choose a package name. Both scoped and unscoped names work (see the guides above). Note that scoped packages are private by default, so pass <code translate="no" dir="ltr">--access public</code>.</li> <li>Build and check what ships. <code translate="no" dir="ltr">main</code> and <code translate="no" dir="ltr">types</code> point at your compiled output (<code translate="no" dir="ltr">lib/</code> in our worked example), so that directory must be included in the published tar file. Use <code translate="no" dir="ltr">.npmignore</code> or a <code translate="no" dir="ltr">files</code> allow-list, and inspect the result with <code translate="no" dir="ltr">npm pack --dry-run</code>. A <code translate="no" dir="ltr">prepublishOnly</code> script that runs your build prevents publishing stale output.</li> </ol> <p><code translate="no" dir="ltr">package.json</code> additions that make publishing safe by default:</p> 
+<pre>{
+  "files": ["lib", "README.md", "CHANGELOG.md"],
+  "publishConfig": { "access": "public", "tag": "next" },
+  "scripts": {
+    "build": "tsc -b",
+    "prepublishOnly": "npm run build &amp;&amp; npm test"
+  }
+}
+</pre> <p>The field <code translate="no" dir="ltr">"publishConfig": { "tag": "next" }</code> ensures that a plain <code translate="no" dir="ltr">npm
+publish</code> never overwrites <code translate="no" dir="ltr">latest</code>.</p> <p><strong>Cutting a release candidate:</strong></p> <p>For example, to increment the version locally from <code translate="no" dir="ltr">0.0.2-rc.3</code> to <code translate="no" dir="ltr">0.0.2-rc.4</code> (this commits and tags in Git if <code translate="no" dir="ltr">package.json</code> is at the repository root):</p> 
+<pre>npm version prerelease --preid rc
+</pre> <p>To publish the release candidate and register <code translate="no" dir="ltr">@your-org/your-kit@0.0.2-rc.4</code> on npm under the <code translate="no" dir="ltr">next</code> tag:</p> 
+<pre>npm publish
+</pre> <p>The npm website can take a few minutes to show the new version; <code translate="no" dir="ltr">npm view</code> reads the registry directly:</p> 
+<pre>npm view @your-org/your-kit versions dist-tags
+</pre> <p>Once <a href="#testing-function-kit">Step 11</a> and <a href="#test-migration-replacement">Step 12</a> of this guide are complete, you can promote the package to a stable version:</p> 
+<pre>npm version 0.0.2
+npm publish --tag latest
+npm dist-tag add @your-org/your-kit@0.0.2 next
+</pre> <p><strong>Note on <code translate="no" dir="ltr">npm-shrinkwrap.json</code>:</strong> We highly recommend including an <code translate="no" dir="ltr">npm-shrinkwrap.json</code> file with your package; the CLI warns users on install if you don't. It ensures users use the exact dependencies you tested against and helps protect against supply chain attacks. However, a shrinkwrap is applied verbatim in your users' projects, including during the Cloud Functions build (<code translate="no" dir="ltr">npm ci</code>), where dev-only entries can fail with <code translate="no" dir="ltr">EBADPLATFORM</code>. You may need to strip <code translate="no" dir="ltr">"dev": true</code> entries and <code translate="no" dir="ltr">devDependencies</code> from the published shrinkwrap copy.</p> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> <p>The kit's <code translate="no" dir="ltr">package.json</code> at the time of its fourth release candidate:</p> 
+<pre>{
+  "name": "@firebase-function-kits/firestore-bigquery-export",
+  "version": "0.0.2-rc.4",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/firebase/extensions.git",
+    "directory": "kits/firestore-bigquery-export"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "engines": { "node": "22" },
+  "scripts": { "build": "tsc -b" }
+}
+</pre> <p>Note that in this case, the kit lives in a monorepo, so it is important to include <code translate="no" dir="ltr">repository.directory</code> for the npm registry link to point at the correct folder. Its <code translate="no" dir="ltr">CHANGELOG.md</code> holds notes for the pending release.</p> <h3 id="testing-function-kit">11. Test as a function kit</h3> <p>Once you've published your kit, we recommend testing your kit using npm.</p> <p>Make sure you are using <a href="https://www.npmjs.com/package/firebase-tools"><code translate="no" dir="ltr">firebase-tools</code></a> version <code translate="no" dir="ltr">&gt;= 15.32.0</code> and install the kit:</p> 
+<pre>firebase functions:kits:install --package &lt;your-package-name&gt;@&lt;your-prerelease-version&gt;
+</pre> <p>This downloads your package from npm, sets it up inside a new source directory for your kit, and walks you through configuring the first instance similar to the extensions installation flow. Once you've installed and set up your package locally, run a deploy to create the resources in your Google Cloud project:</p> 
+<pre>firebase deploy --only functions:&lt;your-kit-instance-id&gt;
+</pre> <p>After installation, the Firebase CLI prints a similar deploy command with the exact instance ID that you chose during installation.</p> <p>Validate your kit again using the instructions in <a href="#test-2nd-gen-function">Step 9. Test your 2nd gen function</a>. Now that you're deploying using kits, your functions are prefixed and named <code translate="no" dir="ltr">kit-&lt;instance-id&gt;-&lt;method-name&gt;</code>. This allows kits to have multiple instances, deploying the same function multiple times in a project, each with a unique name.</p> <h3 id="test-migration-replacement">12. Test migration replacement</h3> <p>You can set up a working extension instance and then use the <a href="../users/migrate#choose-migration-path">user migration guide</a> (using either <a href="../users/migrate#migrate-with-ext-migrate"><code translate="no" dir="ltr">firebase ext:migrate --package</code></a> or the <a href="../users/migrate#function-kits-cli">function kits CLI commands</a>) to finish testing your function kit as a migration replacement.</p> <h3 id="notify-users-and-google">13. Notify users and Google of your official extension replacement</h3> <p>Once your function kit replacement is ready and available as an npm package that users should migrate to, inform both your users and Google of this official replacement. Update the <code translate="no" dir="ltr">README.md</code> file in the GitHub repository that hosts your <em>extension</em> with the following information:</p> 
+<pre>&lt;!-- FIREBASE_EXTENSION_REPLACEMENT: extension="&lt;your-extesion-id&gt;" package="&lt;your-npm-package-name&gt;" --&gt;
+&gt; [!WARNING]
+&gt; **Deprecation Notice:** The Firebase Extension `&lt;your-extension&gt;` is deprecated. Migrate to the [&lt;your-npm-package-name&gt;](&lt;link-to-your-npm-package&gt;) package.
+</pre> <p>Google scans known extension READMEs for comments like <code translate="no" dir="ltr">&lt;!--
+FIREBASE_EXTENSION_REPLACEMENT: extension="firebase/firestore-bigquery-export"
+package="@firebase-function-kits/firestore-bigquery-export" --&gt;</code> and uses this to populate our official registry of replacements stored in the <code translate="no" dir="ltr">firebase-tools</code> repository as <a href="https://github.com/firebase/firebase-tools/blob/be0000e18311c2e843032c26782738fa893cc6c3/src/extensions/replacements.json"><code translate="no" dir="ltr">replacements.json</code></a>. You can also check <code translate="no" dir="ltr">replacements.json</code> to see which <code translate="no" dir="ltr">README.md</code> will be scanned for your extension. The official list of replacements is updated weekly.</p> <p><strong>Worked example:</strong> Stream Cloud Firestore to BigQuery</p> <p>The <code translate="no" dir="ltr">firestore-bigquery-export</code> extension <a href="https://github.com/firebase/extensions/blob/next/firestore-bigquery-export/README.md"><code translate="no" dir="ltr">README.md</code></a> contains:</p> 
+<pre>&lt;!-- FIREBASE_EXTENSION_REPLACEMENT: extension="firebase/firestore-bigquery-export" package="@firebase-function-kits/firestore-bigquery-export" --&gt;
+&gt; [!WARNING]
+&gt; **Deprecation Notice:** The Firebase Extension `firebase/firestore-bigquery-export` is deprecated. Please migrate to the [`@firebase-function-kits/firestore-bigquery-export`](https://www.npmjs.com/package/@firebase-function-kits/firestore-bigquery-export) package.
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/extensions/publishers/migrate" class="_attribution-link">https://firebase.google.com/docs/extensions/publishers/migrate</a>
+  </p>
+</div>

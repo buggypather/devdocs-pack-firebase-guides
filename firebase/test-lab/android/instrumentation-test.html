@@ -1,0 +1,86 @@
+<h1>Get started with instrumentation tests</h1> <p>This guide describes how to prepare and run an instrumentation test using Firebase Test Lab. To use this guide, you'll need an <a href="https://developer.android.com/training/testing/instrumented-tests" class="external">instrumentation test</a> (written by you or your team) that uses the <a href="https://developer.android.com/training/testing/espresso" class="external">Espresso</a> or <a href="https://developer.android.com/training/testing/other-components/ui-automator" class="external">UI Automator</a> Android test frameworks. Instrumentation tests can run up to 45 minutes on physical devices and up to 60 minutes on <a href="../avds">virtual devices</a>.</p> <p>In the steps later, you'll upload your app's APK and your test's APK to Firebase.</p> <aside class="note"><strong>Note:</strong><span> Test Lab no longer supports the Robotium Android test framework.</span></aside> <h2 id="add-screenshot-library">(Optional) Add the screenshot library to your app</h2> <p>Firebase Test Lab includes a library (testlab-instr-lib) that you can use to process any screenshots you take with AndroidX’s <a href="https://developer.android.com/reference/androidx/test/runner/screenshot/ScreenCapture" class="external">ScreenCapture</a> when running instrumentation tests, such as tests written using the <a href="https://android.github.io/android-test/docs/espresso/" class="external">Espresso test framework</a>. This section describes how to create <code translate="no" dir="ltr">ScreenCapture</code> objects with the AndroidX library and how to process them using testlab-instr-lib.</p> <p>After your instrumentation test has run, you can view the captured screenshots in the Firebase console.</p> <h3 id="try_out_a_sample_app">Try out a sample app</h3> <p>Download the <a href="https://github.com/firebase/firebase-testlab-instr-lib/tree/master/notepad" class="external">NotePad sample app</a> to try out this functionality. The ability to take screenshots is already incorporated into the NotePad project.</p> <h2 id="step_1_add_the_screenshot_library_to_your_project">Step 1. Add the screenshot library to your project</h2> <ol> <li>
+<p>In your test project's <strong>root-level settings</strong> Gradle file (<code translate="no" dir="ltr">settings.gradle.kts</code> or <code translate="no" dir="ltr">settings.gradle</code>), add Google's Maven repository to every <code translate="no" dir="ltr">repositories</code> section:</p> 
+<pre>pluginManagement {
+    repositories {
+        // Add the following line:
+        google() // Google's Maven repository
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        // Add the following line:
+        google() // Google's Maven repository
+        mavenCentral()
+    }
+}
+// ...</pre>
+</li> <li>
+<p>In your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add a dependency for the Test Lab screenshot library.</p> 
+<pre>dependencies {
+  // ...
+  // Add Test Lab's instrumentation test screenshot library:
+  androidTestImplementation("com.google.firebase:testlab-instr-lib:0.2")
+  // ...</pre>
+</li> <li>
+<p>In your test's <code translate="no" dir="ltr">AndroidManifest.xml</code> file, register the <code translate="no" dir="ltr">FirebaseScreenCaptureProcessor</code> in a meta-data tag within the <code translate="no" dir="ltr">&lt;instrumentation&gt;</code> element. You can also specify the processor as an argument in AndroidJUnitRunner instead (see the <a href="https://developer.android.com/reference/androidx/test/runner/AndroidJUnitRunner" class="external">AndroidJUnitRunner reference documentation</a> for instructions on how).</p> 
+<pre>&lt;instrumentation
+  // Check that you have the following line (if not, add it):
+  android:name="androidx.test.runner.AndroidJUnitRunner" // Specifies AndroidJUnitRunner as the test runner
+  android:targetPackage="com.your.package.name"&gt;
+
+// Add the following:
+&lt;meta-data
+  android:name="screenCaptureProcessors"
+  android:value="com.google.firebase.testlab.screenshot.FirebaseScreenCaptureProcessor" /&gt;
+&lt;/instrumentation&gt;
+...
+</pre>
+</li> <li>
+<p>In your app's <code translate="no" dir="ltr">AndroidManifest.xml</code> file, add the following lines within the <code translate="no" dir="ltr">&lt;manifest&gt;</code> element:</p> 
+<pre> &lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/&gt;
+</pre>
+</li> <li>
+<p>In your <code translate="no" dir="ltr">AndroidManifest.xml</code> file, specify system permissions for your app by adding the following lines within the <code translate="no" dir="ltr">&lt;manifest&gt;</code> tag. If you're testing on <strong>Android 10 (API level 29) or higher</strong>, omit the <code translate="no" dir="ltr">WRITE_EXTERNAL_STORAGE</code> permission (your app does not require this permission in order to read and write screenshots to the device).</p> 
+<pre>&lt;manifest ... &gt;
+    &lt;!-- WRITE_EXTERNAL_STORAGE is not needed on Android 10 (API level 29) or higher. --&gt;
+    &lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/&gt;
+    &lt;uses-permission android:name="android.permission.INTERNET"/&gt;
+    ...
+&lt;/manifest&gt;</pre>
+</li> </ol> <h2 id="step_2_take_screenshots_during_your_test">Step 2. Take screenshots during your test</h2> <p>At any point in your test where you want to take a screenshot, call the <code translate="no" dir="ltr">Screenshot.capture()</code> method from the AndroidX library. This produces a <a href="https://developer.android.com/reference/androidx/test/runner/screenshot/ScreenCapture" class="external"><code translate="no" dir="ltr">ScreenCapture</code> object</a>. When you call <code translate="no" dir="ltr">process()</code> on the <code translate="no" dir="ltr">ScreenCapture</code> object, it gets processed using the <a href="https://developer.android.com/reference/androidx/test/runner/screenshot/ScreenCaptureProcessor" class="external">ScreenCaptureProcessor</a> that's registered in your <code translate="no" dir="ltr">AndroidManifest.xml</code>. Note that the <code translate="no" dir="ltr">BasicScreenCaptureProcessor</code> is used if no processors are registered. Since you registered the <code translate="no" dir="ltr">FirebaseScreenCaptureProcessor</code>, your screenshots will be processed via <code translate="no" dir="ltr">FirebaseScreenCaptureProcessor</code> and will be available for you with your results when you run your test with Firebase Test Lab.</p> <h3 id="example_use_cases_for_creating_a_screencapture">Example use cases for creating a <code translate="no" dir="ltr">ScreenCapture</code>:</h3> <ul> <li>
+<p>Take a full ScreenCapture on a API Build.VERSION_CODES.JELLY_BEAN_MR2 and above:</p> 
+<pre>Screenshot.capture()
+</pre>
+</li> <li>
+<p>Take a <code translate="no" dir="ltr">ScreenCapture</code> of the Activity on any API level. Note this is the only option for devices that are below Build.VERSION_CODES.JELLY_BEAN_MR2.</p> 
+<pre>@Rule
+  public ActivityTestRule&lt;MainActivity&gt; activityRule = new ActivityTestRule&lt;&gt;(MainActivity.class);
+...
+Screenshot.capture(activityRule.getActivity());
+...
+</pre>
+</li> </ul> <h3 id="example_use_cases_for_processing_a_screencapture">Example use cases for processing a ScreenCapture</h3> <ul> <li>
+<p>Process a <code translate="no" dir="ltr">ScreenCapture</code> via the <code translate="no" dir="ltr">FirebaseScreenCaptureProcessor</code>:</p> 
+<pre>Screenshot.capture().process();
+</pre>
+</li> <li>
+<p>Process a <code translate="no" dir="ltr">ScreenCapture</code> via a specified <code translate="no" dir="ltr">ScreenCaptureProcessor</code> (this allows you to skip registering the processor):</p> 
+<pre>Set&lt;ScreenCaptureProcessor&gt; processors = new HashSet&lt;&gt;();
+processors.add(new FirebaseScreenCaptureProcessor());
+Screenshot.capture().process(processors);
+</pre>
+</li> <li>
+<p>Set the name and format of the <code translate="no" dir="ltr">ScreenCapture</code> and process it using the registered processor:</p> 
+<pre>Screenshot.capture().setName("myscreenshot").setFormat(CompressFormat.JPEG).process();
+</pre>
+</li> </ul> <h2 id="step_3_build_and_run_your_test">Step 3. Build and run your test</h2> <ol> <li><p>Build your app and test APKs (see <a href="https://developer.android.com/studio/test/index.html" class="external">Test your app</a> for instructions).</p></li> <li><p>In the Firebase console, go to <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/testlab" class="external"><strong>Test Lab</strong></a>, then upload the APK files.</p></li> <li><p>Finally, run your test.</p></li> </ol> <h2 id="step_4_view_your_test_screenshots">Step 4. View your test screenshots</h2> <p>After your test has completed, you can view any screenshots that were taken:</p> <ol> <li><p>In the Firebase console, go to <strong>DevOps &amp; Engagement</strong> &gt; <a href="https://console.firebase.google.com/project/_/testlab" class="external"><strong>Test Lab</strong></a>.</p></li> <li><p>In the <strong>Tests</strong> tab, select your completed test, then click the <strong>Results</strong> tab.</p></li> <li><p>Select your test again, then click the <strong>Screenshots</strong> tab that appears.</p></li> </ol> <h2 id="optional-enabling">(Optional) Enable additional test features</h2> <p>You can enable the following features in your test before running it with Test Lab:</p> <h3 id="orchestrator">Enable Orchestrator</h3> <p><a href="https://developer.android.com/training/testing/junit-runner.html#using-android-test-orchestrator" class="external">Android Test Orchestrator</a> is a tool that runs each of your app's instrumentation tests independently. Test Lab always uses the latest version of Orchestrator.</p> <p>To enable Orchestrator for Test Lab, in <a href="https://console.firebase.google.com/project/_/testlab/run/instrumentation">instrumentation test setup,</a> click <strong>Additional options</strong> &gt; <strong>Run with Orchestrator</strong>.</p> <aside class="caution"><strong>Caution:</strong><span> <strong>To avoid spending quota on or being billed for malfunctioning tests, run Orchestrator locally before trying it in Test Lab.</strong> Confirm that Orchestrator is working in your app by running a test on your own machine before uploading your APK. Keep in mind that testing with Orchestrator takes slightly longer than without it, and it might impact your billing or cause your tests to exceed your timeout limit.</span></aside> <p>When you use Orchestrator, you benefit from the following:</p> <ul> <li>No shared state. Each test runs in its own instrumentation instance, so a shared state doesn't accumulate across tests.</li> <li>Isolated crashes. If a test crashes, only that instrumentation is terminated, and other tests in your suite can still run.</li> </ul> <p>Keep in mind that when you use Orchestrator, each test runs its own instrumentation instance, which means that the app process is restarted after every test case. The resulting increased run times might impact your <a href="../usage-quotas-pricing">quota usage or billed time</a> and might cause you to exceed your devices' timeout limits. If you reduce your app's startup time, this overhead will shorten.</p> <p>To set additional options for Orchestrator, specify them via <a href="https://cloud.google.com/sdk/gcloud/reference/firebase/test/android/run#--environment-variables"><code translate="no" dir="ltr">environmentVariables</code> field</a>. For example, to use <code translate="no" dir="ltr">clearPackageData</code>, use this option in gcloud:</p> 
+<pre>--environment-variables clearPackageData=true
+</pre> <h3 id="sharding">Enable sharding</h3> <p>Test sharding divides a set of tests into sub-groups (shards) that run separately in isolation. Test Lab automatically runs each shard in parallel using multiple devices, and completes the entire set of tests in less time.</p> <p>For example, if you create N shards, for each device you select, Test Lab spins up N identical devices and runs a subset of the tests on each device. This means that sharded test cases can result in multiple test executions per device. Non-sharded test cases, however, result in one test execution per device. To learn Test Lab concepts, see <a href="analyzing-results#key_concepts">Key concepts</a>.</p> <p>To enable test sharding in the Firebase console, follow these steps:</p> <ol> <li><p>In <a href="https://console.firebase.google.com/project/_/testlab/run/instrumentation">instrumentation test setup,</a> click <strong>Additional options</strong>.</p></li> <li><p>In the <strong>Sharding</strong> section, enter the number of shards you want to run.</p></li> </ol> <h3 id="billing_shard">Billing for test shards</h3> <p>Test Lab implements your shards by leveraging <a href="https://developer.android.com/training/testing/junit-runner#sharding-tests" class="external">AndroidJUnitRunner's built-in sharding mechanism.</a> To avoid being charged for spinning up empty shards (shards without assigned test cases), the number of shards you create should be less than the total number of test cases. Depending on how long each test case takes to run, it's typically a good idea to assign 2-10 test cases per shard.</p> <aside class="caution"><strong>Caution:</strong><span> <strong>Sharding tests may cost more.</strong> Although test sharding reduces the time it takes for all your tests to run, the overhead of starting your app on each shard may increase individual device times (the time it takes for a device to run its tests). Because charges are calculated on a per-minute basis for each shard, your total charges may increase. In addition, shards are counted towards <a href="../usage-quotas-pricing#testing-quota">your daily quota</a> for test executions.</span></aside> <p>For more information on billing, read <a href="../usage-quotas-pricing">Usage, quotas, and billing</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/test-lab/android/instrumentation-test" class="_attribution-link">https://firebase.google.com/docs/test-lab/android/instrumentation-test</a>
+  </p>
+</div>

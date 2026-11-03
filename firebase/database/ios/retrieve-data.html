@@ -1,0 +1,204 @@
+<h1>Read and Write Data on Apple platforms</h1> <h2 id="optional_prototype_and_test_with">(Optional) Prototype and test with Firebase Local Emulator Suite</h2> <p>Before talking about how your app reads from and writes to Realtime Database, let's introduce a set of tools you can use to prototype and test Realtime Database functionality: Firebase Local Emulator Suite. If you're trying out different data models, optimizing your security rules, or working to find the most cost-effective way to interact with the back-end, being able to work locally without deploying live services can be a great idea.</p> <p>A Realtime Database emulator is part of the Local Emulator Suite, which enables your app to interact with your emulated database content and config, as well as optionally your emulated project resources (functions, other databases, and security rules).</p> <p>Using the Realtime Database emulator involves just a few steps:</p> <ol> <li>Adding a line of code to your app's test config to connect to the emulator.</li> <li>From the root of your local project directory, running <code translate="no" dir="ltr">firebase emulators:start</code>.</li> <li>Making calls from your app's prototype code using a Realtime Database platform SDK as usual, or using the Realtime Database REST API.</li> </ol> <p>A detailed <a href="../../emulator-suite/connect_and_prototype">walkthrough involving Realtime Database and Cloud Functions</a> is available. You should also have a look at the <a href="../../emulator-suite">Local Emulator Suite introduction</a>.</p> <h2 id="get_a_firdatabasereference">Get a FIRDatabaseReference</h2> <p>To read or write data from the database, you need an instance of <code translate="no" dir="ltr">FIRDatabaseReference</code>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">var ref: DatabaseReference!
+
+ref = Database.database().reference()</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">@property (strong, nonatomic) FIRDatabaseReference *ref;
+
+self.ref = [[FIRDatabase database] reference];</pre></section> </div> <h2 id="write_data">Write data</h2> <p>This document covers the basics of reading and writing Firebase data.</p> <p>Firebase data is written to a <code translate="no" dir="ltr">Database</code> reference and retrieved by attaching an asynchronous listener to the reference. The listener is triggered once for the initial state of the data and again anytime the data changes.</p> <aside class="note"><strong>Note:</strong><span> By default, read and write access to your database is restricted so only authenticated users can read or write data. To get started without setting up <a href="../../auth">Authentication</a>, you can <a href="../../rules/basics#default_rules_locked_mode" target="_blank">configure your rules for public access</a>. This does make your database open to anyone, even people not using your app, so be sure to restrict your database again when you set up authentication.</span></aside> <h3 id="basic_write">Basic write operations</h3> <p>For basic write operations, you can use <code translate="no" dir="ltr">setValue</code> to save data to a specified reference, replacing any existing data at that path. You can use this method to:</p> <ul> <li>Pass types that correspond to the available JSON types as follows: <ul> <li><code translate="no" dir="ltr">NSString</code></li> <li><code translate="no" dir="ltr">NSNumber</code></li> <li><code translate="no" dir="ltr">NSDictionary</code></li> <li><code translate="no" dir="ltr">NSArray</code></li> </ul>
+</li> </ul> <p>For instance, you can add a user with <code translate="no" dir="ltr">setValue</code> as follows:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">self.ref.child("users").child(user.uid).setValue(["username": username])</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">[[[self.ref child:@"users"] child:authResult.user.uid]
+    setValue:@{@"username": username}];</pre></section> </div> <p>Using <code translate="no" dir="ltr">setValue</code> in this way overwrites data at the specified location, including any child nodes. However, you can still update a child without rewriting the entire object. If you want to allow users to update their profiles you could update the username as follows:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">self.ref.child("users/\(user.uid)/username").setValue(username)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">[[[[_ref child:@"users"] child:user.uid] child:@"username"] setValue:username];</pre></section> </div> <h2 id="read_data">Read data</h2> <h3 id="read_value_events">Read data by listening for value events</h3> <p>To read data at a path and listen for changes, use the <code translate="no" dir="ltr">observeEventType:withBlock</code> of <code translate="no" dir="ltr">FIRDatabaseReference</code> to observe <code translate="no" dir="ltr">FIRDataEventTypeValue</code> events.</p> <table> <tr> <th>Event type</th> <th>Typical usage</th> </tr> <tr> <td><code translate="no" dir="ltr">FIRDataEventTypeValue</code></td> <td>Read and listen for changes to the entire contents of a path.</td> </tr> </table> <p>You can use the <code translate="no" dir="ltr">FIRDataEventTypeValue</code> event to read the data at a given path, as it exists at the time of the event. This method is triggered once when the listener is attached and again every time the data, including any children, changes. The event callback is passed a <code translate="no" dir="ltr">snapshot</code> containing all data at that location, including child data. If there is no data, the snapshot will return <code translate="no" dir="ltr">false</code> when you call <code translate="no" dir="ltr">exists()</code> and <code translate="no" dir="ltr">nil</code> when you read its <code translate="no" dir="ltr">value</code> property.</p> <aside class="special"><strong>Important:</strong><span> The <code translate="no" dir="ltr">FIRDataEventTypeValue</code> event is fired every time data is changed at the specified database reference, including changes to children. To limit the size of your snapshots, attach only at the highest level needed for watching changes. For example, attaching a listener to the root of your database is not recommended.</span></aside> <p>The following example demonstrates a social blogging application retrieving the details of a post from the database:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">refHandle = postRef.observe(DataEventType.value, with: { snapshot in
+  // ...
+})</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">_refHandle = [_postRef observeEventType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot * _Nonnull snapshot) {
+  NSDictionary *postDict = snapshot.value;
+  // ...
+}];</pre></section> </div> <p>The listener receives a <code translate="no" dir="ltr">FIRDataSnapshot</code> that contains the data at the specified location in the database at the time of the event in its <code translate="no" dir="ltr">value</code> property. You can assign the values to the appropriate native type, such as <code translate="no" dir="ltr">NSDictionary</code>. If no data exists at the location, the <code translate="no" dir="ltr">value</code> is <code translate="no" dir="ltr">nil</code>.</p> <h3 id="read_data_once">Read data once</h3> <h4 id="read_once_using_getdata">Read once using getData()</h4> <p>The SDK is designed to manage interactions with database servers whether your app is online or offline.</p> <p>Generally, you should use the value events techniques described above to read data to get notified of updates to the data from the backend. Those technique reduce your usage and billing, and are optimized to give your users the best experience as they go online and offline.</p> <p>If you need the data only once, you can use <code translate="no" dir="ltr">getData()</code> to get a snapshot of the data from the database. If for any reason <code translate="no" dir="ltr">getData()</code> is unable to return the server value, the client will probe the local storage cache and return an error if the value is still not found.</p> <p>The following example demonstrates retrieving a user's public-facing username a single time from the database:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">do {
+  let snapshot = try await ref.child("users/\(uid)/username").getData()
+  let userName = snapshot.value as? String ?? "Unknown"
+} catch {
+  print(error)
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">NSString *userPath = [NSString stringWithFormat:@"users/%@/username", uid];
+[[ref child:userPath] getDataWithCompletionBlock:^(NSError * _Nullable error, FIRDataSnapshot * _Nonnull snapshot) {
+  if (error) {
+    NSLog(@"Received an error %@", error);
+    return;
+  }
+  NSString *userName = snapshot.value;
+}];</pre></section> </div> <p>Unnecessary use of <code translate="no" dir="ltr">getData()</code> can increase use of bandwidth and lead to loss of performance, which can be prevented by using a realtime listener as shown above.</p> <h4 id="read_data_once_with_an_observer">Read data once with an observer</h4> <p>In some cases you may want the value from the local cache to be returned immediately, instead of checking for an updated value on the server. In those cases you can use <code translate="no" dir="ltr">observeSingleEventOfType</code> to get the data from the local disk cache immediately.</p> <p>This is useful for data that only needs to be loaded once and isn't expected to change frequently or require active listening. For instance, the blogging app in the previous examples uses this method to load a user's profile when they begin authoring a new post:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">let userID = Auth.auth().currentUser?.uid
+ref.child("users").child(userID!).observeSingleEvent(of: .value, with: { snapshot in
+  // Get user value
+  let value = snapshot.value as? NSDictionary
+  let username = value?["username"] as? String ?? ""
+  let user = User(username: username)
+
+  // ...
+}) { error in
+  print(error.localizedDescription)
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">NSString *userID = [FIRAuth auth].currentUser.uid;
+[[[_ref child:@"users"] child:userID] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot * _Nonnull snapshot) {
+  // Get user value
+  User *user = [[User alloc] initWithUsername:snapshot.value[@"username"]];
+
+  // ...
+} withCancelBlock:^(NSError * _Nonnull error) {
+  NSLog(@"%@", error.localizedDescription);
+}];</pre></section> </div> <h2 id="updating_or_deleting_data">Updating or deleting data</h2> <h3 id="update_specific_fields">Update specific fields</h3> <p>To simultaneously write to specific children of a node without overwriting other child nodes, use the <code translate="no" dir="ltr">updateChildValues</code> method.</p> <p> When calling <code translate="no" dir="ltr">updateChildValues</code>, you can update lower-level child values by specifying a path for the key. If data is stored in multiple locations to scale better, you can update all instances of that data using <a href="structure-data#fanout">data fan-out</a>. For example, a social blogging app might want to create a post and simultaneously update it to the recent activity feed and the posting user's activity feed. To do this, the blogging application uses code like this:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">guard let key = ref.child("posts").childByAutoId().key else { return }
+let post = ["uid": userID,
+            "author": username,
+            "title": title,
+            "body": body]
+let childUpdates = ["/posts/\(key)": post,
+                    "/user-posts/\(userID)/\(key)/": post]
+ref.updateChildValues(childUpdates)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">NSString *key = [[_ref child:@"posts"] childByAutoId].key;
+NSDictionary *post = @{@"uid": userID,
+                       @"author": username,
+                       @"title": title,
+                       @"body": body};
+NSDictionary *childUpdates = @{[@"/posts/" stringByAppendingString:key]: post,
+                               [NSString stringWithFormat:@"/user-posts/%@/%@/", userID, key]: post};
+[_ref updateChildValues:childUpdates];</pre></section> </div> <p>This example uses <code translate="no" dir="ltr">childByAutoId</code> to create a post in the node containing posts for all users at <code translate="no" dir="ltr">/posts/$postid</code> and simultaneously retrieve the key with <code translate="no" dir="ltr">getKey()</code>. The key can then be used to create a second entry in the user's posts at <code translate="no" dir="ltr">/user-posts/$userid/$postid</code>.</p> <p>Using these paths, you can perform simultaneous updates to multiple locations in the JSON tree with a single call to <code translate="no" dir="ltr">updateChildValues</code>, such as how this example creates the new post in both locations. Simultaneous updates made this way are atomic: either all updates succeed or all updates fail.</p> <h3 id="add_a_completion_block">Add a Completion Block</h3> <p>If you want to know when your data has been committed, you can add a completion block. Both <code translate="no" dir="ltr">setValue</code> and <code translate="no" dir="ltr">updateChildValues</code> take an optional completion block that is called when the write has been committed to the database. This listener can be useful for keeping track of which data has been saved and which data is still being synchronized. If the call was unsuccessful, the listener is passed an error object indicating why the failure occurred.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">do {
+  try await ref.child("users").child(user.uid).setValue(["username": username])
+  print("Data saved successfully!")
+} catch {
+  print("Data could not be saved: \(error).")
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">[[[_ref child:@"users"] child:user.uid] setValue:@{@"username": username} withCompletionBlock:^(NSError *error, FIRDatabaseReference *ref) {
+  if (error) {
+    NSLog(@"Data could not be saved: %@", error);
+  } else {
+    NSLog(@"Data saved successfully.");
+  }
+}];</pre></section> </div> <h3 id="delete_data">Delete data</h3> <p>The simplest way to delete data is to call <code translate="no" dir="ltr">removeValue</code> on a reference to the location of that data.</p> <p>You can also delete by specifying <code translate="no" dir="ltr">nil</code> as the value for another write operation such as <code translate="no" dir="ltr">setValue</code> or <code translate="no" dir="ltr">updateChildValues</code>. You can use this technique with <code translate="no" dir="ltr">updateChildValues</code> to delete multiple children in a single API call.</p> <h2 id="detach_listeners">Detach listeners</h2> <p>Observers don't automatically stop syncing data when you leave a <code translate="no" dir="ltr">ViewController</code>. If an observer isn't properly removed, it continues to sync data to local memory. When an observer is no longer needed, remove it by passing the associated <code translate="no" dir="ltr">FIRDatabaseHandle</code> to the <code translate="no" dir="ltr">removeObserverWithHandle</code> method.</p> <p>When you add a callback block to a reference, a <code translate="no" dir="ltr">FIRDatabaseHandle</code> is returned. These handles can be used to remove the callback block.</p> <p>If multiple listeners have been added to a database reference, each listener is called when an event is raised. In order to stop syncing data at that location, you must remove all observers at a location by calling the <code translate="no" dir="ltr">removeAllObservers</code> method.</p> <p>Calling <code translate="no" dir="ltr">removeObserverWithHandle</code> or <code translate="no" dir="ltr">removeAllObservers</code> on a listener does not automatically remove listeners registered on its child nodes; you must also keep track of those references or handles to remove them.</p> <h2 id="save_data_as_transactions">Save data as transactions</h2> <p>When working with data that could be corrupted by concurrent modifications, such as incremental counters, you can use a <a href="https://firebase.google.com/docs/reference/ios/firebasedatabase/interface_f_i_r_database_reference#a796bff455159479a44b225eeaa2ba9d6">transaction operation</a>. You give this operation two arguments: an update function and an optional completion callback. The update function takes the current state of the data as an argument and returns the new desired state you would like to write.</p> <p>For instance, in the example social blogging app, you could allow users to star and unstar posts and keep track of how many stars a post has received as follows:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">ref.runTransactionBlock({ (currentData: MutableData) -&gt; TransactionResult in
+  if var post = currentData.value as? [String: AnyObject],
+    let uid = Auth.auth().currentUser?.uid {
+    var stars: [String: Bool]
+    stars = post["stars"] as? [String: Bool] ?? [:]
+    var starCount = post["starCount"] as? Int ?? 0
+    if let _ = stars[uid] {
+      // Unstar the post and remove self from stars
+      starCount -= 1
+      stars.removeValue(forKey: uid)
+    } else {
+      // Star the post and add self to stars
+      starCount += 1
+      stars[uid] = true
+    }
+    post["starCount"] = starCount as AnyObject?
+    post["stars"] = stars as AnyObject?
+
+    // Set value and report transaction success
+    currentData.value = post
+
+    return TransactionResult.success(withValue: currentData)
+  }
+  return TransactionResult.success(withValue: currentData)
+}) { error, committed, snapshot in
+  if let error = error {
+    print(error.localizedDescription)
+  }
+}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">[ref runTransactionBlock:^FIRTransactionResult * _Nonnull(FIRMutableData * _Nonnull currentData) {
+  NSMutableDictionary *post = currentData.value;
+  if (!post || [post isEqual:[NSNull null]]) {
+    return [FIRTransactionResult successWithValue:currentData];
+  }
+
+  NSMutableDictionary *stars = post[@"stars"];
+  if (!stars) {
+    stars = [[NSMutableDictionary alloc] initWithCapacity:1];
+  }
+  NSString *uid = [FIRAuth auth].currentUser.uid;
+  int starCount = [post[@"starCount"] intValue];
+  if (stars[uid]) {
+    // Unstar the post and remove self from stars
+    starCount--;
+    [stars removeObjectForKey:uid];
+  } else {
+    // Star the post and add self to stars
+    starCount++;
+    stars[uid] = @YES;
+  }
+  post[@"stars"] = stars;
+  post[@"starCount"] = @(starCount);
+
+  // Set value and report transaction success
+  currentData.value = post;
+  return [FIRTransactionResult successWithValue:currentData];
+} andCompletionBlock:^(NSError * _Nullable error,
+                       BOOL committed,
+                       FIRDataSnapshot * _Nullable snapshot) {
+  // Transaction completed
+  if (error) {
+    NSLog(@"%@", error.localizedDescription);
+  }
+}];</pre></section> </div> <p>Using a transaction prevents star counts from being incorrect if multiple users star the same post at the same time or the client had stale data. The value contained in the <code translate="no" dir="ltr">FIRMutableData</code> class is initially the client's last known value for the path, or <code translate="no" dir="ltr">nil</code> if there is none. The server compares the initial value against its current value and accepts the transaction if the values match, or rejects it. If the transaction is rejected, the server returns the current value to the client, which runs the transaction again with the updated value. This repeats until the transaction is accepted or too many attempts have been made.</p> <aside class="note"><strong>Note:</strong><span> Because <code translate="no" dir="ltr">runTransactionBlock:andCompletionBlock:</code> is called multiple times, it must be able to handle <code translate="no" dir="ltr">nil</code> data. Even if there is existing data in your remote database, it may not be locally cached when the transaction function is run, resulting in <code translate="no" dir="ltr">nil</code> for the initial value.</span></aside> <h3 id="atomic_server-side_increments">Atomic server-side increments</h3> <p>In the above use case we're writing two values to the database: the ID of the user who stars/unstars the post, and the incremented star count. If we already know that user is starring the post, we can use an atomic increment operation instead of a transaction.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="swift">let updates = [
+  "posts/\(postID)/stars/\(userID)": true,
+  "posts/\(postID)/starCount": ServerValue.increment(1),
+  "user-posts/\(postID)/stars/\(userID)": true,
+  "user-posts/\(postID)/starCount": ServerValue.increment(1)
+] as [String : Any]
+Database.database().reference().updateChildValues(updates)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+
+<div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+<pre data-language="objectivec">NSDictionary *updates = @{[NSString stringWithFormat: @"posts/%@/stars/%@", postID, userID]: @TRUE,
+                        [NSString stringWithFormat: @"posts/%@/starCount", postID]: [FIRServerValue increment:@1],
+                        [NSString stringWithFormat: @"user-posts/%@/stars/%@", postID, userID]: @TRUE,
+                        [NSString stringWithFormat: @"user-posts/%@/starCount", postID]: [FIRServerValue increment:@1]};
+[[[FIRDatabase database] reference] updateChildValues:updates];</pre></section> </div> <p>This code does not use a transaction operation, so it does not automatically get re-run if there is a conflicting update. However, since the increment operation happens directly on the database server, there is no chance of a conflict.</p> <p>If you want to detect and reject application-specific conflicts, such as a user starring a post that they already starred before, you should write custom security rules for that use case.</p> <h2 id="work_with_data_offline">Work with data offline</h2> <p>If a client loses its network connection, your app will continue functioning correctly.</p> <p>Every client connected to a Firebase database maintains its own internal version of any active data. When data is written, it's written to this local version first. The Firebase client then synchronizes that data with the remote database servers and with other clients on a "best-effort" basis.</p> <p>As a result, all writes to the database trigger local events immediately, before any data is written to the server. This means your app remains responsive regardless of network latency or connectivity.</p> <p>Once connectivity is reestablished, your app receives the appropriate set of events so that the client syncs with the current server state, without having to write any custom code.</p> <p>We'll talk more about offline behavior in <a href="offline-capabilities">Learn more about online and offline capabilities</a>.</p> <h2 id="next_steps">Next Steps</h2> <ul> <li><a href="lists-of-data">Working with lists of data</a></li> <li><a href="structure-data">Learn how to structure data</a></li> <li><a href="offline-capabilities">Learn more about online and offline capabilities</a></li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/database/ios/retrieve-data" class="_attribution-link">https://firebase.google.com/docs/database/ios/retrieve-data</a>
+  </p>
+</div>

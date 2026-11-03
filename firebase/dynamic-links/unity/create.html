@@ -1,0 +1,45 @@
+<h1>Create Dynamic Links with Unity</h1> <aside class="note"> <b>Note:</b> Firebase Dynamic Links is <i>deprecated</i> and should not be used in new projects. The service will be shutting down soon. Follow the <a href="https://firebase.google.com/support/dynamic-links-faq#how_should_i_migrate_from_the_service"> migration guide</a> and see the <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ</a> for more information. </aside> <p>You can create short or long Dynamic Links with the Firebase Dynamic Links API. The API takes several optional parameter structures to build links. Short links can also be created from a previously generated long link. The Dynamic Links API will generate a URL like the following:</p> 
+<pre>https://example.page.link/aSDf
+</pre> <h2 id="before_you_begin">Before you begin</h2> <p>Before you can use <a href="https://firebase.google.com/docs/reference/unity/namespace/firebase/dynamic-links">Firebase Dynamic Links</a>, you need to:</p> <ul> <li>
+<p>Register your Unity project and configure it to use Firebase.</p> <ul> <li><p>If your Unity project already uses Firebase, then it's already registered and configured for Firebase.</p></li> <li><p>If you don't have a Unity project, you can download a <a href="https://github.com/google/mechahamster">sample app</a>.</p></li> </ul>
+</li> <li><p>Add the <a href="https://firebase.google.com/download/unity">Firebase Unity SDK</a> (specifically, <code translate="no" dir="ltr">FirebaseDynamicLinks.unitypackage</code>) to your Unity project.</p></li> </ul> <aside class="objective"><strong>Find detailed instructions for these initial setup tasks in <a href="../../unity/setup#prerequisites">Add Firebase to your Unity project</a>.</strong> </aside> <p>Note that adding Firebase to your Unity project involves tasks both in the <a href="https://console.firebase.google.com/">Firebase console</a> and in your open Unity project (for example, you download Firebase config files from the console, then move them into your Unity project).</p> <aside class="note"><strong>Note:</strong><span> Dynamic Links is not supported on tvOS.</span></aside> <h2 id="set_a_uri_prefix">Set a Dynamic Links URI prefix</h2> <ol> <li><p>In the Firebase console, open the <strong>Dynamic Links</strong> section.</p></li> <li>
+<p>If you have not already accepted the terms of service and set a URI prefix for your Dynamic Links, do so when prompted.</p> <p>If you already have a Dynamic Links URI prefix, take note of it. You need to provide a Dynamic Links URI prefix when you programmatically create Dynamic Links.</p> <p><img src="https://firebase.google.com/static/docs/dynamic-links/images/dynamic-links-domain.png"></p>
+</li> <li><p><strong>Recommended</strong>: Specify the URL patterns allowed in your deep links and fallback links. By doing so, you prevent unauthorized parties from creating Dynamic Links that redirect from your domain to sites you don't control. See <a href="../allow-specific-url-patterns">Allow specific URL patterns</a>.</p></li> </ol> <h2 id="use-the-firebase-console"> Use the Firebase console </h2> <p>If you want to generate a single Dynamic Link, either for testing purposes, or for your marketing team to easily create a link that can be used in something like a social media post, the simplest way would be to visit the <a href="https://console.firebase.google.com/project/_/durablelinks/links/">Firebase console</a> and create one manually following the step-by-step form.</p> <h3 id="custom_domains">Custom domains</h3> <p>You can have greater control over your Dynamic Link's branding by using your own domain instead of a <code translate="no" dir="ltr">goo.gl</code> or <code translate="no" dir="ltr">page.link</code> subdomain. Follow <a href="../custom-domains">these instructions</a> to set up a custom domain for your project.</p> <aside class="note"><strong>Note:</strong><span> If you're building your project for iOS, you must edit the <code translate="no" dir="ltr">Info.plist</code> file per the <a href="../custom-domains#console">iOS-only instructions</a> for setting up a custom domain.</span></aside> <h2 id="using_the_api">Using the Firebase Dynamic Links API</h2> <h3 id="creating_a_long_from_parameters">Creating a long Dynamic Link from parameters</h3> <p>To create a Dynamic Link, create a <code translate="no" dir="ltr">DynamicLinkComponents</code> object, setting any of the optional members for additional configuration, and then access the <code translate="no" dir="ltr">LongDynamicLink</code> property to get the link URL.</p> <p>The following minimal example creates a long Dynamic Link to https://www.example.com/ that opens with your Android app com.example.android on Android and the app com.example.ios on iOS:</p> 
+<pre>var components = new Firebase.DynamicLinks.DynamicLinkComponents(
+    // The base Link.
+    new System.Uri("https://www.example.com/"),
+    // The dynamic link URI prefix.
+    "https://example.page.link") {
+      IOSParameters = new Firebase.DynamicLinks.IOSParameters("com.example.ios"),
+      AndroidParameters = new Firebase.DynamicLinks.AndroidParameters(
+        "com.example.android.package_name"),
+    };
+// do something with: components.LongDynamicLink</pre> <aside class="note"><strong>Note:</strong><span> Long links append all of the configuration settings as query arguments to the link and therefore do not require any network calls.</span></aside> <h3 id="creating_a_short">Creating a short Dynamic Link</h3> <p>To create a short Dynamic Link, pass a previously generated long link to <code translate="no" dir="ltr">Firebase.DynamicLinks.GetShortLinkAsync</code> or build <code translate="no" dir="ltr">DynamicLinkComponents</code> in the same way as above.</p> <p><code translate="no" dir="ltr">GetShortLinkAsync</code> optionally takes an extra <code translate="no" dir="ltr">DynamicLinkOptions</code> config parameter with the <code translate="no" dir="ltr">PathLength</code> property, allowing you to control how the link should be generated. Short link generation requires a network request to the Firebase backend, so the <code translate="no" dir="ltr">GetShortLinkAsync</code> method is executed asynchronously. <code translate="no" dir="ltr">GetShortLinkAsync</code> returns a <code translate="no" dir="ltr">Task&lt;Firebase.DynamicLinks.ShortDynamicLink&gt;</code>.</p> <p>For example:</p> 
+<pre>var options = new Firebase.DynamicLinks.DynamicLinkOptions {
+  PathLength = DynamicLinkPathLength.Unguessable
+};
+
+Firebase.DynamicLinks.DynamicLinks.GetShortLinkAsync(components, options).ContinueWith(task =&gt; {
+  if (task.IsCanceled) {
+    Debug.LogError("GetShortLinkAsync was canceled.");
+    return;
+  }
+  if (task.IsFaulted) {
+    Debug.LogError("GetShortLinkAsync encountered an error: " + task.Exception);
+    return;
+  }
+
+  // Short Link has been created.
+  Firebase.DynamicLinks.ShortDynamicLink link = task.Result;
+  Debug.LogFormat("Generated short link {0}", link.Url);
+
+  var warnings = new System.Collections.Generic.List&lt;string&gt;(link.Warnings);
+  if (warnings.Count &gt; 0) {
+    // Debug logging for warnings generating the short link.
+  }
+});</pre> <p>The example above uses a lambda expression that is triggered when the task is completed.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/dynamic-links/unity/create" class="_attribution-link">https://firebase.google.com/docs/dynamic-links/unity/create</a>
+  </p>
+</div>

@@ -1,0 +1,145 @@
+<h1>Perform vector similarity search with Vertex AI</h1> <p>Welcome to Firebase SQL Connect's vector similarity search — Firebase's implementation of semantic search that integrates with <a href="https://cloud.google.com/vertex-ai/docs/vector-search/overview">Google Vertex AI</a>.</p> <p>At the core of this feature are vector embeddings, which are arrays of floating point numbers representing the semantic meaning of text or media. By running a nearest neighbor search using an input vector embedding, you can find all semantically similar content. SQL Connect uses PostgreSQL's <code translate="no" dir="ltr">pgvector</code> extension for this capability.</p> <p>This powerful semantic search can drive use cases like recommendation engines and search engines. It's also a key component in <a href="https://developers.google.com/machine-learning/glossary#retrieval-augmented-generation-rag">retrieval-augmented generation</a> in generative AI flows. The Vertex AI documentation is a great place to <a href="https://cloud.google.com/vertex-ai/docs/vector-search/overview">learn more</a>.</p> <p>You can rely on SQL Connect's built-in support for generating vector embeddings automatically using <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings">Vertex AI's Embeddings API</a>, or use that API to generate them manually.</p> <h2 id="prerequisites">Prerequisites</h2> <ul> <li>
+<p><a href="quickstart">Set up SQL Connect</a> for your project.</p> <aside class="note"><strong>Note:</strong><span> As you work through the setup flow, be aware that SQL Connect's Vertex AI integration is supported only for certain Cloud SQL for PostgreSQL locations. See the <a href="manage-services-and-databases#vertex-ai-limitations">location list</a>.</span></aside>
+</li> <li>
+<p>Enable <a href="https://cloud.google.com/vertex-ai/docs/start/cloud-environment#enable_vertexai_apis" class="external">Vertex AI APIs</a>.</p> <aside class="note"><strong>Note:</strong><span> You don't need to create a separate Google Cloud project or install the Google Cloud CLI.</span></aside>
+</li> </ul> <h2 id="setup">Setup</h2> <p>You can choose between a local development flow (if you're a web, Kotlin Android, or iOS developer) or an IDX flow (for web developers). You can use a local database or your production SQL Connect project and its Cloud SQL for PostgreSQL instance for development.</p> <aside class="note"><strong>Note:</strong><span> Whether you work locally or with your production project, you are using Vertex AI, and you will incur <a href="https://cloud.google.com/vertex-ai/pricing#vectorsearch" class="external">Vertex AI usage costs</a>.</span></aside> <p>These instructions assume you have created your SQL Connect project <a href="quickstart">following the quickstart guide</a>.</p> <h3 id="integrate-local">Integrate with local PostgreSQL</h3> <ol> <li><p>Set up a local PostgreSQL instance.</p></li> <li><p><a href="https://cloud.google.com/iam/docs/grant-role-console" class="external">Grant</a> yourself the <a href="https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user" class="external"><em>Vertex AI User</em> IAM role</a>.</p></li> <li><p>In your environment, set up <a href="https://cloud.google.com/docs/authentication/provide-credentials-adc" class="external">Google Cloud Application Default Credentials</a>.</p></li> <li><p>In your local PostgreSQL instance, install the <a href="https://github.com/pgvector/pgvector" class="external"><code translate="no" dir="ltr">pgvector</code> extension</a>.</p></li> <li><p>Enable the extension using <code translate="no" dir="ltr">CREATE EXTENSION vector</code> per the <code translate="no" dir="ltr">pgvector</code> repository instructions.</p></li> </ol> <h3 id="integrate-idx">Integrate with IDX</h3> <ol> <li><p>Set up your IDX workspace using the SQL Connect template.</p></li> <li><p><a href="https://cloud.google.com/iam/docs/grant-role-console" class="external">Grant</a> yourself the <a href="https://cloud.google.com/vertex-ai/docs/general/access-control#aiplatform.user" class="external"><em>Vertex AI User</em> IAM role</a>.</p></li> <li><p>Enable the extension using <code translate="no" dir="ltr">CREATE EXTENSION vector</code> per the <code translate="no" dir="ltr">pgvector</code> repository instructions.</p></li> </ol> <h2 id="design-schema">Design your schema</h2> <p>To perform vector search, add a new field of <code translate="no" dir="ltr">Vector</code> type in your schema. For example, if you want to do a semantic search using movie descriptions, add a field to hold the vector embeddings associated with the movie description. In this schema, <code translate="no" dir="ltr">descriptionEmbedding</code> is added to store vector embeddings for the <code translate="no" dir="ltr">description</code> field.</p> 
+<pre>type Movie @table {
+ id: ID! @col(name: "movie_id") @default(id: ID! @col(name: "movie_id") @default(expr: "uuidV4()")
+ title: String!
+ description: String
+ descriptionEmbedding: Vector! @col(size:768)
+ // ...
+}
+</pre>
+<aside class="note"><strong>Note:</strong><span> Ensure that the vector embedding dimension is provided using the <code translate="no" dir="ltr">@col(size: X)</code> schema directive, since vector embedding search can only compare vectors of the same dimensions. The vector embeddings generated using Vertex AI are of size 768.</span></aside> <h2 id="store-retrieve-embeddings">Generate and retrieve embeddings</h2> <p>SQL Connect brings integrated support for vector embeddings with the <code translate="no" dir="ltr">_embed</code> server value. This directs SQL Connect to generate vector embeddings by internally calling Vertex AI's Embedding APIs. The <code translate="no" dir="ltr">_embed</code> server value can be used in both mutations and queries.</p> <aside class="note"><strong>Note:</strong><span> Vector embeddings generated from different model versions are generally considered to be incompatible. Thus, for all operations on a field (queries or mutations), it is the best practice to use vector embeddings generated using the same model. The list of supported Vertex AI models is available in <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/text-embeddings#model_versions" class="external">the documentation</a>.</span></aside> <h3 id="mutations">Mutations</h3> <h4 id="generate_and_store_an_embedding_through">Generate and store an embedding through SQL Connect</h4> <p>In your vector search app, you'll likely want to request that embeddings be generated as soon as you add records to your database. Here's a <code translate="no" dir="ltr">createMovie</code> mutation adds a movie record to the <code translate="no" dir="ltr">Movie</code> table and also passes a movie description with a specified embedding <code translate="no" dir="ltr">model</code>.</p> 
+<pre>mutation createMovie($title: String!, $description: String!) {
+  movie_insert(data: {
+    title: $title,
+    description: $description,
+    descriptionEmbedding_embed: {model: "text-embedding-005", text: $description}
+  })
+}
+</pre> <p>In some cases, you may want to update the movie description and embedding.</p> 
+<pre>mutation updateDescription($id: String!, $description: String!) {
+  movie_update(id: $id, data: {
+    description: $description,
+    descriptionEmbedding_embed: {model: "text-embedding-005", text: $description}
+  })
+}
+</pre> <p>To call the latter mutation from a client:</p> 
+<pre>import { updateMovieDescription } from 'lib/dataconnect-sdk/';
+
+await updateMovieDescription({ id: movieId, description: description});
+
+// Use the response
+</pre> <h3 id="queries">Queries</h3> <p>Fetch vector embeddings using a query like the following. Note that the <code translate="no" dir="ltr">descriptionEmbedding</code> returned by the query is an array of floats, which is typically not human-readable. Thus, SQL Connect generated SDKs don't support returning it directly.</p> <p>You can use returned vector embeddings to do similarity search, as described in the next section.</p> 
+<pre>query getMovieDescription($id: String!) @auth(level: PUBLIC) {
+ movie(id: $id)
+   id
+   description
+   descriptionEmbedding
+}
+</pre> <h2 id="performing-similarity">Perform similarity search</h2> <p>Now we can perform similarity search.</p> <p>For each <code translate="no" dir="ltr">Vector</code> field, SQL Connect generates a GraphQL function that implements the similarity search. The name of this generated function is <code translate="no" dir="ltr">${pluralType}_${vectorFieldName}_similarity</code>. It supports a few parameters as shown in the following examples and in the <a href="#parameters-similarity">reference list</a>.</p> <p>You can define a GraphQL function that invokes the similarity search. As mentioned above, the <code translate="no" dir="ltr">_embed</code> server value directs SQL Connect to generate the vector embeddings using Vertex AI's Embedding APIs, in this case to create embeddings for the search string used for comparison with movie description embeddings.</p> <p>In this example, the similarity search will return up to 5 movies whose description is semantically closest to the input query. The result set is sorted in the ascending order of the distance - closest to furthest.</p> 
+<pre>query searchMovieDescriptionUsingL2Similarity ($query: String!) @auth(level: PUBLIC) {
+    movies_descriptionEmbedding_similarity(
+      compare_embed: {model: "text-embedding-005", text: $query},
+      where: {content: {ne: "No info available for this movie."}}, limit: 5)
+      {
+        id
+        title
+        description
+      }
+  }
+</pre> <h3 id="tune_the_similarity_query" class="hide-from-toc">Tune the similarity query</h3> <p>Default values for search parameters like <code translate="no" dir="ltr">method</code> and <code translate="no" dir="ltr">within</code> perform well for most use cases. However, if you notice that your query returns results that are too dissimilar, or is missing results that you want included, try tuning these parameters.</p> <p>To find an appropriate value for <code translate="no" dir="ltr">within</code>, we can add <code translate="no" dir="ltr">_metadata.distance</code> to the selected fields to see how far from the query vector each result is. Based on the returned <code translate="no" dir="ltr">distance</code> values, we can set the <code translate="no" dir="ltr">within</code> parameter; only results with distance less than the value of <code translate="no" dir="ltr">within</code> will be included:</p> 
+<pre>query searchMovieDescriptionUsingL2Similarity ($query: String!) @auth(level: PUBLIC) {
+    movies_descriptionEmbedding_similarity(
+      compare_embed: {model: "text-embedding-005", text: $query},
+      within: 2,
+      where: {content: {ne: "No info available for this movie."}}, limit: 5)
+      {
+        id
+        title
+        description
+        _metadata {
+          distance
+        }
+      }
+  }
+</pre> <p>You can also experiment with different distance functions by setting the <code translate="no" dir="ltr">method</code> parameter.</p> 
+<pre>query searchMovieDescriptionUsingL2Similarity ($query: String!) @auth(level: PUBLIC) {
+    movies_descriptionEmbedding_similarity(
+      compare_embed: {model: "text-embedding-005", text: $query},
+      within: .5,
+      method: COSINE,
+      where: {content: {ne: "No info available for this movie."}}, limit: 5)
+      {
+        id
+        title
+        description
+        _metadata {
+          distance
+        }
+      }
+  }
+</pre> <p>Note that different methods return very different values for distance: if you've set <code translate="no" dir="ltr">within</code>, you will need to tune that value again after changing <code translate="no" dir="ltr">method</code>.</p> <h3 id="call_the_similarity_query" class="hide-from-toc">Call the similarity query</h3> <p>To call a similarity search from client code:</p> 
+<pre>import { searchMovieDescriptionUsingL2similarity} from 'lib/dataconnect-sdk';
+
+const response = await searchMovieDescriptionUsingL2similarity({ query });
+
+// Use the response
+</pre> <h2 id="use-custom">Use custom embeddings</h2> <p>SQL Connect also lets you work with embeddings directly as <code translate="no" dir="ltr">Vector</code>s rather than using the <code translate="no" dir="ltr">_embed</code> server value to generate them.</p> <h3 id="generate-and">Store a custom embedding</h3> <p>Using the Vertex Embeddings API, specify a matching model and request embedding results of the correct dimension.</p> <p>Then, cast the returned array of floats to a <code translate="no" dir="ltr">Vector</code> to pass to the update operation for storage.</p> 
+<pre>mutation updateDescription($id: String!, $description: String!, $descriptionEmbedding: Vector!) {
+  movie_update(id: $id, data: {
+    // title, genre...
+    description: $description,
+    descriptionEmbedding: $descriptionEmbedding
+  })
+}
+</pre> <h3 id="perform-similarity-custom">Perform similarity search using custom embeddings</h3> <p>Carry out the same operation to retrieve embeddings for search terms and cast them to <code translate="no" dir="ltr">Vectors</code>.</p> <p>Then, call the <code translate="no" dir="ltr">_similarity</code> query to perform each search.</p> 
+<pre>query searchMovieDescriptionUsingL2Similarity($compare: Vector!, $within: Float, $excludesContent: String, $limit: Int) @auth(level: PUBLIC) {
+    movies_descriptionEmbedding_similarity(
+      compare: $compare,
+      method: L2,
+      within: $within,
+      where: {content: {ne: $excludesContent}}, limit: $limit)
+      {
+        id
+        title
+        description
+      }
+  }
+</pre> <h2 id="deploy-production">Deploy to production</h2> <h3 id="deploy-schema">Deploy your schema and connector</h3> <p>The last step in a typical SQL Connect iteration is to deploy your assets to production.</p> <p>When deploying your schema containing <code translate="no" dir="ltr">Vector</code> types to Cloud SQL using the <code translate="no" dir="ltr">firebase deploy</code> command, the Firebase CLI takes the necessary steps to enable Vertex AI-based embedding generation on your Cloud SQL instance.</p> 
+<pre>firebase deploy --only dataconnect</pre> <p>if you want to enable embedding support in your Cloud SQL instance manually, or encounter a CLI error, follow <a href="https://cloud.google.com/sql/docs/postgres/integrate-cloud-sql-with-vertex-ai" class="external">these instructions</a>.</p> <h2 id="syntaxes-vectors">Vector search syntax</h2> <h3 id="schema-extensions">Schema extensions</h3> <p>SQL Connect's <code translate="no" dir="ltr">Vector</code> data type maps to PostgreSQL's <code translate="no" dir="ltr">vector</code> type as defined by the <a href="https://github.com/pgvector/pgvector"><code translate="no" dir="ltr">pgvector</code> extension</a>. pgvector's <code translate="no" dir="ltr">vector</code> type is stored as an array of single precision floating point numbers in PostgreSQL.</p> <p>In SQL Connect, the <code translate="no" dir="ltr">Vector</code> type is represented as an array of JSON numbers. Inputs are coerced into an array of <code translate="no" dir="ltr">float32</code> values. If coercion fails, an error is raised.</p> <aside class="note"><strong>Note:</strong><span> JavaScript numerics are compatible with float coercion.</span></aside> <p>Use the size parameter of the <code translate="no" dir="ltr">@col</code> directive to set the dimensions of the vector.</p> 
+<pre>type Question @table {
+    text: String!
+    category: String!
+    textEmbedding: Vector! @col(size: 768)
+}
+</pre> <p><code translate="no" dir="ltr">size</code> is only supported for <code translate="no" dir="ltr">Vector</code> types. <code translate="no" dir="ltr">Vector</code> operations, such as similarity-search, necessitate that all the <code translate="no" dir="ltr">Vector</code>s have the same number of dimensions.</p> 
+<pre>directive @col(
+  # … existing args
+  """
+  Defines a fixed column size for certain scalar types.
+
+  - For Vector, size is required.
+  - For all other types, size is currently unsupported and hence supplying it will result in a schema error.
+  """
+  size: Int
+) on FIELD_DEFINITION
+</pre> <h3 id="server-value">
+<code translate="no" dir="ltr">_embed</code> server value for queries and mutations</h3> 
+<pre>_embed
+</pre> <p>This server value directs the SQL Connect service to generate and store embeddings using <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings" class="external">Vertex AI's Embedding APIs</a>. This server value can be used on both queries and mutations.</p> <h3 id="parameters-similarity">Parameters For similarity search</h3> 
+<pre>method: COSINE|INNER_PRODUCT|L2
+</pre> <p>The distance function used to search for nearby neighbors. Currently-supported algorithms are a subset of <a href="https://github.com/pgvector/pgvector" class="external">pgvector search algorithms</a>.</p> 
+<pre>within: float
+</pre> <p>A constraint on the distance within which the nearest neighbor search is performed.</p> 
+<pre>where: FDC filter condition
+</pre> <p>See the <a href="schemas-queries-mutations">schemas, queries and mutations guide</a>.</p> 
+<pre>limit: int
+</pre> <p>The number of results to return.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/sql-connect/solutions-vector-similarity-search" class="_attribution-link">https://firebase.google.com/docs/sql-connect/solutions-vector-similarity-search</a>
+  </p>
+</div>

@@ -1,0 +1,416 @@
+<h1>Migrate from Imagen to a Gemini Nano Banana model</h1> <aside class="warning"> <strong>All <span class='\"notranslate\"'>Imagen</span> models shut down on August 17, 2026.</strong> As a replacement, you can follow this guide to migrate your apps to use Gemini Nano Banana models. </aside> <p><br></p> <p>All <span class='\"notranslate\"'>Imagen</span> models are deprecated and will <strong>shut down as early as August 17, 2026</strong>. This deprecation and shutdown is applicable across Google and for both the <span class='\"notranslate\"'>Gemini Developer API</span> and <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>.</p> <p>Before this shutdown date, to avoid service disruption, you should migrate your apps from using <span class='\"notranslate\"'>Imagen</span> models to using <a href="generate-images-gemini">Gemini Nano Banana models</a>, as described in this guide.</p> <p>If you have an urgent issue involving this deprecation and shutdown, <a href="https://firebase.google.com/support/troubleshooter/contact">reach out to Firebase Support</a>.</p> <h2 id="replacement-gemini-models">Replacement Nano Banana models</h2> <p>The following table can help you choose a replacement Nano Banana model for your app.</p> <table> <thead> <tr> <th>
+<span class='\"notranslate\"'>Imagen</span> model</th> <th>Gemini Nano Banana models</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">imagen-4.0-fast-generate-001</code></td> <td> <code translate="no" dir="ltr">gemini-nano-banana-2.1</code> (with thinking level <code translate="no" dir="ltr">MINIMAL</code>) </td> </tr> <tr> <td><code translate="no" dir="ltr">imagen-4.0-generate-001</code></td> <td> <code translate="no" dir="ltr">gemini-nano-banana-2.1</code> (with thinking level <code translate="no" dir="ltr">HIGH</code>) </td> </tr> <tr> <td><code translate="no" dir="ltr">imagen-4.0-ultra-generate-001</code></td> <td> <code translate="no" dir="ltr">gemini-3-pro-image</code> </td> </tr> <tr> <td><code translate="no" dir="ltr">imagen-3.0-capability-001</code></td> <td> <code translate="no" dir="ltr">gemini-nano-banana-2.1</code> </td> </tr> </tbody> </table> <h2 id="migrate-app">Migrate your app</h2> <p>This section shows before and after examples for migrating from an <span class='\"notranslate\"'>Imagen</span> model to a Gemini Nano Banana model.</p> <h3 id="migrate-app-text-to-image">Generate an image from text</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>To generate an image from text, migrate your app by making the following changes:</p> <ul> <li><p>Use an appropriate <a href="#replacement-gemini-models">replacement Nano Banana model</a> (such as <code translate="no" dir="ltr">gemini-nano-banana-2.1</code>).</p></li> <li><p>Create a <code translate="no" dir="ltr">GenerativeModel</code> instance (instead of an <code translate="no" dir="ltr">ImagenModel</code> instance).</p></li> <li>
+<p>Update the <a href="#replacement-config">model configuration options</a> to accommodate Nano Banana models.</p> <ul> <li>As part of this configuration, set a response modality of <code translate="no" dir="ltr">IMAGE</code>.<br> Note that Nano Banana models can be configured to return both images <em>and</em> text.</li> </ul>
+</li> </ul> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p><strong>Before</strong></p> 
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create an `ImagenModel` instance with a model that supports your use case.
+let model = ai.imagenModel(modelName: "IMAGEN_MODEL_NAME")
+
+// Provide an image generation prompt.
+let prompt = "An astronaut riding a horse"
+
+// To generate an image, call `generateImages` with the text prompt.
+let response = try await model.generateImages(prompt: prompt)
+
+// Handle the generated image.
+guard let image = response.images.first else {
+  fatalError("No image in the response.")
+}
+let uiImage = UIImage(data: image.data)
+
+</pre> <p><strong>After</strong></p> 
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+let model = ai.generativeModel(
+  modelName: "GEMINI_NANOBANANA_MODEL_NAME",
+  generationConfig: GenerationConfig(
+    responseModalities: [.image],
+    imageConfig: ImageConfig(aspectRatio: .landscape4x3)
+  )
+)
+
+// Provide an image generation prompt.
+let prompt = "An astronaut riding a horse"
+
+// To generate an image, call `generateContent` with the text prompt.
+let response = try await model.generateContent(prompt)
+
+// Handle the case where no images were generated.
+guard let inlineDataPart = response.inlineDataParts.first else {
+  fatalError("No image in the response.")
+}
+
+// Process the image.
+guard let uiImage = UIImage(data: inlineDataPart.data) else {
+  fatalError("Failed to convert data to UIImage.")
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><strong>Before</strong></p> 
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+val ai = Firebase.ai(backend = GenerativeBackend.googleAI())
+
+// Create an `ImagenModel` instance with an Imagen model that supports your use case.
+val model = ai.imagenModel("IMAGEN_MODEL_NAME")
+
+// Provide an image generation prompt.
+val prompt = "An astronaut riding a horse"
+
+// To generate an image, call `generateImages` with the text prompt.
+val imageResponse = model.generateImages(prompt)
+
+// Handle the generated image.
+val image = imageResponse.images.first()
+
+val bitmapImage = image.asBitmap()
+
+</pre> <p><strong>After</strong></p> 
+<pre data-language="kotlin">
+// Initialize the Gemini Developer API backend service.
+val ai = Firebase.ai(backend = GenerativeBackend.googleAI())
+
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+val model = ai.generativeModel(
+    modelName = "GEMINI_NANOBANANA_MODEL_NAME",
+    generationConfig = generationConfig {
+      responseModalities = listOf(ResponseModality.IMAGE),
+      imageConfig = imageConfig {
+        aspectRatio = AspectRatio.LANDSCAPE_4x3
+      }
+    }
+)
+
+// Provide an image generation prompt.
+val prompt = "An astronaut riding a horse"
+
+// To generate an image, call `generateContent` with the text prompt.
+val imageResponse = model.generateContent(prompt)
+
+if (imageResponse.finishReason == FinishReason.NO_IMAGE) {
+  // Handle the case where no images were generated.
+} else {
+  // Handle the generated image.
+  val bitmapImage = imageResponse.candidates.first().content.parts.filterIsInstance().firstOrNull()?.image
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p><strong>Before</strong></p> 
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create an `ImagenModel` instance with an Imagen model that supports your use case.
+ImagenModel imagenModel = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+        .imagenModel(
+                /* modelName */ "IMAGEN_MODEL_NAME");
+
+ImagenModelFutures model = ImagenModelFutures.from(imagenModel);
+
+// Provide an image generation prompt.
+String prompt = "An astronaut riding a horse";
+
+// To generate an image, call `generateImages` with the text prompt.
+Futures.addCallback(model.generateImages(prompt), new FutureCallback&lt;ImagenGenerationResponse&gt;() {
+    @Override
+    public void onSuccess(ImagenGenerationResponse result) {
+        if (result.getImages().isEmpty()) {
+            Log.d("TAG", "No images generated");
+        }
+        Bitmap bitmap = result.getImages().get(0).asBitmap();
+        // Use the bitmap to display the image in your UI.
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        // ...
+    }
+}, Executors.newSingleThreadExecutor());
+
+</pre> <p><strong>After</strong></p> 
+<pre data-language="java">
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI()).generativeModel(
+    "GEMINI_NANOBANANA_MODEL_NAME",
+    new GenerationConfig.Builder()
+        .setResponseModalities(Arrays.asList(ResponseModality.IMAGE))
+        .setImageConfig(new ImageConfig(AspectRatio.LANDSCAPE_4x3, null))
+        .build()
+);
+
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+// Provide a text prompt instructing the model to generate an image.
+Content prompt = new Content.Builder()
+        .addText("An astronaut riding a horse")
+        .build();
+
+// To generate an image, call `generateContent` with the text input.
+Executor executor = Executors.newSingleThreadExecutor();
+ListenableFuture response = model.generateContent(prompt);
+Futures.addCallback(response, new FutureCallback() {
+    @Override
+    public void onSuccess(GenerateContentResponse result) {
+        if (result.finishReason == FinishReason.NO_IMAGE) {
+            // handle the case where no images were generated
+            return;
+        }
+        // iterate over all the parts in the first candidate in the result object.
+        for (Part part : result.getCandidates().get(0).getContent().getParts()) {
+            if (part instanceof ImagePart) {
+                ImagePart imagePart = (ImagePart) part;
+                // The returned image as a bitmap
+                Bitmap generatedImageAsBitmap = imagePart.getImage();
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p><strong>Before</strong></p> 
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, getImagenModel, GoogleAIBackend } from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create an `ImagenModel` instance with an Imagen model that supports your use case.
+const model = getImagenModel(ai, { model: "IMAGEN_MODEL_NAME" });
+
+// Provide an image generation prompt.
+const prompt = "An astronaut riding a horse.";
+
+// To generate an image, call `generateImages` with the text prompt.
+const response = await model.generateImages(prompt)
+
+// If fewer images were generated than were requested,
+// then `filteredReason` will describe the reason they were filtered out.
+if (response.filteredReason) {
+  console.log(response.filteredReason);
+}
+
+if (response.images.length == 0) {
+  throw new Error("No images in the response.")
+}
+
+const image = response.images[0];
+
+</pre> <p><strong>After</strong></p> 
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import {
+  getAI,
+  getGenerativeModel,
+  GoogleAIBackend,
+  ResponseModality,
+  ImageConfigAspectRatio,
+  FinishReason
+} from "firebase/ai";
+
+// TODO(developer): Replace the following with your app's Firebase configuration
+const firebaseConfig = {
+  // ...
+};
+
+// Initialize FirebaseApp
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Create a `GenerativeModel` instance with a model that supports your use case.
+const model = getGenerativeModel(ai, {
+  model: "GEMINI_NANOBANANA_MODEL_NAME",
+  generationConfig: {
+    responseModalities: [ResponseModality.IMAGE],
+    imageConfig: {
+      aspectRatio: ImageConfigAspectRatio.LANDSCAPE_4x3
+    }
+  },
+});
+
+// Provide an image generation prompt.
+const prompt = "An astronaut riding a horse.";
+
+// To generate an image, call `generateContent` with the text prompt.
+const result = await model.generateContent(prompt);
+
+// Handle the generated image.
+try {
+  const response = result.response;
+  if (response.candidates?.[0].finishReason == FinishReason.NO_IMAGE) {
+    // Handle the case where no images were generated.
+  }
+  const inlineDataParts = response.inlineDataParts();
+  if (inlineDataParts?.[0]) {
+    const image = inlineDataParts[0].inlineData;
+    // Use this mimeType and base64 data to display the image using your preferred tooling.
+    console.log(image.mimeType, image.data);
+  }
+} catch (err) {
+  console.error('Prompt or candidate was blocked:', err);
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p><strong>Before</strong></p> 
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+final ai = FirebaseAI.googleAI();
+
+// Create an `ImagenModel` instance with an Imagen model that supports your use case.
+final model = ai.imagenModel(model: 'IMAGEN_MODEL_NAME');
+
+// Provide an image generation prompt.
+const prompt = 'An astronaut riding a horse.';
+
+// To generate an image, call `generateImages` with the text prompt.
+final response = await model.generateImages(prompt);
+
+if (response.images.isNotEmpty) {
+  final image = response.images[0];
+  // Process the image.
+} else {
+  // Handle the case where no images were generated.
+  print('Error: No images were generated.');
+}
+
+</pre> <p><strong>After</strong></p> 
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+// Initialize FirebaseApp
+await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
+
+// Initialize the Gemini Developer API backend service.
+final ai = FirebaseAI.googleAI();
+
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+final model = ai.generativeModel(
+  model: 'GEMINI_NANOBANANA_MODEL_NAME',
+  generationConfig: GenerationConfig(
+    responseModalities: [ResponseModalities.image],
+    imageConfig: ImageConfig(aspectRatio: ImageAspectRatio.landscape4x3)
+  ),
+);
+
+// Provide a text prompt instructing the model to generate an image.
+final prompt = [Content.text('An astronaut riding a horse.')];
+
+// To generate an image, call `generateContent` with the text prompt.
+final response = await model.generateContent(prompt);
+if (response.inlineDataParts.isNotEmpty) {
+  final imageBytes = response.inlineDataParts.first.bytes;
+  // Process the image.
+} else {
+  // Handle the case where no images were generated.
+  print('Error: No images were generated.');
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p><strong>Before</strong></p> 
+<pre data-language="csharp">
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create an `ImagenModel` instance with a model that supports your use case
+var model = ai.GetImagenModel(modelName: "IMAGEN_MODEL_NAME");
+
+// Provide an image generation prompt
+var prompt = "An astronaut riding a horse";
+
+// To generate an image, call `generateImages` with the text prompt
+var response = await model.GenerateImagesAsync(prompt: prompt);
+
+// Handle the generated image
+if (response.Images.Count == 0) {
+  throw new Exception("No image in the response.");
+}
+var image = response.Images[0].AsTexture2D();
+
+</pre> <p><strong>After</strong></p> 
+<pre data-language="csharp">
+using Firebase;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a Gemini model that supports image output.
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_NANOBANANA_MODEL_NAME",
+  generationConfig: new GenerationConfig(
+    responseModalities: new[] { ResponseModality.Image },
+    imageConfig: new ImageConfig(aspectRatio: ImageConfig.AspectRatio.Landscape4x3)
+  )
+);
+
+// Provide an image generation prompt.
+var prompt = "An astronaut riding a horse";
+
+// To generate an image, call `GenerateContentAsync` with the text prompt.
+var response = await model.GenerateContentAsync(prompt);
+
+if (response.Candidates.First().FinishReason == FinishReason.NoImage) {
+  // Handle the case where no images were generated.
+}
+
+// Handle the generated image.
+var imageParts = response.Candidates.First().Content.Parts
+                         .OfType&lt;ModelContent.InlineDataPart&gt;()
+                         .Where(part =&gt; part.MimeType == "image/png");
+
+foreach (var imagePart in imageParts) {
+  // Load the Image into a Unity Texture2D object.
+  UnityEngine.Texture2D texture2D = new(2, 2);
+  if (texture2D.LoadImage(imagePart.Data.ToArray())) {
+    // Do something with the image.
+  }
+}
+
+</pre></section> </div> <h2 id="replacement-config">Replacement configuration options</h2> <p>This section describes replacement options for various model configuration options to help control the response of the model.</p> <h3 id="replacement-safety-settings">Safety settings</h3> <p>You configure the safety settings for <span class='\"notranslate\"'>Imagen</span> models using <code translate="no" dir="ltr">ImagenSafetySettings</code>. However, for Nano Banana models, you need to migrate to using <a href="safety-settings#gemini"><code translate="no" dir="ltr">SafetySetting</code></a>.</p> <h3 id="replacement-model-parameters">Model configuration parameters</h3> <p>You configure <span class='\"notranslate\"'>Imagen</span> models with an <code translate="no" dir="ltr">ImagenGenerationConfig</code>. However, for Nano Banana models, you need to migrate to using a <code translate="no" dir="ltr">GenerationConfig</code> and optionally a nested <a href="generate-images-gemini#configure-image-generation"><code translate="no" dir="ltr">ImageConfig</code></a> (this is available starting with the early May 2026 versions of the SDKs).</p> <p>As part of the <code translate="no" dir="ltr">GenerationConfig</code>, set a response modality of <code translate="no" dir="ltr">IMAGE</code> (as shown in the "after" code samples earlier in this guide). Note that you can optionally configure Nano Banana models to return both <code translate="no" dir="ltr">IMAGE</code> <em>and</em> <code translate="no" dir="ltr">TEXT</code>.</p> <p>The following table can help you understand how to migrate your model configuration parameters from <span class='\"notranslate\"'>Imagen</span> to Nano Banana models:</p> <table> <thead> <tr> <th width="25%">
+<span class='\"notranslate\"'>Imagen</span> models</th> <th>Gemini Nano Banana models</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">addWatermark</code></td> <td> <p>Not supported</p> <p> Nano Banana models always return generated images with a SynthID watermark. </p> </td> </tr> <tr> <td><code translate="no" dir="ltr">aspectRatio</code></td> <td> <p>Use <code translate="no" dir="ltr">aspectRatio</code> in an <code translate="no" dir="ltr">ImageConfig</code></p> <p> For code samples and supported values, see <a href="generate-images-gemini#configure-image-generation">Configure image generation</a> in the Nano Banana models guide. </p> </td> </tr> <tr> <td><code translate="no" dir="ltr">imageFormat</code></td> <td> <p>Not supported</p> <p> Nano Banana models always return generated images in PNG format. </p> </td> </tr> <tr> <td><code translate="no" dir="ltr">negativePrompt</code></td> <td> <p>Not supported</p> <p> Note that negative prompts are a legacy feature, and they haven't been supported since <nobr><code translate="no" dir="ltr">imagen-3.0-generate-002</code></nobr> (or by any of the <span class='\"notranslate\"'>Imagen 4</span> models). </p> </td> </tr> <tr> <td><code translate="no" dir="ltr">numberOfImages</code></td> <td> <p>Not supported</p> <p> Nano Banana models always return a single generated image. <br> As a workaround, you can run your generation in a loop to achieve the same result. Note that candidate count doesn't work as a replacement. </p> </td> </tr> <tr> <td><code translate="no" dir="ltr">personGeneration</code></td> <td> <p>Not supported</p> <p> By default, Nano Banana models allow generating images of people. </p> </td> </tr> </tbody> </table><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/generate-images-imagen" class="_attribution-link">https://firebase.google.com/docs/ai-logic/generate-images-imagen</a>
+  </p>
+</div>

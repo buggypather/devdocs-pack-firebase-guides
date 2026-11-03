@@ -1,0 +1,42 @@
+<h1>Method: projects.databases.documents.batchWrite</h1> <meta itemprop="name" content="batchWrite"> <meta itemprop="path" content="/docs/firestore/reference/rest/v1beta1/projects.databases.documents/batchWrite"> <section id="/docs/firestore/reference/rest/v1beta1/projects.databases.documents/batchWrite">  <section id="description"> <p>Applies a batch of write operations.</p>
+<p>The documents.batchWrite method does not apply the write operations atomically and can apply them out of order. Method does not allow more than one write per document. Each write succeeds or fails independently. See the <code translate="no" dir="ltr"><a href="batchwrite#body.BatchWriteResponse">BatchWriteResponse</a></code> for the success status of each write.</p>
+<p>If you require an atomically applied set of writes, use <code translate="no" dir="ltr"><a href="commit#google.firestore.v1beta1.Firestore.Commit">documents.commit</a></code> instead.</p> </section> <section id="body"> <section id="body.HTTP_TEMPLATE"> <h3 id="http-request">HTTP request</h3> <p><label>Choose a location:</label> </p>
+ <div> <br> <code translate="no" dir="ltr">POST https://firestore.googleapis.com/v1beta1/{database=projects/*/databases/*}/documents:batchWrite</code> </div>
+<p>The URLs use <a href="https://google.aip.dev/127">gRPC Transcoding</a> syntax.</p> </section> <section id="body.PATH_PARAMETERS"> <h3 id="path-parameters">Path parameters</h3> <table class="properties responsive fixed" id="body.PATH_PARAMETERS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Parameters</th> </tr> </thead> <tbody> <tr id="body.PATH_PARAMETERS.database"> <td><code translate="no" dir="ltr">database</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">string</code></p> <p>Required. The database name. In the format: <code translate="no" dir="ltr">projects/{projectId}/databases/{databaseId}</code>.</p> </td> </tr> </tbody> </table> </section> <section id="body.request_body"> <h3 id="request-body">Request body</h3> <p>The request body contains data with the following structure:</p> <section id="body.request_body.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "writes": [
+    {
+      object (Write)
+    }
+  ],
+  "labels": {
+    string: string,
+    ...
+  }
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="body.request_body.FIELDS"> <table class="properties responsive fixed" id="body.request_body.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="body.request_body.FIELDS.writes"> <td><code translate="no" dir="ltr">writes[]</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="../write">Write</a></code>)</code></p> <p>The writes to apply.</p>
+<p>Method does not apply writes atomically and does not guarantee ordering. Each write succeeds or fails independently. You cannot write to the same document more than once per request.</p> </td> </tr> <tr id="body.request_body.FIELDS.labels"> <td><code translate="no" dir="ltr">labels</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">map (key: string, value: string)</code></p> <p>Labels associated with this batch write.</p>
+<p>An object containing a list of <code translate="no" dir="ltr">"key": value</code> pairs. Example: <code translate="no" dir="ltr">{ "name": "wrench", "mass": "1.3kg", "count": "3" }</code>.</p> </td> </tr> </tbody> </table> </section> </section> <section id="body.response_body"> <h3 id="response-body">Response body</h3> <section id="body.BatchWriteResponse"> <section id="body.BatchWriteResponse.description"> <p>The response from <code translate="no" dir="ltr"><a href="batchwrite#google.firestore.v1beta1.Firestore.BatchWrite">Firestore.BatchWrite</a></code>.</p> <p>If successful, the response body contains data with the following structure:</p> </section> <section id="body.BatchWriteResponse.SCHEMA_REPRESENTATION"> <table class="properties responsive fixed"> <thead> <tr> <th>JSON representation</th> </tr> </thead> <tbody> <tr> <td style="margin:0;padding:0;">
+
+<pre>{
+  "writeResults": [
+    {
+      object (WriteResult)
+    }
+  ],
+  "status": [
+    {
+      object (Status)
+    }
+  ]
+}</pre>
+</td> </tr> </tbody> </table> </section> <section id="body.BatchWriteResponse.FIELDS"> <table class="properties responsive fixed" id="body.BatchWriteResponse.FIELDS-table"> <colgroup> <col width="25%"> <col> </colgroup> <thead> <tr> <th colspan="2">Fields</th> </tr> </thead> <tbody> <tr id="body.BatchWriteResponse.FIELDS.write_results"> <td><code translate="no" dir="ltr">writeResults[]</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="../writeresult">WriteResult</a></code>)</code></p> <p>The result of applying the writes.</p>
+<p>This i-th write result corresponds to the i-th write in the request.</p> </td> </tr> <tr id="body.BatchWriteResponse.FIELDS.status"> <td><code translate="no" dir="ltr">status[]</code></td> <td> <p><code class="apitype" translate="no" dir="ltr">object (<code translate="no" dir="ltr"><a href="../../shared.types/operation#Status">Status</a></code>)</code></p> <p>The status of applying the writes.</p>
+<p>This i-th write status corresponds to the i-th write in the request.</p> </td> </tr> </tbody> </table> </section> </section> </section> <section id="body.aspect"> <h3 id="authorization-scopes">Authorization scopes</h3> <p>Requires one of the following OAuth scopes:</p> <ul> <li><code translate="no" dir="ltr">https://www.googleapis.com/auth/datastore</code></li> <li><code translate="no" dir="ltr">https://www.googleapis.com/auth/cloud-platform</code></li> </ul>
+<p>For more information, see the <a href="https://developers.google.com/identity/protocols/OAuth2">OAuth 2.0 Overview</a>.</p> </section> </section>  </section><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents/batchWrite" class="_attribution-link">https://firebase.google.com/docs/firestore/reference/rest/v1beta1/projects.databases.documents/batchWrite</a>
+  </p>
+</div>

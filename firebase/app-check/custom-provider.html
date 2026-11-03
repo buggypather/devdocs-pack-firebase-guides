@@ -1,0 +1,35 @@
+<h1>Implement a custom App Check provider</h1> <p>App Check has built-in support for several providers: DeviceCheck and App Attest on Apple platforms, Play Integrity on Android, and reCAPTCHA Enterprise in web apps (<a href="../app-check">overview</a>). These are well-understood providers that should meet the needs of most developers. You can, however, also implement your own custom App Check providers. Using a custom provider is necessary when:</p> <ul> <li><p>You want to use a provider other than the built-in ones.</p></li> <li><p>You want to use the built-in providers in unsupported ways.</p></li> <li><p>You want to verify devices using platforms other than Apple, Android, and the web. For example, you could create App Check providers for desktop OSes or Internet-of-Things devices.</p></li> <li><p>You want to implement your own verification techniques on any platform.</p></li> </ul> <h2 id="overview">Overview</h2> <p>To implement a custom App Check provider, you need a secure backend environment that can run the Node.js <a href="../admin/setup">Firebase Admin SDK</a>. This can be Cloud Functions, a container platform such as <a href="https://cloud.google.com/run">Cloud Run</a>, or your own server.</p> <p>From this environment, you will provide a network-accessible service that receives proof of authenticity from your app clients, and—if the proof of authenticity passes your authenticity assessment—returns an App Check token. The specific indicators you use as proof of authenticity will depend on either the third-party provider you're using, or the indicators of your own invention, if you're implementing custom logic.</p> <p>Usually, you expose this service as a REST or gRPC endpoint, but this detail is up to you.</p> <h2 id="create_the_token_acquisition_endpoint">Create the token acquisition endpoint</h2> <ol> <li><p><a href="../admin/setup">Install and initialize the Admin SDK</a>.</p></li> <li>
+<p>Create a network-accessible endpoint that can receive authenticity data from your clients. For example, using Cloud Functions:</p> 
+<pre>// Create endpoint at https://example-app.cloudfunctions.net/fetchAppCheckToken
+exports.fetchAppCheckToken = functions.https.onRequest((request, response) =&gt; {
+  // ...
+});
+</pre>
+</li> <li><p>Add to the endpoint logic that assesses the authenticity data. This is the core logic of your custom App Check provider, which you will need to write yourself.</p></li> <li>
+<p>If you determine the client to be authentic, use the Admin SDK to mint an App Check token and return it and its expiration time to the client:</p> 
+<pre>const admin = require('firebase-admin');
+admin.initializeApp();
+
+// ...
+
+admin.appCheck().createToken(appId)
+    .then(function (appCheckToken) {
+      // Token expires in an hour.
+      const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60;
+
+      // Return appCheckToken and expiresAt to the client.
+    })
+   .catch(function (err) {
+     console.error('Unable to create App Check token.');
+     console.error(err);
+   });
+</pre>
+<aside class="note"><strong>Note:</strong><span> If you encounter a token signing error while creating a new token, make sure your service account has the required permissions. See the <a href="../auth/admin/create-custom-tokens#troubleshooting">Admin SDK troubleshooting guide</a>.</span></aside> <p>If you can't verify the client's authenticity, return an error (for example, return an HTTP 403 error).</p>
+</li> <li>
+<p><strong>Optional</strong>: Set the time-to-live (TTL) for App Check tokens issued by your custom provider by passing an <code translate="no" dir="ltr">AppCheckTokenOptions</code> object to <code translate="no" dir="ltr">createToken()</code>. You can set the TTL to any value between 30 minutes and 7 days. When setting this value, be aware of the following tradeoffs:</p> <ul> <li>Security: Shorter TTLs provide stronger security, because it reduces the window in which a leaked or intercepted token can be abused by an attacker.</li> <li>Performance: Shorter TTLs mean your app will perform attestation more frequently. Because the app attestation process adds latency to network requests every time it's performed, a short TTL can impact the performance of your app.</li> </ul> <p>The default TTL of 1 hour is reasonable for most apps.</p>
+</li> </ol> <h2 id="next_steps">Next steps</h2> <p>Now that you've implemented your custom provider's server-side logic, learn how to use it from your <a href="ios/custom-provider">Apple</a>, <a href="android/custom-provider">Android</a>, and <a href="web/custom-provider">web</a> clients.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-check/custom-provider" class="_attribution-link">https://firebase.google.com/docs/app-check/custom-provider</a>
+  </p>
+</div>

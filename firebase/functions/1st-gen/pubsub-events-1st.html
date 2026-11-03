@@ -1,0 +1,34 @@
+<h1>Pub/Sub triggers (1st gen)</h1> <aside class="note"><strong>Note:</strong><span> The 1st-gen functionality described in this page is also supported in Cloud Functions (2nd gen) with improved features and performance. For more information about 2nd gen, see the <a href="../version-comparison">version comparison</a>. To go directly to the 2nd gen guide for this feature, see <a href="../pubsub-events">Pub/Sub triggers</a>.</span></aside> <p>Google Cloud's <a href="https://cloud.google.com/pubsub/docs/">Pub/Sub</a> is a globally distributed message bus that automatically scales as you need it. You can create a function that handles Pub/Sub events by using <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.pubsub"><code translate="no" dir="ltr">functions.pubsub</code></a>.</p> <h2 id="trigger-pub/sub">Trigger a pub/sub function</h2> <p>You can trigger a function whenever a new Pub/Sub message is sent to a specific topic. You must specify the Pub/Sub topic name that you want to trigger your function, and set the event within the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.pubsub.topicbuilder#pubsubtopicbuilderonpublish"><code translate="no" dir="ltr">onPublish()</code></a> event handler:</p> 
+
+<pre>exports.helloPubSub = functions.pubsub.topic('topic-name').onPublish((message) =&gt; {
+  // ...
+});</pre> <h2 id="access-pub/sub">Access the pub/sub message payload</h2> <p>The payload for the Pub/Sub message is accessible from the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.pubsub.message"><code translate="no" dir="ltr">Message</code></a> object returned to your function. For messages with JSON in the Pub/Sub message body, the Firebase SDK for Cloud Functions has a helper property to decode the message. For example, here is a message published with a simple JSON payload:</p> 
+<pre>gcloud pubsub topics publish topic-name --message '{"name":"Xenia"}'
+</pre> <p>You can access a JSON data payload like this via the <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.pubsub.message#pubsubmessagejson"><code translate="no" dir="ltr">json</code></a> property:</p> 
+<pre>  // Get the `name` attribute of the PubSub message JSON body.
+  let name = null;
+  try {
+    name = message.json.name;
+  } catch (e) {
+    functions.logger.error('PubSub message was not JSON', e);
+  }</pre> <p>Other, non-JSON payloads are contained in the Pub/Sub message as base64 encoded strings in the message object. To read a message like the following, you must decode the base64 encoded string as shown:</p> 
+<pre>gcloud pubsub topics publish topic-name --message 'MyMessage'
+</pre> 
+
+<pre>// Decode the PubSub Message body.
+const messageBody = message.data ? Buffer.from(message.data, 'base64').toString() : null;</pre> <h2 id="access-message">Access message attributes</h2> <p>Pub/Sub message can be sent with data attributes set in the publish command. For example, you could publish a message with a <code translate="no" dir="ltr">name</code> attribute:</p> 
+<pre>gcloud pubsub topics publish topic-name --attribute name=Xenia
+</pre> <p>You can read such attributes from <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.pubsub#pubsubmessageattributes"><code translate="no" dir="ltr">Message.attributes</code></a>:</p> 
+
+<pre>// Get the `name` attribute of the message.
+const name = message.attributes.name;</pre> <p>You might notice that some basic data such as the message ID or the message publish time are not available in <code translate="no" dir="ltr">Message.attributes</code>. To work around this, you can access these details in the triggering event's <a href="https://firebase.google.com/docs/reference/functions/firebase-functions.eventcontext"><code translate="no" dir="ltr">EventContext</code></a>. For example:</p> 
+<pre>exports.myFunction = functions.pubsub.topic('topic1').onPublish((message, context) =&gt; {
+    console.log('The function was triggered at ', context.timestamp);
+    console.log('The unique ID for the event is', context.eventId);
+});
+</pre><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/1st-gen/pubsub-events-1st" class="_attribution-link">https://firebase.google.com/docs/functions/1st-gen/pubsub-events-1st</a>
+  </p>
+</div>

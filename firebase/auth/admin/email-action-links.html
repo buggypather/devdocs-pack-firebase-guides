@@ -1,0 +1,228 @@
+<h1>Generating Email Action Links</h1> <p>Mobile apps sometimes need to interact with users and prompt them to take certain actions by sending emails.</p> <p>The Firebase <a href="../../libraries#client-sdks">Client SDKs</a> provide the ability to send users emails containing links they can use for password resets, email address verification, and email-based sign-in. These template-based emails are sent by Google and have limited customizability.</p> <p>If you want to instead use your own email templates and your own email delivery service, this page explains how to use the <a href="../../admin/setup">Firebase Admin SDK</a> to programmatically generate the action links for the above flows, which you can include in emails to your users.</p> <p>This comes with the following benefits:</p> <ul> <li>Customize email templates. This includes the ability to add new styles and custom branding, change wording and logos, address users by first name instead of full name, and so on.</li> <li>Apply different templates depending on context. For example, if the user is verifying their email to subscribe to a newsletter, the context may need to be provided in the email content. Another example is email link sign in: in one scenario this may be triggered by the same user, or as an invite by another user. The context would need to be included in the email.</li> <li>Localize customized email templates.</li> <li>Ability to generate the link from a secure server environment.</li> <li>Ability to customize how the link is to be opened, through a mobile app or a browser, and how to pass additional state information, etc.</li> <li>Ability to customize the mobile link domain used for mobile app flows when constructing the email action link.</li> </ul> <h2 id="initialize-actioncodesettings">Initialize ActionCodeSettings</h2> <p>Before you can generate an email action link, you may need to initialize an <code translate="no" dir="ltr">ActionCodeSettings</code> instance.</p> <p><code translate="no" dir="ltr">ActionCodeSettings</code> allow you to pass additional state via a continue URL which is accessible after the user clicks the email link. This also provides the user the ability to go back to the app after the action is completed. In addition, you can specify whether to handle the email action link directly from a mobile application when it is installed or from a browser.</p> <p>For links that are meant to be opened via a mobile app, you'll need to perform some tasks to detect these links from your mobile app. Refer to the instructions on how to <a href="../web/passing-state-in-email-actions#configuring-hosting-links">configure mobile links</a> for email actions.</p> <p>To initialize an <code translate="no" dir="ltr">ActionCodeSettings</code> instance, provide the following data:</p> <table> <tr> <th>Parameter</th> <th>Type</th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">url</code></td> <td>string</td> <td>
+<p>Sets the link (state/continue URL) which has different meanings in different contexts:</p> <ul> <li>When the link is handled in the web action widgets, this is the deep link in the <code translate="no" dir="ltr">continueUrl</code> query parameter.</li> <li>When the link is handled in the app directly, this is the <code translate="no" dir="ltr">continueUrl</code> query parameter in the deep link of the Hosting link.</li> </ul>
+</td> </tr> <tr> <td><code translate="no" dir="ltr">iOS</code></td> <td>({bundleId: string}|undefined)</td> <td>Sets the iOS bundle ID to help Firebase Authentication determine if it should create a web-only or mobile link which is opened on an Apple device</td> </tr> <tr> <td><code translate="no" dir="ltr">android</code></td> <td>({packageName: string, installApp:boolean|undefined, minimumVersion: string|undefined}|undefined)</td> <td>Sets the Android package name to help Firebase Authentication determine if it should create a web-only or mobile link which is opened on an Android device</td> </tr> <tr> <td><code translate="no" dir="ltr">handleCodeInApp</code></td> <td>(boolean|undefined)</td> <td>Whether the email action link will be opened in a mobile app or a web link first. The default is false. When set to true, the action code link will be be sent as a Universal Link or Android App Link and will be opened by the app if installed. In the false case, the code will be sent to the web widget first and then on continue will redirect to the app if installed.</td> </tr> <tr> <td><code translate="no" dir="ltr">linkDomain</code></td> <td>(string|undefined)</td> <td>When custom Hosting link domains are defined for a project, specify which one to use when the link is to be opened by a specified mobile app. Otherwise, the default domain is automatically selected (for example, <nobr><code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebaseapp.com</code></nobr>).</td> </tr> <tr> <td><code translate="no" dir="ltr">dynamicLinkDomain</code></td> <td>(string|undefined)</td> <td>Deprecated. Don't specify this parameter.</td> </tr> </table> <p>The following example illustrates how to send an email verification link that will open in a mobile app first. The deep link will contain the continue URL payload <code translate="no" dir="ltr">https://www.example.com/checkout?cartId=1234</code>. The custom Hosting link domain used is <code translate="no" dir="ltr">custom-domain.com</code>, which must be configured for use with Firebase Hosting.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const actionCodeSettings = {
+  // URL you want to redirect back to. The domain (www.example.com) for
+  // this URL must be whitelisted in the Firebase Console.
+  url: 'https://www.example.com/checkout?cartId=1234',
+  // This must be true for email link sign-in.
+  handleCodeInApp: true,
+  iOS: {
+    bundleId: 'com.example.ios',
+  },
+  android: {
+    packageName: 'com.example.android',
+    installApp: true,
+    minimumVersion: '12',
+  },
+  // The domain must be configured in Firebase Hosting and owned by the project.
+  linkDomain: 'custom-domain.com',
+};
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">ActionCodeSettings actionCodeSettings = ActionCodeSettings.builder()
+    .setUrl("https://www.example.com/checkout?cartId=1234")
+    .setHandleCodeInApp(true)
+    .setIosBundleId("com.example.ios")
+    .setAndroidPackageName("com.example.android")
+    .setAndroidInstallApp(true)
+    .setAndroidMinimumVersion("12")
+    .setDynamicLinkDomain("coolapp.page.link")
+    .build();
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">action_code_settings = auth.ActionCodeSettings(
+    url='https://www.example.com/checkout?cartId=1234',
+    handle_code_in_app=True,
+    ios_bundle_id='com.example.ios',
+    android_package_name='com.example.android',
+    android_install_app=True,
+    android_minimum_version='12',
+    dynamic_link_domain='coolapp.page.link',
+)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">actionCodeSettings := &amp;auth.ActionCodeSettings{
+	URL:                   "https://www.example.com/checkout?cartId=1234",
+	HandleCodeInApp:       true,
+	IOSBundleID:           "com.example.ios",
+	AndroidPackageName:    "com.example.android",
+	AndroidInstallApp:     true,
+	AndroidMinimumVersion: "12",
+	DynamicLinkDomain:     "coolapp.page.link",
+}
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">var actionCodeSettings = new ActionCodeSettings()
+{
+    Url = "https://www.example.com/checkout?cartId=1234",
+    HandleCodeInApp = true,
+    IosBundleId = "com.example.ios",
+    AndroidPackageName = "com.example.android",
+    AndroidInstallApp = true,
+    AndroidMinimumVersion = "12",
+    LinkDomain = "coolapp.page.link",
+};
+</pre></section> </div> <p>To learn more, see <a href="../web/passing-state-in-email-actions">Passing State in Email Actions</a>.</p> <h2 id="generate-password-reset">Generate password reset email link</h2> <p>To generate a password reset link, provide the existing user's email and an optional <code translate="no" dir="ltr">ActionCodeSettings</code> object. The operation will resolve with the email action link. The email used must belong to an existing user.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Admin SDK API to generate the password reset link.
+const userEmail = 'user@example.com';
+getAuth()
+  .generatePasswordResetLink(userEmail, actionCodeSettings)
+  .then((link) =&gt; {
+    // Construct password reset email template, embed the link and send
+    // using custom SMTP server.
+    return sendCustomPasswordResetEmail(userEmail, displayName, link);
+  })
+  .catch((error) =&gt; {
+    // Some error occurred.
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">String email = "user@example.com";
+try {
+  String link = FirebaseAuth.getInstance().generatePasswordResetLink(
+      email, actionCodeSettings);
+  // Construct email verification template, embed the link and send
+  // using custom SMTP server.
+  sendCustomEmail(email, displayName, link);
+} catch (FirebaseAuthException e) {
+  System.out.println("Error generating email link: " + e.getMessage());
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">email = 'user@example.com'
+link = auth.generate_password_reset_link(email, action_code_settings)
+# Construct password reset email from a template embedding the link, and send
+# using a custom SMTP server.
+send_custom_email(email, link)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">email := "user@example.com"
+link, err := client.PasswordResetLinkWithSettings(ctx, email, actionCodeSettings)
+if err != nil {
+	log.Fatalf("error generating email link: %v\n", err)
+}
+
+// Construct password reset template, embed the link and send
+// using custom SMTP server.
+sendCustomEmail(email, displayName, link)
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">var email = "user@example.com";
+var link = await FirebaseAuth.DefaultInstance.GeneratePasswordResetLinkAsync(
+    email, actionCodeSettings);
+// Construct email verification template, embed the link and send
+// using custom SMTP server.
+SendCustomEmail(email, displayName, link);
+</pre></section> </div> <p>After the link is generated, it can be inserted into the custom password reset email and then emailed to the corresponding user using a custom SMTP server.</p> <p>If you are not using the default password reset landing page and building your own custom handler, see <a href="../custom-email-handler">creating custom email action handlers</a>.</p> <h2 id="generate-email-verify">Generate email verification link</h2> <p>To generate an email verification link, provide the existing user’s unverified email and an optional <code translate="no" dir="ltr">ActionCodeSettings</code> object. The operation will resolve with the email action link. The email used must belong to an existing user.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Admin SDK API to generate the email verification link.
+const useremail = 'user@example.com';
+getAuth()
+  .generateEmailVerificationLink(useremail, actionCodeSettings)
+  .then((link) =&gt; {
+    // Construct email verification template, embed the link and send
+    // using custom SMTP server.
+    return sendCustomVerificationEmail(useremail, displayName, link);
+  })
+  .catch((error) =&gt; {
+    // Some error occurred.
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">String email = "user@example.com";
+try {
+  String link = FirebaseAuth.getInstance().generateEmailVerificationLink(
+      email, actionCodeSettings);
+  // Construct email verification template, embed the link and send
+  // using custom SMTP server.
+  sendCustomEmail(email, displayName, link);
+} catch (FirebaseAuthException e) {
+  System.out.println("Error generating email link: " + e.getMessage());
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">email = 'user@example.com'
+link = auth.generate_email_verification_link(email, action_code_settings)
+# Construct email from a template embedding the link, and send
+# using a custom SMTP server.
+send_custom_email(email, link)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">email := "user@example.com"
+link, err := client.EmailVerificationLinkWithSettings(ctx, email, actionCodeSettings)
+if err != nil {
+	log.Fatalf("error generating email link: %v\n", err)
+}
+
+// Construct email verification template, embed the link and send
+// using custom SMTP server.
+sendCustomEmail(email, displayName, link)
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">var email = "user@example.com";
+var link = await FirebaseAuth.DefaultInstance.GenerateEmailVerificationLinkAsync(
+    email, actionCodeSettings);
+// Construct email verification template, embed the link and send
+// using custom SMTP server.
+SendCustomEmail(email, displayName, link);
+</pre></section> </div> <p>After the link is generated, it can be inserted into the custom verification email and then emailed to the corresponding user using a custom SMTP server.</p> <p>If you are not using the default email verification landing page and building your own custom handler, see <a href="../custom-email-handler">creating custom email action handlers</a>.</p> <h2 id="generate-email-signin">Generate email link for sign-in</h2> <p>Before you can authenticate users with email link sign-in, you will need to <a href="../web/email-link-auth#enable_email_link_sign-in_for_your_firebase_project">enable email link sign-in</a> for your Firebase project.</p> <p>To generate a sign-in link, provide the user’s email and an <code translate="no" dir="ltr">ActionCodeSettings</code> object. The <code translate="no" dir="ltr">ActionCodeSettings</code> object is required in this case to provide information on where to return the user after the link is clicked for sign-in completion. The operation will resolve with the email action link.</p> <p>Unlike password reset and email verification, the email used does not necessarily need to belong to an existing user, as this operation can be used to sign up new users into your app via email link.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">// Admin SDK API to generate the sign in with email link.
+const useremail = 'user@example.com';
+getAuth()
+  .generateSignInWithEmailLink(useremail, actionCodeSettings)
+  .then((link) =&gt; {
+    // Construct sign-in with email link template, embed the link and
+    // send using custom SMTP server.
+    return sendSignInEmail(useremail, displayName, link);
+  })
+  .catch((error) =&gt; {
+    // Some error occurred.
+  });
+</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+
+<pre data-language="java">String email = "user@example.com";
+try {
+  String link = FirebaseAuth.getInstance().generateSignInWithEmailLink(
+      email, actionCodeSettings);
+  // Construct email verification template, embed the link and send
+  // using custom SMTP server.
+  sendCustomEmail(email, displayName, link);
+} catch (FirebaseAuthException e) {
+  System.out.println("Error generating email link: " + e.getMessage());
+}
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">email = 'user@example.com'
+link = auth.generate_sign_in_with_email_link(email, action_code_settings)
+# Construct email from a template embedding the link, and send
+# using a custom SMTP server.
+send_custom_email(email, link)
+</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+
+<pre data-language="go">email := "user@example.com"
+link, err := client.EmailSignInLink(ctx, email, actionCodeSettings)
+if err != nil {
+	log.Fatalf("error generating email link: %v\n", err)
+}
+
+// Construct sign-in with email link template, embed the link and send
+// using custom SMTP server.
+sendCustomEmail(email, displayName, link)
+</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+
+<pre data-language="csharp">var email = "user@example.com";
+var link = await FirebaseAuth.DefaultInstance.GenerateSignInWithEmailLinkAsync(
+    email, actionCodeSettings);
+// Construct email verification template, embed the link and send
+// using custom SMTP server.
+SendCustomEmail(email, displayName, link);
+</pre></section> </div> <p>After the link is generated, it can be inserted into the custom sign-in email and then emailed to the corresponding user using a custom SMTP server.</p> <p>Learn more about <a href="../web/email-link-auth">authenticating users with Firebase using email links</a>. This will help provide information on how to complete sign-in after the user clicks the link and is redirected back to the app.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/admin/email-action-links" class="_attribution-link">https://firebase.google.com/docs/auth/admin/email-action-links</a>
+  </p>
+</div>

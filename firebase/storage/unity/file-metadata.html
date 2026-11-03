@@ -1,0 +1,51 @@
+<h1>Use file metadata with Cloud Storage for Unity</h1> <p>After uploading a file to Cloud Storage reference, you can also get and update the file metadata, for example to update the content type. Files can also store custom key/value pairs with additional file metadata.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside> <h2 id="get_file_metadata">Get File Metadata</h2> <p>File metadata contains common properties such as <code translate="no" dir="ltr">Name</code>, <code translate="no" dir="ltr">SizeBytes</code>, and <code translate="no" dir="ltr">ContentType</code> (often referred to as MIME type) in addition to some less common ones like <code translate="no" dir="ltr">ContentDisposition</code> and <code translate="no" dir="ltr">CreationTimeMillis</code>. This metadata can be retrieved from a Cloud Storage reference using the <code translate="no" dir="ltr">GetMetadataAsync</code> method.</p> 
+<pre>// Create reference to the file whose metadata we want to retrieve
+StorageReference forestRef =
+    storageRef.Child("images/forest.jpg");
+
+// Get metadata properties
+forestRef.GetMetadataAsync().ContinueWithOnMainThread(task =&gt; {
+    if (!task.IsFaulted &amp;&amp; !task.IsCanceled) {
+        StorageMetadata meta = task.Result;
+        // do stuff with meta
+    }
+});</pre> <h2 id="update_file_metadata">Update File Metadata</h2> <p>You can update file metadata at any time after the file upload completes by using the <code translate="no" dir="ltr">UpdateMetadataAsync</code> method which takes a <code translate="no" dir="ltr">MetadataChange</code> object. Refer to the <a href="#file_metadata_properties">full list</a> for more information on what properties can be updated. Only the properties specified in the metadata are updated, all others are left unmodified.</p> 
+<pre>// Create reference to the file whose metadata we want to change
+StorageReference forestRef = storageRef.Child("images/forest.jpg");
+
+// Create file metadata to update
+var newMetadata = new MetadataChange();
+newMetadata.CacheControl = "public,max-age=300";
+newMetadata.ContentType = "image/jpeg";
+
+// Update metadata properties
+forestRef.UpdateMetadataAsync(newMetadata).ContinueWithOnMainThread(task =&gt; {
+    if (!task.IsFaulted &amp;&amp; !task.IsCanceled) {
+        // access the updated meta data
+        StorageMetadata meta = task.Result;
+    }
+});</pre> <p>You can delete writable metadata properties by passing the empty string:</p> 
+<pre>// Create file metadata to update
+var newMetadata = new MetadataChange();
+newMetadata.ContentType = "";
+
+// Update metadata properties
+forestRef.UpdateMetadataAsync(newMetadata).ContinueWithOnMainThread(task =&gt; {
+    if (!task.IsFaulted &amp;&amp; !task.IsCanceled) {
+        StorageMetadata meta = task.Result;
+        // meta.ContentType should be an empty string now
+    }
+});</pre> <h2 id="handle_errors">Handle Errors</h2> <p>There are a number of reasons why errors may occur on getting or updating metadata, including the file not existing, or the user not having permission to access the desired file. More information on errors can be found in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="custom_metadata">Custom Metadata</h2> <p>You can specify custom metadata as a <code translate="no" dir="ltr">Dictionary&lt;string, string&gt;</code>.</p> 
+<pre>var newMetadata = new MetadataChange {
+    CustomMetadata = new Dictionary&lt;string, string&gt; {
+        {"location", "Yosemite, CA, USA"},
+        {"activity", "Hiking"}
+    }
+};
+
+// UpdateMetadataAsync</pre> <p>You can store app-specific data for each file in custom metadata, but we highly recommend using a database (such as the <a href="../../database">Firebase Realtime Database</a>) to store and synchronize this type of data.</p> <h2 id="file_metadata_properties">File Metadata Properties</h2> <p>A full list of metadata properties on a file is available below:</p> <table> <thead> <tr> <th>Property</th> <th>Type</th> <th>Modifyable in MetadataChange</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">Bucket</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">Generation</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">MetadataGeneration</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">Path</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">Name</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">SizeBytes</code></td> <td><code translate="no" dir="ltr">long</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">CreationTimeMillis</code></td> <td><code translate="no" dir="ltr">long</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">UpdatedTimeMillis</code></td> <td><code translate="no" dir="ltr">long</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">CacheControl</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>YES</td> </tr> <tr> <td><code translate="no" dir="ltr">ContentDisposition</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>YES</td> </tr> <tr> <td><code translate="no" dir="ltr">ContentEncoding</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>YES</td> </tr> <tr> <td><code translate="no" dir="ltr">ContentLanguage</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>YES</td> </tr> <tr> <td><code translate="no" dir="ltr">ContentType</code></td> <td><code translate="no" dir="ltr">string</code></td> <td>YES</td> </tr> <tr> <td><code translate="no" dir="ltr">DownloadUrl</code></td> <td><code translate="no" dir="ltr">Uri</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">DownloadUrls</code></td> <td><code translate="no" dir="ltr">IList&lt;Uri&gt;</code></td> <td>NO</td> </tr> <tr> <td><code translate="no" dir="ltr">CustomMetadataKeys</code></td> <td><code translate="no" dir="ltr">IEnumerable&lt;string&gt;</code></td> <td>YES</td> </tr> </tbody> </table> <h2 id="next_steps">Next Steps</h2> <p>Uploading, downloading, and updating files is important, but so is being able to remove them. Let's learn how to <a href="delete-files">delete files</a> from Cloud Storage.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/storage/unity/file-metadata" class="_attribution-link">https://firebase.google.com/docs/storage/unity/file-metadata</a>
+  </p>
+</div>

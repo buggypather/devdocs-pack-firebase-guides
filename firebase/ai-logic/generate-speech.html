@@ -1,0 +1,885 @@
+<h1>Text-to-speech generation (TTS) using the Gemini API</h1> <aside class="preview"><strong>Preview:</strong><span> Using the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs for text-to-speech (TTS) generation is a feature that's in Preview, which means that it isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways.</span></aside> <p><br></p> <p>You can ask a <span class='\"notranslate\"'>Gemini</span> TTS model to generate speech (audio) output from a text prompt. When you use <span class='\"notranslate\"'>Firebase AI Logic</span>, you can make this request directly from your app.</p> <p>Text-to-speech (TTS) generation is <strong>controllable</strong>, meaning that you <em>provide the exact text</em> to synthesize into speech. Also, you can use natural language in your prompts to guide the style, accent, pace, and tone of the audio output. You can think of TTS as the <em>opposite of transcription (speech-to-text)</em>.</p> <p>This feature is available using any of the <span class='\"notranslate\"'>Gemini</span> <code translate="no" dir="ltr">-tts</code> models, which are optimized for high-quality, low-latency speech generation.</p> <p>With this capability, you can do things like:</p> <ul> <li><p><strong>Interactive storytelling</strong>: Create immersive audiobooks or role-playing games where the model switches voices for different characters or adapts its tone (like whispering in suspense or laughing at a joke) to match the narrative.</p></li> <li><p><strong>Language learning</strong>: Build pronunciation guides that can read text with specific regional accents or at slower paces to help learners practice difficult pronunciations.</p></li> <li><p><strong>Context-aware content readers</strong>: Read news articles, recipes, or blog posts aloud using a voice persona and emotional tone that matches the content (such as a serious tone for breaking news or a warm, patient tone for step-by-step cooking instructions).</p></li> </ul> <p>This guide shows how to generate speech from text input with single- or multi-speakers and how to stream the audio response.</p> <p><a href="#single-speaker" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code for single-speaker</a> <a href="#multi-speaker" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code for multi-speaker</a> <a href="#streaming" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code for streamed responses</a> </p> <h4 id="comparison-between-tts-and-live-api">Comparison between TTS and the Live API</h4> <p>Both text-to-speech (TTS) models and Live API models are low-latency, speech-generating models that can be configured for different response voices and languages. However, they serve very different use cases.</p> <ul> <li><p><strong><a href="generate-speech">Text-to-speech (TTS) generation</a></strong> is a <em>unidirectional</em>, request-response interaction (text in, audio out). It's tailored for scenarios that require <em><strong>exact recitation</strong></em> of the provided text with fine-grained control over style and sound, such as podcast narration, audiobooks, or reading articles aloud.</p></li> <li><p><strong><a href="live-api">Live API generation</a></strong> supports <em>bidirectional</em> streaming for <em><strong>real-time voice conversations</strong></em> (voice in, voice out). It excels in dynamic conversational contexts where the model decides the applicable speech to return. Note that the latest Live API models also support video and image input.</p></li> </ul> <h2 id="before-you-begin">Before you begin</h2> 
+<table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>If you haven't already, complete the <a href="get-started">getting started guide</a>, which describes how to set up your Firebase project, connect your app to Firebase, add the SDK, initialize the backend service for your chosen <span class='\"notranslate\"'>Gemini API</span> provider, and create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> <p> <aside class="note">All our docs assume that you're using the <a href="https://firebase.google.com/support/releases">latest versions</a> of the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs. </aside> </p> For testing and iterating on your prompts, we recommend using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <h4 id="supported-models">Models that support this capability</h4> <ul> <li><code translate="no" dir="ltr">gemini-3.1-flash-tts-preview</code></li> </ul> <aside class="note"><strong>Note:</strong><span> <span class='\"notranslate\"'>Firebase AI Logic</span> supports the Gemini 2.x TTS models that are offered in various versions from the two <span class='\"notranslate\"'>Gemini API</span> providers. Note, though, that this <span class='\"notranslate\"'>Firebase AI Logic</span> documentation for TTS models is focused on using the <span class='\"notranslate\"'>Gemini 3.x TTS</span> models.</span></aside> <h2 id="generate-speech-from-text">Generate speech from text</h2> <p>You can generate speech from provided text using a <span class='\"notranslate\"'>Gemini</span> TTS model.</p> <h3 id="single-speaker">Generate speech with a single speaker</h3> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can configure the model to output audio using a single voice.</p> <p>In your <code translate="no" dir="ltr">GenerationConfig</code>, include the following:</p> <ul> <li><p>Set <code translate="no" dir="ltr">responseModalities</code> to include <code translate="no" dir="ltr">AUDIO</code>.</p></li> <li>
+<p>Configure a <code translate="no" dir="ltr">SpeechConfig</code> with the following:</p> <ul> <li><p><em>(Required)</em> <a href="#response-voices">Response voice name</a> (for example, <code translate="no" dir="ltr">Kore</code>)</p></li> <li><p><em>(Optional)</em> <a href="#explicit-language-codes">Language code</a>.<br> If you don't specify a language, the <span class='\"notranslate\"'>Gemini</span> TTS models can <a href="#languages">automatically detect the language</a> in the prompt.</p></li> </ul>
+</li> </ul> <p>Call <code translate="no" dir="ltr">generateContent</code> with your text prompt. The model returns raw PCM audio data in the response parts.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Set `responseModalities` to include `AUDIO`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+let config = GenerationConfig(
+  responseModalities: [.audio],
+  speechConfig: SpeechConfig(voiceName: "Kore", languageCode: "en-US")
+)
+
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+let model = ai.generativeModel(
+  modelName: "gemini-3.1-flash-tts-preview",
+  generationConfig: config
+)
+
+// Provide a text prompt.
+let prompt = "Say cheerfully: Have a wonderful day!"
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+let response = try await model.generateContent(prompt)
+
+// Extract the audio data and handle it for downstream use. For example:
+for part in response.inlineDataParts {
+  let data = part.data          // Raw PCM audio bytes (24kHz, 1 channel, 16-bit)
+  let mimeType = part.mimeType  // for example: "audio/pcm"
+  print("Received audio data with MIME type: \(mimeType)")
+
+  // To play back raw PCM audio bytes, you'll need to write your own `playRawPcm` function.
+  playRawPcm(data: data)
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
+<pre data-language="kotlin">
+// Set `responseModalities` to include `AUDIO`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+val config = generationConfig {
+    responseModalities = listOf(ResponseModality.AUDIO)
+    speechConfig = SpeechConfig(
+        voice = Voice("Kore"),
+        languageCode = "en-US"
+    )
+}
+
+// Initialize the Gemini Developer API backend service.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+    .generativeModel(
+        modelName = "gemini-3.1-flash-tts-preview",
+        generationConfig = config
+    )
+
+// Provide a text prompt.
+val prompt = "Say cheerfully: Have a wonderful day!"
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+val response = model.generateContent(prompt)
+
+// Extract the audio data and handle it for downstream use. For example:
+val part = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()
+if (part is InlineDataPart) {
+    val pcmData = part.inlineData  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+    val mimeType = part.mimeType   // for example: "audio/pcm"
+
+    // To play back PCM audio data, you'll need to write your own `playAudio` function.
+    playAudio(pcmData)
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<sup><em>For Java, the streaming methods in this SDK return a <code translate="no" dir="ltr">Publisher</code> type from the <a href="https://www.reactive-streams.org/" class="external">Reactive Streams library</a>.</em></sup> 
+<pre data-language="java">
+// Set `responseModalities` to include `AUDIO`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+GenerationConfig config = new GenerationConfig.Builder()
+    .setResponseModalities(Collections.singletonList(ResponseModality.AUDIO))
+    .setSpeechConfig(new SpeechConfig(new Voice("Kore"), "en-US"))
+    .build();
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+        .generativeModel("gemini-3.1-flash-tts-preview", config);
+
+// Use the GenerativeModelFutures Java compatibility layer.
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+// Provide a text prompt.
+String prompt = "Say cheerfully: Have a wonderful day!";
+Content content = new Content.Builder().addText(prompt).build();
+Executor executor = Executors.newSingleThreadExecutor();
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+// Extract the audio data and handle it for downstream use.
+ListenableFuture&lt;GenerateContentResponse&gt; response = model.generateContent(content);
+Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;() {
+    @Override
+    public void onSuccess(GenerateContentResponse result) {
+        Part part = result.getCandidates().get(0).getContent().getParts().get(0);
+        if (part instanceof InlineDataPart) {
+            byte[] pcmData = ((InlineDataPart) part).getInlineData();
+            String mimeType = ((InlineDataPart) part).getMimeType();
+
+            // To play back PCM audio data, you'll need to write your own `playAudio` function.
+            playAudio(pcmData);
+        }
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend, ResponseModality } from "firebase/ai";
+
+// TODO(developer): Replace with your app's Firebase configuration
+const firebaseConfig = { /* ... */ };
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Set `responseModalities` to include `AUDIO`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+const generationConfig = {
+  responseModalities: [ResponseModality.AUDIO],
+  speechConfig: {
+    voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } },
+    languageCode: "en-US"
+  }
+};
+
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+const model = getGenerativeModel(ai, {
+  model: "gemini-3.1-flash-tts-preview",
+  generationConfig
+});
+
+// Provide a text prompt.
+const prompt = "Say cheerfully: Have a wonderful day!";
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+const result = await model.generateContent(prompt);
+const inlineDataParts = result.response.inlineDataParts();
+
+// Extract the audio data and handle it for downstream use. For example:
+if (inlineDataParts?.[0]) {
+  const pcmBase64 = inlineDataParts[0].inlineData.data;
+  // Decode base64 to ArrayBuffer
+  const pcmBuffer = Uint8Array.from(atob(pcmBase64), c =&gt; c.charCodeAt(0)).buffer;
+
+  // To play back a PCM buffer, you'll need to write your own `playAudio` function.
+  playAudio(pcmBuffer);
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+
+// Set `responseModalities` to include `AUDIO`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+final config = GenerationConfig(
+  responseModalities: [ResponseModalities.audio],
+  speechConfig: SpeechConfig(voiceName: 'Kore', languageCode: 'en-US'),
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'gemini-3.1-flash-tts-preview',
+  generationConfig: config,
+);
+
+// Provide a text prompt.
+final prompt = 'Say cheerfully: Have a wonderful day!';
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+final response = await model.generateContent([Content.text(prompt)]);
+
+// Extract the audio data and handle it for downstream use. For example:
+final part = response.candidates.first.content.parts.first;
+if (part is InlineDataPart &amp;&amp; part.mimeType.startsWith('audio/')) {
+  final Uint8List pcmData = part.bytes;  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+
+  // To play back PCM audio data, you'll need to write your own `playAudio` function.
+  await playAudio(pcmData);
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using Firebase.AI;
+
+// Set `responseModalities` to include `Audio`.
+// Configure a `SpeechConfig` with your chosen voice name and language code.
+var config = new GenerationConfig(
+  responseModalities: new System.Collections.Generic.List&lt;ResponseModality&gt; { ResponseModality.Audio },
+  speechConfig: SpeechConfig.UsePrebuiltVoice("Kore", "en-US")
+);
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+var model = ai.GetGenerativeModel(
+  modelName: "gemini-3.1-flash-tts-preview",
+  generationConfig: config
+);
+
+// Provide a text prompt.
+var prompt = "Say cheerfully: Have a wonderful day!";
+
+// Call `GenerateContentAsync` to generate the speech output based on your text prompt.
+var response = await model.GenerateContentAsync(prompt);
+
+// Extract the audio data and handle it for downstream use. For example:
+if (response.Candidates.Count &gt; 0) {
+  foreach (var part in response.Candidates[0].Content.Parts) {
+    if (part is ModelContent.InlineDataPart inlineData) {
+      byte[] pcmData = inlineData.Data;  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+
+      // To play back PCM audio data, you'll need to write your own `playAudio` function.
+      playAudio(pcmData);
+    }
+  }
+}
+
+</pre></section> </div> <h3 id="multi-speaker">Generate speech with multiple speakers</h3> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can configure the model to use different voices for different speakers in the text. This is useful for generating audio for dialogues or conversations.</p> <ol> <li>
+<p>Create a <code translate="no" dir="ltr">MultiSpeakerVoiceConfig</code> that maps speaker names (which you'll use in your prompt) to specific <a href="#response-voices">response voice names</a> (for example, <code translate="no" dir="ltr">Kore</code>).</p> <p>The multi-speaker configuration supports exactly 2 speakers.</p>
+</li> <li>
+<p>In your <code translate="no" dir="ltr">GenerationConfig</code>, include the following:</p> <ul> <li><p>Set <code translate="no" dir="ltr">responseModalities</code> to include <code translate="no" dir="ltr">AUDIO</code>.</p></li> <li>
+<p>Configure a <code translate="no" dir="ltr">SpeechConfig</code> with the following:</p> <ul> <li><p><em>(Required)</em> Pass in your <code translate="no" dir="ltr">MultiSpeakerVoiceConfig</code>.</p></li> <li><p><em>(Optional)</em> <a href="#explicit-language-codes">Language code</a>.<br> If you don't specify a language, the <span class='\"notranslate\"'>Gemini</span> TTS models can <a href="#languages">automatically detect the language</a> in the prompt.</p></li> </ul>
+</li> </ul>
+</li> <li><p>In your prompt, indicate who is speaking by using the speaker names as prefixes (for example, <code translate="no" dir="ltr">Joe: Hello. Jane: Hi.</code>).</p></li> </ol> <p>Call <code translate="no" dir="ltr">generateContent</code> with your text prompt. The model returns raw PCM audio data in the response parts.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Configure a `SpeechConfig` for multiple speakers, assigning a voice to each speaker.
+let multiSpeechConfig = SpeechConfig(
+  multiSpeakerVoiceConfig: MultiSpeakerVoiceConfig(
+    speakerVoiceConfigs: [
+      SpeakerVoiceConfig(speaker: "Joe", voiceName: "Puck"),
+      SpeakerVoiceConfig(speaker: "Jane", voiceName: "Kore")
+    ]
+  ),
+  languageCode: "en-US"
+)
+
+// Set `responseModalities` to include `audio`.
+let config = GenerationConfig(
+  responseModalities: [.audio],
+  speechConfig: multiSpeechConfig
+)
+
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+let model = ai.generativeModel(
+  modelName: "gemini-3.1-flash-tts-preview",
+  generationConfig: config
+)
+
+// Provide a text prompt that includes the names of the speakers.
+let prompt = """
+Joe: How's it going today Jane?
+Jane: Not too bad, how about you?
+"""
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+let response = try await model.generateContent(prompt)
+
+// Extract the audio data and handle it for downstream use. For example:
+for part in response.inlineDataParts {
+  let data = part.data          // Raw PCM audio bytes (24kHz, 1 channel, 16-bit)
+  let mimeType = part.mimeType  // for example: "audio/pcm"
+  print("Received audio data with MIME type: \(mimeType)")
+
+  // To play back raw PCM audio bytes, you'll need to write your own `playRawPcm` function.
+  playRawPcm(data: data)
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
+<pre data-language="kotlin">
+// Configure a `SpeechConfig` for multiple speakers, assigning a voice to each speaker.
+val multiSpeechConfig = SpeechConfig(
+    multiSpeakerVoiceConfig = MultiSpeakerVoiceConfig(
+        speakerVoiceConfigs = listOf(
+            SpeakerVoiceConfig(speaker = "Joe", voice = Voice("Puck")),
+            SpeakerVoiceConfig(speaker = "Jane", voice = Voice("Kore"))
+        )
+    ),
+    languageCode = "en-US"
+)
+
+// Set `responseModalities` to include `AUDIO`.
+val config = generationConfig {
+    responseModalities = listOf(ResponseModality.AUDIO)
+    speechConfig = multiSpeechConfig
+}
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+    .generativeModel(
+        modelName = "gemini-3.1-flash-tts-preview",
+        generationConfig = config
+    )
+
+// Provide a text prompt that includes the names of the speakers.
+val prompt = """
+Joe: How's it going today Jane?
+Jane: Not too bad, how about you?
+"""
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+val response = model.generateContent(prompt)
+
+// Extract the audio data and handle it for downstream use. For example:
+val part = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()
+if (part is InlineDataPart) {
+    val pcmData = part.inlineData  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+    val mimeType = part.mimeType   // for example: "audio/pcm"
+
+    // To play back PCM audio data, you'll need to write your own `playAudio` function.
+    playAudio(pcmData)
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<sup><em>For Java, the streaming methods in this SDK return a <code translate="no" dir="ltr">Publisher</code> type from the <a href="https://www.reactive-streams.org/" class="external">Reactive Streams library</a>.</em></sup> 
+<pre data-language="java">
+// Configure a `SpeechConfig` for multiple speakers, assigning a voice to each speaker.
+MultiSpeakerVoiceConfig multiSpeakerVoiceConfig = new MultiSpeakerVoiceConfig(
+    Arrays.asList(
+        new SpeakerVoiceConfig("Joe", new Voice("Puck")),
+        new SpeakerVoiceConfig("Jane", new Voice("Kore"))
+    )
+);
+
+SpeechConfig multiSpeechConfig = new SpeechConfig(multiSpeakerVoiceConfig);
+
+// Set `responseModalities` to include `AUDIO`.
+GenerationConfig config = new GenerationConfig.Builder()
+    .setResponseModalities(Collections.singletonList(ResponseModality.AUDIO))
+    .setSpeechConfig(multiSpeechConfig)
+    .build();
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+         .generativeModel("gemini-3.1-flash-tts-preview", config);
+
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+// Provide a text prompt that includes the names of the speakers.
+String prompt = "Joe: How's it going today Jane?\nJane: Not too bad, how about you?";
+Content content = new Content.Builder().addText(prompt).build();
+Executor executor = Executors.newSingleThreadExecutor();
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+// Extract the audio data and handle it for downstream use.
+ListenableFuture&lt;GenerateContentResponse&gt; response = model.generateContent(content);
+Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;() {
+    @Override
+    public void onSuccess(GenerateContentResponse result) {
+        Part part = result.getCandidates().get(0).getContent().getParts().get(0);
+        if (part instanceof InlineDataPart) {
+            byte[] pcmData = ((InlineDataPart) part).getInlineData();  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+            String mimeType = ((InlineDataPart) part).getMimeType();   // for example: "audio/pcm"
+
+            // To play back PCM audio data, you'll need to write your own `playAudio` function.
+            playAudio(pcmData);
+        }
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        t.printStackTrace();
+    }
+}, executor);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend, ResponseModality } from "firebase/ai";
+
+// TODO(developer): Replace with your app's Firebase configuration
+const firebaseConfig = { /* ... */ };
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Set `responseModalities` to include `AUDIO`.
+// Configure a `SpeechConfig` for multiple speakers, assigning a voice to each speaker.
+const generationConfig = {
+  responseModalities: [ResponseModality.AUDIO],
+  speechConfig: {
+    multiSpeakerVoiceConfig: {
+      speakerVoiceConfigs: [
+        { speaker: "Joe", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } },
+        { speaker: "Jane", voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } }
+      ]
+    },
+    languageCode: "en-US"
+  }
+};
+
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+const model = getGenerativeModel(ai, {
+  model: "gemini-3.1-flash-tts-preview",
+  generationConfig
+});
+
+// Provide a text prompt that includes the names of the speakers.
+const prompt = `
+Joe: How's it going today Jane?
+Jane: Not too bad, how about you?
+`;
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+const result = await model.generateContent(prompt);
+const inlineDataParts = result.response.inlineDataParts();
+
+// Extract the audio data and handle it for downstream use. For example:
+if (inlineDataParts?.[0]) {
+  const pcmBase64 = inlineDataParts[0].inlineData.data;  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+  const pcmBuffer = Uint8Array.from(atob(pcmBase64), c =&gt; c.charCodeAt(0)).buffer;
+
+  // To play back a PCM buffer, you'll need to write your own `playAudio` function.
+  playAudio(pcmBuffer);
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+
+// Configure a `SpeechConfig` for multiple speakers, assigning a voice to each speaker.
+final multiSpeechConfig = SpeechConfig.multiSpeaker(
+  multiSpeakerVoiceConfig: MultiSpeakerVoiceConfig(
+    speakerVoiceConfigs: [
+      SpeakerVoiceConfig(speaker: 'Joe', voiceName: 'Puck'),
+      SpeakerVoiceConfig(speaker: 'Jane', voiceName: 'Kore'),
+    ],
+  ),
+  languageCode: 'en-US',
+);
+
+// Set `responseModalities` to include `audio`.
+final config = GenerationConfig(
+  responseModalities: [ResponseModalities.audio],
+  speechConfig: multiSpeechConfig,
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'gemini-3.1-flash-tts-preview',
+  generationConfig: config,
+);
+
+// Provide a text prompt that includes the names of the speakers.
+final prompt = '''
+Joe: How's it going today Jane?
+Jane: Not too bad, how about you?
+''';
+
+// Call `generateContent` to generate the speech output based on your text prompt.
+final response = await model.generateContent([Content.text(prompt)]);
+
+// Extract the audio data and handle it for downstream use. For example:
+final part = response.candidates.first.content.parts.first;
+if (part is InlineDataPart &amp;&amp; part.mimeType.startsWith('audio/')) {
+  final Uint8List pcmData = part.bytes;  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+
+  // To play back PCM audio data, you'll need to write your own `playAudio` function.
+  await playAudio(pcmData);
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using Firebase.AI;
+
+// Configure a `SpeechConfig` for multiple speakers, assigning a voice to each speaker.
+var multiSpeakerVoiceConfig = new MultiSpeakerVoiceConfig(
+  new System.Collections.Generic.List&lt;SpeakerVoiceConfig&gt; {
+    SpeakerVoiceConfig.UsePrebuiltVoice("Joe", "Puck"),
+    SpeakerVoiceConfig.UsePrebuiltVoice("Jane", "Kore")
+  }
+);
+
+var multiSpeechConfig = SpeechConfig.UseMultiSpeakerVoice(multiSpeakerVoiceConfig);
+
+// Set `responseModalities` to include `Audio`.
+var config = new GenerationConfig(
+  responseModalities: new System.Collections.Generic.List&lt;ResponseModality&gt; { ResponseModality.Audio },
+  speechConfig: multiSpeechConfig
+);
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+var model = ai.GetGenerativeModel(
+  modelName: "gemini-3.1-flash-tts-preview",
+  generationConfig: config
+);
+
+// Provide a text prompt that includes the names of the speakers.
+var prompt = "Joe: How's it going today Jane?\nJane: Not too bad, how about you?";
+
+// Call `GenerateContentAsync` to generate the speech output based on your text prompt.
+var response = await model.GenerateContentAsync(prompt);
+
+// Extract the audio data and handle it for downstream use. For example:
+if (response.Candidates.Count &gt; 0) {
+  foreach (var part in response.Candidates[0].Content.Parts) {
+    if (part is ModelContent.InlineDataPart inlineData) {
+      byte[] pcmData = inlineData.Data;  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+
+      // To play back PCM audio data, you'll need to write your own `playAudio` function.
+      playAudio(pcmData);
+    }
+  }
+}
+
+</pre></section> </div> <h3 id="streaming">Stream the response</h3> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can achieve faster interactions and lower latency by streaming the audio response as it is generated, instead of waiting for the entire audio file to complete.</p> <p>Streaming of generated speech is supported for both <a href="#single-speaker">single-speaker</a> and <a href="#multi-speaker">multi-speaker</a> configurations. It's only supported when using the <span class='\"notranslate\"'>Gemini 3.x TTS</span> models.</p> <p>To stream the speech response, call <code translate="no" dir="ltr">generateContentStream</code> instead of <code translate="no" dir="ltr">generateContent</code> and handle the chunks as they arrive. The following examples show how to stream a single-speaker response:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Initialize the Gemini Developer API backend service.
+let ai = FirebaseAI.firebaseAI(backend: .googleAI())
+
+// Set `responseModalities` to include `audio`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+let config = GenerationConfig(
+  responseModalities: [.audio],
+  speechConfig: SpeechConfig(voiceName: "Kore")
+)
+
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+let model = ai.generativeModel(
+  modelName: "gemini-3.1-flash-tts-preview",
+  generationConfig: config
+)
+
+// Provide a text prompt.
+let prompt = "Tell me a story about a brave knight."
+
+// Call `generateContentStream` to generate the speech output stream based on your text prompt.
+let responseStream = try model.generateContentStream(prompt)
+
+// Extract the audio data and handle it for downstream use. For example:
+for try await chunk in responseStream {
+  for part in chunk.inlineDataParts {
+    let data = part.data          // Raw PCM audio bytes (24kHz, 1 channel, 16-bit)
+    let mimeType = part.mimeType  // for example: "audio/pcm"
+
+    // Append the audio chunk to your audio queue/buffer for playback.
+    appendAudioChunk(data)
+  }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
+<pre data-language="kotlin">
+// Set `responseModalities` to include `AUDIO`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+val config = generationConfig {
+    responseModalities = listOf(ResponseModality.AUDIO)
+    speechConfig = SpeechConfig(voice = Voice("Kore"))
+}
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+    .generativeModel(
+        modelName = "gemini-3.1-flash-tts-preview",
+        generationConfig = config
+    )
+
+// Provide a text prompt.
+val prompt = "Tell me a story about a brave knight."
+
+// Call `generateContentStream` to generate the speech output stream based on your text prompt.
+// Extract the audio data and handle it for downstream use.
+model.generateContentStream(prompt).collect { chunk -&gt;
+    val part = chunk.candidates.firstOrNull()?.content?.parts?.firstOrNull()
+    if (part is InlineDataPart) {
+        val pcmChunk = part.inlineData  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+        val mimeType = part.mimeType    // for example: "audio/pcm"
+
+        // Append the audio chunk to your audio queue/buffer for playback.
+        appendAudioChunk(pcmChunk)
+    }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<sup><em>For Java, the streaming methods in this SDK return a <code translate="no" dir="ltr">Publisher</code> type from the <a href="https://www.reactive-streams.org/" class="external">Reactive Streams library</a>.</em></sup> 
+<pre data-language="java">
+// Set `responseModalities` to include `AUDIO`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+GenerationConfig config = new GenerationConfig.Builder()
+    .setResponseModalities(Collections.singletonList(ResponseModality.AUDIO))
+    .setSpeechConfig(new SpeechConfig(new Voice("Kore")))
+    .build();
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
+        .generativeModel("gemini-3.1-flash-tts-preview", config);
+
+GenerativeModelFutures model = GenerativeModelFutures.from(ai);
+
+// Provide a text prompt.
+String prompt = "Tell me a story about a brave knight.";
+Content content = new Content.Builder().addText(prompt).build();
+
+// Call `generateContentStream` to generate the speech output stream based on your text prompt.
+Publisher&lt;GenerateContentResponse&gt; streamingResponse =
+    model.generateContentStream(content);
+
+// Extract the audio data and handle it for downstream use.
+streamingResponse.subscribe(new Subscriber&lt;GenerateContentResponse&gt;() {
+  @Override
+  public void onSubscribe(Subscription s) {
+      s.request(Long.MAX_VALUE);
+  }
+
+  @Override
+  public void onNext(GenerateContentResponse chunk) {
+      Part part = chunk.getCandidates().get(0).getContent().getParts().get(0);
+      if (part instanceof InlineDataPart) {
+          byte[] pcmChunk = ((InlineDataPart) part).getInlineData();  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+          String mimeType = ((InlineDataPart) part).getMimeType();    // for example: "audio/pcm"
+
+          // Append the audio chunk to your audio queue/buffer for playback.
+          appendAudioChunk(pcmChunk);
+      }
+  }
+
+  @Override
+  public void onComplete() {
+      // Audio stream complete.
+  }
+
+  @Override
+  public void onError(Throwable t) {
+      t.printStackTrace();
+  }
+});
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+
+<pre data-language="javascript">
+import { initializeApp } from "firebase/app";
+import { getAI, getGenerativeModel, GoogleAIBackend, ResponseModality } from "firebase/ai";
+
+// TODO(developer): Replace with your app's Firebase configuration
+const firebaseConfig = { /* ... */ };
+const firebaseApp = initializeApp(firebaseConfig);
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Set `responseModalities` to include `AUDIO`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+const generationConfig = {
+  responseModalities: [ResponseModality.AUDIO],
+  speechConfig: {
+    voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } }
+  }
+};
+
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+const model = getGenerativeModel(ai, {
+  model: "gemini-3.1-flash-tts-preview",
+  generationConfig
+});
+
+// Provide a text prompt.
+const prompt = "Tell me a story about a brave knight.";
+
+// Call `generateContentStream` to generate the speech output stream based on your text prompt.
+const result = await model.generateContentStream(prompt);
+
+// Extract the audio data and handle it for downstream use. For example:
+const playbackQueue = [];
+for await (const chunk of result.stream) {
+  const inlineDataParts = chunk.inlineDataParts();
+  if (inlineDataParts?.[0]) {
+    const pcmBase64 = inlineDataParts[0].inlineData.data;  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+    const pcmBuffer = Uint8Array.from(atob(pcmBase64), c =&gt; c.charCodeAt(0)).buffer;
+
+    // Append the audio chunk to your audio queue/buffer for playback.
+    playbackQueue.push(pcmBuffer);
+  }
+}
+
+// To play back an array of PCM buffers in sequence, you'll need to write your own `processPlaybackQueue` function.
+processPlaybackQueue(playbackQueue);
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+
+<pre data-language="dart">
+import 'package:firebase_ai/firebase_ai.dart';
+
+// Set `responseModalities` to include `audio`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+final config = GenerationConfig(
+  responseModalities: [ResponseModalities.audio],
+  speechConfig: SpeechConfig(voiceName: 'Kore'),
+);
+
+// Initialize the Gemini Developer API backend service.
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'gemini-3.1-flash-tts-preview',
+  generationConfig: config,
+);
+
+// Provide a text prompt.
+final prompt = 'Tell me a story about a brave knight.';
+
+// Call `generateContentStream` to generate the speech output stream based on your text prompt.
+final responseStream = model.generateContentStream([Content.text(prompt)]);
+
+// Extract the audio data and handle it for downstream use. For example:
+await for (final chunk in responseStream) {
+  final part = chunk.candidates.first.content.parts.first;
+  if (part is InlineDataPart &amp;&amp; part.mimeType.startsWith('audio/')) {
+    final Uint8List pcmChunk = part.bytes;  // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+
+    // Append the audio chunk to your audio queue/buffer for playback.
+    appendAudioChunk(pcmChunk);
+  }
+}
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+
+<pre data-language="csharp">
+using System.Collections.Generic;
+using System.Linq;
+using Firebase.AI;
+
+// Initialize the Gemini Developer API backend service.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+
+// Set `ResponseModalities` to include `Audio`.
+// Configure a `SpeechConfig` with your chosen voice name (and optionally a language code).
+var config = new GenerationConfig(
+    responseModalities: new List&lt;ResponseModality&gt; { ResponseModality.Audio },
+    speechConfig: SpeechConfig.UsePrebuiltVoice("Kore")
+);
+
+// Create a `GenerativeModel` instance with a model that supports speech generation.
+var model = ai.GetGenerativeModel(
+    modelName: "gemini-3.1-flash-tts-preview",
+    generationConfig: config
+);
+
+// Provide a text prompt.
+var prompt = "Tell me a story about a brave knight.";
+
+// Call `GenerateContentStreamAsync` to generate the speech output stream based on your text prompt.
+var responseStream = model.GenerateContentStreamAsync(prompt);
+
+// Extract the audio data and handle it for downstream use. For example:
+await foreach (var response in responseStream)
+{
+    var audioParts = response.Candidates.FirstOrDefault().Content.Parts
+                            .OfType&lt;ModelContent.InlineDataPart&gt;();
+
+    foreach (var part in audioParts)
+    {
+        byte[] pcmChunk = part.Data; // Raw PCM bytes (24kHz, 1 channel, 16-bit)
+
+        // Append the audio chunk to your audio queue/buffer for playback.
+        appendAudioChunk(pcmChunk);
+    }
+}
+
+</pre></section> </div> <p><br></p> <hr> <h2 id="control-speech-output-with-prompts">Control speech output with prompts</h2> <p>You can influence the tone, pace, and style of the generated speech using specific prompting techniques.</p> <p>The following subsections about <a href="#prompt-structure">prompt structure</a> and <a href="#audio-tags">audio tags</a> describe high-level guidance. For detailed guidance, refer to this <a href="https://ai.google.dev/gemini-api/docs/speech-generation#prompting-guide" class="external">prompting guide</a>.</p> <h3 id="prompt-structure">Prompt structure</h3> <p>For best results, structure your prompt with the following components:</p> <ul> <li><p><strong><code translate="no" dir="ltr">Audio Profile</code></strong>: Describe the speaker's persona, core identity, and archetype (for example, <code translate="no" dir="ltr">A warm, professional narrator</code>).</p></li> <li><p><strong><code translate="no" dir="ltr">Scene</code></strong>: Describe the environment and emotional vibe (for example, <code translate="no" dir="ltr">In a quiet library</code> or <code translate="no" dir="ltr">Amidst a noisy crowd</code>).</p></li> <li><p><strong><code translate="no" dir="ltr">Director's Notes</code></strong>: Describe the emotion, pace, style, and accent (for example, <code translate="no" dir="ltr">Speak slowly and with mystery</code>).</p></li> <li><p><strong><code translate="no" dir="ltr">Sample Context</code></strong>: Give the model a starting point (for example, <code translate="no" dir="ltr">The speaker is greeting a close friend</code>).</p></li> <li><p><strong>Transcript</strong>: The actual text to be spoken. For best performance, make sure the text's written tone and context align with the voice profile and directorial notes.</p></li> </ul> <p>Example prompt:</p> 
+<pre>[Audio Profile: A young, energetic voice]
+[Scene: A lively sports broadcast]
+[Director's Notes: Speak fast, with high energy and excitement]
+[Sample Context: The game just ended with a last-second touchdown]
+Welcome back fans! What an incredible game we're witnessing today!
+</pre> <h3 id="audio-tags">Audio tags</h3> <p>You can insert formatting tags directly into your text prompt to guide the model's performance.</p> <p>Audio tags are only supported when using the <span class='\"notranslate\"'>Gemini 3.x TTS</span> models.</p> <p>Commonly used tags include:</p> <ul> <li>
+<code translate="no" dir="ltr">[whispers]</code>: To speak in a whisper</li> <li>
+<code translate="no" dir="ltr">[laughs]</code>: To add laughter</li> <li>
+<code translate="no" dir="ltr">[giggles]</code>: To add giggles</li> <li>
+<code translate="no" dir="ltr">[sighs]</code>: To add a sigh</li> <li>
+<code translate="no" dir="ltr">[gasp]</code>: To add a gasp</li> <li>
+<code translate="no" dir="ltr">[shouting]</code>: To shout</li> <li>
+<code translate="no" dir="ltr">[excited]</code>: To speak excitedly</li> <li>
+<code translate="no" dir="ltr">[serious]</code>: To speak seriously</li> <li>
+<code translate="no" dir="ltr">[sighs whispers]</code>: Combined emotions (you can combine tags)</li> </ul> <p>Note the following when using audio tags:</p> <ul> <li><p><strong>No exhaustive list</strong>: There's no fixed list of supported tags. You can experiment with different emotions and expressions (like <code translate="no" dir="ltr">[bored]</code>, <code translate="no" dir="ltr">[sarcastically]</code>, or even <code translate="no" dir="ltr">[like dracula]</code>) to see how the output changes.</p></li> <li><p><strong>Non-English text prompt</strong>: If your text prompt isn't in English, you should still use English audio tags for best results.</p></li> </ul> <p>Example prompt:</p> 
+<pre>I have a secret to tell you. [whispers] I found the hidden treasure. [laughs] I can't believe it!
+</pre> <p><br></p> <hr> <h2 id="limitations-requirements">Limitations and requirements</h2> <p>Be aware of the following limitations and requirements when using speech generation:</p> <ul> <li><p>The multi-speaker configuration supports exactly 2 speakers.</p></li> <li><p>The following features are only supported when using the <span class='\"notranslate\"'>Gemini 3.x TTS</span> models: streaming, audio tags, and additional auto-detected languages.</p></li> </ul> <h3 id="model-constraints">Constraints for <code translate="no" dir="ltr">gemini-3.1-flash-tts-preview</code>
+</h3> <ul> <li>
+<strong>Voice inconsistency</strong>: The model's output might not always strictly match the selected speaker if your prompt's tone and context don't align with the speaker's profile (for example, a deep male voice attempting to speak like a young girl). Ensure your prompt context matches the voice.</li> <li>
+<strong>Longer outputs</strong>: Speech quality and consistency might drift for audio longer than a few minutes. We recommend splitting long text prompts into smaller chunks.</li> <li>
+<strong>Occasional text token returns</strong>: The model occasionally returns text tokens instead of audio tokens, causing the request to fail with a <code translate="no" dir="ltr">500</code> error. Because this occurs randomly in a small percentage of requests, you should implement retry logic in your app.</li> <li>
+<strong>Classifier false rejections</strong>: Vague prompts might fail the speech synthesis classifier, resulting in a rejected request (<code translate="no" dir="ltr">PROHIBITED_CONTENT</code>) or causing the model to read your style instructions aloud. To avoid this, use a structured prompt with a clear preamble (like <code translate="no" dir="ltr">Audio Profile</code> and <code translate="no" dir="ltr">Director's Notes</code>) at the beginning of the prompt.</li> </ul> <p><br></p> <hr> <h2 id="supported-voices-and-languages">Supported voices and languages</h2> <p>The <span class='\"notranslate\"'>Gemini</span> TTS models take text input and generate audio output, so the response is the synthesized speech itself. The following subsections list the supported voices and languages that the <span class='\"notranslate\"'>Gemini</span> TTS models can "speak" (or respond in).</p> <p>The voices are multilingual, which means you can use the same voice to generate speech in any of the supported languages. For example, you can set the voice to <code translate="no" dir="ltr">Kore</code> and send a set of text prompts in Spanish, Hindi, and Vietnamese. The responses will all be in the Kore voice, but in each of those different languages.</p> <h3 id="response-voices">Voice names</h3> <p>The <span class='\"notranslate\"'>Gemini</span> TTS models support 30 different synthisized HD voices, each with distinct characteristics. You can <a href="#response-voices-list">view a list of response voice options and hear demos of each voice</a> by expanding the section below.</p> <p><section class="expandable" id="response-voices-list"> <p class="showalways" id="response-voices-list"><strong>View a list of response voice options and hear demos</strong></p></section></p> <table> <thead> <tr> <th>Voice name</th> <th>Description</th> <th>Gender</th> <th>Demo</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">Achernar</code></td> <td>Soft</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Achird</code></td> <td>Friendly</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Algenib</code></td> <td>Gravelly</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Algieba</code></td> <td>Smooth</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Alnilam</code></td> <td>Firm</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Aoede</code></td> <td>Breezy</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Autonoe</code></td> <td>Bright</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Callirrhoe</code></td> <td>Easy-going</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Charon</code></td> <td>Informative</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Despina</code></td> <td>Smooth</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Enceladus</code></td> <td>Breathy</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Erinome</code></td> <td>Clear</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Fenrir</code></td> <td>Excitable</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Gacrux</code></td> <td>Mature</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Iapetus</code></td> <td>Clear</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Kore</code></td> <td>Firm</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Laomedeia</code></td> <td>Upbeat</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Leda</code></td> <td>Youthful</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Orus</code></td> <td>Firm</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Puck</code></td> <td>Upbeat</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Pulcherrima</code></td> <td>Forward</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Rasalgethi</code></td> <td>Informative</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Sadachbia</code></td> <td>Lively</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Sadaltager</code></td> <td>Knowledgeable</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Schedar</code></td> <td>Even</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Sulafat</code></td> <td>Warm</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Umbriel</code></td> <td>Easy-going</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Vindemiatrix</code></td> <td>Gentle</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Zephyr</code></td> <td>Bright</td> <td>Female</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> <tr> <td><code translate="no" dir="ltr">Zubenelgenubi</code></td> <td>Casual</td> <td>Male</td> <td> <audio controls>  Your browser doesn't support the audio element. </audio> </td> </tr> </tbody> </table>  <h3 id="languages">Languages</h3> <p>The <span class='\"notranslate\"'>Gemini</span> TTS models can <em>automatically</em> detect the following languages in your text prompt. The generated speech will be in that language.</p> <p>Note that you can optionally <a href="#explicit-language-codes">explicitly set a language code</a> in your speech configuration.</p> <aside class="tip"><strong>Tip:</strong><span> You can mix languages in a single request, including in multi-speaker dialogues (for example, one speaker talking in Japanese and another in Portuguese). For this use case, <strong>do not</strong> specify a <code translate="no" dir="ltr">languageCode</code> in the speech configuration; instead, the model will <em>automatically</em> detect and switch languages for each speaker's turn.</span></aside> <h5 id="languages-all-models">Languages supported by all audio-generating models</h5> <table> <thead> <tr> <th style="text-align: left">Language</th> <th style="text-align: left">BCP-47 Code</th> <th style="text-align: left">Language</th> <th style="text-align: left">BCP-47 Code</th> </tr> </thead> <tbody> <tr> <td style="text-align: left">Arabic (Egyptian)</td> <td style="text-align: left">ar-EG</td> <td style="text-align: left">German (Germany)</td> <td style="text-align: left">de-DE</td> </tr> <tr> <td style="text-align: left">English (US)</td> <td style="text-align: left">en-US</td> <td style="text-align: left">Spanish (US)</td> <td style="text-align: left">es-US</td> </tr> <tr> <td style="text-align: left">French (France)</td> <td style="text-align: left">fr-FR</td> <td style="text-align: left">Hindi (India)</td> <td style="text-align: left">hi-IN</td> </tr> <tr> <td style="text-align: left">Indonesian (Indonesia)</td> <td style="text-align: left">id-ID</td> <td style="text-align: left">Italian (Italy)</td> <td style="text-align: left">it-IT</td> </tr> <tr> <td style="text-align: left">Japanese (Japan)</td> <td style="text-align: left">ja-JP</td> <td style="text-align: left">Korean (Korea)</td> <td style="text-align: left">ko-KR</td> </tr> <tr> <td style="text-align: left">Portuguese (Brazil)</td> <td style="text-align: left">pt-BR</td> <td style="text-align: left">Russian (Russia)</td> <td style="text-align: left">ru-RU</td> </tr> <tr> <td style="text-align: left">Dutch (Netherlands)</td> <td style="text-align: left">nl-NL</td> <td style="text-align: left">Polish (Poland)</td> <td style="text-align: left">pl-PL</td> </tr> <tr> <td style="text-align: left">Thai (Thailand)</td> <td style="text-align: left">th-TH</td> <td style="text-align: left">Turkish (Turkey)</td> <td style="text-align: left">tr-TR</td> </tr> <tr> <td style="text-align: left">Vietnamese (Vietnam)</td> <td style="text-align: left">vi-VN</td> <td style="text-align: left">Romanian (Romania)</td> <td style="text-align: left">ro-RO</td> </tr> <tr> <td style="text-align: left">Ukrainian (Ukraine)</td> <td style="text-align: left">uk-UA</td> <td style="text-align: left">Bengali (Bangladesh)</td> <td style="text-align: left">bn-BD</td> </tr> <tr> <td style="text-align: left">English (India)</td> <td style="text-align: left">en-IN &amp; hi-IN bundle</td> <td style="text-align: left">Marathi (India)</td> <td style="text-align: left">mr-IN</td> </tr> <tr> <td style="text-align: left">Tamil (India)</td> <td style="text-align: left">ta-IN</td> <td style="text-align: left">Telugu (India)</td> <td style="text-align: left">te-IN</td> </tr> </tbody> </table> <h5 id="languages-3.x-plus-models">Additional languages supported by audio-generating 3.x models</h5> <table> <thead> <tr> <th style="text-align: left">Language</th> <th style="text-align: left">BCP-47 Code</th> <th style="text-align: left">Language</th> <th style="text-align: left">BCP-47 Code</th> </tr> </thead> <tbody> <tr> <td style="text-align: left">Afrikaans</td> <td style="text-align: left">af</td> <td style="text-align: left">Filipino</td> <td style="text-align: left">fil</td> </tr> <tr> <td style="text-align: left">Albanian</td> <td style="text-align: left">sq</td> <td style="text-align: left">Finnish</td> <td style="text-align: left">fi</td> </tr> <tr> <td style="text-align: left">Amharic</td> <td style="text-align: left">am</td> <td style="text-align: left">Galician</td> <td style="text-align: left">gl</td> </tr> <tr> <td style="text-align: left">Armenian</td> <td style="text-align: left">hy</td> <td style="text-align: left">Georgian</td> <td style="text-align: left">ka</td> </tr> <tr> <td style="text-align: left">Azerbaijani</td> <td style="text-align: left">az</td> <td style="text-align: left">Greek</td> <td style="text-align: left">el</td> </tr> <tr> <td style="text-align: left">Basque</td> <td style="text-align: left">eu</td> <td style="text-align: left">Gujarati</td> <td style="text-align: left">gu</td> </tr> <tr> <td style="text-align: left">Belarusian</td> <td style="text-align: left">be</td> <td style="text-align: left">Haitian Creole</td> <td style="text-align: left">ht</td> </tr> <tr> <td style="text-align: left">Bulgarian</td> <td style="text-align: left">bg</td> <td style="text-align: left">Hebrew</td> <td style="text-align: left">he</td> </tr> <tr> <td style="text-align: left">Burmese</td> <td style="text-align: left">my</td> <td style="text-align: left">Hungarian</td> <td style="text-align: left">hu</td> </tr> <tr> <td style="text-align: left">Catalan</td> <td style="text-align: left">ca</td> <td style="text-align: left">Icelandic</td> <td style="text-align: left">is</td> </tr> <tr> <td style="text-align: left">Cebuano</td> <td style="text-align: left">ceb</td> <td style="text-align: left">Javanese</td> <td style="text-align: left">jv</td> </tr> <tr> <td style="text-align: left">Chinese, Mandarin</td> <td style="text-align: left">cmn</td> <td style="text-align: left">Kannada</td> <td style="text-align: left">kn</td> </tr> <tr> <td style="text-align: left">Croatian</td> <td style="text-align: left">hr</td> <td style="text-align: left">Konkani</td> <td style="text-align: left">kok</td> </tr> <tr> <td style="text-align: left">Czech</td> <td style="text-align: left">cs</td> <td style="text-align: left">Lao</td> <td style="text-align: left">lo</td> </tr> <tr> <td style="text-align: left">Danish</td> <td style="text-align: left">da</td> <td style="text-align: left">Latin</td> <td style="text-align: left">la</td> </tr> <tr> <td style="text-align: left">Estonian</td> <td style="text-align: left">et</td> <td style="text-align: left">Latvian</td> <td style="text-align: left">lv</td> </tr> <tr> <td style="text-align: left">Lithuanian</td> <td style="text-align: left">lt</td> <td style="text-align: left">Luxembourgish</td> <td style="text-align: left">lb</td> </tr> <tr> <td style="text-align: left">Macedonian</td> <td style="text-align: left">mk</td> <td style="text-align: left">Maithili</td> <td style="text-align: left">mai</td> </tr> <tr> <td style="text-align: left">Malagasy</td> <td style="text-align: left">mg</td> <td style="text-align: left">Malay</td> <td style="text-align: left">ms</td> </tr> <tr> <td style="text-align: left">Malayalam</td> <td style="text-align: left">ml</td> <td style="text-align: left">Mongolian</td> <td style="text-align: left">mn</td> </tr> <tr> <td style="text-align: left">Nepali</td> <td style="text-align: left">ne</td> <td style="text-align: left">Norwegian, Bokmål</td> <td style="text-align: left">nb</td> </tr> <tr> <td style="text-align: left">Norwegian, Nynorsk</td> <td style="text-align: left">nn</td> <td style="text-align: left">Odia</td> <td style="text-align: left">or</td> </tr> <tr> <td style="text-align: left">Pashto</td> <td style="text-align: left">ps</td> <td style="text-align: left">Persian</td> <td style="text-align: left">fa</td> </tr> <tr> <td style="text-align: left">Punjabi</td> <td style="text-align: left">pa</td> <td style="text-align: left">Serbian</td> <td style="text-align: left">sr</td> </tr> <tr> <td style="text-align: left">Sindhi</td> <td style="text-align: left">sd</td> <td style="text-align: left">Sinhala</td> <td style="text-align: left">si</td> </tr> <tr> <td style="text-align: left">Slovak</td> <td style="text-align: left">sk</td> <td style="text-align: left">Slovenian</td> <td style="text-align: left">sl</td> </tr> <tr> <td style="text-align: left">Swahili</td> <td style="text-align: left">sw</td> <td style="text-align: left">Swedish</td> <td style="text-align: left">sv</td> </tr> <tr> <td style="text-align: left">Urdu</td> <td style="text-align: left">ur</td> <td style="text-align: left"></td> <td style="text-align: left"></td> </tr> </tbody> </table> <h4 id="explicit-language-codes">
+<em>(Optional)</em> Explicitly set a language code</h4> <p>If you don't specify a language code in your speech configuration, the model <a href="#languages">automatically detects the language</a> in your text prompt.</p> <p>However, you can optionally explicitly set the language (using the <code translate="no" dir="ltr">languageCode</code> parameter in the speech configuration). To do this, you must use one of the following supported BCP-47 locale codes:</p> <ul> <li>
+<strong>Arabic</strong>: <code translate="no" dir="ltr">ar-XA</code>
+</li> <li>
+<strong>Bengali</strong>: <code translate="no" dir="ltr">bn-IN</code>
+</li> <li>
+<strong>Chinese (Mandarin)</strong>: <code translate="no" dir="ltr">cmn-CN</code>
+</li> <li>
+<strong>Dutch</strong>: <code translate="no" dir="ltr">nl-NL</code>
+</li> <li>
+<strong>English</strong>: <code translate="no" dir="ltr">en-US</code>, <code translate="no" dir="ltr">en-GB</code>, <code translate="no" dir="ltr">en-AU</code>, <code translate="no" dir="ltr">en-IN</code>
+</li> <li>
+<strong>French</strong>: <code translate="no" dir="ltr">fr-FR</code>, <code translate="no" dir="ltr">fr-CA</code>
+</li> <li>
+<strong>German</strong>: <code translate="no" dir="ltr">de-DE</code>
+</li> <li>
+<strong>Gujarati</strong>: <code translate="no" dir="ltr">gu-IN</code>
+</li> <li>
+<strong>Hindi</strong>: <code translate="no" dir="ltr">hi-IN</code>
+</li> <li>
+<strong>Indonesian</strong>: <code translate="no" dir="ltr">id-ID</code>
+</li> <li>
+<strong>Italian</strong>: <code translate="no" dir="ltr">it-IT</code>
+</li> <li>
+<strong>Japanese</strong>: <code translate="no" dir="ltr">ja-JP</code>
+</li> <li>
+<strong>Kannada</strong>: <code translate="no" dir="ltr">kn-IN</code>
+</li> <li>
+<strong>Korean</strong>: <code translate="no" dir="ltr">ko-KR</code>
+</li> <li>
+<strong>Malayalam</strong>: <code translate="no" dir="ltr">ml-IN</code>
+</li> <li>
+<strong>Marathi</strong>: <code translate="no" dir="ltr">mr-IN</code>
+</li> <li>
+<strong>Polish</strong>: <code translate="no" dir="ltr">pl-PL</code>
+</li> <li>
+<strong>Portuguese</strong>: <code translate="no" dir="ltr">pt-BR</code>
+</li> <li>
+<strong>Russian</strong>: <code translate="no" dir="ltr">ru-RU</code>
+</li> <li>
+<strong>Spanish</strong>: <code translate="no" dir="ltr">es-US</code>, <code translate="no" dir="ltr">es-ES</code>
+</li> <li>
+<strong>Tamil</strong>: <code translate="no" dir="ltr">ta-IN</code>
+</li> <li>
+<strong>Telugu</strong>: <code translate="no" dir="ltr">te-IN</code>
+</li> <li>
+<strong>Thai</strong>: <code translate="no" dir="ltr">th-TH</code>
+</li> <li>
+<strong>Turkish</strong>: <code translate="no" dir="ltr">tr-TR</code>
+</li> <li>
+<strong>Vietnamese</strong>: <code translate="no" dir="ltr">vi-VN</code>
+</li> </ul> <p><br></p> <hr class="full-width"> <h2 id="what-else-can-you-do">What else can you do?</h2> <ul> <li> Learn how to <a href="count-tokens">count tokens</a> before sending long prompts to the model. </li> <li> Start thinking about preparing for production (see the <a href="production-checklist">production checklist</a>): <ul> <li> <a href="app-check">Enforce Firebase App Check</a> <em>as early as possible</em> to help protect the <span class='\"notranslate\"'>Gemini API</span> from abuse by unauthorized clients. </li> <li> Use <a href="change-model-name-remotely">Firebase Remote Config</a> or <a href="server-prompt-templates/get-started">server prompt templates</a> so that you can make on-demand changes to configurations for your AI feature (like model name) without releasing a new version of your app. </li> </ul> </li> </ul> 
+<h4 id="try-capabilities-of-gemini-api">Try out other capabilities</h4> <ul> <li> Build <a href="chat">multi-turn conversations (chat)</a>. </li> <li> Generate text from <a href="generate-text">text-only prompts</a>. </li> <li> <a href="generate-structured-output">Generate structured output (like JSON)</a> from both text and multimodal prompts. </li> <li> <a href="generate-images-gemini">Generate and edit images</a> from both text and multimodal prompts. </li> <li> <a href="live-api">Stream input and output</a> (including audio) using the Gemini Live API. </li> <li> Use tools (like <a href="function-calling">function calling</a> and Grounding with <a href="grounding-google-search"><nobr>Google Search</nobr></a> or <a href="grounding-google-maps"><nobr>Google Maps</nobr></a>) to connect a <span class='\"notranslate\"'>Gemini</span> model to other parts of your app and external systems and information. </li> </ul> 
+<h4 id="next-steps-control-content-generation">Learn how to control content generation</h4> <ul> <li> <a href="prompt-design">Understand prompt design</a>, including best practices, strategies, and example prompts. </li> <li> <a href="model-parameters">Configure model parameters</a> like max output tokens, the probability of repeated output tokens, etc. </li> <li> <a href="safety-settings">Use safety settings</a> to adjust the likelihood of getting responses that may be considered harmful. </li> </ul> You can also experiment with prompts and model configurations and even get a generated code snippet using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <h4 id="next-steps-gemini-models">Learn more about the supported models</h4> Learn about the <a href="models">models available for various use cases</a> and their <a href="quotas">quotas</a> and <a href="pricing">pricing</a>. <p><br></p> <p><a class="button button-primary" href="feedback">Give feedback about your experience with <span class='\"notranslate\"'>Firebase AI Logic</span></a></p> <p><br></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/generate-speech" class="_attribution-link">https://firebase.google.com/docs/ai-logic/generate-speech</a>
+  </p>
+</div>

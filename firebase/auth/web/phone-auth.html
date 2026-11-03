@@ -1,0 +1,164 @@
+<h1>Authenticate with Firebase with a Phone Number Using JavaScript</h1> <p>You can use Firebase Authentication to sign in a user by sending an SMS message to the user's phone. The user signs in using a one-time code contained in the SMS message.</p> <p>The easiest way to add phone number sign-in to your app is to use <a href="https://github.com/firebase/firebaseui-web/">FirebaseUI</a>, which includes a drop-in sign-in widget that implements sign-in flows for phone number sign-in, as well as password-based and federated sign-in. This document describes how to implement a phone number sign-in flow using the Firebase SDK. </p> <aside class="important"> Phone numbers that end users provide for authentication will be sent and stored by Google to improve our spam and abuse prevention across Google services, including but not limited to Firebase. Developers should ensure they have appropriate end-user consent prior to using the Firebase Authentication phone number sign-in service. </aside> <h2 id="before-you-begin">Before you begin</h2> If you haven't already, copy the initialization snippet from the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a> to your project as described in <a href="../../web/setup"> Add Firebase to your JavaScript project</a>. <h3 id="security-concerns">Security concerns</h3> <p>Authentication using only a phone number, while convenient, is less secure than the other available methods, because possession of a phone number can be easily transferred between users. Also, on devices with multiple user profiles, any user that can receive SMS messages can sign in to an account using the device's phone number.</p> <p>If you use phone number based sign-in in your app, you should offer it alongside more secure sign-in methods, and inform users of the security tradeoffs of using phone number sign-in.</p> <h2 class="procedure-step" id="enable-phone-number-sign-in-for-your-firebase-project">Enable Phone Number sign-in for your Firebase project</h2> <p>To sign in users by SMS, you must first enable the Phone Number sign-in method for your Firebase project:</p> <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Phone</b> sign-in provider. </li> <li> Set a policy on the regions to which you want to allow or deny SMS messages to be sent. Setting an SMS region policy can help protect your apps from SMS abuse. For new projects, the default policy allows no regions. <ol> <li> In the Firebase console, go to the <b>Security</b> &gt; <b>Authentication</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/settings" class="external"><b>Settings</b> tab</a>. </li> <li> In the <b>SMS region policy</b> section, set up your SMS region policy. </li> </ol> </li> <li> If you haven't already, authorize your app's domain: <ol> <li> In the Firebase console, go to the <b>Security</b> &gt; <b>Authentication</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/settings" class="external"><b>Settings</b> tab</a>. </li> <li> In the <b>Authorized domains</b> section, click <b>Add domain</b>, and add your domain. </li> </ol> <p> Note that localhost is not allowed as a hosted domain for the purposes of phone auth. </p> </li> </ol> <h2 class="procedure-step" id="set-up-the-recaptcha-verifier">Set up the reCAPTCHA verifier</h2> <p>Before you can sign in users with their phone numbers, you must set up Firebase's reCAPTCHA verifier. Firebase uses reCAPTCHA to prevent abuse, such as by ensuring that the phone number verification request comes from one of your app's allowed domains.</p> <p>You don't need to manually set up a reCAPTCHA client; when you use the Firebase SDK's <code translate="no" dir="ltr">RecaptchaVerifier</code> object, Firebase automatically creates and handles any necessary client keys and secrets.</p> <p>The <code translate="no" dir="ltr">RecaptchaVerifier</code> object supports <a href="https://www.google.com/recaptcha/intro/invisible.html">invisible reCAPTCHA</a>, which can often verify the user without requiring any user action, as well as the reCAPTCHA widget, which always requires user interaction to complete successfully.</p> <p>The underlying rendered reCAPTCHA can be localized to the user's preference by updating the language code on the Auth instance before rendering the reCAPTCHA. The aforementioned localization will also apply to the SMS message sent to the user, containing the verification code.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth } from "firebase/auth";
+
+const auth = getAuth();
+auth.languageCode = 'it';
+// To apply the default browser preference instead of explicitly setting it.
+// auth.useDeviceLanguage();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().languageCode = 'it';
+// To apply the default browser preference instead of explicitly setting it.
+// firebase.auth().useDeviceLanguage();</pre> </section> </div> <h3 id="use-invisible-recaptcha">Use invisible reCAPTCHA</h3> <p>To use an invisible reCAPTCHA, create a <code translate="no" dir="ltr">RecaptchaVerifier</code> object with the <code translate="no" dir="ltr">size</code> parameter set to <code translate="no" dir="ltr">invisible</code>, specifying the ID of the button that submits your sign-in form. For example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, RecaptchaVerifier } from "firebase/auth";
+
+const auth = getAuth();
+window.recaptchaVerifier = new RecaptchaVerifier(auth, 'sign-in-button', {
+  'size': 'invisible',
+  'callback': (response) =&gt; {
+    // reCAPTCHA solved, allow signInWithPhoneNumber.
+    onSignInSubmit();
+  }
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('sign-in-button', {
+  'size': 'invisible',
+  'callback': (response) =&gt; {
+    // reCAPTCHA solved, allow signInWithPhoneNumber.
+    onSignInSubmit();
+  }
+});</pre> </section> </div> <h3 id="use-the-recaptcha-widget">Use the reCAPTCHA widget</h3> <p>To use the visible reCAPTCHA widget, create an element on your page to contain the widget, and then create a <code translate="no" dir="ltr">RecaptchaVerifier</code> object, specifying the ID of the container when you do so. For example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, RecaptchaVerifier } from "firebase/auth";
+
+const auth = getAuth();
+window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container');</pre> </section> </div> <h4 id="optional:-specify-recaptcha-parameters">Optional: Specify reCAPTCHA parameters</h4> <p>You can optionally set callback functions on the <code translate="no" dir="ltr">RecaptchaVerifier</code> object that are called when the user solves the reCAPTCHA or the reCAPTCHA expires before the user submits the form:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, RecaptchaVerifier } from "firebase/auth";
+
+const auth = getAuth();
+window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+  'size': 'normal',
+  'callback': (response) =&gt; {
+    // reCAPTCHA solved, allow signInWithPhoneNumber.
+    // ...
+  },
+  'expired-callback': () =&gt; {
+    // Response expired. Ask user to solve reCAPTCHA again.
+    // ...
+  }
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+  'size': 'normal',
+  'callback': (response) =&gt; {
+    // reCAPTCHA solved, allow signInWithPhoneNumber.
+    // ...
+  },
+  'expired-callback': () =&gt; {
+    // Response expired. Ask user to solve reCAPTCHA again.
+    // ...
+  }
+});</pre> </section> </div> <h4 id="optional:-pre-render-the-recaptcha">Optional: Pre-render the reCAPTCHA</h4> <p>If you want to pre-render the reCAPTCHA before you submit a sign-in request, call <code translate="no" dir="ltr">render</code>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">recaptchaVerifier.render().then((widgetId) =&gt; {
+  window.recaptchaWidgetId = widgetId;
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">recaptchaVerifier.render().then((widgetId) =&gt; {
+  window.recaptchaWidgetId = widgetId;
+});</pre> </section> </div> <p>After <code translate="no" dir="ltr">render</code> resolves, you get the reCAPTCHA's widget ID, which you can use to make calls to the <a href="https://developers.google.com/recaptcha/intro">reCAPTCHA</a> API:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const recaptchaResponse = grecaptcha.getResponse(recaptchaWidgetId);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">const recaptchaResponse = grecaptcha.getResponse(recaptchaWidgetId);</pre> </section> </div> <h2 class="procedure-step" id="send-a-verification-code-to-the-users-phone">Send a verification code to the user's phone</h2> <p>To initiate phone number sign-in, present the user an interface that prompts them to provide their phone number, and then call <code translate="no" dir="ltr">signInWithPhoneNumber</code> to request that Firebase send an authentication code to the user's phone by SMS:</p> <ol> <li> <p>Get the user's phone number.</p> <p>Legal requirements vary, but as a best practice and to set expectations for your users, you should inform them that if they use phone sign-in, they might receive an SMS message for verification and standard rates apply.</p> </li> <li>Call <code translate="no" dir="ltr">signInWithPhoneNumber</code>, passing to it the user's phone number and the <code translate="no" dir="ltr">RecaptchaVerifier</code> you created earlier. <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signInWithPhoneNumber } from "firebase/auth";
+
+const phoneNumber = getPhoneNumberFromUserInput();
+const appVerifier = window.recaptchaVerifier;
+
+const auth = getAuth();
+signInWithPhoneNumber(auth, phoneNumber, appVerifier)
+    .then((confirmationResult) =&gt; {
+      // SMS sent. Prompt user to type the code from the message, then sign the
+      // user in with confirmationResult.confirm(code).
+      window.confirmationResult = confirmationResult;
+      // ...
+    }).catch((error) =&gt; {
+      // Error; SMS not sent
+      // ...
+    });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">const phoneNumber = getPhoneNumberFromUserInput();
+const appVerifier = window.recaptchaVerifier;
+firebase.auth().signInWithPhoneNumber(phoneNumber, appVerifier)
+    .then((confirmationResult) =&gt; {
+      // SMS sent. Prompt user to type the code from the message, then sign the
+      // user in with confirmationResult.confirm(code).
+      window.confirmationResult = confirmationResult;
+      // ...
+    }).catch((error) =&gt; {
+      // Error; SMS not sent
+      // ...
+    });</pre> </section> </div> If <code translate="no" dir="ltr">signInWithPhoneNumber</code> results in an error, reset the reCAPTCHA so the user can try again: 
+<pre>grecaptcha.reset(window.recaptchaWidgetId);
+
+// Or, if you haven't stored the widget ID:
+window.recaptchaVerifier.render().then(function(widgetId) {
+  grecaptcha.reset(widgetId);
+});</pre> <aside class="note"><b>Note:</b> See <a href="../limits#phone-auth">Firebase Authentication Limits</a> for applicable usage limits and quotas.</aside> </li> </ol> <p>The <code translate="no" dir="ltr">signInWithPhoneNumber</code> method issues the reCAPTCHA challenge to the user, and if the user passes the challenge, requests that Firebase Authentication send an SMS message containing a verification code to the user's phone.</p> <aside class="note">To prevent abuse, Firebase enforces a limit on the number of SMS messages that can be sent to a single phone number within a period of time. If you exceed this limit, phone number verification requests might be throttled. If you encounter this issue during development, use a different phone number for testing, or try the request again later.</aside> <h2 class="procedure-step" id="sign-in-the-user-with-the-verification-code">Sign in the user with the verification code</h2> <p>After the call to <code translate="no" dir="ltr">signInWithPhoneNumber</code> succeeds, prompt the user to type the verification code they received by SMS. Then, sign in the user by passing the code to the <code translate="no" dir="ltr">confirm</code> method of the <code translate="no" dir="ltr">ConfirmationResult</code> object that was passed to <code translate="no" dir="ltr">signInWithPhoneNumber</code>'s fulfillment handler (that is, its <code translate="no" dir="ltr">then</code> block). For example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">const code = getCodeFromUserInput();
+confirmationResult.confirm(code).then((result) =&gt; {
+  // User signed in successfully.
+  const user = result.user;
+  // ...
+}).catch((error) =&gt; {
+  // User couldn't sign in (bad verification code?)
+  // ...
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">const code = getCodeFromUserInput();
+confirmationResult.confirm(code).then((result) =&gt; {
+  // User signed in successfully.
+  const user = result.user;
+  // ...
+}).catch((error) =&gt; {
+  // User couldn't sign in (bad verification code?)
+  // ...
+});</pre> </section> </div> <p>If the call to <code translate="no" dir="ltr">confirm</code> succeeded, the user is successfully signed in.</p> <h4 id="get-the-intermediate-authcredential-object">Get the intermediate AuthCredential object</h4> <p>If you need to get an <code translate="no" dir="ltr">AuthCredential</code> object for the user's account, pass the verification code from the confirmation result and the verification code to <code translate="no" dir="ltr">PhoneAuthProvider.credential</code> instead of calling <code translate="no" dir="ltr">confirm</code>: </p>
+
+<pre>var credential = firebase.auth.PhoneAuthProvider.credential(confirmationResult.verificationId, code);</pre> <p>Then, you can sign in the user with the credential:</p> 
+<pre>firebase.auth().signInWithCredential(credential);</pre> <h2 id="test-with-fictional-phone-numbers">Test with fictional phone numbers</h2> <p> You can set up fictional phone numbers for development using the Firebase console. Testing with fictional phone numbers provides these benefits: </p> <ul> <li>Test phone number authentication without consuming your usage quota. </li>
+<li>Test phone number authentication without sending an actual SMS message. </li>
+<li>Run consecutive tests with the same phone number without getting throttled. This minimizes the risk of rejection during App store review process if the reviewer happens to use the same phone number for testing. </li>
+<li>Test readily in development environments without any additional effort, such as the ability to develop in an iOS simulator or an Android emulator without Google Play Services. </li>
+<li>Write integration tests without being blocked by security checks normally applied on real phone numbers in a production environment.</li> </ul> <p> Fictional phone numbers must meet these requirements: </p> <ol> <li>Make sure you use phone numbers that are indeed fictional, and do not already exist. Firebase Authentication does not allow you to set existing phone numbers used by real users as test numbers. One option is to use 555 prefixed numbers as US test phone numbers, for example: <em>+1 650-555-3434</em>
+</li> <li>Phone numbers have to be correctly formatted for length and other constraints. They will still go through the same validation as a real user's phone number.</li> <li>You can add up to 10 phone numbers for development.</li> <li>Use test phone numbers/codes that are hard to guess and change those frequently.</li> </ol> <h3 id="create-fictional-phone-numbers-and-verification-codes">Create fictional phone numbers and verification codes</h3> <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Phone</b> sign-in provider if you haven't already. </li> <li> Expand the <b>Phone numbers for testing</b> section. </li> <li> Provide the phone number you want to test, for example: <code translate="no" dir="ltr">+1 650-555-3434</code>. </li> <li> Provide the 6-digit verification code for that specific number, for example: <code translate="no" dir="ltr">654321</code>. </li> <li> Click <b>Add</b> for each number. If needed, you can delete the phone number and its code by hovering over the corresponding row and clicking the trash icon. </li> </ol> <h3 id="manual-testing">Manual testing</h3> <p>You can directly start using a fictional phone number in your application. This allows you to perform manual testing during development stages without running into quota issues or throttling. You can also test directly from an iOS simulator or Android emulator without Google Play Services installed.</p> <p> When you provide the fictional phone number and send the verification code, no actual SMS is sent. Instead, you need to provide the previously configured verification code to complete the sign in. </p> <p> On sign-in completion, a Firebase user is created with that phone number. The user has the same behavior and properties as a real phone number user, and can access Realtime Database/Cloud Firestore and other services the same way. The ID token minted during this process has the same signature as a real phone number user.</p> <aside class="caution">Because the ID token for the fictional phone number has the same signature as a real phone number user, it is important to store these numbers securely and to continuously recycle them.</aside> <p> Another option is to <a href="../admin/custom-claims">set a test role via custom claims</a> on these users to differentiate them as fake users if you want to further restrict access. </p> <h3 id="integration-testing">Integration testing</h3> <p> In addition to manual testing, Firebase Authentication provides APIs to help write integration tests for phone auth testing. These APIs disable app verification by disabling the reCAPTCHA requirement in web and silent push notifications in iOS. This makes automation testing possible in these flows and easier to implement. In addition, they help provide the ability to test instant verification flows on Android.</p> <aside class="note">Make sure app verification is not disabled for production apps and that no fictional phone numbers are hardcoded in your production app.</aside> <p> On web, set <code translate="no" dir="ltr">appVerificationDisabledForTesting</code> to <code translate="no" dir="ltr">true</code> before rendering the <code translate="no" dir="ltr">firebase.auth.RecaptchaVerifier</code>. This resolves the reCAPTCHA automatically, allowing you to pass the phone number without manually solving it. Note that even though reCAPTCHA is disabled, using a non-fictional phone number will still fail to complete sign in. Only fictional phone numbers can be used with this API. </p> 
+<pre>// Turn off phone auth app verification.
+firebase.auth().settings.appVerificationDisabledForTesting = true;
+
+var phoneNumber = "+16505554567";
+var testVerificationCode = "123456";
+
+// This will render a fake reCAPTCHA as appVerificationDisabledForTesting is true.
+// This will resolve after rendering without app verification.
+var appVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container');
+// signInWithPhoneNumber will call appVerifier.verify() which will resolve with a fake
+// reCAPTCHA response.
+firebase.auth().signInWithPhoneNumber(phoneNumber, appVerifier)
+    .then(function (confirmationResult) {
+      // confirmationResult can resolve with the fictional testVerificationCode above.
+      return confirmationResult.confirm(testVerificationCode)
+    }).catch(function (error) {
+      // Error; SMS not sent
+      // ...
+    });</pre> <p> Visible and invisible mock reCAPTCHA app verifiers behave differently when app verification is disabled: </p> <ul> <li>
+<b>Visible reCAPTCHA</b>: When the visible reCAPTCHA is rendered via <code translate="no" dir="ltr">appVerifier.render()</code>, it automatically resolves itself after a fraction of a second delay. This is equivalent to a user clicking the reCAPTCHA immediately upon rendering. The reCAPTCHA response will expire after some time and then auto-resolve again.</li> <li>
+<b>Invisible reCAPTCHA</b>: The invisible reCAPTCHA does not auto-resolve on rendering and instead does so on the <code translate="no" dir="ltr">appVerifier.verify()</code>call or when the button anchor of the reCAPTCHA is clicked after a fraction of a second delay. Similarly, the response will expire after some time and will only auto-resolve either after the <code translate="no" dir="ltr">appVerifier.verify()</code> call or when the button anchor of the reCAPTCHA is clicked again.</li> </ul> <p> Whenever a mock reCAPTCHA is resolved, the corresponding callback function is triggered as expected with the fake response. If an expiration callback is also specified, it will trigger on expiration. </p> <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">import { getAuth, signOut } from "firebase/auth";
+
+const auth = getAuth();
+signOut(auth).then(() =&gt; {
+  // Sign-out successful.
+}).catch((error) =&gt; {
+  // An error happened.
+});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().signOut().then(() =&gt; {
+  // Sign-out successful.
+}).catch((error) =&gt; {
+  // An error happened.
+});</pre> </section> </div><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/auth/web/phone-auth" class="_attribution-link">https://firebase.google.com/docs/auth/web/phone-auth</a>
+  </p>
+</div>

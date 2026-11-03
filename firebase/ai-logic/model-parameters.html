@@ -1,0 +1,277 @@
+<h1>Use model configuration to control responses</h1> <p>In each call to a model, you can send along a model configuration to control how the model generates a response. Each model supports different configuration options, like setting <code translate="no" dir="ltr">maxOutputTokens</code> or specialized configs for thinking, response modalities, images, speech, or voice activity detection (VAD).</p> <p>For the majority of use cases when accessing a <span class='\"notranslate\"'>Gemini</span> model, you configure the model using <code translate="no" dir="ltr">GenerationConfig</code>. However, if you're configuring a Gemini Live API model, then you use <code translate="no" dir="ltr">LiveGenerationConfig</code>.</p> <p>This page shows how to set up the configuration for <span class='\"notranslate\"'>Gemini</span> models and provides a <a href="model-parameters#parameters-descriptions-gemini">table of available parameters</a>.</p> <p><a href="#config-gemini-general" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to <span class='\"notranslate\"'>Gemini</span> config</a> <a href="#config-gemini-live-api" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to Gemini Live API config</a> </p> <h2 id="config-gemini-general">
+<code translate="no" dir="ltr">GenerationConfig</code> for <span class='\"notranslate\"'>Gemini</span> models</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Set a <code translate="no" dir="ltr">GenerationConfig</code> for the majority of <span class='\"notranslate\"'>Gemini</span> models, including general-use models, image-generating (Nano Banana) models, and text-to-speech (TTS) models.</p> <p>The configuration is maintained for the lifetime of the <code translate="no" dir="ltr">GenerativeModel</code> instance. If you want to use a different config, create and use a new instance with a different config.</p> <p>The following example shows a very basic model configuration. For additional options (especially for specialized models), see the table of <a href="#parameters-descriptions-gemini">available parameters</a> later on this page.</p> <aside class="warning"> <p> For the latest general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models, the following parameters are now unsupported: temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count. Remove them from your app's code. </p> <ul> <li> <strong>Temperature, top-K, or top-P</strong>: All the general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models will ignore them. </li> <li> <strong>Frequency penalty, presence penalty, and candidate count</strong>: For <code translate="no" dir="ltr">gemini-4-argon</code>, <code translate="no" dir="ltr">gemini-3.8-flash</code>, and <code translate="no" dir="ltr">gemini-3.7-flash</code>, the request will <em>fail</em> with a 400 error. </li> </ul> </aside> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="swift">
+import FirebaseAILogic
+
+// Set parameter values in a `GenerationConfig`.
+// IMPORTANT: Example values shown here. Make sure to update for your use case.
+// For the latest general-use Gemini models, the following parameters are now unsupported:
+// temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count
+let config = GenerationConfig(
+  maxOutputTokens: 200,
+  stopSequences: ["red"]
+)
+
+// Initialize the Gemini Developer API backend service.
+// Specify the config as part of creating the `GenerativeModel` instance.
+let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  generationConfig: config
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="kotlin">
+// ...
+
+// Set parameter values in a `GenerationConfig`.
+// IMPORTANT: Example values shown here. Make sure to update for your use case.
+// For the latest general-use Gemini models, the following parameters are now unsupported:
+// temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count
+val config = generationConfig {
+    maxOutputTokens = 200
+    stopSequences = listOf("red")
+}
+
+// Initialize the Gemini Developer API backend service.
+// Specify the config as part of creating the `GenerativeModel` instance.
+val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = "GEMINI_MODEL_NAME",
+    generationConfig = config
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="java">
+// ...
+
+// Set parameter values in a `GenerationConfig`.
+// IMPORTANT: Example values shown here. Make sure to update for your use case.
+// For the latest general-use Gemini models, the following parameters are now unsupported:
+// temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count
+GenerationConfig.Builder configBuilder = new GenerationConfig.Builder();
+configBuilder.maxOutputTokens = 200;
+configBuilder.stopSequences = List.of("red");
+
+GenerationConfig config = configBuilder.build();
+
+// Specify the config as part of creating the `GenerativeModel` instance.
+GenerativeModelFutures model = GenerativeModelFutures.from(
+        FirebaseAI.getInstance(GenerativeBackend.googleAI())
+                .generativeModel(
+                    "GEMINI_MODEL_NAME",
+                    config
+                );
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/js/ai.generationconfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="javascript">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Set parameter values in a `GenerationConfig`.
+// IMPORTANT: Example values shown here. Make sure to update for your use case.
+// For the latest general-use Gemini models, the following parameters are now unsupported:
+// temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count
+const generationConfig = {
+  maxOutputTokens: 200,
+  stopSequences: ["red"],
+};
+
+// Specify the config as part of creating the `GenerativeModel` instance.
+const model = getGenerativeModel(ai, { model: "GEMINI_MODEL_NAME",  generationConfig });
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>Set the values of the parameters in a <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerationConfig-class.html" class="external"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="dart">
+// ...
+
+// Set parameter values in a `GenerationConfig`.
+// IMPORTANT: Example values shown here. Make sure to update for your use case.
+// For the latest general-use Gemini models, the following parameters are now unsupported:
+// temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count
+final generationConfig = GenerationConfig(
+  maxOutputTokens: 200,
+  stopSequences: ["red"],
+);
+
+// Initialize the Gemini Developer API backend service.
+// Specify the config as part of creating the `GenerativeModel` instance.
+final model = FirebaseAI.googleAI().generativeModel(
+  model: 'GEMINI_MODEL_NAME',
+  generationConfig: generationConfig,
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/generation-config"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
+<pre data-language="csharp">
+// ...
+
+// Set parameter values in a `GenerationConfig`.
+// IMPORTANT: Example values shown here. Make sure to update for your use case.
+// For the latest general-use Gemini models, the following parameters are now unsupported:
+// temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count
+var generationConfig = new GenerationConfig(
+  maxOutputTokens: 200,
+  stopSequences: new string[] { "red" }
+);
+
+// Initialize the Gemini Developer API backend service.
+// Specify the config as part of creating the `GenerativeModel` instance.
+var ai = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI());
+var model = ai.GetGenerativeModel(
+  modelName: "GEMINI_MODEL_NAME",
+  generationConfig: generationConfig
+);
+
+</pre></section> </div> You can experiment with prompts and model configurations using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <h2 id="config-gemini-live-api">
+<code translate="no" dir="ltr">LiveGenerationConfig</code> for Gemini Live API models</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Set a <code translate="no" dir="ltr">LiveGenerationConfig</code> only when using Gemini Live API models.</p> <p>The configuration is maintained for the lifetime of the <code translate="no" dir="ltr">LiveModel</code> instance. If you want to use a different config, create and use a new instance with a different config.</p> <p>The following example shows a very basic model configuration. For additional options (like configuring voice activity detection (VAD)), see the table of <a href="#parameters-descriptions-gemini">available parameters</a> later on this page.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Set the values of parameters in the <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/LiveGenerationConfig"><code translate="no" dir="ltr">liveGenerationConfig</code></a> during initialization of the <code translate="no" dir="ltr">LiveModel</code> instance:</p> 
+<pre data-language="swift">
+// ...
+
+// Set parameter values in a `LiveGenerationConfig` (example values shown here).
+let config = LiveGenerationConfig(
+  maxOutputTokens: 200,
+  responseModalities: [.audio],
+  speech: SpeechConfig(voiceName: "Fenrir"),
+)
+
+// Specify the config as part of creating the `liveModel` instance.
+let liveModel = FirebaseAI.firebaseAI(backend: .googleAI()).liveModel(
+  modelName: "GEMINI_LIVE_MODEL_NAME",
+  generationConfig: config
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Set the values of parameters in a <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/LiveGenerationConfig"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
+<pre data-language="kotlin">
+// ...
+
+// Set parameter values in a `LiveGenerationConfig` (example values shown here).
+val config = liveGenerationConfig {
+    maxOutputTokens = 200
+    responseModality = ResponseModality.AUDIO
+    speechConfig = SpeechConfig(voice = Voice("FENRIR"))
+}
+
+// Specify the config as part of creating the `LiveModel` instance.
+val liveModel = Firebase.ai(backend = GenerativeBackend.googleAI()).liveModel(
+    modelName = "GEMINI_LIVE_MODEL_NAME",
+    generationConfig = config
+)
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<p>Set the values of parameters in a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/LiveGenerationConfig"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
+<pre data-language="java">
+// ...
+
+// Set parameter values in a `LiveGenerationConfig` (example values shown here).
+LiveGenerationConfig.Builder configBuilder = new LiveGenerationConfig.Builder();
+configBuilder.setMaxOutputTokens(200);
+configBuilder.setResponseModality(ResponseModality.AUDIO);
+
+configBuilder.setSpeechConfig(new SpeechConfig(new Voice("FENRIR")));
+
+LiveGenerationConfig config = configBuilder.build();
+
+// Specify the config as part of creating the `LiveModel` instance.
+LiveGenerativeModel lm = FirebaseAI.getInstance(GenerativeBackend.googleAI()).liveModel(
+          "GEMINI_LIVE_MODEL_NAME",
+          config
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Set the values of parameters in the <a href="https://firebase.google.com/docs/reference/js/ai.livegenerationconfig"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> during initialization of the <code translate="no" dir="ltr">LiveGenerativeModel</code> instance:</p> 
+<pre data-language="javascript">
+// ...
+
+// Initialize the Gemini Developer API backend service.
+const ai = getAI(firebaseApp, { backend: new GoogleAIBackend() });
+
+// Set parameter values in a `LiveGenerationConfig` (example values shown here).
+const liveGenerationConfig = {
+  maxOutputTokens: 200,
+  responseModalities: [ResponseModality.AUDIO],
+  speechConfig: {
+    voiceConfig: {
+      prebuiltVoiceConfig: { voiceName: "Fenrir" },
+    },
+  },
+};
+
+// Specify the config as part of creating the `LiveGenerativeModel` instance.
+const liveModel = getLiveGenerativeModel(ai, {
+  model: "GEMINI_LIVE_MODEL_NAME",
+  liveGenerationConfig,
+});
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+<p>Set the values of parameters in a <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/LiveGenerationConfig-class.html" class="external"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">LiveGenerativeModel</code> instance.</p> 
+<pre data-language="dart">
+// ...
+
+// Set parameter values in a `LiveGenerationConfig` (example values shown here).
+final config = LiveGenerationConfig(
+  maxOutputTokens: 200,
+  responseModalities: [ResponseModalities.audio],
+  speechConfig: SpeechConfig(voiceName: 'Fenrir'),
+);
+
+// Specify the config as part of creating the `liveGenerativeModel` instance.
+final liveModel = FirebaseAI.googleAI().liveGenerativeModel(
+  model: 'GEMINI_LIVE_MODEL_NAME',
+  liveGenerationConfig: config,
+);
+
+// ...
+
+</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+<p>Set the values of parameters in a <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/live-generation-config"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
+<pre data-language="csharp">
+// ...
+
+// Set parameter values in a `LiveGenerationConfig` (example values shown here).
+var config = new LiveGenerationConfig(
+  maxOutputTokens: 200,
+  responseModalities: new[] { ResponseModality.Audio },
+  speechConfig: SpeechConfig.UsePrebuiltVoice("Fenrir")
+);
+
+// Specify the config as part of creating the `LiveModel` instance.
+var liveModel = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI()).GetLiveModel(
+  modelName: "GEMINI_LIVE_MODEL_NAME",
+  liveGenerationConfig: config
+);
+
+// ...
+
+</pre></section> </div> You can experiment with prompts and model configurations using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <p><br></p> <hr class="full-width"> <h2 id="parameters-descriptions-gemini">Available model parameters</h2> <p>The following table is a high-level overview of the available parameters for model configuration. Some parameters are only applicable for certain models.</p> <aside class="warning"> <p> For the latest general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models, the following parameters are now unsupported: temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count. Remove them from your app's code. </p> <ul> <li> <strong>Temperature, top-K, or top-P</strong>: All the general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models will ignore them. </li> <li> <strong>Frequency penalty, presence penalty, and candidate count</strong>: For <code translate="no" dir="ltr">gemini-4-argon</code>, <code translate="no" dir="ltr">gemini-3.8-flash</code>, and <code translate="no" dir="ltr">gemini-3.7-flash</code>, the request will <em>fail</em> with a 400 error. </li> </ul> </aside> <table> <thead> <tr> <th width="20%">Parameter</th> <th width="35%">Description</th> <th>Limitations</th> <th width="20%">Default value</th> </tr> </thead> <tbody> <tr> <td> Max output tokens<br><code translate="no" dir="ltr">maxOutputTokens</code> </td> <td> <p> Specifies the maximum number of tokens that can be generated in the response. </p> <p> For <code translate="no" dir="ltr">gemini-4-argon</code>, the default and maximum output token limits are <code translate="no" dir="ltr">32,768</code> tokens for non-streaming requests and <code translate="no" dir="ltr">65,536</code> tokens for streaming requests. Note that <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support long decode, but that feature is coming soon! </p> </td> <td>---</td> <td>---</td> </tr> <tr> <td> Stop sequences<br><code translate="no" dir="ltr">stopSequences</code> </td> <td> Specifies a list of strings that tells the model to stop generating content if one of the strings is encountered in the response. </td> <td> <p> Only applicable when using a <code translate="no" dir="ltr">GenerativeModel</code> configuration. </p> <p> Not applicable for Nano Banana or TTS models. </p> </td> <td>---</td> </tr> <tr class="alt"> <td colspan="4"><strong>Specialized configurations</strong></td> </tr> <tr> <td> Thinking<br><a href="thinking"><code translate="no" dir="ltr">thinkingConfig</code></a> </td> <td> <p> Controls the "thinking process" for the models when they're generating a response. </p> <ul> <li> Control the amount of thinking that the model can do using a <em>thinking level</em>. </li> <li> Control whether to include <em>thought summaries</em>. </li> </ul> </td> <td> <p> Supported values: See the <a href="thinking#supported-thinking-level-values">thinking documentation</a> </p> <p> Not applicable for TTS models. </p> <p> <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support setting a <code translate="no" dir="ltr">thinkingConfig</code> for Live API models. </p> </td> <td> <a href="thinking#supported-thinking-level-values">Depends on the model</a> </td> </tr> <tr> <td> Response modalities<br><code translate="no" dir="ltr">responseModalities</code> </td> <td> Specifies the type of output (like text, audio, or images). </td> <td> Only applicable (and <em>required</em>) when using Nano Banana, TTS, and Live API models. </td> <td>---</td> </tr> <tr> <td> Image characteristics<br><a href="generate-images-gemini#configure-image-generation"><code translate="no" dir="ltr">imageConfig</code></a> </td> <td> Specifies the aspect ratio and resolution of generated images. </td> <td> <p> Supported values: See <a href="generate-images-gemini#configure-image-generation">Configure image generation</a> </p> <p> Only applicable when using Nano Banana models. </p> </td> <td> 1:1 aspect ratio (square)<br>1024x1024 resolution </td> </tr> <tr> <td> Speech (voice)<br><code translate="no" dir="ltr">speechConfig</code> </td> <td> Specifies the voice used for the audio output. </td> <td> Only applicable when using TTS models and Live API models.<br><br> Required for TTS models. </td> <td> <code translate="no" dir="ltr">Puck</code> </td> </tr> <tr> <td> Voice activity detection (VAD)<br><a href="live-api/configuration#vad"><code translate="no" dir="ltr">realtimeInputConfig</code></a> </td> <td> Configures voice activity detection (VAD), interruption handling, and turn context coverage, or disables automatic VAD. </td> <td> <p> Supported values: See <a href="live-api/configuration#vad-configuration-settings">Configure VAD</a> </p> <p> Only applicable when using Live API models. </p> </td> <td> <p> VAD enabled </p> <p> See <a href="live-api/configuration#vad-configuration-settings">default values</a> for individual settings. </p> </td> </tr> </tbody> </table> <aside class="note"><b>Note</b>: The following configurations are also supported in the <code translate="no" dir="ltr">GenerationConfig</code>: <ul> <li>
+<a href="generate-structured-output">Generating structured output (like JSON)</a> is controlled by using the <code translate="no" dir="ltr">responseMimeType</code> and <code translate="no" dir="ltr">responseSchema</code> parameters.<br> These parameters are only supported for general-use text models (<em>not</em> for Nano Banana, TTS, or Live API models). </li> </ul> <p> Note that <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not</em> support the parameter <code translate="no" dir="ltr">audioTimestamp</code>. </p> </aside> <p><section class="expandable" id="unsupported-parameters"> <h4 class="showalways" id="unsupported-parameters">Temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count are unsupported</h4></section></p> <aside class="warning showalways"> <p> For the latest general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models, the following parameters are now unsupported: temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count. Remove them from your app's code. </p> <ul> <li> <strong>Temperature, top-K, or top-P</strong>: All the general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models will ignore them. </li> <li> <strong>Frequency penalty, presence penalty, and candidate count</strong>: For <code translate="no" dir="ltr">gemini-4-argon</code>, <code translate="no" dir="ltr">gemini-3.8-flash</code>, and <code translate="no" dir="ltr">gemini-3.7-flash</code>, the request will <em>fail</em> with a 400 error. </li> </ul> </aside> <table> <thead> <tr> <th width="20%">Parameter</th> <th width="35%">Description</th> <th>Limitations</th> <th width="20%">Default value</th> </tr> </thead> <tbody> <tr> <td> Candidate count<br><code translate="no" dir="ltr">candidateCount</code> </td> <td> Specifies the number of response variations to return. For each request, you're charged for the output tokens of all candidates, but you're only charged once for the input tokens. <aside class="warning">Setting <code translate="no" dir="ltr">candidateCount</code> is unsupported. </aside> </td> <td> <p> Supported values: <code translate="no" dir="ltr">1</code> - <code translate="no" dir="ltr">8</code> (inclusive) </p> <p> Only applicable when using <code translate="no" dir="ltr">generateContent</code>. </p> <p> Not applicable when using <code translate="no" dir="ltr">generateContentStream</code>, Nano Banana, TTS, or Live API models. </p> </td> <td> <code translate="no" dir="ltr">1</code> </td> </tr> <tr> <td> Frequency penalty<br><code translate="no" dir="ltr">frequencyPenalty</code> </td> <td> <p> Controls the probability of including tokens that repeatedly appear in the generated response. </p> <p> Positive values penalize tokens that repeatedly appear in the generated content, decreasing the probability of repeating content. </p> <aside class="warning">Setting <code translate="no" dir="ltr">frequencyPenalty</code> is unsupported. </aside> </td> <td> Not applicable for Nano Banana or TTS models. </td> <td>---</td> </tr> <tr> <td> Presence penalty<br><code translate="no" dir="ltr">presencePenalty</code> </td> <td> <p> Controls the probability of including tokens that already appear in the generated response. </p> <p> Positive values penalize tokens that already appear in the generated content, increasing the probability of generating more diverse content. </p> <aside class="warning">Setting <code translate="no" dir="ltr">presencePenalty</code> is unsupported. </aside> </td> <td> Not applicable for Nano Banana or TTS models. </td> <td>---</td> </tr> <tr> <td> Temperature<br><code translate="no" dir="ltr">temperature</code> </td> <td>Controls the degree of randomness in the response.<br> Lower temperatures result in more deterministic responses, and higher temperatures result in more diverse or creative responses. <aside class="warning">Setting <code translate="no" dir="ltr">temperature</code> is unsupported. </aside> </td> <td>---</td> <td>Depends on the model</td> </tr> <tr> <td> Top-K<br><code translate="no" dir="ltr">topK</code> </td> <td>Limits the number of highest probability words used in the generated content.<br> A top-K value of <code translate="no" dir="ltr">1</code> means the next selected token should be <em>the most probable</em> among all tokens in the model's vocabulary, while a top-K value of <code translate="no" dir="ltr">n</code> means that the next token should be selected from among <em>the <em>n</em> most probable</em> tokens (all based on the temperature that's set). <aside class="warning">Setting <code translate="no" dir="ltr">topK</code> is unsupported. </aside> </td> <td>---</td> <td>Depends on the model</td> </tr> <tr> <td> Top-P<br><code translate="no" dir="ltr">topP</code> </td> <td>Controls diversity of generated content.<br> Tokens are selected from the most probable (see top-K above) to least probable until the sum of their probabilities equals the top-P value. <aside class="warning">Setting <code translate="no" dir="ltr">topP</code> is unsupported. </aside> </td> <td>---</td> <td>Depends on the model</td> </tr> </tbody> </table>  <p><br></p> <hr class="full-width"> <h2 id="other-options-to-control-generation">Other options to control content generation</h2> <ul> <li> Learn more about <a href="prompt-design">prompt design</a> so that you can influence the model to generate output specific to your needs. </li> <li> Use <a href="safety-settings">safety settings</a> to adjust the likelihood of getting responses that may be considered harmful, including hate speech and sexually explicit content. </li> <li> Set <a href="system-instructions">system instructions</a> to steer the behavior of the model. This feature is like a preamble that you add before the model gets exposed to any further instructions from the end user. </li> <li> Pass a <a href="generate-structured-output"><i>response schema</i></a> along with the prompt to specify a specific output schema. This feature is most commonly used when <a href="generate-structured-output#generate-json-basic">generating JSON output</a>, but it can also be used for <a href="generate-structured-output#generate-enum-basic">classification tasks</a> (like when you want the model to use specific labels or tags). </li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/model-parameters" class="_attribution-link">https://firebase.google.com/docs/ai-logic/model-parameters</a>
+  </p>
+</div>

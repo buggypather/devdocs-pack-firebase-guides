@@ -1,0 +1,91 @@
+<h1>Google services Gradle plugin and JSON config file</h1> <p>As part of adding Firebase to your Android project, you need to add the <code translate="no" dir="ltr"><nobr>google-services</nobr></code> Gradle plugin and a <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> configuration file to your project.</p> <p>If you add Firebase to your Android project using the <a href="setup#console">Firebase console</a>, the <a href="../projects/api/workflow_set-up-and-manage-project">Management REST API</a>, or the <a href="../cli#management-commands">Firebase CLI</a>, you must manually add the Gradle plugin and JSON config file to your project. However, if you use the <a href="learn-more#firebase-assistant">Firebase Assistant for Android Studio</a>, these tasks are automatically done for you during setup.</p> <aside class="note"><strong>Note:</strong><span> The <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file contains unique, but non-secret identifiers for your project. To learn more about this config file, visit <a href="../projects/learn-more">Understand Firebase Projects</a>.</span></aside> <h2 id="add-the-plugin">Add the Gradle plugin</h2> <p>You add the Google services Gradle plugin (<code translate="no" dir="ltr"><nobr>google-services</nobr></code>) to your <code translate="no" dir="ltr">build.gradle</code> file:</p> 
+<pre>dependencies {
+    classpath 'com.google.gms:google-services:4.5.0'
+    // ...
+}
+</pre> <p>The Google services Gradle plugin has two main functions:</p> <ul> <li><p>Processes the <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file and produces Android resources that can be used in your app's code.</p></li> <li>
+<p>Adds dependencies for basic libraries required for the services you have enabled. This step requires that you apply the Google services Gradle plugin in your <code translate="no" dir="ltr">app/build.gradle</code> file, like so: <br> <code translate="no" dir="ltr">apply plugin: 'com.google.gms.google-services'</code></p> <p>You can see the result of this step by running <code translate="no" dir="ltr">./gradlew :app:dependencies</code>.</p>
+</li> </ul> <h2 id="add-the-json-file">Add the JSON config file</h2> <p>The <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file is generally placed in the <code translate="no" dir="ltr">app/</code> directory (at the root of the Android Studio app module). As of version <code translate="no" dir="ltr">2.2.0</code> the plugin supports build type and product flavor specific JSON files. All of the following directory structures are valid:</p> 
+<pre>// dogfood and release are build types.
+app/
+    google-services.json
+    src/dogfood/google-services.json
+    src/release/google-services.json
+    ...
+</pre>
+<aside class="note"><strong>Note:</strong><span> Providing a <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file in the release directory lets you maintain a separate Firebase project for your production APKs.</span></aside> <p>When product flavors are in use these more complicated directory structures are also valid.</p> 
+<pre>// free and paid are product flavors.
+app/
+    google-services.json
+    src/dogfood/paid/google-services.json
+    src/release/free/google-services.json
+    ...
+</pre> <h2 id="processing-json-file">How the JSON config file is processed</h2> <p>The <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file has the following basic structure:</p> 
+<pre>{
+  "project_info": {...},
+  "client": [...],
+}
+</pre> <p>The <code translate="no" dir="ltr">project_info</code> object contains general information about your project, while each member of the <code translate="no" dir="ltr">client</code> array contains information about the clients (Android apps) that you have added to the project.</p> <p>When processing the JSON file for your Android app, the plugin only uses the <code translate="no" dir="ltr">client</code> object that matches your package name (for the current build type) based on the following logic:</p> <ul> <li><p>For each member of the <code translate="no" dir="ltr">client</code> array, the plugin checks the value of <code translate="no" dir="ltr">client_info/android_client_info/package_name</code>. If the package name matches this value, it returns the member object.</p></li> <li><p>If none of the members of <code translate="no" dir="ltr">client</code> match the package name, the plugin throws an exception.</p></li> </ul> <p>The remainder of this document uses <code translate="no" dir="ltr"><var translate="no">YOUR_CLIENT</var></code> to refer to the member of the <code translate="no" dir="ltr">client</code> array determined by the logic described above.</p> <h3 id="product-xml-files">Production of XML files</h3> <p>The main result of the JSON processing is to produce two XML files that you can reference as Android resources in your code. The following are examples of each file:</p> <ul> <li>
+<p><code translate="no" dir="ltr">app/build/generated/res/google-services/{build_type}/values/values.xml</code></p> 
+<pre>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;resources&gt;
+
+    &lt;! -- Present in all applications --&gt;
+    &lt;string name="google_app_id" translatable="false"&gt;1:1035469437089:android:73a4fb8297b2cd4f&lt;/string&gt;
+
+    &lt;! -- Present in applications with the appropriate services configured --&gt;
+    &lt;string name="gcm_defaultSenderId" translatable="false"&gt;1035469437089&lt;/string&gt;
+    &lt;string name="default_web_client_id" translatable="false"&gt;337894902146-e4uksm38sne0bqrj6uvkbo4oiu4hvigl.apps.googleusercontent.com&lt;/string&gt;
+    &lt;string name="ga_trackingId" translatable="false"&gt;UA-65557217-3&lt;/string&gt;
+    &lt;string name="firebase_database_url" translatable="false"&gt;https://example-url.firebaseio.com&lt;/string&gt;
+    &lt;string name="google_api_key" translatable="false"&gt;AIzbSyCILMsOuUKwN3qhtxrPq7FFemDJUAXTyZ8&lt;/string&gt;
+    &lt;string name="google_crash_reporting_api_key" translatable="false"&gt;AIzbSyCILMsOuUKwN3qhtxrPq7FFemDJUAXTyZ8&lt;/string&gt;
+    &lt;string name="project_id" translatable="false"&gt;mydemoapp&lt;/string&gt;
+
+&lt;/resources&gt;
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">app/build/generated/res/google-services/{flavor}/{build_type}/xml/global_tracker.xml</code></p> 
+<pre>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;resources&gt;
+    &lt;string name="ga_trackingId" translatable="false"&gt;UA-65557218-3&lt;/string&gt;
+&lt;/resources&gt;
+</pre>
+</li> </ul> <h4 id="values-in-xml-files">Values in the XML files</h4> <p>Every value in the XML files is present in the <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file at the locations listed below. If your Android project has some configuration that prevents you from using the <code translate="no" dir="ltr"><nobr>google-services</nobr></code> Gradle plugin, you can safely recreate the XML files manually using these values.</p> <ul> <li>
+<p><code translate="no" dir="ltr">google_app_id</code></p> 
+<pre>YOUR_CLIENT/client_info/mobilesdk_app_id
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">gcm_defaultSenderId</code></p> 
+<pre>project_info/project_number
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">default_web_client_id</code></p> 
+<pre>YOUR_CLIENT/oauth_client/client_id (client_type == 3)
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">ga_trackingId</code></p> 
+<pre>YOUR_CLIENT/services/analytics-service/analytics_property/tracking_id
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">firebase_database_url</code></p> 
+<pre>project_info/firebase_url
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">google_api_key</code></p> 
+<pre>YOUR_CLIENT/api_key/current_key
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">google_crash_reporting_api_key</code></p> 
+<pre>YOUR_CLIENT/api_key/current_key
+</pre>
+</li> <li>
+<p><code translate="no" dir="ltr">project_id</code></p> 
+<pre>project_info/project_id
+</pre>
+</li> </ul> <h2 id="troubleshooting">Troubleshooting</h2> <h4 id="when_building_i_get_the_following_error_message_file_google-servicesjson_is_missing_from_module_root_folder_the_google_services_plugin_cannot_function_without_it">When building, I get the following error message: <code translate="no" dir="ltr">File google-services.json is missing from module root folder. The Google Services Plugin cannot function without it</code>.</h4> <p>The <a href="https://console.firebase.google.com/project/_/" class="external">Firebase console</a> will help you download the <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file.</p> <p>After you've downloaded the <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file, copy it into the <code translate="no" dir="ltr">app/</code> folder of your Android Studio project, or into the <code translate="no" dir="ltr">app/src/{build_type}</code> folder if you're using multiple build types.</p> <h4 id="i_cant_find_the_symbols_like_rstringgcm_defaultsenderid_or_rxmlglobal_tracker">I can't find the symbols like <code translate="no" dir="ltr">R.string.gcm_defaultSenderId</code> or <code translate="no" dir="ltr">R.xml.global_tracker</code>.</h4> <p>Make sure the package name in your <code translate="no" dir="ltr">build.gradle</code> file matches the package name you entered when creating the <code translate="no" dir="ltr">google-services.json</code> file. If you are not sure, run through the getting started flow again and get a new JSON file.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/android/google-services-plugin-and-file" class="_attribution-link">https://firebase.google.com/docs/android/google-services-plugin-and-file</a>
+  </p>
+</div>

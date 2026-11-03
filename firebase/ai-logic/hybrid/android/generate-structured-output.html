@@ -1,0 +1,236 @@
+<h1>Generate structured output for hybrid experiences in Android apps</h1> <aside class="experimental"><strong>Experimental:</strong><span> Using the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK to build hybrid experiences is an Experimental feature (and the Prompt API from ML Kit is in beta), which means that this feature isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways.</span></aside> <p><br></p> <p><span class='\"notranslate\"'>Gemini</span> models return responses as unstructured text by default. However, some use cases require structured text (like JSON or enums). For example, you might be using the response for other downstream tasks that require an established data schema.</p> <p>To ensure that the model's generated output always adheres to a specific schema, you can define a <em>schema</em>, which works like a blueprint for model responses. You can then directly extract data from the model's output with less post-processing.</p> <p>Here are some example use cases:</p> <ul> <li><p><strong>Ensure that a model's response produces valid JSON and conforms to your provided schema.</strong><br> For example, the model can generate structured entries for recipes that always include the recipe name, list of ingredients, and steps. You can then more easily parse and display this information in the UI of your app.</p></li> <li><p><strong>Constrain how a model can respond during classification tasks.</strong><br> For example, you can have the model annotate text with a specific set of labels (for instance, a specific set of enums like <code translate="no" dir="ltr">positive</code> and <code translate="no" dir="ltr">negative</code>), rather than labels that the model produces (which could have a degree of variability like <code translate="no" dir="ltr">good</code>, <code translate="no" dir="ltr">positive</code>, <code translate="no" dir="ltr">negative</code>, or <code translate="no" dir="ltr">bad</code>).</p></li> </ul> <p>This page describes how to generate structured output (like JSON and enums) in your hybrid experiences for Android apps.</p> <p><a href="#json-output" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to JSON output</a> <a href="#enum-output" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to enum output</a> </p> <h2 id="model-config-structured-output">Configuration for structured output</h2> <p>Generating structured output (like JSON and enums) is supported for both on-device and cloud-hosted inference.</p> <p>To generate structured output, pass your schema directly to <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#generateObject(com.google.firebase.ai.type.JsonSchema,kotlin.String)"><code translate="no" dir="ltr">generateObject()</code></a>. Schema requirements depend on your configured inference mode:</p> <ul> <li>
+<p><strong>For on-device and hybrid inference (<code translate="no" dir="ltr">ONLY_ON_DEVICE</code>, <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>, and <code translate="no" dir="ltr">PREFER_IN_CLOUD</code>)</strong>:</p> <ul> <li>Requires using the <code translate="no" dir="ltr">@Generable</code> annotation on a Kotlin <code translate="no" dir="ltr">data class</code> with the KSP processor; manual schemas and direct <code translate="no" dir="ltr">enum class</code> annotations are not supported.</li> <li>When inference runs on-device, the SDK automatically translates the schema into constraints for the on-device model (using the ML Kit Prompt API).</li> <li>If a hybrid request falls back to cloud inference, the SDK automatically sets the <code translate="no" dir="ltr">responseMimeType</code> to <code translate="no" dir="ltr">application/json</code> and passes the schema to the cloud-hosted <span class='\"notranslate\"'>Gemini</span> model.</li> </ul>
+</li> <li>
+<p><strong>For cloud-only inference (<code translate="no" dir="ltr">ONLY_IN_CLOUD</code>)</strong>:</p> <ul> <li>Supports both <code translate="no" dir="ltr">@Generable</code> annotations (recommended) and manual schemas (built using <code translate="no" dir="ltr">JsonSchema</code> helper methods).</li> <li>The SDK automatically sets the <code translate="no" dir="ltr">responseMimeType</code> to <code translate="no" dir="ltr">application/json</code> and passes the schema to the cloud-hosted <span class='\"notranslate\"'>Gemini</span> model.</li> </ul>
+</li> </ul> <h2 id="before-you-begin">Before you begin</h2> 
+<table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Before generating structured output, make sure that you've completed the following setup:</p> <ol> <li><p>Complete the <a href="get-started#get-started">getting started guide for building hybrid experiences</a>, which covers setting up your Firebase project, downloading the on-device model, and configuring App Check.</p></li> <li>
+<p>Configure the <strong>Kotlin Symbol Processing (KSP)</strong> plugin and add the <span class='\"notranslate\"'>Firebase AI KSP</span> dependency to your app.</p> <p>In your <strong>module (app-level) Gradle file</strong> (like <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code>), add the KSP plugin, the Kotlin Serialization plugin, and the required dependencies:</p> 
+<pre>plugins {
+   // ... other plugins
+   id("com.google.gms.google-services")
+   id("com.google.devtools.ksp") version "LATEST_VERSION"
+   id("org.jetbrains.kotlin.plugin.serialization") version "LATEST_VERSION"
+}
+
+dependencies {
+   // ... other androidx dependencies
+
+   // Add the dependencies for the Firebase AI Logic and App Check libraries.
+   implementation("com.google.firebase:firebase-ai:18.1.0")
+   implementation("com.google.firebase:firebase-ai-ondevice:16.0.0-beta07")
+   implementation("com.google.firebase:firebase-appcheck-debug:20.0.0")
+
+   // Add the Firebase AI KSP processor for schema generation.
+   ksp("com.google.firebase:firebase-ai-ksp-processor:17.0.0")
+
+   // (Optional) Add kotlinx.serialization JSON library for object decoding.
+   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:LATEST_VERSION")
+}</pre> <aside class="note"><strong>Note:</strong><span> The KSP processor and strongly-typed <code translate="no" dir="ltr">generateObject()</code> APIs on this page are designed for Kotlin.<br> For Java apps, to generate structured output with on-device or hybrid inference, we recommend writing your AI model interactions in Kotlin. Alternatively, for cloud-only inference, you can use standard <a href="../../generate-structured-output#generate-json-basic"><code translate="no" dir="ltr">generateContent()</code></a> with cloud-hosted models to generate JSON text and parse the response with your preferred JSON library (such as Gson or Moshi).</span></aside>
+</li> </ol> <p><br></p> <p><a href="#json-output" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to JSON output</a> <a href="#enum-output" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to enum output</a> </p> <h2 id="json-output">JSON output</h2> <p>The following examples adapt the <a href="../../generate-structured-output#generate-json-basic">general JSON output example</a> to accommodate hybrid inference (for example, <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>).</p> <p>In the scenario for these examples, the model generates a list of character profiles for a fantasy story, with structured attributes like name, age, species, and optional accessories.</p> <p><strong>You can define your response schemas using either of the following approaches:</strong></p> <ul> <li>
+<p><a href="#json-output-ksp"><strong>KSP annotations (<code translate="no" dir="ltr">@Generable</code> and <code translate="no" dir="ltr">@Guide</code>)</strong></a></p> <ul> <li>Supported for <em>all</em> inference modes, and <em>required</em> for on-device and hybrid inference (specifically, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code>, <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>, and <code translate="no" dir="ltr">PREFER_IN_CLOUD</code>).</li> <li>Define Kotlin data classes to automatically generate schemas at compile time and deserialize responses directly into strongly-typed objects using <code translate="no" dir="ltr">getObject()</code>.</li> </ul>
+</li> <li>
+<p><a href="#json-output-helpers"><strong>Manual <code translate="no" dir="ltr">JsonSchema</code> helper methods</strong></a></p> <ul> <li>Supported <em>only</em> for cloud-based inference (specifically, <code translate="no" dir="ltr">ONLY_IN_CLOUD</code>).</li> <li>Manually construct a <code translate="no" dir="ltr">JsonSchema</code> in code without using the KSP processor, and read the raw JSON string from <code translate="no" dir="ltr">response.response.text</code>.</li> </ul>
+</li> </ul> <h3 id="json-output-ksp">Example 1: Using <code translate="no" dir="ltr">@Generable</code> and <code translate="no" dir="ltr">@Guide</code> annotations with KSP</h3> <p>Define a Kotlin <code translate="no" dir="ltr">data class</code> annotated with <code translate="no" dir="ltr">@Serializable</code> and <code translate="no" dir="ltr">@Generable</code>. Use <code translate="no" dir="ltr">@Guide</code> annotations on properties to provide the model with descriptions, value bounds, or item constraints.</p> <p>This approach is supported for <em>all</em> inference modes, and it's <em>required</em> for on-device and hybrid experiences (specifically, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code>, <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>, and <code translate="no" dir="ltr">PREFER_IN_CLOUD</code>).</p> <aside class="special"><strong>Important:</strong><span> Declare an empty <code translate="no" dir="ltr">companion object</code> in the data class so that KSP can generate the <code translate="no" dir="ltr">firebaseAISchema()</code> extension method.</span></aside> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
+<pre>import com.google.firebase.Firebase
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.InferenceMode
+import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.annotations.Generable
+import com.google.firebase.ai.annotations.Guide
+import com.google.firebase.ai.ai
+import kotlinx.serialization.Serializable
+
+// Define data classes representing the schema, annotated with @Serializable and @Generable.
+// You can provide descriptions on @Generable and @Guide to guide the model's output.
+@Serializable
+@Generable(description = "A character profile for a fantasy story")
+data class Character(
+    val name: String,
+    val age: Int,
+    val species: String,
+    // Use @Guide to add property descriptions, value bounds (minimum/maximum), or formats.
+    // Properties with default values or nullable types are treated as optional in the schema.
+    @Guide(description = "An accessory the character wears or carries")
+    val accessory: String? = null
+) {
+    // An empty companion object is required for KSP to generate the firebaseAISchema() extension.
+    companion object
+}
+
+@Serializable
+@Generable(description = "A list of character profiles")
+data class CharacterList(
+    // Use minItems or maxItems to specify collection size bounds for the model.
+    @Guide(description = "List of characters", minItems = 1)
+    val characters: List&lt;Character&gt;
+) {
+    // An empty companion object is required for KSP to generate the firebaseAISchema() extension.
+    companion object
+}
+
+// Initialize the Gemini Developer API backend service.
+// Create a GenerativeModel instance configured for hybrid inference (like PREFER_ON_DEVICE).
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+    .generativeModel(
+        modelName = "CLOUD_MODEL_NAME",
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.INFERENCE_MODE)
+    )
+
+// Obtain the schema generated by KSP via the firebaseAISchema() extension.
+val schema = CharacterList.firebaseAISchema()
+val prompt = "Create profiles for some characters for a fantasy story."
+
+// Generate the structured object (the SDK applies the schema to on-device or cloud models).
+val response = model.generateObject(schema, prompt)
+
+// Access the strongly-typed deserialized object directly via getObject().
+val characterList: CharacterList? = response.getObject()
+characterList?.characters?.forEach { character -&gt;
+    println("Name: ${character.name}, Species: ${character.species}, Age: ${character.age}")
+    println("Accessory: ${character.accessory ?: "None"}")
+}
+</pre> <h3 id="json-output-helpers">Example 2: Using manual <code translate="no" dir="ltr">JsonSchema</code> helper methods</h3> <p>If your app is <em>only</em> using cloud-based inference (specifically, <code translate="no" dir="ltr">ONLY_IN_CLOUD</code>), then you can manually build a <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/JsonSchema"><code translate="no" dir="ltr">JsonSchema</code></a> using helper methods provided by the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK.</p> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
+<pre>import com.google.firebase.Firebase
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.InferenceMode
+import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.ai
+import com.google.firebase.ai.type.JsonSchema
+
+// Define the schema manually using JsonSchema helper methods.
+// Properties are required by default unless specified in optionalProperties.
+val jsonSchema = JsonSchema.obj(
+    properties = mapOf(
+        "characters" to JsonSchema.array(
+            items = JsonSchema.obj(
+                properties = mapOf(
+                    "name" to JsonSchema.string(),
+                    "accessory" to JsonSchema.string(),
+                    "age" to JsonSchema.integer(),
+                    "species" to JsonSchema.string()
+                ),
+                optionalProperties = listOf("accessory")
+            )
+        )
+    )
+)
+
+// Initialize the Gemini Developer API backend service.
+// Manual schemas are only supported for cloud-based inference (specifically, ONLY_IN_CLOUD).
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+    .generativeModel(
+        modelName = "CLOUD_MODEL_NAME",
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_IN_CLOUD)
+    )
+
+// Call generateObject() with the manual schema and prompt.
+val response = model.generateObject(
+    jsonSchema,
+    "Create profiles for some characters for a fantasy story."
+)
+
+// Access the generated JSON string conforming to the schema from response.response.text.
+println(response.response.text)
+</pre> <h2 id="enum-output">Enum output</h2> <p>The following examples adapt the <a href="../../generate-structured-output#generate-enum-basic">general enum output example</a> to accommodate hybrid inference (for example, <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>).</p> <p>In the scenario for these examples, the model classifies a film description by selecting a single genre from a predefined list of allowed options (<code translate="no" dir="ltr">drama</code>, <code translate="no" dir="ltr">comedy</code>, or <code translate="no" dir="ltr">documentary</code>).</p> <p><strong>You can define your response schemas using either of the following approaches:</strong></p> <ul> <li>
+<p><a href="#enum-output-ksp"><strong>KSP annotations (<code translate="no" dir="ltr">@Generable</code>)</strong></a></p> <ul> <li>Supported for <em>all</em> inference modes, and <em>required</em> for on-device and hybrid inference (specifically, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code>, <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>, and <code translate="no" dir="ltr">PREFER_IN_CLOUD</code>).</li> <li>Define an enum wrapped in a Kotlin <code translate="no" dir="ltr">data class</code> to automatically generate the schema and deserialize responses directly into strongly-typed objects using <code translate="no" dir="ltr">getObject()</code>.</li> </ul>
+</li> <li>
+<p><a href="#enum-output-helpers"><strong>Manual <code translate="no" dir="ltr">JsonSchema</code> helper methods</strong></a></p> <ul> <li>Supported <em>only</em> for cloud-based inference (specifically, <code translate="no" dir="ltr">ONLY_IN_CLOUD</code>).</li> <li>Manually build an enum <code translate="no" dir="ltr">JsonSchema</code> using <code translate="no" dir="ltr">JsonSchema.enumeration()</code> without using the KSP processor, and read the selected string from <code translate="no" dir="ltr">response.response.text</code>.</li> </ul>
+</li> </ul> <h3 id="enum-output-ksp">Example 1: Using <code translate="no" dir="ltr">@Generable</code> annotations with KSP</h3> <p>Define an <code translate="no" dir="ltr">enum class</code> representing the allowed values, and wrap it as a property inside a Kotlin <code translate="no" dir="ltr">data class</code> annotated with <code translate="no" dir="ltr">@Serializable</code> and <code translate="no" dir="ltr">@Generable</code>.</p> <p>This approach is supported for <em>all</em> inference modes, and it's <em>required</em> for on-device and hybrid experiences (specifically, <code translate="no" dir="ltr">ONLY_ON_DEVICE</code>, <code translate="no" dir="ltr">PREFER_ON_DEVICE</code>, and <code translate="no" dir="ltr">PREFER_IN_CLOUD</code>).</p> <aside class="special"><strong>Important:</strong><span> Declare an empty <code translate="no" dir="ltr">companion object</code> in the data class so that KSP can generate the <code translate="no" dir="ltr">firebaseAISchema()</code> extension method.</span></aside> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
+<pre>import com.google.firebase.Firebase
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.InferenceMode
+import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.annotations.Generable
+import com.google.firebase.ai.annotations.Guide
+import com.google.firebase.ai.ai
+import kotlinx.serialization.Serializable
+
+// Define an enum class representing the allowed options.
+@Serializable
+enum class FilmGenre {
+    DRAMA,
+    COMEDY,
+    DOCUMENTARY
+}
+
+// Wrap the enum in a data class annotated with @Serializable and @Generable.
+// On-device inference requires an @Generable data class.
+// Direct enum annotations are not supported on-device.
+@Serializable
+@Generable(description = "The classification result for the film")
+data class FilmClassification(
+    @Guide(description = "The genre of the film")
+    val genre: FilmGenre
+) {
+    // An empty companion object is required for KSP to generate the firebaseAISchema() extension.
+    companion object
+}
+
+// Initialize the Gemini Developer API backend service.
+// Create a GenerativeModel instance configured for hybrid inference (like PREFER_ON_DEVICE).
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+    .generativeModel(
+        modelName = "CLOUD_MODEL_NAME",
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.INFERENCE_MODE)
+    )
+
+// Obtain the schema generated by KSP via the firebaseAISchema() extension.
+val schema = FilmClassification.firebaseAISchema()
+val prompt = """
+    The film aims to educate and inform viewers about real-life subjects, events, or people.
+    It offers a factual record of a particular topic by combining interviews, historical footage,
+    and narration. The primary purpose of a film is to present information and provide insights
+    into various aspects of reality.
+    """
+
+// Generate the structured object (the SDK applies the schema to on-device or cloud models).
+val response = model.generateObject(schema, prompt)
+
+// Access the strongly-typed deserialized object and enum value directly via getObject().
+val classification: FilmClassification? = response.getObject()
+val genre: FilmGenre? = classification?.genre
+println("Selected genre: $genre")
+</pre> <h3 id="enum-output-helpers">Example 2: Using manual <code translate="no" dir="ltr">JsonSchema</code> helper methods</h3> <p>If your app is <em>only</em> using cloud-based inference (specifically, <code translate="no" dir="ltr">ONLY_IN_CLOUD</code>), then you can manually build an enum <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/JsonSchema"><code translate="no" dir="ltr">JsonSchema</code></a> using helper methods provided by the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK.</p> <aside class="note"><strong>Note:</strong><span> On-device inference does <em>not</em> support manual schemas or root-level enum schemas, so you must use KSP annotations (<code translate="no" dir="ltr">@Generable</code>) on a <code translate="no" dir="ltr">data class</code> that wraps the enum.</span></aside> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
+<pre>import com.google.firebase.Firebase
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.InferenceMode
+import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.ai
+import com.google.firebase.ai.type.JsonSchema
+
+// Define an enum schema with allowed string values and a description.
+val enumSchema = JsonSchema.enumeration(
+    values = listOf("drama", "comedy", "documentary"),
+    description = "The genre of the film"
+)
+
+// Initialize the Gemini Developer API backend service.
+// Manual schemas are only supported for cloud-based inference (specifically, ONLY_IN_CLOUD).
+val model = Firebase.ai(backend = GenerativeBackend.googleAI())
+    .generativeModel(
+        modelName = "CLOUD_MODEL_NAME",
+        onDeviceConfig = OnDeviceConfig(mode = InferenceMode.ONLY_IN_CLOUD)
+    )
+
+val prompt = """
+    The film aims to educate and inform viewers about real-life subjects, events, or people.
+    It offers a factual record of a particular topic by combining interviews, historical footage,
+    and narration. The primary purpose of a film is to present information and provide insights
+    into various aspects of reality.
+    """
+
+// Call generateObject() with the enum schema and prompt.
+val response = model.generateObject(enumSchema, prompt)
+
+// Access the selected enum value string from response.response.text.
+println(response.response.text)
+</pre> <p><br></p> <p><a class="button button-primary" href="../../feedback">Give feedback about your experience with <span class='\"notranslate\"'>Firebase AI Logic</span></a></p> <p><br></p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/ai-logic/hybrid/android/generate-structured-output" class="_attribution-link">https://firebase.google.com/docs/ai-logic/hybrid/android/generate-structured-output</a>
+  </p>
+</div>

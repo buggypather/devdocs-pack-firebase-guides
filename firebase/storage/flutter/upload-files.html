@@ -1,0 +1,127 @@
+<h1>Upload files with Cloud Storage on Flutter</h1> <p>Cloud Storage for Firebase allows you to quickly and easily upload files to a <a href="https://cloud.google.com/storage">Cloud Storage</a> bucket provided and managed by Firebase.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside><aside class="note"><strong>Note:</strong><span> For Spark plan projects, Firebase blocks upload and hosting of certain executable file types for Windows (files with <code translate="no" dir="ltr">.exe</code>, <code translate="no" dir="ltr">.dll</code> and <code translate="no" dir="ltr">.bat</code> extensions), Android (<code translate="no" dir="ltr">.apk</code> extension) and Apple (<code translate="no" dir="ltr">.ipa</code> extension) by Cloud Storage for Firebase and Firebase Hosting. This policy exists to prevent abuse on our platform. Projects on the Blaze plan are not affected. For more information, see <a href="https://firebase.google.com/support/faq#storage-exe-restrictions">this FAQ</a>.</span></aside> <h2 id="upload_files">Upload Files</h2> <p>To upload a file to Cloud Storage, you first create a reference to the full path of the file, including the file name.</p> 
+<pre>// Create a storage reference from our app
+final storageRef = FirebaseStorage.instance.ref();
+
+// Create a reference to "mountains.jpg"
+final mountainsRef = storageRef.child("mountains.jpg");
+
+// Create a reference to 'images/mountains.jpg'
+final mountainImagesRef = storageRef.child("images/mountains.jpg");
+
+// While the file names are the same, the references point to different files
+assert(mountainsRef.name == mountainImagesRef.name);
+assert(mountainsRef.fullPath != mountainImagesRef.fullPath);
+</pre> <p>Once you've created an appropriate reference, you then call the <code translate="no" dir="ltr">putFile()</code>, <code translate="no" dir="ltr">putString()</code>, or <code translate="no" dir="ltr">putData()</code> method to upload the file to Cloud Storage.</p> <p>You cannot upload data with a reference to the root of your Cloud Storage bucket. Your reference must point to a child URL.</p> <h3 id="upload_from_a_file">Upload from a file</h3> <p>To upload a file, you must first get the absolute path to its on-device location. For example, if a file exists within the application's documents directory, use the official <a href="https://pub.dev/packages/path_provider"><code translate="no" dir="ltr">path_provider</code></a> package to generate a file path and pass it to <code translate="no" dir="ltr">putFile()</code>:</p> 
+<pre>Directory appDocDir = await getApplicationDocumentsDirectory();
+String filePath = '${appDocDir.absolute}/file-to-upload.png';
+File file = File(filePath);
+
+try {
+  await mountainsRef.putFile(file);
+} on firebase_core.FirebaseException catch (e) {
+  // ...
+}
+</pre> <h3 id="upload_from_a_string">Upload from a String</h3> <p>You can upload data as a raw, <code translate="no" dir="ltr">base64</code>, <code translate="no" dir="ltr">base64url</code>, or <code translate="no" dir="ltr">data_url</code> encoded string using the <code translate="no" dir="ltr">putString()</code> method. For example, to upload a text string encoded as a Data URL:</p> 
+<pre>String dataUrl = 'data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==';
+
+try {
+  await mountainsRef.putString(dataUrl, format: PutStringFormat.dataUrl);
+} on FirebaseException catch (e) {
+  // ...
+}
+</pre> <h3 id="uploading_raw_data">Uploading raw data</h3> <p>You can upload lower-level typed data in the form of a <a href="https://api.dart.dev/stable/2.9.2/dart-typed_data/Uint8List-class.html"><code translate="no" dir="ltr">Uint8List</code></a> for those cases where uploading a string or <code translate="no" dir="ltr">File</code> is not practical. In this case, call the <code translate="no" dir="ltr">putData()</code> method with your data:</p> 
+<pre>try {
+  // Upload raw data.
+  await mountainsRef.putData(data);
+} on firebase_core.FirebaseException catch (e) {
+  // ...
+}
+</pre> <h2 id="get_a_download_url">Get a download URL</h2> <p>After uploading a file, you can get a URL to download the file by calling the <code translate="no" dir="ltr">getDownloadUrl()</code> method on the <code translate="no" dir="ltr">Reference</code>:</p> 
+<pre>await mountainsRef.getDownloadURL();
+</pre> <h2 id="add_file_metadata">Add File Metadata</h2> <p>You can also include metadata when you upload files. This metadata contains typical file metadata properties such as <code translate="no" dir="ltr">contentType</code> (commonly referred to as MIME type). The <code translate="no" dir="ltr">putFile()</code> method automatically infers the MIME type from the <code translate="no" dir="ltr">File</code> extension, but you can override the auto-detected type by specifying <code translate="no" dir="ltr">contentType</code> in the metadata. If you do not provide a <code translate="no" dir="ltr">contentType</code> and Cloud Storage cannot infer a default from the file extension, Cloud Storage uses <code translate="no" dir="ltr">application/octet-stream</code>. See <a href="file-metadata">Use File Metadata</a>.</p> 
+<pre>try {
+  await mountainsRef.putFile(file, SettableMetadata(
+    contentType: "image/jpeg",
+  ));
+} on firebase_core.FirebaseException catch (e) {
+  // ...
+}
+</pre> <h2 id="manage_uploads">Manage Uploads</h2> <p>In addition to starting uploads, you can pause, resume, and cancel uploads using the <code translate="no" dir="ltr">pause()</code>, <code translate="no" dir="ltr">resume()</code>, and <code translate="no" dir="ltr">cancel()</code> methods. Pause and resume events raise <code translate="no" dir="ltr">pause</code> and <code translate="no" dir="ltr">progress</code> state changes respectively. Canceling an upload causes the upload to fail with an error indicating that the upload was canceled.</p> 
+<pre>final task = mountainsRef.putFile(largeFile);
+
+// Pause the upload.
+bool paused = await task.pause();
+print('paused, $paused');
+
+// Resume the upload.
+bool resumed = await task.resume();
+print('resumed, $resumed');
+
+// Cancel the upload.
+bool canceled = await task.cancel();
+print('canceled, $canceled');
+</pre> <h2 id="monitor_upload_progress">Monitor Upload Progress</h2> <p>You can listen to a task's event stream to handle success, failure, progress, or pauses in your upload task:</p> <table> <thead> <tr> <th>Event Type</th> <th>Typical Usage</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">TaskState.running</code></td> <td>Emitted periodically as data is transferred and can be used to populate an upload/download indicator.</td> </tr> <tr> <td><code translate="no" dir="ltr">TaskState.paused</code></td> <td>Emitted any time the task is paused.</td> </tr> <tr> <td><code translate="no" dir="ltr">TaskState.success</code></td> <td>Emitted when the task has successfully completed.</td> </tr> <tr> <td><code translate="no" dir="ltr">TaskState.canceled</code></td> <td>Emitted any time the task is canceled.</td> </tr> <tr> <td><code translate="no" dir="ltr">TaskState.error</code></td> <td>Emitted when the upload has failed. This can happen due to network timeouts, authorization failures, or if you cancel the task.</td> </tr> </tbody> </table> 
+<pre>mountainsRef.putFile(file).snapshotEvents.listen((taskSnapshot) {
+  switch (taskSnapshot.state) {
+    case TaskState.running:
+      // ...
+      break;
+    case TaskState.paused:
+      // ...
+      break;
+    case TaskState.success:
+      // ...
+      break;
+    case TaskState.canceled:
+      // ...
+      break;
+    case TaskState.error:
+      // ...
+      break;
+  }
+});
+</pre> <h2 id="error_handling">Error Handling</h2> <p>There are a number of reasons why errors may occur on upload, including the local file not existing, or the user not having permission to upload the desired file. You can find more information about errors in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="full_example">Full Example</h2> <p>A full example of an upload with progress monitoring and error handling is shown below:</p> 
+<pre>final appDocDir = await getApplicationDocumentsDirectory();
+final filePath = "${appDocDir.absolute}/path/to/mountains.jpg";
+final file = File(filePath);
+
+// Create the file metadata
+final metadata = SettableMetadata(contentType: "image/jpeg");
+
+// Create a reference to the Firebase Storage bucket
+final storageRef = FirebaseStorage.instance.ref();
+
+// Upload file and metadata to the path 'images/mountains.jpg'
+final uploadTask = storageRef
+    .child("images/path/to/mountains.jpg")
+    .putFile(file, metadata);
+
+// Listen for state changes, errors, and completion of the upload.
+uploadTask.snapshotEvents.listen((TaskSnapshot taskSnapshot) {
+  switch (taskSnapshot.state) {
+    case TaskState.running:
+      final progress =
+          100.0 * (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes);
+      print("Upload is $progress% complete.");
+      break;
+    case TaskState.paused:
+      print("Upload is paused.");
+      break;
+    case TaskState.canceled:
+      print("Upload was canceled");
+      break;
+    case TaskState.error:
+      // Handle unsuccessful uploads
+      break;
+    case TaskState.success:
+      // Handle successful uploads on complete
+      // ...
+      break;
+  }
+});
+</pre> <p>Now that you've uploaded files, let's learn how to <a href="download-files">download them</a> from Cloud Storage.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/storage/flutter/upload-files" class="_attribution-link">https://firebase.google.com/docs/storage/flutter/upload-files</a>
+  </p>
+</div>

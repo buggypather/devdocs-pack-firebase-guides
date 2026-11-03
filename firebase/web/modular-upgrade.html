@@ -1,0 +1,111 @@
+<h1>Upgrade from the namespaced API to the modular application</h1> <p>Apps using any namespaced Firebase web API, from the <code translate="no" dir="ltr">compat</code> libraries back through version 8 or earlier, should consider migrating to the modular API using the instructions in this guide.</p> <p>This guide assumes that you are familiar with the namespaced API and that you will take advantage of a module bundler such as <a href="https://webpack.js.org/" class="external">webpack</a> or <a href="https://rollupjs.org/" class="external">Rollup</a> for upgrading and ongoing modular app development.</p> <p>Using a module bundler in your development environment is strongly recommended. If you don't use one, you won't be able to take advantage of the modular API's main benefits in reduced app size. You'll need <a href="https://www.npmjs.com/" class="external">npm</a> or <a href="https://yarnpkg.com/" class="external">yarn</a> to install the SDK.</p> <p>The upgrade steps in this guide will be based around an imaginary web app that uses the Authentication and Cloud Firestore SDKs. By working through the examples, you can master the concepts and practical steps required to upgrade all supported Firebase web SDKs.</p> <h2 id="about_the_namespaced_compat_libraries">About the namespaced (<code translate="no" dir="ltr">compat</code>) libraries</h2> <p>There are two types of libraries available for the Firebase web SDK:</p> <ul> <li>
+<strong>Modular</strong> - a new API surface designed to facilitate tree-shaking (removal of unused code) to make your web app as small and fast as possible.</li> <li>
+<strong>Namespaced (<code translate="no" dir="ltr">compat</code>)</strong> - a familiar API surface which is fully compatible with the earlier versions of the SDK, allowing you to upgrade without changing all of your Firebase code at once. Compat libraries have little to no size or performance advantages over their namespaced counterparts.</li> </ul> <p>This guide assumes that you will take advantage of the compat libraries to facilitate your upgrade. These libraries allow you to continue using namespaced code alongside code refactored for the modular API. This means you can compile and debug your app more easily as you work through the upgrade process.</p> <aside class="caution">Keep in mind: the compat libraries are a temporary solution that will be removed completely in a future major SDK version (such as version 10 or version 11). Your ultimate goal is to remove compat code and keep only the modular-style code in your app.</aside> <p>For apps with a very small exposure to the Firebase web SDK—for example, an app that makes only a simple call to the Authentication APIs—it may be practical to refactor older namespaced code without using the compat libraries. If you are upgrading such an app, you can follow the instructions in this guide for "the modular API" without using the compat libraries.</p> <h2 id="about_the_upgrade_process">About the upgrade process</h2> <p>Each step of the upgrade process is scoped so that you can finish editing the source for your app and then compile and run it without breakage. In summary, here's what you'll do to upgrade an app:</p> <ol> <li>Add the modular libraries and the compat libraries to your app.</li> <li>Update import statements in your code to compat.</li> <li>Refactor code for a single product (for example, Authentication) to the modular style.</li> <li>Optional: at this point, remove the Authentication compat library and compat code for Authentication in order to realize the app size benefit for Authentication before continuing.</li> <li>Refactor functions for each product (for example, Cloud Firestore, FCM, etc.) to the modular style, compiling and testing until all areas are complete.</li> <li>Update initialization code to the modular style.</li> <li>Remove all remaining compat statements and compat code from your app.</li> </ol> <h2 id="get_the_latest_version_of_the_sdk">Get the latest version of the SDK</h2> <p>To get started, get the modular libraries and compat libraries using npm:</p> 
+<pre>npm i firebase@13.1.0
+
+# OR
+
+yarn add firebase@13.1.0</pre> <h2 id="update_imports_to_compat">Update imports to compat</h2> <p>In order to keep your code functioning after updating your dependencies, change your import statements to use the "compat" version of each import. For example:</p> <p><strong>Before: version 8 or earlier</strong></p> 
+<pre>import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/firestore';
+</pre> <p><strong>After: compat</strong></p> 
+<pre>// compat packages are API compatible with namespaced code
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
+</pre> <h2 id="refactor_to_the_modular_style">Refactor to the modular style</h2> <p>While the namespaced APIs are based on a dot-chained namespace and service pattern, the modular approach means that your code will be organized principally around <strong>functions</strong>. In the modular API, the <code translate="no" dir="ltr">firebase/app</code> package and other packages do not return a comprehensive export that contains all the methods from the package. Instead, the packages export individual functions.</p> <p>In the modular API, services are passed as the first argument, and the function then uses the details of the service to do the rest. Let's examine how this works in two examples that refactor calls to the Authentication and Cloud Firestore APIs.</p> <h3 id="example_1_refactoring_an_function">Example 1: refactoring an Authentication function</h3> <p><strong>Before: compat</strong></p> <p>The compat code is identical to the namespaced code, but the imports have changed.</p> 
+<pre>import firebase from "firebase/compat/app";
+import "firebase/compat/auth";
+
+const auth = firebase.auth();
+auth.onAuthStateChanged(user =&gt; { 
+  // Check for user status
+});
+</pre> <p><strong>After: modular</strong></p> <p>The <code translate="no" dir="ltr">getAuth</code> function takes <code translate="no" dir="ltr">firebaseApp</code> as its first parameter. The <code translate="no" dir="ltr">onAuthStateChanged</code> function is not chained from the <code translate="no" dir="ltr">auth</code> instance as it would be in the namespaced API; instead, it's a free function which takes <code translate="no" dir="ltr">auth</code> as its first parameter.</p> 
+<pre>import { getAuth, onAuthStateChanged } from "firebase/auth";
+
+const auth = getAuth(firebaseApp);
+onAuthStateChanged(auth, user =&gt; {
+  // Check for user status
+});
+</pre> <h3 id="redirect-update">Update handling of Auth method <code translate="no" dir="ltr">getRedirectResult</code>
+</h3> <aside class="caution"><strong>Caution:</strong><span> If your app uses the Auth method <code translate="no" dir="ltr">getRedirectResult</code>, you must make the updates described in this section. Failure to refactor your code could result in unpredictable app behavior.</span></aside> <p>The modular API introduces a breaking change in <code translate="no" dir="ltr">getRedirectResult</code>. When no redirect operation is called, the modular API returns <code translate="no" dir="ltr">null</code> as opposed to the namespaced API, which returned a <code translate="no" dir="ltr">UserCredential</code> with a <code translate="no" dir="ltr">null</code> user.</p> <p><strong>Before: compat</strong></p> 
+<pre>const result = await auth.getRedirectResult()
+if (result.user === null &amp;&amp; result.credential === null) {
+  return null;
+}
+return result;
+</pre> <p><strong>After: modular</strong></p> 
+<pre>const result = await getRedirectResult(auth);
+// Provider of the access token could be Facebook, Github, etc.
+if (result === null || provider.credentialFromResult(result) === null) {
+  return null;
+}
+return result;
+</pre> <h3 id="example_2_refactoring_a_function">Example 2: refactoring a Cloud Firestore function</h3> <p><strong>Before: compat</strong></p> 
+<pre>import "firebase/compat/firestore"
+
+const db = firebase.firestore();
+db.collection("cities").where("capital", "==", true)
+    .get()
+    .then((querySnapshot) =&gt; {
+        querySnapshot.forEach((doc) =&gt; {
+            // doc.data() is never undefined for query doc snapshots
+            console.log(doc.id, " =&gt; ", doc.data());
+        });
+    })
+    .catch((error) =&gt; {
+        console.log("Error getting documents: ", error);
+    });
+</pre> <p><strong>After: modular</strong></p> <p>The <code translate="no" dir="ltr">getFirestore</code> function takes <code translate="no" dir="ltr">firebaseApp</code> as its first parameter, which was returned from <code translate="no" dir="ltr">initializeApp</code> in an earlier example. Note how the code to form a query is very different in the modular API; there is no chaining, and methods such as <code translate="no" dir="ltr">query</code> or <code translate="no" dir="ltr">where</code> are now exposed as free functions.</p> 
+<pre>import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
+
+const db = getFirestore(firebaseApp);
+
+const q = query(collection(db, "cities"), where("capital", "==", true));
+
+const querySnapshot = await getDocs(q);
+querySnapshot.forEach((doc) =&gt; {
+  // doc.data() is never undefined for query doc snapshots
+  console.log(doc.id, " =&gt; ", doc.data());
+});
+</pre> <h3 id="exists-update">Update references to Firestore <code translate="no" dir="ltr">DocumentSnapshot.exists</code>
+</h3> <aside class="caution"><strong>Caution:</strong><span> If your app uses the <code translate="no" dir="ltr">DocumentSnapshot.exists</code> property, you must perform the update described in this section. Failure to refactor your code could result in unpredictable app behavior.</span></aside> <p>The modular API introduces a breaking change in which the property <code translate="no" dir="ltr">firestore.DocumentSnapshot.exists</code> has been changed to a <em>method</em>. The functionality is essentially the same (testing whether a document exists) but you must refactor your code to use the newer method as shown:</p> <p><strong>Before:compat</strong></p> 
+<pre>if (snapshot.exists) {
+  console.log("the document exists");
+}
+</pre> <p><strong>After: modular</strong></p> 
+<pre>if (snapshot.exists()) {
+  console.log("the document exists");
+}
+</pre> <h3 id="example_3_combining_namespaced_and_modular_code_styles">Example 3: combining namespaced and modular code styles</h3> <p>Using the compat libraries during upgrade allows you to continue using namespaced code alongside code refactored for the modular API. This means you can keep existing namespaced code for Cloud Firestore while you refactor Authentication or other Firebase SDK code to the modular style, and still successfully compile your app with both code styles. The same is true for namespaced and modular API code <em>within</em> a product such as Cloud Firestore; new and old code styles can coexist, as long as you are importing the compat packages:</p> 
+<pre>import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+import { getDoc } from 'firebase/firestore'
+
+const docRef = firebase.firestore().doc();
+getDoc(docRef);
+</pre> <p>Keep in mind that, although your app will compile, you won't get the app size benefits of the modular code until you fully remove the compat statements and code from your app.</p> <h2 id="update_initialization_code">Update initialization code</h2> <p>Update your app's initialization code to use modular syntax. It is important to update this code <em>after</em> you have completed refactoring all the code in your app; this is because <code translate="no" dir="ltr">firebase.initializeApp()</code> initializes global state for both the compat and modular APIs, whereas the modular <code translate="no" dir="ltr">initializeApp()</code> function initializes only the state for modular.</p> <p><strong>Before: compat</strong></p> 
+<pre>import firebase from "firebase/compat/app"
+
+firebase.initializeApp({ /* config */ });
+</pre> <p><strong>After: modular</strong></p> 
+<pre>import { initializeApp } from "firebase/app"
+
+const firebaseApp = initializeApp({ /* config */ });
+</pre> <h2 id="remove_compat_code">Remove compat code</h2> <p>To realize the size benefits of the modular API, you should eventually convert all invocations to the modular style shown above and remove all of the <code translate="no" dir="ltr">import "firebase/compat/*</code> statements from your code. When you are done, there should be no more references to the <code translate="no" dir="ltr">firebase.*</code> global namespace or any other code in the namespaced API style.</p> <h2 id="window-compat">Using the compat library from the window</h2> <p>The modular API is optimized to work with modules rather than the browser's <code translate="no" dir="ltr">window</code> object. Previous versions of the library allowed the loading and management of Firebase by using the <code translate="no" dir="ltr">window.firebase</code> namespace. This is not recommended going forward as it does not allow for unused code elimination. However, the compat version of the JavaScript SDK does work with the <code translate="no" dir="ltr">window</code> for developers who prefer not to immediately begin the modular upgrade path.</p> 
+<pre>&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-app-compat.js"&gt;&lt;/script&gt;
+&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore-compat.js"&gt;&lt;/script&gt;
+&lt;script src="https://www.gstatic.com/firebasejs/13.1.0/firebase-auth-compat.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+   const firebaseApp = firebase.initializeApp({ /* Firebase config */ });
+   const db = firebaseApp.firestore();
+   const auth = firebaseApp.auth();
+&lt;/script&gt;
+</pre> <p>The compatibility library uses modular code under the hood and provides it with the same API as the namespaced API; this means you can refer to the <a href="https://firebase.google.com/docs/reference/js/v8">namespaced API reference</a> and namespaced code snippets for details. This method is not recommended for long term use, but as a start to upgrade to the fully modular library.</p> <h2 id="benefits">Benefits and limitations of the modular SDK</h2> <p>The fully modularized SDK has these advantages over earlier versions:</p> <ul> <li>The modular SDK enables a dramatically reduced app size. It adopts the modern JavaScript Module format, allowing for "tree shaking" practices in which you import only the artifacts your app needs. Depending on your app, tree-shaking with the modular SDK can result in 80% less kilobytes than a comparable app built using the namespaced API.</li> <li>The modular SDK will continue to benefit from ongoing feature development, while the namespaced API will not.</li> </ul><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/web/modular-upgrade" class="_attribution-link">https://firebase.google.com/docs/web/modular-upgrade</a>
+  </p>
+</div>

@@ -1,0 +1,151 @@
+<h1>Call functions via HTTP requests</h1> <p>You can trigger a function through an HTTP request with a request handler. This allows you to invoke a function through the following supported HTTP methods: <code translate="no" dir="ltr">GET</code>, <code translate="no" dir="ltr">POST</code>, <code translate="no" dir="ltr">PUT</code>, <code translate="no" dir="ltr">DELETE</code>, and <code translate="no" dir="ltr">OPTIONS</code>.</p> <p>This guide assumes you have completed the setup tasks described in our <a href="get-started">getting started guide for Node.js and Python</a>, or the setup tasks for the <a href="start-dart">experimental Dart SDK</a>.</p> <h2 id="additional-https-options">Additional HTTP options</h2> <table> <thead> <tr> <th>Option</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">region</code></td> <td>HTTP functions may specify an array of regions as well as a single region. When multiple regions are specified, a separate function instance will be deployed for each region.</td> </tr> <tr> <td>
+<code translate="no" dir="ltr">timeoutSeconds</code> (<code translate="no" dir="ltr">timeout_sec</code> for Python)</td> <td>HTTP functions may specify a timeout of up to one hour.</td> </tr> <tr> <td><code translate="no" dir="ltr">cors</code></td> <td>HTTP functions may specify CORS policies. You can set this to <code translate="no" dir="ltr">true</code> to allow all origins or a <code translate="no" dir="ltr">string</code>, <code translate="no" dir="ltr">regex</code>, or <code translate="no" dir="ltr">array</code> to specify allowed origins. Defaults to false/no CORS policies if not explicitly set.</td> </tr> </tbody> </table> <h3 id="configuring_cors_cross-origin_resource_sharing">Configuring CORS (Cross-Origin Resource Sharing)</h3> <p>Use the <code translate="no" dir="ltr">cors</code> option to control which origins can access your function. By default, HTTP functions don't have CORS configured, meaning that any cross-origin request to your function results in this error:</p> 
+<pre>request has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+</pre> <p>You can also explicitly disable CORS by setting the <code translate="no" dir="ltr">cors</code> option to <code translate="no" dir="ltr">false</code> for your function.</p> <p>To allow some cross-origin requests, but not all, you can pass a list of specific domains or regular expressions that should be allowed. For example, if you own the domains <code translate="no" dir="ltr">firebase.com</code> and <code translate="no" dir="ltr">flutter.com</code>, and <code translate="no" dir="ltr">firebase.com</code> can have many subdomains, you might want to set the <code translate="no" dir="ltr">cors</code> option as shown:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const { onRequest } = require("firebase-functions/v2/https");
+
+exports.sayHello = onRequest(
+  { cors: [/firebase\.com$/, "https://flutter.com"] },
+  (req, res) =&gt; {
+    res.status(200).send("Hello world!");
+  }
+);
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_functions import https_fn, options
+
+@https_fn.on_request(
+    cors=options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
+        cors_methods=["get", "post"],
+    )
+)
+def say_hello(req: https_fn.Request) -&gt; https_fn.Response:
+    return https_fn.Response("Hello world!")
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">import 'package:firebase_functions/firebase_functions.dart';
+
+void main() {
+  runFunctions((firebase) {
+    firebase.https.onRequest(
+      name: 'sayHello',
+      options: const HttpsOptions(
+        cors: Cors([RegExp(r'^https:\/\/firebase\.com$'), 'https://flutter.com']),
+      ),
+      (request) async =&gt; Response(200, body: 'Hello world!'),
+    );
+  });
+}
+</pre></section> </div> <p>If your function should be openly available, for example if it's serving a public API or website, set the <code translate="no" dir="ltr">cors</code> policy to <code translate="no" dir="ltr">true</code>.</p> <h2 id="trigger_a_function_with_an_http_request">Trigger a function with an HTTP request</h2> <p>Use the request handler for your platform to create a function that handles HTTP events. Examples in this section are based on a "time server" sample that triggers when you send an HTTP <code translate="no" dir="ltr">GET</code> request to the functions endpoint. The sample function retrieves the current server time, formats the time as specified in a URL query parameter, and sends the result in the HTTP response.</p> <h3 id="using_request_and_response_objects">Using request and response objects</h3> <p>The request object gives you access to the properties of the HTTP request sent by the client, and the response object gives you a way to send a response back to the client.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">exports.date = onRequest(
+    {timeoutSeconds: 1200, region: ["us-west1", "us-east1"]},
+    (req, res) =&gt; {
+// ...
+});</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">@https_fn.on_request(cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def date(req: https_fn.Request) -&gt; https_fn.Response:
+    """Get the server's local date and time."""
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">void main() {
+  runFunctions((firebase) {
+    firebase.https.onRequest(name: 'date', (request) async {
+</pre></section> </div>
+<aside class="special"><strong>Important:</strong><span> Make sure that all HTTP functions terminate properly. By terminating functions correctly, you can avoid excessive charges from functions that run for too long.</span></aside> <h3 id="using_existing_express_or_flask_apps">Using existing Express or Flask apps</h3> <p>Using the app as the argument for the request handler, you can pass a full app to an HTTP function:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">const { onRequest } = require('firebase-functions/v2/https');
+
+const express = require('express');
+const app = express();
+
+// Add middleware to authenticate requests
+app.use(myMiddleware);
+
+// build multiple CRUD interfaces:
+app.get('/:id', (req, res) =&gt; res.send(Widgets.getById(req.params.id)));
+app.post('/', (req, res) =&gt; res.send(Widgets.create()));
+app.put('/:id', (req, res) =&gt; res.send(Widgets.update(req.params.id, req.body)));
+app.delete('/:id', (req, res) =&gt; res.send(Widgets.delete(req.params.id)));
+app.get('/', (req, res) =&gt; res.send(Widgets.list()));
+
+// Expose Express API as a single Cloud Function:
+exports.widgets = onRequest(app);
+</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">from firebase_admin import initialize_app, db
+from firebase_functions import https_fn
+import flask
+
+initialize_app()
+app = flask.Flask(__name__)
+
+# Build multiple CRUD interfaces:
+
+
+@app.get("/widgets")
+@app.get("/widgets/&lt;id&gt;")
+def get_widget(id=None):
+    if id is not None:
+        return db.reference(f"/widgets/{id}").get()
+    else:
+        return db.reference("/widgets").get()
+
+
+@app.post("/widgets")
+def add_widget():
+    new_widget = flask.request.get_data(as_text=True)
+    db.reference("/widgets").push(new_widget)
+    return flask.Response(status=201, response="Added widget")
+
+
+# Expose Flask app as a single Cloud Function:
+
+
+@https_fn.on_request()
+def httpsflaskexample(req: https_fn.Request) -&gt; https_fn.Response:
+    with app.request_context(req.environ):
+        return app.full_dispatch_request()
+</pre></section> </div> <h2 id="invoke_an_http_function">Invoke an HTTP function</h2> <p>After you deploy an HTTP function, you can invoke it through its own unique URL. Use the exact URL output from the CLI after deployment.</p> <p>For example, the URL to invoke <code translate="no" dir="ltr">date()</code> looks like this:</p> 
+<pre>https://us-central1-&lt;project-id&gt;.cloudfunctions.net/date
+</pre> <p>With Express and Flask app routing, the function name is added as a prefix to the URL paths in the app you define.</p> <aside class="note"><strong>Note:</strong><span> URLs to invoke functions with the experimental Dart SDK have a different format: <code translate="no" dir="ltr">https://&lt;function-name&gt;-&lt;random-hash&gt;.&lt;region&gt;.run.app</code>.</span></aside> <h2 id="read_values_from_the_request">Read values from the request</h2> <p>In the <code translate="no" dir="ltr">date()</code> function example, the function tests both the URL parameter and the body for a <code translate="no" dir="ltr">format</code> value to set the date/time format to use:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+
+<pre data-language="javascript">let format = req.query.format;
+format = req.body.format;</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">format = req.args["format"] if "format" in req.args else None
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">var format = request.url.queryParameters['format'];
+final bodyString = await request.readAsString();
+try {
+  if (bodyString.isNotEmpty) {
+    final body = jsonDecode(bodyString) as Map&lt;String, dynamic&gt;;
+    format = body['format'] as String?;
+  }
+} catch (e) {
+  return Response.badRequest(body: 'invalid JSON');
+}
+</pre></section> </div> <h2 id="terminate_http_functions">Terminate HTTP Functions</h2> <p>After retrieving and formatting the server time, the <code translate="no" dir="ltr">date()</code> function concludes by sending the result in the HTTP response:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<p>Always end an HTTP function with <code translate="no" dir="ltr">send()</code>, <code translate="no" dir="ltr">redirect()</code>, or <code translate="no" dir="ltr">end()</code>. Otherwise, your function might continue to run and be forcibly terminated by the system. See also <a href="terminate-functions">Sync, Async and Promises</a>.</p> 
+<pre data-language="javascript">const formattedDate = moment().format(`${format}`);
+logger.log("Sending formatted date:", formattedDate);
+res.status(200).send(formattedDate);</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+
+<pre data-language="python">formatted_date = datetime.now().strftime(format)
+print(f"Sending Formatted date: {formatted_date}")
+return https_fn.Response(formatted_date)
+</pre></section> <section><p class="_firebase-tab"><strong>Dart (experimental)</strong></p>
+
+<pre data-language="">final formattedDate = DateFormat(format).format(DateTime.now());
+print('Sending formatted date: $formattedDate');
+return Response.ok(formattedDate);
+</pre></section> </div> <h2 id="integrating-with-firebase-hosting">Integrating with Firebase Hosting</h2> <p>You can connect an HTTP function to Firebase Hosting. Requests on your Firebase Hosting site can be proxied to specific HTTP functions. This also allows you to use your own custom domain with an HTTP function. Learn more about <a href="../hosting/functions">connecting Cloud Functions to Firebase Hosting</a>.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/functions/http-events" class="_attribution-link">https://firebase.google.com/docs/functions/http-events</a>
+  </p>
+</div>
