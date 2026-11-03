@@ -27,8 +27,13 @@ env:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     steps:
+      # This repository, for the README that goes into the pack.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: self
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: buggypather/devdocs
@@ -71,7 +76,7 @@ jobs:
           cd pack
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp -r ../devdocs/public/docs/firebase ../devdocs/public/docs/docs.json .
-          cp ../README.md README.md
+          cp ../self/README.md README.md
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
