@@ -1,4 +1,4 @@
-<h1>Upload files with Cloud Storage on Android</h1> <p>Cloud Storage for Firebase allows you to quickly and easily upload files to a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket provided and managed by Firebase.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside><aside class="note"><strong>Note:</strong><span> For Spark plan projects, Firebase blocks upload and hosting of certain executable file types for Windows (files with <code translate="no" dir="ltr">.exe</code>, <code translate="no" dir="ltr">.dll</code> and <code translate="no" dir="ltr">.bat</code> extensions), Android (<code translate="no" dir="ltr">.apk</code> extension) and Apple (<code translate="no" dir="ltr">.ipa</code> extension) by Cloud Storage for Firebase and Firebase Hosting. This policy exists to prevent abuse on our platform. Projects on the Blaze plan are not affected. For more information, see <a href="https://firebase.google.com/support/faq#storage-exe-restrictions">this FAQ</a>.</span></aside> <h2 id="upload_files">Upload Files</h2> <p>To upload a file to Cloud Storage, you first create a reference to the full path of the file, including the file name.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<h1>Upload files with Cloud Storage on Android</h1> <p>Cloud Storage for Firebase allows you to quickly and easily upload files to a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket provided and managed by Firebase.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside><aside class="note"><strong>Note:</strong><span> For Spark plan projects, Firebase blocks upload and hosting of certain executable file types for Windows (files with <code translate="no" dir="ltr">.exe</code>, <code translate="no" dir="ltr">.dll</code> and <code translate="no" dir="ltr">.bat</code> extensions), Android (<code translate="no" dir="ltr">.apk</code> extension) and Apple (<code translate="no" dir="ltr">.ipa</code> extension) by Cloud Storage for Firebase and Firebase Hosting. This policy exists to prevent abuse on our platform. Projects on the Blaze plan are not affected. For more information, see <a href="https://firebase.google.com/support/faq#storage-exe-restrictions">this FAQ</a>.</span></aside> <h2 id="upload_files">Upload Files</h2> <p>To upload a file to Cloud Storage, you first create a reference to the full path of the file, including the file name.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Create a storage reference from our app
 val storageRef = storage.reference
 
@@ -10,7 +10,7 @@ val mountainImagesRef = storageRef.child("images/mountains.jpg")
 
 // While the file names are the same, the references point to different files
 mountainsRef.name == mountainImagesRef.name // true
-mountainsRef.path == mountainImagesRef.path // false</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+mountainsRef.path == mountainImagesRef.path // false</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Create a storage reference from our app
 StorageReference storageRef = storage.getReference();
 
@@ -22,7 +22,7 @@ StorageReference mountainImagesRef = storageRef.child("images/mountains.jpg");
 
 // While the file names are the same, the references point to different files
 mountainsRef.getName().equals(mountainImagesRef.getName());    // true
-mountainsRef.getPath().equals(mountainImagesRef.getPath());    // false</pre> </section> </div> <p>Once you've created an appropriate reference, you then call the <code translate="no" dir="ltr">putBytes()</code>, <code translate="no" dir="ltr">putFile()</code>, or <code translate="no" dir="ltr">putStream()</code> method to upload the file to Cloud Storage.</p> <p>You cannot upload data with a reference to the root of your Cloud Storage bucket. Your reference must point to a child URL.</p> <h3 id="upload_from_data_in_memory">Upload from data in memory</h3> <p>The <code translate="no" dir="ltr">putBytes()</code> method is the simplest way to upload a file to Cloud Storage. <code translate="no" dir="ltr">putBytes()</code> takes a <code translate="no" dir="ltr">byte[]</code> and returns an <code translate="no" dir="ltr">UploadTask</code> that you can use to manage and monitor the status of the upload.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+mountainsRef.getPath().equals(mountainImagesRef.getPath());    // false</pre> </section> </div> <p>Once you've created an appropriate reference, you then call the <code translate="no" dir="ltr">putBytes()</code>, <code translate="no" dir="ltr">putFile()</code>, or <code translate="no" dir="ltr">putStream()</code> method to upload the file to Cloud Storage.</p> <p>You cannot upload data with a reference to the root of your Cloud Storage bucket. Your reference must point to a child URL.</p> <h3 id="upload_from_data_in_memory">Upload from data in memory</h3> <p>The <code translate="no" dir="ltr">putBytes()</code> method is the simplest way to upload a file to Cloud Storage. <code translate="no" dir="ltr">putBytes()</code> takes a <code translate="no" dir="ltr">byte[]</code> and returns an <code translate="no" dir="ltr">UploadTask</code> that you can use to manage and monitor the status of the upload.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Get the data from an ImageView as bytes
 imageView.isDrawingCacheEnabled = true
 imageView.buildDrawingCache()
@@ -37,7 +37,7 @@ uploadTask.addOnFailureListener {
 }.addOnSuccessListener { taskSnapshot -&gt;
     // taskSnapshot.metadata contains file metadata such as size, content-type, etc.
     // ...
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Get the data from an ImageView as bytes
 imageView.setDrawingCacheEnabled(true);
 imageView.buildDrawingCache();
@@ -58,7 +58,7 @@ uploadTask.addOnFailureListener(new OnFailureListener() {
         // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
         // ...
     }
-});</pre> </section> </div> <p>Because <code translate="no" dir="ltr">putBytes()</code> accepts a <code translate="no" dir="ltr">byte[]</code>, it requires your app to hold the entire contents of a file in memory at once. Consider using <code translate="no" dir="ltr">putStream()</code> or <code translate="no" dir="ltr">putFile()</code> to use less memory.</p> <h3 id="upload_from_a_stream">Upload from a stream</h3> <p>The <code translate="no" dir="ltr">putStream()</code> method is the most versatile way to upload a file to Cloud Storage. <code translate="no" dir="ltr">putStream()</code> takes an <code translate="no" dir="ltr">InputStream</code> and returns an <code translate="no" dir="ltr">UploadTask</code> that you can use to manage and monitor the status of the upload.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> </div> <p>Because <code translate="no" dir="ltr">putBytes()</code> accepts a <code translate="no" dir="ltr">byte[]</code>, it requires your app to hold the entire contents of a file in memory at once. Consider using <code translate="no" dir="ltr">putStream()</code> or <code translate="no" dir="ltr">putFile()</code> to use less memory.</p> <h3 id="upload_from_a_stream">Upload from a stream</h3> <p>The <code translate="no" dir="ltr">putStream()</code> method is the most versatile way to upload a file to Cloud Storage. <code translate="no" dir="ltr">putStream()</code> takes an <code translate="no" dir="ltr">InputStream</code> and returns an <code translate="no" dir="ltr">UploadTask</code> that you can use to manage and monitor the status of the upload.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val stream = FileInputStream(File("path/to/images/rivers.jpg"))
 
 uploadTask = mountainsRef.putStream(stream)
@@ -67,7 +67,7 @@ uploadTask.addOnFailureListener {
 }.addOnSuccessListener { taskSnapshot -&gt;
     // taskSnapshot.metadata contains file metadata such as size, content-type, etc.
     // ...
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">InputStream stream = new FileInputStream(new File("path/to/images/rivers.jpg"));
 
 uploadTask = mountainsRef.putStream(stream);
@@ -82,7 +82,7 @@ uploadTask.addOnFailureListener(new OnFailureListener() {
         // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
         // ...
     }
-});</pre> </section> </div> <h3 id="upload_from_a_local_file">Upload from a local file</h3> <p>You can upload local files on the device, such as photos and videos from the camera, with the <code translate="no" dir="ltr">putFile()</code> method. <code translate="no" dir="ltr">putFile()</code> takes a <code translate="no" dir="ltr">File</code> and returns an <code translate="no" dir="ltr">UploadTask</code> which you can use to manage and monitor the status of the upload.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> </div> <h3 id="upload_from_a_local_file">Upload from a local file</h3> <p>You can upload local files on the device, such as photos and videos from the camera, with the <code translate="no" dir="ltr">putFile()</code> method. <code translate="no" dir="ltr">putFile()</code> takes a <code translate="no" dir="ltr">File</code> and returns an <code translate="no" dir="ltr">UploadTask</code> which you can use to manage and monitor the status of the upload.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">var file = Uri.fromFile(File("path/to/images/rivers.jpg"))
 val riversRef = storageRef.child("images/${file.lastPathSegment}")
 uploadTask = riversRef.putFile(file)
@@ -93,7 +93,7 @@ uploadTask.addOnFailureListener {
 }.addOnSuccessListener { taskSnapshot -&gt;
     // taskSnapshot.metadata contains file metadata such as size, content-type, etc.
     // ...
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Uri file = Uri.fromFile(new File("path/to/images/rivers.jpg"));
 StorageReference riversRef = storageRef.child("images/"+file.getLastPathSegment());
 uploadTask = riversRef.putFile(file);
@@ -110,7 +110,7 @@ uploadTask.addOnFailureListener(new OnFailureListener() {
         // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
         // ...
     }
-});</pre> </section> </div> <h2 id="get_a_download_url">Get a download URL</h2> <p>After uploading a file, you can get a URL to download the file by calling the <code translate="no" dir="ltr">getDownloadUrl()</code> method on the <code translate="no" dir="ltr">StorageReference</code>:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> </div> <h2 id="get_a_download_url">Get a download URL</h2> <p>After uploading a file, you can get a URL to download the file by calling the <code translate="no" dir="ltr">getDownloadUrl()</code> method on the <code translate="no" dir="ltr">StorageReference</code>:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val ref = storageRef.child("images/mountains.jpg")
 uploadTask = ref.putFile(file)
 
@@ -128,7 +128,7 @@ val urlTask = uploadTask.continueWithTask { task -&gt;
         // Handle failures
         // ...
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">final StorageReference ref = storageRef.child("images/mountains.jpg");
 uploadTask = ref.putFile(file);
 
@@ -152,21 +152,21 @@ Task&lt;Uri&gt; urlTask = uploadTask.continueWithTask(new Continuation&lt;Upload
             // ...
         }
     }
-});</pre> </section> </div> <h2 id="add_file_metadata">Add File Metadata</h2> <p>You can also include metadata when you upload files. This metadata contains typical file metadata properties such as <code translate="no" dir="ltr">name</code>, <code translate="no" dir="ltr">size</code>, and <code translate="no" dir="ltr">contentType</code> (commonly referred to as MIME type). The <code translate="no" dir="ltr">putFile()</code> method automatically infers the MIME type from the <code translate="no" dir="ltr">File</code> extension, but you can override the auto-detected type by specifying <code translate="no" dir="ltr">contentType</code> in the metadata. If you do not provide a <code translate="no" dir="ltr">contentType</code> and Cloud Storage cannot infer a default from the file extension, Cloud Storage uses <code translate="no" dir="ltr">application/octet-stream</code>. See the <a href="file-metadata">Use File Metadata</a> section for more information about file metadata.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> </div> <h2 id="add_file_metadata">Add File Metadata</h2> <p>You can also include metadata when you upload files. This metadata contains typical file metadata properties such as <code translate="no" dir="ltr">name</code>, <code translate="no" dir="ltr">size</code>, and <code translate="no" dir="ltr">contentType</code> (commonly referred to as MIME type). The <code translate="no" dir="ltr">putFile()</code> method automatically infers the MIME type from the <code translate="no" dir="ltr">File</code> extension, but you can override the auto-detected type by specifying <code translate="no" dir="ltr">contentType</code> in the metadata. If you do not provide a <code translate="no" dir="ltr">contentType</code> and Cloud Storage cannot infer a default from the file extension, Cloud Storage uses <code translate="no" dir="ltr">application/octet-stream</code>. See the <a href="file-metadata">Use File Metadata</a> section for more information about file metadata.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Create file metadata including the content type
 var metadata = storageMetadata {
     contentType = "image/jpg"
 }
 
 // Upload the file and metadata
-uploadTask = storageRef.child("images/mountains.jpg").putFile(file, metadata)</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+uploadTask = storageRef.child("images/mountains.jpg").putFile(file, metadata)</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Create file metadata including the content type
 StorageMetadata metadata = new StorageMetadata.Builder()
         .setContentType("image/jpg")
         .build();
 
 // Upload the file and metadata
-uploadTask = storageRef.child("images/mountains.jpg").putFile(file, metadata);</pre> </section> </div> <h2 id="manage_uploads">Manage Uploads</h2> <p>In addition to starting uploads, you can pause, resume, and cancel uploads using the <code translate="no" dir="ltr">pause()</code>, <code translate="no" dir="ltr">resume()</code>, and <code translate="no" dir="ltr">cancel()</code> methods. Pause and resume events raise <code translate="no" dir="ltr">pause</code> and <code translate="no" dir="ltr">progress</code> state changes respectively. Canceling an upload causes the upload to fail with an error indicating that the upload was canceled.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+uploadTask = storageRef.child("images/mountains.jpg").putFile(file, metadata);</pre> </section> </div> <h2 id="manage_uploads">Manage Uploads</h2> <p>In addition to starting uploads, you can pause, resume, and cancel uploads using the <code translate="no" dir="ltr">pause()</code>, <code translate="no" dir="ltr">resume()</code>, and <code translate="no" dir="ltr">cancel()</code> methods. Pause and resume events raise <code translate="no" dir="ltr">pause</code> and <code translate="no" dir="ltr">progress</code> state changes respectively. Canceling an upload causes the upload to fail with an error indicating that the upload was canceled.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">uploadTask = storageRef.child("images/mountains.jpg").putFile(file)
 
 // Pause the upload
@@ -176,7 +176,7 @@ uploadTask.pause()
 uploadTask.resume()
 
 // Cancel the upload
-uploadTask.cancel()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+uploadTask.cancel()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">uploadTask = storageRef.child("images/mountains.jpg").putFile(file);
 
 // Pause the upload
@@ -186,7 +186,7 @@ uploadTask.pause();
 uploadTask.resume();
 
 // Cancel the upload
-uploadTask.cancel();</pre> </section> </div> <h2 id="monitor_upload_progress">Monitor Upload Progress</h2> <p>You can add listeners to handle success, failure, progress, or pauses in your upload task:</p> <table> <thead> <tr> <th>Listener Type</th> <th>Typical Usage</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">OnProgressListener</code></td> <td>This listener is called periodically as data is transferred and can be used to populate an upload/download indicator.</td> </tr> <tr> <td><code translate="no" dir="ltr">OnPausedListener</code></td> <td>This listener is called any time the task is paused.</td> </tr> <tr> <td><code translate="no" dir="ltr">OnSuccessListener</code></td> <td>This listener is called when the task has successfully completed.</td> </tr> <tr> <td><code translate="no" dir="ltr">OnFailureListener</code></td> <td>This listener is called any time the upload has failed. This can happen due to network timeouts, authorization failures, or if you cancel the task.</td> </tr> </tbody> </table> <p><code translate="no" dir="ltr">OnFailureListener</code> is called with an <code translate="no" dir="ltr">Exception</code> instance. Other listeners are called with an <code translate="no" dir="ltr">UploadTask.TaskSnapshot</code> object. This object is an immutable view of the task at the time the event occurred. An <code translate="no" dir="ltr">UploadTask.TaskSnapshot</code> contains the following properties:</p> <table> <thead> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">getDownloadUrl</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>A URL that can be used to download the object. This is a public unguessable URL that can be shared with other clients. This value is populated once an upload is complete.</td> </tr> <tr> <td><code translate="no" dir="ltr">getError</code></td> <td><code translate="no" dir="ltr">Exception</code></td> <td>If the task failed, this will have the cause as an Exception.</td> </tr> <tr> <td><code translate="no" dir="ltr">getBytesTransferred</code></td> <td><code translate="no" dir="ltr">long</code></td> <td>The total number of bytes that have been transferred when this snapshot was taken.</td> </tr> <tr> <td><code translate="no" dir="ltr">getTotalByteCount</code></td> <td><code translate="no" dir="ltr">long</code></td> <td>The total number of bytes expected to be uploaded.</td> </tr> <tr> <td><code translate="no" dir="ltr">getUploadSessionUri</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>A URI that can be used to continue this task via another call to putFile.</td> </tr> <tr> <td><code translate="no" dir="ltr">getMetadata</code></td> <td><code translate="no" dir="ltr">StorageMetadata</code></td> <td>Before an upload completes, this is the metadata being sent to the server. After the upload completes, this is the metadata returned by the server.</td> </tr> <tr> <td><code translate="no" dir="ltr">getTask</code></td> <td><code translate="no" dir="ltr">UploadTask</code></td> <td>The task that created this snapshot. Use this task to cancel, pause, or resume the upload.</td> </tr> <tr> <td><code translate="no" dir="ltr">getStorage</code></td> <td><code translate="no" dir="ltr">StorageReference</code></td> <td>The <code translate="no" dir="ltr">StorageReference</code> used to create the <code translate="no" dir="ltr">UploadTask</code>.</td> </tr> </tbody> </table> <p>The <code translate="no" dir="ltr">UploadTask</code> event listeners provide a simple and powerful way to monitor upload events.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+uploadTask.cancel();</pre> </section> </div> <h2 id="monitor_upload_progress">Monitor Upload Progress</h2> <p>You can add listeners to handle success, failure, progress, or pauses in your upload task:</p> <table> <thead> <tr> <th>Listener Type</th> <th>Typical Usage</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">OnProgressListener</code></td> <td>This listener is called periodically as data is transferred and can be used to populate an upload/download indicator.</td> </tr> <tr> <td><code translate="no" dir="ltr">OnPausedListener</code></td> <td>This listener is called any time the task is paused.</td> </tr> <tr> <td><code translate="no" dir="ltr">OnSuccessListener</code></td> <td>This listener is called when the task has successfully completed.</td> </tr> <tr> <td><code translate="no" dir="ltr">OnFailureListener</code></td> <td>This listener is called any time the upload has failed. This can happen due to network timeouts, authorization failures, or if you cancel the task.</td> </tr> </tbody> </table> <p><code translate="no" dir="ltr">OnFailureListener</code> is called with an <code translate="no" dir="ltr">Exception</code> instance. Other listeners are called with an <code translate="no" dir="ltr">UploadTask.TaskSnapshot</code> object. This object is an immutable view of the task at the time the event occurred. An <code translate="no" dir="ltr">UploadTask.TaskSnapshot</code> contains the following properties:</p> <table> <thead> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">getDownloadUrl</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>A URL that can be used to download the object. This is a public unguessable URL that can be shared with other clients. This value is populated once an upload is complete.</td> </tr> <tr> <td><code translate="no" dir="ltr">getError</code></td> <td><code translate="no" dir="ltr">Exception</code></td> <td>If the task failed, this will have the cause as an Exception.</td> </tr> <tr> <td><code translate="no" dir="ltr">getBytesTransferred</code></td> <td><code translate="no" dir="ltr">long</code></td> <td>The total number of bytes that have been transferred when this snapshot was taken.</td> </tr> <tr> <td><code translate="no" dir="ltr">getTotalByteCount</code></td> <td><code translate="no" dir="ltr">long</code></td> <td>The total number of bytes expected to be uploaded.</td> </tr> <tr> <td><code translate="no" dir="ltr">getUploadSessionUri</code></td> <td><code translate="no" dir="ltr">String</code></td> <td>A URI that can be used to continue this task via another call to putFile.</td> </tr> <tr> <td><code translate="no" dir="ltr">getMetadata</code></td> <td><code translate="no" dir="ltr">StorageMetadata</code></td> <td>Before an upload completes, this is the metadata being sent to the server. After the upload completes, this is the metadata returned by the server.</td> </tr> <tr> <td><code translate="no" dir="ltr">getTask</code></td> <td><code translate="no" dir="ltr">UploadTask</code></td> <td>The task that created this snapshot. Use this task to cancel, pause, or resume the upload.</td> </tr> <tr> <td><code translate="no" dir="ltr">getStorage</code></td> <td><code translate="no" dir="ltr">StorageReference</code></td> <td>The <code translate="no" dir="ltr">StorageReference</code> used to create the <code translate="no" dir="ltr">UploadTask</code>.</td> </tr> </tbody> </table> <p>The <code translate="no" dir="ltr">UploadTask</code> event listeners provide a simple and powerful way to monitor upload events.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Observe state change events such as progress, pause, and resume
 // You'll need to import com.google.firebase.storage.component1 and
 // com.google.firebase.storage.component2
@@ -195,7 +195,7 @@ uploadTask.addOnProgressListener { (bytesTransferred, totalByteCount) -&gt;
     Log.d(TAG, "Upload is $progress% done")
 }.addOnPausedListener {
     Log.d(TAG, "Upload is paused")
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Observe state change events such as progress, pause, and resume
 uploadTask.addOnProgressListener(new OnProgressListener&lt;UploadTask.TaskSnapshot&gt;() {
     @Override
@@ -208,7 +208,7 @@ uploadTask.addOnProgressListener(new OnProgressListener&lt;UploadTask.TaskSnapsh
     public void onPaused(UploadTask.TaskSnapshot taskSnapshot) {
         Log.d(TAG, "Upload is paused");
     }
-});</pre> </section> </div> <h2 id="handle_activity_lifecycle_changes">Handle Activity Lifecycle Changes</h2> <p>Uploads continue in the background even after <a href="http://developer.android.com/reference/android/app/Activity.html#ActivityLifecycle">activity lifecycle</a> changes (such as presenting a dialog or rotating the screen). Any listeners you had attached will also remain attached. This could cause unexpected results if they get called after the activity is stopped.</p> <p>You can solve this problem by subscribing your listeners with an activity scope to automatically unregister them when the activity stops. Then, use the <code translate="no" dir="ltr">getActiveUploadTasks</code> method when the activity restarts to obtain upload tasks that are still running or recently completed.</p> <p>The example below demonstrates this and also shows how to persist the storage reference path used.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> </div> <h2 id="handle_activity_lifecycle_changes">Handle Activity Lifecycle Changes</h2> <p>Uploads continue in the background even after <a href="http://developer.android.com/reference/android/app/Activity.html#ActivityLifecycle">activity lifecycle</a> changes (such as presenting a dialog or rotating the screen). Any listeners you had attached will also remain attached. This could cause unexpected results if they get called after the activity is stopped.</p> <p>You can solve this problem by subscribing your listeners with an activity scope to automatically unregister them when the activity stops. Then, use the <code translate="no" dir="ltr">getActiveUploadTasks</code> method when the activity restarts to obtain upload tasks that are still running or recently completed.</p> <p>The example below demonstrates this and also shows how to persist the storage reference path used.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">override fun onSaveInstanceState(outState: Bundle) {
     super.onSaveInstanceState(outState)
 
@@ -238,7 +238,7 @@ override fun onRestoreInstanceState(savedInstanceState: Bundle) {
             // ...
         }
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">@Override
 protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
@@ -275,7 +275,7 @@ protected void onRestoreInstanceState(Bundle savedInstanceState) {
             }
         });
     }
-}</pre> </section> </div> <p><code translate="no" dir="ltr">getActiveUploadTasks</code> retrieves all active upload tasks at and below the provided reference, so you may need to handle multiple tasks.</p> <h2 id="continuing_uploads_across_process_restarts">Continuing Uploads Across Process Restarts</h2> <p>If your process is shut down, any uploads in progress will be interrupted. However, you can continue uploading once the process restarts by resuming the upload session with the server. This can save time and bandwidth by not starting the upload from the start of the file.</p> <p>To do this, begin uploading via <code translate="no" dir="ltr">putFile</code>. On the resulting <code translate="no" dir="ltr">StorageTask</code>, call <code translate="no" dir="ltr">getUploadSessionUri</code> and save the resulting value in persistent storage (such as SharedPreferences).</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> </div> <p><code translate="no" dir="ltr">getActiveUploadTasks</code> retrieves all active upload tasks at and below the provided reference, so you may need to handle multiple tasks.</p> <h2 id="continuing_uploads_across_process_restarts">Continuing Uploads Across Process Restarts</h2> <p>If your process is shut down, any uploads in progress will be interrupted. However, you can continue uploading once the process restarts by resuming the upload session with the server. This can save time and bandwidth by not starting the upload from the start of the file.</p> <p>To do this, begin uploading via <code translate="no" dir="ltr">putFile</code>. On the resulting <code translate="no" dir="ltr">StorageTask</code>, call <code translate="no" dir="ltr">getUploadSessionUri</code> and save the resulting value in persistent storage (such as SharedPreferences).</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">uploadTask = storageRef.putFile(localFile)
 uploadTask.addOnProgressListener { taskSnapshot -&gt;
     sessionUri = taskSnapshot.uploadSessionUri
@@ -284,7 +284,7 @@ uploadTask.addOnProgressListener { taskSnapshot -&gt;
         // A persisted session has begun with the server.
         // Save this to persistent storage in case the process dies.
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">uploadTask = mStorageRef.putFile(localFile);
 uploadTask.addOnProgressListener(new OnProgressListener&lt;UploadTask.TaskSnapshot&gt;() {
     @Override
@@ -296,18 +296,18 @@ uploadTask.addOnProgressListener(new OnProgressListener&lt;UploadTask.TaskSnapsh
             // Save this to persistent storage in case the process dies.
         }
     }
-});</pre> </section> </div> <p>After your process restarts with an interrupted upload, call putFile again. But this time also pass the Uri that was saved.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> </div> <p>After your process restarts with an interrupted upload, call putFile again. But this time also pass the Uri that was saved.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// resume the upload task from where it left off when the process died.
 // to do this, pass the sessionUri as the last parameter
 uploadTask = storageRef.putFile(
     localFile,
     storageMetadata { },
     sessionUri,
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">//resume the upload task from where it left off when the process died.
 //to do this, pass the sessionUri as the last parameter
 uploadTask = mStorageRef.putFile(localFile,
-        new StorageMetadata.Builder().build(), sessionUri);</pre> </section> </div> <p>Sessions last one week. If you attempt to resume a session after it has expired or if it had experienced an error, you will receive a failure callback. It is your responsibility to ensure the file has not changed between uploads.</p> <h2 id="error_handling">Error Handling</h2> <p>There are a number of reasons why errors may occur on upload, including the local file not existing, or the user not having permission to upload the desired file. You can find more information about errors in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="full_example">Full Example</h2> <p>A full example of an upload with progress monitoring and error handling is shown below:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+        new StorageMetadata.Builder().build(), sessionUri);</pre> </section> </div> <p>Sessions last one week. If you attempt to resume a session after it has expired or if it had experienced an error, you will receive a failure callback. It is your responsibility to ensure the file has not changed between uploads.</p> <h2 id="error_handling">Error Handling</h2> <p>There are a number of reasons why errors may occur on upload, including the local file not existing, or the user not having permission to upload the desired file. You can find more information about errors in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="full_example">Full Example</h2> <p>A full example of an upload with progress monitoring and error handling is shown below:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// File or Blob
 file = Uri.fromFile(File("path/to/mountains.jpg"))
 
@@ -332,7 +332,7 @@ uploadTask.addOnProgressListener { (bytesTransferred, totalByteCount) -&gt;
 }.addOnSuccessListener {
     // Handle successful uploads on complete
     // ...
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// File or Blob
 file = Uri.fromFile(new File("path/to/mountains.jpg"));
 

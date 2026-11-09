@@ -11,7 +11,7 @@
     // Add the dependency for the App Check library
     // When NOT using the BoM, you must specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-appcheck:20.0.0")
-}</pre>  <h2 id="implement-classes">2. Implement the App Check interfaces</h2> <p>First, you need to create classes that implement the <code translate="no" dir="ltr">AppCheckProvider</code> and <code translate="no" dir="ltr">AppCheckProviderFactory</code> interfaces.</p> <p>Your <code translate="no" dir="ltr">AppCheckProvider</code> class must have a <code translate="no" dir="ltr">getToken()</code> method, which collects whatever information your custom App Check provider requires as proof of authenticity, and sends it to your token acquisition service in exchange for an App Check token. The App Check SDK handles token caching, so always get a new token in your implementation of <code translate="no" dir="ltr">getToken()</code>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+}</pre>  <h2 id="implement-classes">2. Implement the App Check interfaces</h2> <p>First, you need to create classes that implement the <code translate="no" dir="ltr">AppCheckProvider</code> and <code translate="no" dir="ltr">AppCheckProviderFactory</code> interfaces.</p> <p>Your <code translate="no" dir="ltr">AppCheckProvider</code> class must have a <code translate="no" dir="ltr">getToken()</code> method, which collects whatever information your custom App Check provider requires as proof of authenticity, and sends it to your token acquisition service in exchange for an App Check token. The App Check SDK handles token caching, so always get a new token in your implementation of <code translate="no" dir="ltr">getToken()</code>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">class YourCustomAppCheckToken(
     private val token: String,
@@ -34,7 +34,7 @@ class YourCustomAppCheckProvider(firebaseApp: FirebaseApp) : AppCheckProvider {
         val appCheckToken: AppCheckToken = YourCustomAppCheckToken(tokenFromServer, expMillis)
         return Tasks.forResult(appCheckToken)
     }
-}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">public class YourCustomAppCheckToken extends AppCheckToken {
     private String token;
@@ -78,14 +78,14 @@ public class YourCustomAppCheckProvider implements AppCheckProvider {
 
         return Tasks.forResult(appCheckToken);
     }
-}</pre></section> </div> <p>Also, implement a <code translate="no" dir="ltr">AppCheckProviderFactory</code> class that creates instances of your <code translate="no" dir="ltr">AppCheckProvider</code> implementation:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+}</pre></section> </div> <p>Also, implement a <code translate="no" dir="ltr">AppCheckProviderFactory</code> class that creates instances of your <code translate="no" dir="ltr">AppCheckProvider</code> implementation:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">class YourCustomAppCheckProviderFactory : AppCheckProviderFactory {
     override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
         // Create and return an AppCheckProvider object.
         return YourCustomAppCheckProvider(firebaseApp)
     }
-}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">public class YourCustomAppCheckProviderFactory implements AppCheckProviderFactory {
     @NonNull
@@ -94,12 +94,12 @@ public class YourCustomAppCheckProvider implements AppCheckProvider {
         // Create and return an AppCheckProvider object.
         return new YourCustomAppCheckProvider(firebaseApp);
     }
-}</pre></section> </div> <h2 id="initialize">3. Initialize App Check</h2> <p>Add the following initialization code to your app so that it runs before you use any other Firebase SDKs:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+}</pre></section> </div> <h2 id="initialize">3. Initialize App Check</h2> <p>Add the following initialization code to your app so that it runs before you use any other Firebase SDKs:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">Firebase.initialize(context)
 Firebase.appCheck.installAppCheckProviderFactory(
     YourCustomAppCheckProviderFactory(),
-)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+)</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">FirebaseApp.initializeApp(/*context=*/ context);
 FirebaseAppCheck firebaseAppCheck = FirebaseAppCheck.getInstance();

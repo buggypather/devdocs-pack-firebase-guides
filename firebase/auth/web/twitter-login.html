@@ -1,28 +1,28 @@
 <h1>Authenticate Using Twitter in JavaScript</h1> <p>You can let your users authenticate with Firebase using their Twitter accounts by integrating Twitter authentication into your app. You can integrate Twitter authentication either by using the Firebase SDK to carry out the sign-in flow, or by carrying out the Twitter OAuth flow manually and passing the resulting access token and secret to Firebase.</p> <h2 id="before_you_begin">Before you begin</h2> <ol> <li>
 <a href="../../web/setup">Add Firebase to your JavaScript project</a>. </li>
-<li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Twitter</b> sign-in provider. </li> <li> Add the <b>API key</b> and <b>API secret</b> from that provider's developer console to the provider configuration: <ol> <li> <a href="https://apps.twitter.com/" class="external">Register your app</a> as a developer application on Twitter and get your app's OAuth <b>API key</b> and <b>API secret</b>. </li> <li> Make sure your Firebase <b>OAuth redirect URI</b> (for example, <code translate="no" dir="ltr">my-app-12345.firebaseapp.com/__/auth/handler</code>) is set as your <b>Authorization callback URL</b> in your app's settings page on your <a href="https://apps.twitter.com/" class="external">Twitter app's config</a>. </li> </ol> </li> <li> Click <b>Save</b>. </li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building a web app, the easiest way to authenticate your users with Firebase using their Twitter accounts is to handle the sign-in flow with the Firebase JavaScript SDK. (If you want to authenticate a user in Node.js or other non-browser environment, you must handle the sign-in flow manually.) </p> <p>To handle the sign-in flow with the Firebase JavaScript SDK, follow these steps:</p> <ol> <li>Create an instance of the Twitter provider object: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Twitter</b> sign-in provider. </li> <li> Add the <b>API key</b> and <b>API secret</b> from that provider's developer console to the provider configuration: <ol> <li> <a href="https://apps.twitter.com/" class="external">Register your app</a> as a developer application on Twitter and get your app's OAuth <b>API key</b> and <b>API secret</b>. </li> <li> Make sure your Firebase <b>OAuth redirect URI</b> (for example, <code translate="no" dir="ltr">my-app-12345.firebaseapp.com/__/auth/handler</code>) is set as your <b>Authorization callback URL</b> in your app's settings page on your <a href="https://apps.twitter.com/" class="external">Twitter app's config</a>. </li> </ol> </li> <li> Click <b>Save</b>. </li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building a web app, the easiest way to authenticate your users with Firebase using their Twitter accounts is to handle the sign-in flow with the Firebase JavaScript SDK. (If you want to authenticate a user in Node.js or other non-browser environment, you must handle the sign-in flow manually.) </p> <p>To handle the sign-in flow with the Firebase JavaScript SDK, follow these steps:</p> <ol> <li>Create an instance of the Twitter provider object: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { TwitterAuthProvider } from "firebase/auth";
 
-const provider = new TwitterAuthProvider();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+const provider = new TwitterAuthProvider();</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">var provider = new firebase.auth.TwitterAuthProvider();</pre> </section> </div> </li> <li>
-<strong>Optional</strong>: To localize the provider's OAuth flow to the user's preferred language without explicitly passing the relevant custom OAuth parameters, update the language code on the Auth instance before starting the OAuth flow. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<strong>Optional</strong>: To localize the provider's OAuth flow to the user's preferred language without explicitly passing the relevant custom OAuth parameters, update the language code on the Auth instance before starting the OAuth flow. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth } from "firebase/auth";
 
 const auth = getAuth();
 auth.languageCode = 'it';
 // To apply the default browser preference instead of explicitly setting it.
-// auth.useDeviceLanguage();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+// auth.useDeviceLanguage();</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().languageCode = 'it';
 // To apply the default browser preference instead of explicitly setting it.
 // firebase.auth().useDeviceLanguage();</pre> </section> </div> </li>
 <li>
-<strong>Optional</strong>: Specify additional custom OAuth provider parameters that you want to send with the OAuth request. To add a custom parameter, call <code translate="no" dir="ltr">setCustomParameters</code> on the initialized provider with an object containing the key as specified by the OAuth provider documentation and the corresponding value. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<strong>Optional</strong>: Specify additional custom OAuth provider parameters that you want to send with the OAuth request. To add a custom parameter, call <code translate="no" dir="ltr">setCustomParameters</code> on the initialized provider with an object containing the key as specified by the OAuth provider documentation and the corresponding value. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   'lang': 'es'
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   'lang': 'es'
-});</pre> </section> </div> Reserved required OAuth parameters are not allowed and will be ignored. See the <a href="https://firebase.google.com/docs/reference/js/v8/firebase.auth.Auth#setCustomParameters"> authentication provider reference</a> for more details. </li> <li>Authenticate with Firebase using the Twitter provider object. You can prompt your users to sign in with their Twitter accounts either by opening a pop-up window or by redirecting to the sign-in page. The redirect method is preferred on mobile devices. <ul> <li>To sign in with a pop-up window, call <code translate="no" dir="ltr">signInWithPopup</code>: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+});</pre> </section> </div> Reserved required OAuth parameters are not allowed and will be ignored. See the <a href="https://firebase.google.com/docs/reference/js/v8/firebase.auth.Auth#setCustomParameters"> authentication provider reference</a> for more details. </li> <li>Authenticate with Firebase using the Twitter provider object. You can prompt your users to sign in with their Twitter accounts either by opening a pop-up window or by redirecting to the sign-in page. The redirect method is preferred on mobile devices. <ul> <li>To sign in with a pop-up window, call <code translate="no" dir="ltr">signInWithPopup</code>: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithPopup, TwitterAuthProvider } from "firebase/auth";
 
 const auth = getAuth();
@@ -47,7 +47,7 @@ signInWithPopup(auth, provider)
     // The AuthCredential type that was used.
     const credential = TwitterAuthProvider.credentialFromError(error);
     // ...
-  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+  });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase
   .auth()
   .signInWithPopup(provider)
@@ -73,12 +73,12 @@ signInWithPopup(auth, provider)
     // The firebase.auth.AuthCredential type that was used.
     var credential = error.credential;
     // ...
-  });</pre> </section> </div> Also notice that you can retrieve the Twitter provider's OAuth token which can be used to fetch additional data using the Twitter APIs. <p> This is also where you can catch and handle errors. For a list of error codes have a look at the <a href="https://firebase.google.com/docs/reference/js/v8/firebase.auth.Auth#signInWithPopup">Auth Reference Docs</a>. </p> </li> <li>To sign in by redirecting to the sign-in page, call <code translate="no" dir="ltr">signInWithRedirect</code>: Follow the <a href="redirect-best-practices">best practices</a> when using `signInWithRedirect`. <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+  });</pre> </section> </div> Also notice that you can retrieve the Twitter provider's OAuth token which can be used to fetch additional data using the Twitter APIs. <p> This is also where you can catch and handle errors. For a list of error codes have a look at the <a href="https://firebase.google.com/docs/reference/js/v8/firebase.auth.Auth#signInWithPopup">Auth Reference Docs</a>. </p> </li> <li>To sign in by redirecting to the sign-in page, call <code translate="no" dir="ltr">signInWithRedirect</code>: Follow the <a href="redirect-best-practices">best practices</a> when using `signInWithRedirect`. <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithRedirect } from "firebase/auth";
 
 const auth = getAuth();
-signInWithRedirect(auth, provider);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
-<pre data-language="javascript">firebase.auth().signInWithRedirect(provider);</pre> </section> </div> Then, you can also retrieve the Twitter provider's OAuth token by calling <code translate="no" dir="ltr">getRedirectResult</code> when your page loads: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+signInWithRedirect(auth, provider);</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().signInWithRedirect(provider);</pre> </section> </div> Then, you can also retrieve the Twitter provider's OAuth token by calling <code translate="no" dir="ltr">getRedirectResult</code> when your page loads: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, getRedirectResult, TwitterAuthProvider } from "firebase/auth";
 
 const auth = getAuth();
@@ -104,7 +104,7 @@ getRedirectResult(auth)
     // The AuthCredential type that was used.
     const credential = TwitterAuthProvider.credentialFromError(error);
     // ...
-  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+  });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth()
   .getRedirectResult()
   .then((result) =&gt; {
@@ -177,7 +177,7 @@ try {
 } catch (error) {
   // ...
 }</pre> <h3 id="redirect-mode">Redirect mode</h3> <p>This error is handled in a similar way in the redirect mode, with the difference that the pending credential has to be cached between page redirects (for example, using session storage).</p> </section> <h2 id="handle_the_sign-in_flow_manually">Handle the sign-in flow manually</h2> <p>You can also authenticate with Firebase using a Twitter account by handling the sign-in flow by calling the Twitter OAuth endpoints:</p> <ol> <li>Integrate Twitter authentication into your app by following the <a href="https://developer.twitter.com/en/docs/basics/authentication/guides/log-in-with-twitter"> developer's documentation</a>. At the end of the Twitter sign-in flow, you will receive an OAuth access token and an OAuth secret. </li> <li>If you need to sign in on a Node.js application, send the OAuth access token and the OAuth secret to the Node.js application.</li> <li>After a user successfully signs in with Twitter, exchange the OAuth access token and OAuth secret for a Firebase credential: 
-<pre>var credential = firebase.auth.TwitterAuthProvider.credential(token, secret);</pre> </li> <li>Authenticate with Firebase using the Firebase credential: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<pre>var credential = firebase.auth.TwitterAuthProvider.credential(token, secret);</pre> </li> <li>Authenticate with Firebase using the Firebase credential: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithCredential, FacebookAuthProvider } from "firebase/auth";
 
 // Sign in with the credential from the Facebook user.
@@ -196,7 +196,7 @@ signInWithCredential(auth, credential)
     // The AuthCredential type that was used.
     const credential = FacebookAuthProvider.credentialFromError(error);
     // ...
-  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+  });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">// Sign in with the credential from the Facebook user.
 firebase.auth().signInWithCredential(credential)
   .then((result) =&gt; {
@@ -223,7 +223,7 @@ firebase.auth().signInWithCredential(credential)
   storageBucket: 'PROJECT_ID.firebasestorage.app',
   messagingSenderId: 'SENDER_ID'
 };
-firebase.initializeApp(config);</pre> </li> </ol> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+firebase.initializeApp(config);</pre> </li> </ol> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signOut } from "firebase/auth";
 
 const auth = getAuth();
@@ -231,7 +231,7 @@ signOut(auth).then(() =&gt; {
   // Sign-out successful.
 }).catch((error) =&gt; {
   // An error happened.
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().signOut().then(() =&gt; {
   // Sign-out successful.
 }).catch((error) =&gt; {

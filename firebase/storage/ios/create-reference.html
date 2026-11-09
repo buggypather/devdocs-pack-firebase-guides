@@ -1,16 +1,16 @@
-<h1>Create a Cloud Storage reference on Apple platforms</h1> <p>Your files are stored in a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket. The files in this bucket are presented in a hierarchical structure, just like the file system on your local hard disk, or the data in the Firebase Realtime Database. By creating a reference to a file, your app gains access to it. These references can then be used to upload or download data, get or update metadata or delete the file. A reference can either point to a specific file or to a higher level node in the hierarchy.</p> <p>If you've used the <a href="../../database">Firebase Realtime Database</a>, these paths should seem very familiar to you. However, your file data is stored in Cloud Storage, <strong>not</strong> in the Realtime Database.</p> <h2 id="create_a_reference">Create a Reference</h2> <p>Create a reference to upload, download, or delete a file, or to get or update its metadata. A reference can be thought of as a pointer to a file in the cloud. References are lightweight, so you can create as many as you need. They are also reusable for multiple operations.</p> <p>References are created using the <code translate="no" dir="ltr">FirebaseStorage</code> service and calling its <code translate="no" dir="ltr">reference</code> method.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<h1>Create a Cloud Storage reference on Apple platforms</h1> <p>Your files are stored in a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket. The files in this bucket are presented in a hierarchical structure, just like the file system on your local hard disk, or the data in the Firebase Realtime Database. By creating a reference to a file, your app gains access to it. These references can then be used to upload or download data, get or update metadata or delete the file. A reference can either point to a specific file or to a higher level node in the hierarchy.</p> <p>If you've used the <a href="../../database">Firebase Realtime Database</a>, these paths should seem very familiar to you. However, your file data is stored in Cloud Storage, <strong>not</strong> in the Realtime Database.</p> <h2 id="create_a_reference">Create a Reference</h2> <p>Create a reference to upload, download, or delete a file, or to get or update its metadata. A reference can be thought of as a pointer to a file in the cloud. References are lightweight, so you can create as many as you need. They are also reusable for multiple operations.</p> <p>References are created using the <code translate="no" dir="ltr">FirebaseStorage</code> service and calling its <code translate="no" dir="ltr">reference</code> method.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Get a reference to the storage service using the default Firebase App
 let storage = Storage.storage()
 
 // Create a storage reference from our storage service
 let storageRef = storage.reference()
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Get a reference to the storage service using the default Firebase App
 FIRStorage *storage = [FIRStorage storage];
 
 // Create a storage reference from our storage service
 FIRStorageReference *storageRef = [storage reference];
-    </pre> </section> </div> <p>You can create a reference to a location lower in the tree, say <code translate="no" dir="ltr">'images/space.jpg'</code>, by using the <code translate="no" dir="ltr">child</code> method on an existing reference.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <p>You can create a reference to a location lower in the tree, say <code translate="no" dir="ltr">'images/space.jpg'</code>, by using the <code translate="no" dir="ltr">child</code> method on an existing reference.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create a child reference
 // imagesRef now points to "images"
 let imagesRef = storageRef.child("images")
@@ -23,7 +23,7 @@ var spaceRef = storageRef.child("images/space.jpg")
 // This is equivalent to creating the full reference
 let storagePath = "\(your_firebase_storage_bucket)/images/space.jpg"
 spaceRef = storage.reference(forURL: storagePath)
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create a child reference
 // imagesRef now points to "images"
 FIRStorageReference *imagesRef = [storageRef child:@"images"];
@@ -35,7 +35,7 @@ FIRStorageReference *spaceRef = [storageRef child:@"images/space.jpg"];
 
 // This is equivalent to creating the full reference
 spaceRef = [storage referenceForURL:@"gs://&lt;your-firebase-storage-bucket&gt;/images/space.jpg"];
-     </pre> </section> </div> <h2 id="navigate_with_references">Navigate with References</h2> <p>You can also use the <code translate="no" dir="ltr">parent</code> and <code translate="no" dir="ltr">root</code> methods to navigate up in our file hierarchy. <code translate="no" dir="ltr">parent</code> navigates up one level, while <code translate="no" dir="ltr">root</code> navigates all the way to the top.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+     </pre> </section> </div> <h2 id="navigate_with_references">Navigate with References</h2> <p>You can also use the <code translate="no" dir="ltr">parent</code> and <code translate="no" dir="ltr">root</code> methods to navigate up in our file hierarchy. <code translate="no" dir="ltr">parent</code> navigates up one level, while <code translate="no" dir="ltr">root</code> navigates all the way to the top.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Parent allows us to move to the parent of a reference
 // imagesRef now points to 'images'
 let imagesRef = spaceRef.parent()
@@ -43,7 +43,7 @@ let imagesRef = spaceRef.parent()
 // Root allows us to move all the way back to the top of our bucket
 // rootRef now points to the root
 let rootRef = spaceRef.root()
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Parent allows us to move to the parent of a reference
 // imagesRef now points to 'images'
 imagesRef = [spaceRef parent];
@@ -51,21 +51,21 @@ imagesRef = [spaceRef parent];
 // Root allows us to move all the way back to the top of our bucket
 // rootRef now points to the root
 FIRStorageReference *rootRef = [spaceRef root];
-    </pre> </section> </div> <p><code translate="no" dir="ltr">child</code>, <code translate="no" dir="ltr">parent</code>, and <code translate="no" dir="ltr">root</code> can be chained together multiple times, as each returns a reference. The exception is the <code translate="no" dir="ltr">parent</code> of <code translate="no" dir="ltr">root</code>, which is <code translate="no" dir="ltr">nil</code>.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <p><code translate="no" dir="ltr">child</code>, <code translate="no" dir="ltr">parent</code>, and <code translate="no" dir="ltr">root</code> can be chained together multiple times, as each returns a reference. The exception is the <code translate="no" dir="ltr">parent</code> of <code translate="no" dir="ltr">root</code>, which is <code translate="no" dir="ltr">nil</code>.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// References can be chained together multiple times
 // earthRef points to "images/earth.jpg"
 let earthRef = spaceRef.parent()?.child("earth.jpg")
 
 // nilRef is nil, since the parent of root is nil
 let nilRef = spaceRef.root().parent()
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// References can be chained together multiple times
 // earthRef points to "images/earth.jpg"
 FIRStorageReference *earthRef = [[spaceRef parent] child:@"earth.jpg"];
 
 // nilRef is nil, since the parent of root is nil
 FIRStorageReference *nilRef = [[spaceRef root] parent];
-    </pre> </section> </div> <h2 id="reference_properties">Reference Properties</h2> <p>You can inspect references to better understand the files they point to using the <code translate="no" dir="ltr">fullPath</code>, <code translate="no" dir="ltr">name</code>, and <code translate="no" dir="ltr">bucket</code> properties. These properties get the file's full path, name, and bucket.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <h2 id="reference_properties">Reference Properties</h2> <p>You can inspect references to better understand the files they point to using the <code translate="no" dir="ltr">fullPath</code>, <code translate="no" dir="ltr">name</code>, and <code translate="no" dir="ltr">bucket</code> properties. These properties get the file's full path, name, and bucket.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Reference's path is: "images/space.jpg"
 // This is analogous to a file path on disk
 spaceRef.fullPath
@@ -76,7 +76,7 @@ spaceRef.name
 
 // Reference's bucket is the name of the storage bucket where files are stored
 spaceRef.bucket
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Reference's path is: "images/space.jpg"
 // This is analogous to a file path on disk
 spaceRef.fullPath;
@@ -87,7 +87,7 @@ spaceRef.name;
 
 // Reference's bucket is the name of the storage bucket where files are stored
 spaceRef.bucket;
-    </pre> </section> </div> <h2 id="limitations_on_references">Limitations on References</h2> <p>Reference paths and names can contain any sequence of valid Unicode characters, but certain restrictions are imposed including:</p> <ol> <li>Total length of reference.fullPath must be between 1 and 1024 bytes when UTF-8 encoded.</li> <li>No Carriage Return or Line Feed characters.</li> <li>Avoid using <code translate="no" dir="ltr">#</code>, <code translate="no" dir="ltr">[</code>, <code translate="no" dir="ltr">]</code>, <code translate="no" dir="ltr">*</code>, or <code translate="no" dir="ltr">?</code>, as these do not work well with other tools such as the <a href="../../database">Firebase Realtime Database</a> or <a href="https://cloud.google.com/storage/docs/gsutil">gsutil</a>.</li> </ol> <h2 id="full_example">Full Example</h2> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <h2 id="limitations_on_references">Limitations on References</h2> <p>Reference paths and names can contain any sequence of valid Unicode characters, but certain restrictions are imposed including:</p> <ol> <li>Total length of reference.fullPath must be between 1 and 1024 bytes when UTF-8 encoded.</li> <li>No Carriage Return or Line Feed characters.</li> <li>Avoid using <code translate="no" dir="ltr">#</code>, <code translate="no" dir="ltr">[</code>, <code translate="no" dir="ltr">]</code>, <code translate="no" dir="ltr">*</code>, or <code translate="no" dir="ltr">?</code>, as these do not work well with other tools such as the <a href="../../database">Firebase Realtime Database</a> or <a href="https://cloud.google.com/storage/docs/gsutil">gsutil</a>.</li> </ol> <h2 id="full_example">Full Example</h2> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Points to the root reference
 let storageRef = Storage.storage().reference()
 
@@ -107,7 +107,7 @@ let name = spaceRef.name
 
 // Points to "images"
 let images = spaceRef.parent()
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Points to the root reference
 FIRStorageReference *storageRef = [[FIRStorage storage] reference];
 

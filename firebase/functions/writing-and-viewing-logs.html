@@ -1,4 +1,4 @@
-<h1>Write and view logs</h1> <p>Logging is an important tool for debugging and monitoring code. Cloud Functions gives you the option of using the logger SDK for <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.logger">Node.js</a> or <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/python/firebase_functions.logger">Python</a>, or the <code translate="no" dir="ltr">console</code> object standard for developing for the web.</p> <p>Cloud Logging is a chargeable service; you may be billed if you exceed the no-cost quota. For more information, see <a href="https://cloud.google.com/stackdriver/pricing">Cloud Logging pricing</a>.</p> <h2 id="writing_logs">Writing logs</h2> <h3 id="logger-sdk">Using the Cloud Functions logger SDK</h3> <p>The Cloud Functions logger SDK provides a standard interface to report status from functions to Cloud Logging. You can use this SDK to log events with <a href="https://cloud.google.com/logging/docs/structured-logging">structured data</a>, enabling easier analysis and monitoring.</p> <p>Import from the <code translate="no" dir="ltr">logger</code> subpackage:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Write and view logs</h1> <p>Logging is an important tool for debugging and monitoring code. Cloud Functions gives you the option of using the logger SDK for <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.logger">Node.js</a> or <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/python/firebase_functions.logger">Python</a>, or the <code translate="no" dir="ltr">console</code> object standard for developing for the web.</p> <p>Cloud Logging is a chargeable service; you may be billed if you exceed the no-cost quota. For more information, see <a href="https://cloud.google.com/stackdriver/pricing">Cloud Logging pricing</a>.</p> <h2 id="writing_logs">Writing logs</h2> <h3 id="logger-sdk">Using the Cloud Functions logger SDK</h3> <p>The Cloud Functions logger SDK provides a standard interface to report status from functions to Cloud Logging. You can use this SDK to log events with <a href="https://cloud.google.com/logging/docs/structured-logging">structured data</a>, enabling easier analysis and monitoring.</p> <p>Import from the <code translate="no" dir="ltr">logger</code> subpackage:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">// All available logging functions
 const {
@@ -9,10 +9,10 @@ const {
   error,
   write,
 } = require("firebase-functions/logger");
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_functions import logger
-</pre></section> </div> <ul> <li><p><code translate="no" dir="ltr">logger.log()</code> commands have the <strong>INFO</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.info()</code> commands have the <strong>INFO</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.warn()</code> commands have the <strong>WARNING</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.error()</code> commands have the <strong>ERROR</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.debug()</code> commands have the <strong>DEBUG</strong> log level.</p></li> <li><p>Internal system messages have the <strong>DEBUG</strong> log level.</p></li> </ul> <p>This example demonstrates a function writing a basic log:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <ul> <li><p><code translate="no" dir="ltr">logger.log()</code> commands have the <strong>INFO</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.info()</code> commands have the <strong>INFO</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.warn()</code> commands have the <strong>WARNING</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.error()</code> commands have the <strong>ERROR</strong> log level.</p></li> <li><p><code translate="no" dir="ltr">logger.debug()</code> commands have the <strong>DEBUG</strong> log level.</p></li> <li><p>Internal system messages have the <strong>DEBUG</strong> log level.</p></li> </ul> <p>This example demonstrates a function writing a basic log:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">exports.helloWorld = onRequest((request, response) =&gt; {
   // sends a log to Cloud Logging
@@ -20,7 +20,7 @@ const {
 
   response.send("Hello from Firebase!");
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@https_fn.on_request()
 def hello_world(req: https_fn.Request) -&gt; https_fn.Response:
@@ -28,7 +28,7 @@ def hello_world(req: https_fn.Request) -&gt; https_fn.Response:
     logger.log("Hello logs!")
 
     return https_fn.Response("Hello from Firebase!")
-</pre></section> </div> <p>Use different log levels for different types of log in your function code. Structured data can be attached to a log as the last argument. Here is an example of how a function can use each log type:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>Use different log levels for different types of log in your function code. Structured data can be attached to a log as the last argument. Here is an example of how a function can use each log type:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">exports.getInspirationalQuote = onRequest(async (request, response) =&gt; {
   const db = getFirestore();
@@ -75,7 +75,7 @@ def hello_world(req: https_fn.Request) -&gt; https_fn.Response:
   info("Sending a quote!", {quote: quote});
   response.json({inspirationalQuote: quote});
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@https_fn.on_request()
 def get_inspirational_quote(req: https_fn.Request) -&gt; https_fn.Response:
@@ -121,7 +121,7 @@ def get_inspirational_quote(req: https_fn.Request) -&gt; https_fn.Response:
     # Attach relevant structured data to any log
     logger.info("Sending a quote!", quote=quote)
     return https_fn.Response("Hello from Firebase!")
-</pre></section> </div> <p>With <code translate="no" dir="ltr">logger.write()</code>, you can write log entries with additional log severity levels of <code translate="no" dir="ltr">CRITICAL</code>, <code translate="no" dir="ltr">ALERT</code>, and <code translate="no" dir="ltr">EMERGENCY</code>. See <a href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity">LogSeverity</a>.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>With <code translate="no" dir="ltr">logger.write()</code>, you can write log entries with additional log severity levels of <code translate="no" dir="ltr">CRITICAL</code>, <code translate="no" dir="ltr">ALERT</code>, and <code translate="no" dir="ltr">EMERGENCY</code>. See <a href="https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity">LogSeverity</a>.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">exports.appHasARegression = onRegressionAlertPublished((event) =&gt; {
   write({
@@ -133,7 +133,7 @@ def get_inspirational_quote(req: https_fn.Request) -&gt; https_fn.Response:
     lastOccurred: event.data.payload.resolveTime,
   });
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@crashlytics_fn.on_regression_alert_published()
 def app_has_regression(alert: crashlytics_fn.CrashlyticsRegressionAlertEvent) -&gt; None:

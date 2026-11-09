@@ -1,31 +1,31 @@
 <h1>Authenticate Using Facebook Login with JavaScript</h1> <p>You can let your users authenticate with Firebase using their Facebook accounts by integrating Facebook Login into your app. You can integrate Facebook Login either by using the Firebase SDK to carry out the sign-in flow, or by carrying out the Facebook Login flow manually and passing the resulting access token to Firebase.</p> <h2 id="before_you_begin">Before you begin</h2> <ol> <li>
 <a href="../../web/setup">Add Firebase to your JavaScript project</a>. </li>
-<li> In the <a href="https://developers.facebook.com/" class="external">Facebook for Developers site</a>, get the <b>App ID</b> and an <b>App Secret</b> for your app. </li> <li> Enable Facebook Login as a sign-in provider for your Firebase project: <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Facebook</b> sign-in provider, and specify the <b>App ID</b> and <b>App Secret</b> you got from Facebook. </li> <li> Make sure your <b>OAuth redirect URI</b> (for example, <code translate="no" dir="ltr">my-app-12345.firebaseapp.com/__/auth/handler</code>) is listed as one of your <b>OAuth redirect URIs</b> in your Facebook app's settings page on the <a href="https://developers.facebook.com/" class="external">Facebook for Developers site</a> in the <b>Product Settings &gt; Facebook Login</b> config. </li> </ol> </li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building a web app, the easiest way to authenticate your users with Firebase using their Facebook accounts is to handle the sign-in flow with the Firebase JavaScript SDK. (If you want to authenticate a user in Node.js or other non-browser environment, you must handle the sign-in flow manually.) </p> <p>To handle the sign-in flow with the Firebase JavaScript SDK, follow these steps:</p> <ol> <li>Create an instance of the Facebook provider object: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<li> In the <a href="https://developers.facebook.com/" class="external">Facebook for Developers site</a>, get the <b>App ID</b> and an <b>App Secret</b> for your app. </li> <li> Enable Facebook Login as a sign-in provider for your Firebase project: <ol> <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Facebook</b> sign-in provider, and specify the <b>App ID</b> and <b>App Secret</b> you got from Facebook. </li> <li> Make sure your <b>OAuth redirect URI</b> (for example, <code translate="no" dir="ltr">my-app-12345.firebaseapp.com/__/auth/handler</code>) is listed as one of your <b>OAuth redirect URIs</b> in your Facebook app's settings page on the <a href="https://developers.facebook.com/" class="external">Facebook for Developers site</a> in the <b>Product Settings &gt; Facebook Login</b> config. </li> </ol> </li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building a web app, the easiest way to authenticate your users with Firebase using their Facebook accounts is to handle the sign-in flow with the Firebase JavaScript SDK. (If you want to authenticate a user in Node.js or other non-browser environment, you must handle the sign-in flow manually.) </p> <p>To handle the sign-in flow with the Firebase JavaScript SDK, follow these steps:</p> <ol> <li>Create an instance of the Facebook provider object: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { FacebookAuthProvider } from "firebase/auth";
 
-const provider = new FacebookAuthProvider();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+const provider = new FacebookAuthProvider();</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">var provider = new firebase.auth.FacebookAuthProvider();</pre> </section> </div> </li> <li>
-<strong>Optional</strong>: Specify additional OAuth 2.0 scopes that you want to request from the authentication provider. To add a scope, call <code translate="no" dir="ltr">addScope</code>. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
-<pre data-language="javascript">provider.addScope('user_birthday');</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+<strong>Optional</strong>: Specify additional OAuth 2.0 scopes that you want to request from the authentication provider. To add a scope, call <code translate="no" dir="ltr">addScope</code>. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
+<pre data-language="javascript">provider.addScope('user_birthday');</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">provider.addScope('user_birthday');</pre> </section> </div> See the <a href="https://developers.facebook.com/docs/facebook-login/permissions">authentication provider documentation</a>. </li> <li>
-<strong>Optional</strong>: To localize the provider's OAuth flow to the user's preferred language without explicitly passing the relevant custom OAuth parameters, update the language code on the Auth instance before starting the OAuth flow. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<strong>Optional</strong>: To localize the provider's OAuth flow to the user's preferred language without explicitly passing the relevant custom OAuth parameters, update the language code on the Auth instance before starting the OAuth flow. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth } from "firebase/auth";
 
 const auth = getAuth();
 auth.languageCode = 'it';
 // To apply the default browser preference instead of explicitly setting it.
-// auth.useDeviceLanguage();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+// auth.useDeviceLanguage();</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().languageCode = 'it';
 // To apply the default browser preference instead of explicitly setting it.
 // firebase.auth().useDeviceLanguage();</pre> </section> </div> </li>
 <li>
-<strong>Optional</strong>: Specify additional custom OAuth provider parameters that you want to send with the OAuth request. To add a custom parameter, call <code translate="no" dir="ltr">setCustomParameters</code> on the initialized provider with an object containing the key as specified by the OAuth provider documentation and the corresponding value. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<strong>Optional</strong>: Specify additional custom OAuth provider parameters that you want to send with the OAuth request. To add a custom parameter, call <code translate="no" dir="ltr">setCustomParameters</code> on the initialized provider with an object containing the key as specified by the OAuth provider documentation and the corresponding value. For example: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   'display': 'popup'
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   'display': 'popup'
-});</pre> </section> </div> Reserved required OAuth parameters are not allowed and will be ignored. See the <a href="https://firebase.google.com/docs/reference/js/v8/firebase.auth.Auth#setCustomParameters"> authentication provider reference</a> for more details. </li> <li>Authenticate with Firebase using the Facebook provider object. You can prompt your users to sign in with their Facebook accounts either by opening a pop-up window or by redirecting to the sign-in page. The redirect method is preferred on mobile devices. <ul> <li>To sign in with a pop-up window, call <code translate="no" dir="ltr">signInWithPopup</code>: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+});</pre> </section> </div> Reserved required OAuth parameters are not allowed and will be ignored. See the <a href="https://firebase.google.com/docs/reference/js/v8/firebase.auth.Auth#setCustomParameters"> authentication provider reference</a> for more details. </li> <li>Authenticate with Firebase using the Facebook provider object. You can prompt your users to sign in with their Facebook accounts either by opening a pop-up window or by redirecting to the sign-in page. The redirect method is preferred on mobile devices. <ul> <li>To sign in with a pop-up window, call <code translate="no" dir="ltr">signInWithPopup</code>: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithPopup, FacebookAuthProvider } from "firebase/auth";
 
 const auth = getAuth();
@@ -51,7 +51,7 @@ signInWithPopup(auth, provider)
     const credential = FacebookAuthProvider.credentialFromError(error);
 
     // ...
-  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+  });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase
   .auth()
   .signInWithPopup(provider)
@@ -79,12 +79,12 @@ signInWithPopup(auth, provider)
     var credential = error.credential;
 
     // ...
-  });</pre> </section> </div> Also notice that you can retrieve the Facebook provider's OAuth token which can be used to fetch additional data using the Facebook APIs. <p> This is also where you can catch and handle errors. For a list of error codes have a look at the <a href="https://firebase.google.com/docs/reference/js/v8/firebase.auth.Auth#signInWithPopup">Auth Reference Docs</a>. </p> </li> <li>To sign in by redirecting to the sign-in page, call <code translate="no" dir="ltr">signInWithRedirect</code>: Follow the <a href="redirect-best-practices">best practices</a> when using `signInWithRedirect`. <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+  });</pre> </section> </div> Also notice that you can retrieve the Facebook provider's OAuth token which can be used to fetch additional data using the Facebook APIs. <p> This is also where you can catch and handle errors. For a list of error codes have a look at the <a href="https://firebase.google.com/docs/reference/js/v8/firebase.auth.Auth#signInWithPopup">Auth Reference Docs</a>. </p> </li> <li>To sign in by redirecting to the sign-in page, call <code translate="no" dir="ltr">signInWithRedirect</code>: Follow the <a href="redirect-best-practices">best practices</a> when using `signInWithRedirect`. <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithRedirect } from "firebase/auth";
 
 const auth = getAuth();
-signInWithRedirect(auth, provider);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
-<pre data-language="javascript">firebase.auth().signInWithRedirect(provider);</pre> </section> </div> Then, you can also retrieve the Facebook provider's OAuth token by calling <code translate="no" dir="ltr">getRedirectResult</code> when your page loads: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+signInWithRedirect(auth, provider);</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().signInWithRedirect(provider);</pre> </section> </div> Then, you can also retrieve the Facebook provider's OAuth token by calling <code translate="no" dir="ltr">getRedirectResult</code> when your page loads: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, getRedirectResult, FacebookAuthProvider } from "firebase/auth";
 
 const auth = getAuth();
@@ -106,7 +106,7 @@ getRedirectResult(auth)
     // AuthCredential type that was used.
     const credential = FacebookAuthProvider.credentialFromError(error);
     // ...
-  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+  });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth()
   .getRedirectResult()
   .then((result) =&gt; {
@@ -194,7 +194,7 @@ try {
   data-auto-logout-link="true"
   scope="public_profile,email"
   size="large"
-&gt;&lt;/fb:login-button&gt;</pre> </li> <li id="get_idp_token">In the Facebook auth state callback, exchange the auth token from Facebook's auth response for a Firebase credential and sign-in Firebase: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+&gt;&lt;/fb:login-button&gt;</pre> </li> <li id="get_idp_token">In the Facebook auth state callback, exchange the auth token from Facebook's auth response for a Firebase credential and sign-in Firebase: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, onAuthStateChanged, signInWithCredential, signOut, FacebookAuthProvider } from "firebase/auth";
 const auth = getAuth();
 
@@ -229,7 +229,7 @@ function checkLoginState(response) {
     // User is signed-out of Facebook.
     signOut(auth);
   }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">function checkLoginState(response) {
   if (response.authResponse) {
     // User is signed-in Facebook.
@@ -261,7 +261,7 @@ function checkLoginState(response) {
     // User is signed-out of Facebook.
     firebase.auth().signOut();
   }
-}</pre> </section> </div> This is also where you can catch and handle errors. For a list of error codes have a look at the <a href="https://firebase.google.com/docs/reference/js/auth#autherrorcodes">Auth Reference Docs</a>. </li> <li>Also you should check that the Facebook user is not already signed-in Firebase to avoid un-needed re-auth: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+}</pre> </section> </div> This is also where you can catch and handle errors. For a list of error codes have a look at the <a href="https://firebase.google.com/docs/reference/js/auth#autherrorcodes">Auth Reference Docs</a>. </li> <li>Also you should check that the Facebook user is not already signed-in Firebase to avoid un-needed re-auth: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { FacebookAuthProvider } from "firebase/auth";
 
 function isUserEqual(facebookAuthResponse, firebaseUser) {
@@ -276,7 +276,7 @@ function isUserEqual(facebookAuthResponse, firebaseUser) {
     }
   }
   return false;
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">function isUserEqual(facebookAuthResponse, firebaseUser) {
   if (firebaseUser) {
     var providerData = firebaseUser.providerData;
@@ -289,7 +289,7 @@ function isUserEqual(facebookAuthResponse, firebaseUser) {
     }
   }
   return false;
-}</pre> </section> </div> </li> </ol> </section> <section class="expandable"> <h2 class="showalways" id="advanced:-authenticate-with-firebase-in-node.js">Advanced: Authenticate with Firebase in Node.js</h2> <p>To authenticate with Firebase in a Node.js application:</p> <ol> <li>Sign in the user with their Facebook Account and get the user's Facebook access token. For example, sign in the user in a browser as described in the <a href="#advanced-handle-the-sign-in-flow-manually">Handle the sign-in flow manually</a> section, but send the access token to your Node.js application instead of using it in the client app. </li> <li>After you get the user's Facebook access token, use it to build a Credential object and then sign in the user with the credential: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+}</pre> </section> </div> </li> </ol> </section> <section class="expandable"> <h2 class="showalways" id="advanced:-authenticate-with-firebase-in-node.js">Advanced: Authenticate with Firebase in Node.js</h2> <p>To authenticate with Firebase in a Node.js application:</p> <ol> <li>Sign in the user with their Facebook Account and get the user's Facebook access token. For example, sign in the user in a browser as described in the <a href="#advanced-handle-the-sign-in-flow-manually">Handle the sign-in flow manually</a> section, but send the access token to your Node.js application instead of using it in the client app. </li> <li>After you get the user's Facebook access token, use it to build a Credential object and then sign in the user with the credential: <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithCredential, FacebookAuthProvider } from "firebase/auth";
 
 // Sign in with the credential from the Facebook user.
@@ -308,7 +308,7 @@ signInWithCredential(auth, credential)
     // The AuthCredential type that was used.
     const credential = FacebookAuthProvider.credentialFromError(error);
     // ...
-  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+  });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">// Sign in with the credential from the Facebook user.
 firebase.auth().signInWithCredential(credential)
   .then((result) =&gt; {
@@ -335,7 +335,7 @@ firebase.auth().signInWithCredential(credential)
   storageBucket: 'PROJECT_ID.firebasestorage.app',
   messagingSenderId: 'SENDER_ID'
 };
-firebase.initializeApp(config);</pre> </li> </ol> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+firebase.initializeApp(config);</pre> </li> </ol> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signOut } from "firebase/auth";
 
 const auth = getAuth();
@@ -343,7 +343,7 @@ signOut(auth).then(() =&gt; {
   // Sign-out successful.
 }).catch((error) =&gt; {
   // An error happened.
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().signOut().then(() =&gt; {
   // Sign-out successful.
 }).catch((error) =&gt; {

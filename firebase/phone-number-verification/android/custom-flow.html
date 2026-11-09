@@ -1,6 +1,6 @@
 <h1>Customize the Firebase Phone Number Verification flow on Android</h1> <p>The <a href="get-started">Get started with Firebase Phone Number Verification</a> page details how to integrate with Firebase PNV using the <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code> method, which handles the entire Firebase PNV flow, from obtaining user consent to making the necessary network calls to the Firebase PNV backend.</p> <p>The single-method API (<code translate="no" dir="ltr">getVerifiedPhoneNumber()</code>) is recommended for most developers. However, if you need finer-grained control over the interaction with Android Credential Manager–for example, to request other credentials along with the phone number–the Firebase PNV library also provides the following two methods, each of which handles a different interaction with the Firebase PNV backend:</p> <ul> <li>
 <code translate="no" dir="ltr">getDigitalCredentialPayload()</code> gets a server-signed request that you will use to invoke Credential Manager.</li> <li>
-<code translate="no" dir="ltr">exchangeCredentialResponseForPhoneNumber()</code> exchanges the response from Credential Manager for a signed token containing the verified phone number. Billing will occur at this step.</li> </ul> <p>Between calling each of those methods, you are responsible for handling the interaction with Android's Credential Manager APIs. This page gives an overview of how you implement this three-part flow.</p> <h2 id="before-you-begin">Before you begin</h2> <p>Set up your Firebase project and import the Firebase PNV dependencies as described on the <a href="get-started">Get started</a> page.</p> <h2 id="get-digital-credential-payload">1. Get the Digital Credential request payload</h2> <p>Call the <code translate="no" dir="ltr">getDigitalCredentialPayload()</code> method to generate a request for the device's phone number. In the next step, this request will be the payload of your interaction with the Credential Manager API.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<code translate="no" dir="ltr">exchangeCredentialResponseForPhoneNumber()</code> exchanges the response from Credential Manager for a signed token containing the verified phone number. Billing will occur at this step.</li> </ul> <p>Between calling each of those methods, you are responsible for handling the interaction with Android's Credential Manager APIs. This page gives an overview of how you implement this three-part flow.</p> <h2 id="before-you-begin">Before you begin</h2> <p>Set up your Firebase project and import the Firebase PNV dependencies as described on the <a href="get-started">Get started</a> page.</p> <h2 id="get-digital-credential-payload">1. Get the Digital Credential request payload</h2> <p>Call the <code translate="no" dir="ltr">getDigitalCredentialPayload()</code> method to generate a request for the device's phone number. In the next step, this request will be the payload of your interaction with the Credential Manager API.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// This instance does not require an Activity context.
 val fpnv = FirebasePhoneNumberVerification.getInstance()
@@ -16,7 +16,7 @@ fpnv.getDigitalCredentialPayload(nonce)
     // ...
   }
   .addOnFailureListener { e -&gt; /* Handle payload fetch failure */ }
-</pre></section> </div> <h2 id="call-credential-manager">2. Make a digital credential request using the Credential Manager</h2> <p>Next, pass the request to the Credential Manager.</p> <p>To do so, you need to wrap the request payload in a DigitalCredential API request. This request must include the same nonce you passed to <code translate="no" dir="ltr">getDigitalCredentialPayload()</code>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> </div> <h2 id="call-credential-manager">2. Make a digital credential request using the Credential Manager</h2> <p>Next, pass the request to the Credential Manager.</p> <p>To do so, you need to wrap the request payload in a DigitalCredential API request. This request must include the same nonce you passed to <code translate="no" dir="ltr">getDigitalCredentialPayload()</code>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// This example uses string interpolation for clarity, but you should use some kind of type-safe
 // serialization method.
@@ -35,7 +35,7 @@ fun buildDigitalCredentialRequestJson(nonce: String, fpnvDigitalCredentialPayloa
       ]
     }
 """.trimIndent()
-</pre></section> </div> <p>Having done so, you can make the request using the Credential Manager API:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> </div> <p>Having done so, you can make the request using the Credential Manager API:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">suspend fun makeFpnvRequest(
   context: Activity, nonce: String, fpnvDigitalCredentialPayload: String): GetCredentialResponse {
@@ -65,7 +65,7 @@ fun buildDigitalCredentialRequestJson(nonce: String, fpnvDigitalCredentialPayloa
   }
   return cmResponse
 }
-</pre></section> </div> <p>If the Credential Manager call succeeds, its response will contain a digital credential, which you can extract using code like the following example:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> </div> <p>If the Credential Manager call succeeds, its response will contain a digital credential, which you can extract using code like the following example:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val dcApiResponse = extractApiResponse(cmResponse)
 </pre>
@@ -86,7 +86,7 @@ fun buildDigitalCredentialRequestJson(nonce: String, fpnvDigitalCredentialPayloa
     }
   }
 }
-</pre></section> </div> <h2 id="token-exchange">3. Exchange the digital credential response for a Firebase PNV token</h2> <p>Finally, call the <code translate="no" dir="ltr">exchangeCredentialResponseForPhoneNumber()</code> method to exchange the digital credential response for the verified phone number and an Firebase PNV token:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> </div> <h2 id="token-exchange">3. Exchange the digital credential response for a Firebase PNV token</h2> <p>Finally, call the <code translate="no" dir="ltr">exchangeCredentialResponseForPhoneNumber()</code> method to exchange the digital credential response for the verified phone number and an Firebase PNV token:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">fpnv.exchangeCredentialResponseForPhoneNumber(dcApiResponse)
   .addOnSuccessListener { result -&gt;
@@ -94,7 +94,7 @@ fun buildDigitalCredentialRequestJson(nonce: String, fpnvDigitalCredentialPayloa
     // Verification successful
   }
   .addOnFailureListener { e -&gt; /* Handle exchange failure */ }
-</pre></section> </div> <p>This step will trigger billing when it successfully completes and the verified phone number is returned to your app.</p> <h2 id="verify-tokens">4. Verifying the Firebase PNV token</h2> <p>If the flow succeeds, the <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code> method returns the verified phone number and a signed token containing it. You can use this data in your app as documented by your privacy policy.</p> <p>If you use the verified phone number outside the app client, you should pass around the token instead of the phone number itself so you can verify its integrity when you use it. To verify tokens, you need to implement two endpoints:</p> <ul> <li>A nonce generation endpoint</li> <li>A token verification endpoint</li> </ul> <p>The implementation of these endpoints is up to you; the following examples show how you might implement them using Node.js and Express.</p> <h3 id="generating-nonces">Generating nonces</h3> <p>This endpoint is responsible for generating and temporarily storing single-use values called nonces, which are used to prevent replay attacks against your endpoints. As an example, you might have an Express route defined like this:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>This step will trigger billing when it successfully completes and the verified phone number is returned to your app.</p> <h2 id="verify-tokens">4. Verifying the Firebase PNV token</h2> <p>If the flow succeeds, the <code translate="no" dir="ltr">getVerifiedPhoneNumber()</code> method returns the verified phone number and a signed token containing it. You can use this data in your app as documented by your privacy policy.</p> <p>If you use the verified phone number outside the app client, you should pass around the token instead of the phone number itself so you can verify its integrity when you use it. To verify tokens, you need to implement two endpoints:</p> <ul> <li>A nonce generation endpoint</li> <li>A token verification endpoint</li> </ul> <p>The implementation of these endpoints is up to you; the following examples show how you might implement them using Node.js and Express.</p> <h3 id="generating-nonces">Generating nonces</h3> <p>This endpoint is responsible for generating and temporarily storing single-use values called nonces, which are used to prevent replay attacks against your endpoints. As an example, you might have an Express route defined like this:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">app.get('/fpnvNonce', async (req, res) =&gt; {
     const nonce = crypto.randomUUID();
@@ -127,7 +127,7 @@ fun buildDigitalCredentialRequestJson(nonce: String, fpnvDigitalCredentialPayloa
 </pre>
 </li> <li><p>The token has not expired.</p></li> <li>
 <p>The token contains a valid nonce. A nonce is valid if:</p> <ul> <li>You generated it (that is, it can be found in whatever persistence mechanism you're using)</li> <li>It hasn't already been used</li> <li>It hasn't expired</li> </ul>
-</li> </ul> <p>For example, the Express implementation might look something like the following:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</li> </ul> <p>For example, the Express implementation might look something like the following:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">import { JwtVerifier } from "aws-jwt-verify";
 

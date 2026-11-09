@@ -4,7 +4,7 @@
 <p>Check that the <code translate="no" dir="ltr">gcloud</code> tool is configured for the correct project:</p> 
 <pre>gcloud config list</pre>
 </li> </ol> <h2 id="write">
-<strong>Step 1</strong>: Write the sample application</h2> <p>Note that Cloud Run supports <a href="https://cloud.google.com/run/docs/quickstarts/build-and-deploy#writing" class="external">many other languages</a> in addition to the languages shown in the following sample.</p> <div> <section><p class="_firebase-tab"><strong>Go</strong></p>
+<strong>Step 1</strong>: Write the sample application</h2> <p>Note that Cloud Run supports <a href="https://cloud.google.com/run/docs/quickstarts/build-and-deploy#writing" class="external">many other languages</a> in addition to the languages shown in the following sample.</p> <div> <section><p class="_code-tab"><strong>Go</strong></p>
 <ol> <li>
 <p>Create a new directory named <code translate="no" dir="ltr">helloworld-go</code>, then change directory into it:</p> 
 <pre data-language="go">mkdir helloworld-go</pre> 
@@ -41,7 +41,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
 </pre> </div> <p>This code creates a basic web server that listens on the port defined by the <code translate="no" dir="ltr">PORT</code> environment variable.</p>
-</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> <section><p class="_code-tab"><strong>Node.js</strong></p>
 <ol> <li>
 <p>Create a new directory named <code translate="no" dir="ltr">helloworld-nodejs</code>, then change directory into it:</p> 
 <pre data-language="javascript">mkdir helloworld-nodejs</pre> 
@@ -54,12 +54,16 @@ func main() {
   "description": "Simple hello world sample in Node",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "check": "node --check index.js"
+  },
+  "engines": {
+    "node": "&gt;=24"
   },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "express": "^4.22.1"
+    "express": "^5.3.0"
   }
 }
 </pre> </div> </li> <li>
@@ -79,7 +83,7 @@ app.listen(port, () =&gt; {
   console.log('Hello world listening on port', port);
 });
 </pre> </div> <p>This code creates a basic web server that listens on the port defined by the <code translate="no" dir="ltr">PORT</code> environment variable.</p>
-</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> <section><p class="_code-tab"><strong>Python</strong></p>
 <ol> <li>
 <p>Create a new directory named <code translate="no" dir="ltr">helloworld-python</code>, then change directory into it:</p> 
 <pre data-language="python">mkdir helloworld-python</pre> 
@@ -92,15 +96,17 @@ from flask import Flask
 
 app = Flask(__name__)
 
-@app.route('/')
+
+@app.route("/")
 def hello_world():
-    target = os.environ.get('TARGET', 'World')
-    return 'Hello {}!\n'.format(target)
+    target = os.environ.get("TARGET", "World")
+    return f"Hello {target}!\n"
+
 
 if __name__ == "__main__":
-    app.run(debug=True,host='0.0.0.0',port=int(os.environ.get('PORT', 8080)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
 </pre> </div> <p>This code creates a basic web server that listens on the port defined by the <code translate="no" dir="ltr">PORT</code> environment variable.</p>
-</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> <section><p class="_code-tab"><strong>Java</strong></p>
 <ol> <li>
 <p>Install <a href="https://www.oracle.com/technetwork/java/javase/downloads/index.html" class="external">Java SE 8 or later JDK</a> and <a href="https://curl.haxx.se" class="external">CURL</a>.</p> <p>Note that we only need to do this to create the new web project in the next step. The Dockerfile, which is described later, will load all dependencies into the container.</p>
 </li> <li>
@@ -142,12 +148,12 @@ public class HelloworldApplication {
 </pre> </div> <p>This code creates a basic web server that listens on the port defined by the <code translate="no" dir="ltr">PORT</code> environment variable.</p>
 </li> </ol> <p>Your app is finished and ready to be containerized and uploaded to Artifact Registry.</p></section> </div> <h2 id="containerize">
 <strong>Step 2</strong>: Containerize an app and upload it to Artifact Registry</h2> <ol> <li>
-<p>Containerize the sample app by creating a new file named <code translate="no" dir="ltr">Dockerfile</code> in the same directory as the source files. Copy the following content into your file.</p> <div> <section><p class="_firebase-tab"><strong>Go</strong></p>
+<p>Containerize the sample app by creating a new file named <code translate="no" dir="ltr">Dockerfile</code> in the same directory as the source files. Copy the following content into your file.</p> <div> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="go"># Use the official Golang image to create a build artifact.
-# This is based on Debian and sets the GOPATH to /go.
-FROM golang:latest AS builder
+# Use the supported Go 1.27 release track.
+FROM golang:1.27 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -168,7 +174,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -mod=readonly -
 # Use the official Alpine image for a lean production container.
 # https://hub.docker.com/_/alpine
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
-FROM alpine:3
+FROM alpine:3.24
 RUN apk add --no-cache ca-certificates
 
 # Copy the binary to the production image from the builder stage.
@@ -176,76 +182,78 @@ COPY --from=builder /app/server /server
 
 # Run the web service on container startup.
 CMD ["/server"]
-</pre> </div> </section> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> </div> </section> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <div class="github-docwidget-gitinclude-code"> 
-<pre data-language="javascript"># Use the official lightweight Node.js 12 image.
+<pre data-language="javascript"># Use the official lightweight Node.js 24 LTS image.
 # https://hub.docker.com/_/node
-FROM node:12-slim
+FROM node:24-bookworm-slim
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
 
 # Copy application dependency manifests to the container image.
 # A wildcard is used to ensure both package.json AND package-lock.json are copied.
-# Copying this separately prevents re-running npm install on every code change.
+# Copying this separately prevents re-running npm ci on every code change.
 COPY package*.json ./
 
 # Install production dependencies.
-RUN npm install --only=production
+RUN npm ci --omit=dev
 
 # Copy local code to the container image.
 COPY . ./
 
 # Run the web service on container startup.
-CMD [ "npm", "start" ]
-</pre> </div> </section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+CMD [ "node", "index.js" ]
+</pre> </div> </section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="python"># Use the official lightweight Python image.
 # https://hub.docker.com/_/python
-FROM python:3.7-slim
+FROM python:3.14.9-slim-trixie
 
 # Allow statements and log messages to immediately appear in the Knative logs
-ENV PYTHONUNBUFFERED True
+ENV PYTHONUNBUFFERED=1
 
-# Copy local code to the container image.
-ENV APP_HOME /app
-WORKDIR $APP_HOME
-COPY . ./
+# Knative supplies PORT; default to 8080 for local runs.
+ENV PORT=8080
+WORKDIR /app
 
-# Install production dependencies.
-RUN pip install Flask gunicorn
+# Install pinned production dependencies before copying application code.
+COPY requirements.txt ./
+RUN python -m pip install --no-cache-dir -r requirements.txt
+
+COPY app.py ./
 
 # Run the web service on container startup. Here we use the gunicorn
 # webserver, with one worker process and 8 threads.
 # For environments with multiple CPU cores, increase the number of workers
 # to be equal to the cores available.
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 app:app
-</pre> </div> </section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+CMD ["sh", "-c", "exec gunicorn --bind \"0.0.0.0:${PORT:-8080}\" --workers 1 --threads 8 --timeout 0 app:app"]
+</pre> </div> </section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <div class="github-docwidget-gitinclude-code"> 
-<pre data-language="java"># Use the official maven/Java 8 image to create a build artifact: https://hub.docker.com/_/maven
-FROM maven:3.5-jdk-8-alpine AS builder
+<pre data-language="java"># Use the official Maven/Java 25 LTS image to build: https://hub.docker.com/_/maven
+FROM maven:3.9-eclipse-temurin-26 AS builder
 
 # Copy local code to the container image.
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-# Build a release artifact.
-RUN mvn package -DskipTests
+# Build the executable jar.
+RUN mvn --batch-mode --no-transfer-progress package
 
-# Use the Official OpenJDK image for a lean production stage of our multi-stage build.
-# https://hub.docker.com/_/openjdk
+# Use the Eclipse Temurin Java 25 LTS runtime for the production stage.
+# https://hub.docker.com/_/eclipse-temurin
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
-FROM openjdk:8-jre-alpine
+FROM eclipse-temurin:25-jre-noble
 
 # Copy the jar to the production image from the builder stage.
 COPY --from=builder /app/target/helloworld-*.jar /helloworld.jar
 
 # Run the web service on container startup.
-CMD ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/helloworld.jar"]
+CMD ["java", "-jar", "/helloworld.jar"]
 </pre> </div> </section> </div>
 </li> <li>
 <p>Build your container image using Cloud Build by running the following command from the directory containing your Dockerfile:</p> 

@@ -5,28 +5,28 @@
 <strong>Your app's Entity ID</strong>: A URI that identifies your app, the "service provider". </li> </ul> <p>After you have the above information, enable SAML as a sign-in provider for your Firebase project:</p> <ol> <li><p><a href="../../web/setup">Add Firebase to your JavaScript project</a>.</p></li> <li><p>If you haven't already, make sure that your project is upgraded to Firebase Authentication with Identity Platform. SAML authentication is only available in upgraded projects.</p></li> <li><p>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><strong>Authentication</strong></a>.</p></li> <li><p>In the <strong>Sign-in method</strong> tab, click <strong>Add new provider</strong>, and then click <strong>SAML</strong>.</p></li> <li><p>Give a name to this provider. Note the provider ID that's generated: something like <code translate="no" dir="ltr">saml.example-provider</code>. You'll need this ID when you add sign-in code to your app.</p></li> <li><p>Specify your identity provider's entity ID, SSO URL, and public key certificate. Also specify the entity ID of your app (the service provider). These values must exactly match the values your provider assigned to you.</p></li> <li><p>Save your changes.</p></li> <li>
 <p>If you haven't already, authorize your app's domain:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/settings" class="external"><strong>Settings</strong> tab</a>.</p></li> <li><p>In the <strong>Authorized domains</strong> section, click <strong>Add domain</strong>, and add your domain.</p></li> </ol>
 </li> </ol> <h2 id="handle-sign-in">Handle the sign-in flow with the Firebase SDK</h2> <p>To handle the sign-in flow with the Firebase JavaScript SDK, follow these steps:</p> <ol> <li>
-<p>Create an instance of an <code translate="no" dir="ltr">SAMLAuthProvider</code> using the provider ID you got in the Firebase console.</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Create an instance of an <code translate="no" dir="ltr">SAMLAuthProvider</code> using the provider ID you got in the Firebase console.</p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">import { SAMLAuthProvider } from "firebase/auth";
 
 const provider = new SAMLAuthProvider('saml.example-provider');
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">var provider = new firebase.auth.SAMLAuthProvider('saml.example-provider');
 ``
 </pre></section> </div>
 </li> </ol>
 <ol> <li>
-<p>Authenticate with Firebase using the SAML provider object.</p> <p>You can either redirect the user to the provider's sign-in page or open the sign-in page in a pop-up browser window.</p> <p><strong>Redirect flow</strong></p> <p>Redirect to the provider sign-in page by calling <code translate="no" dir="ltr">signInWithRedirect()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Authenticate with Firebase using the SAML provider object.</p> <p>You can either redirect the user to the provider's sign-in page or open the sign-in page in a pop-up browser window.</p> <p><strong>Redirect flow</strong></p> <p>Redirect to the provider sign-in page by calling <code translate="no" dir="ltr">signInWithRedirect()</code>:</p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">import { getAuth, signInWithRedirect } from "firebase/auth";
 
 const auth = getAuth();
 signInWithRedirect(auth, provider);
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">firebase.auth().signInWithRedirect(provider);
-</pre></section> </div> <p>After the user completes sign-in and returns to your app, you can obtain the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult()</code>.</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> </div> <p>After the user completes sign-in and returns to your app, you can obtain the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult()</code>.</p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">import { getAuth, getRedirectResult, SAMLAuthProvider } from "firebase/auth";
 
@@ -40,7 +40,7 @@ getRedirectResult(auth)
   .catch((error) =&gt; {
     // Handle error.
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">firebase.auth().getRedirectResult()
   .then((result) =&gt; {
@@ -53,7 +53,7 @@ getRedirectResult(auth)
   .catch((error) =&gt; {
     // Handle error.
   });
-</pre> <p><strong>Pop-up flow</strong></p></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre> <p><strong>Pop-up flow</strong></p></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">import { getAuth, signInWithPopup, OAuthProvider } from "firebase/auth";
 
@@ -69,7 +69,7 @@ signInWithPopup(auth, provider)
   .catch((error) =&gt; {
     // Handle error.
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">firebase.auth().signInWithPopup(provider)
   .then((result) =&gt; {

@@ -2,7 +2,7 @@
 <strong>Array Subqueries:</strong> Materialize the entire result set of the subquery as an array of documents.</li> <li>
 <strong>Scalar Subqueries:</strong> Evaluate to a single value, such as a count, an average, or a specific field from a related document.</li> <li>
 <strong><code translate="no" dir="ltr">subcollection(...)</code> Subqueries:</strong> simplified joins for a one-to-many parent-child relation.</li> </ul> <h3 id="scope_and_variables">Scope and variables</h3> <p>When writing a join, the nested subquery often needs to reference fields from the "outer" document (the parent). To bridge these scopes, you use the <a href="stages/transformation/let"><code translate="no" dir="ltr">let(...)</code></a> stage (referred to as <code translate="no" dir="ltr">define(...)</code> in some SDKs) to define variables in the parent scope that can then be referenced in the subquery using the <code translate="no" dir="ltr">variable(...)</code> function.</p> <h2 id="syntax">Syntax</h2> <p>The following sections give an overview of the syntax for performing joins.</p> <h3 id="the_let_stage">The <code translate="no" dir="ltr">let(...)</code> stage</h3> <p>The <a href="stages/transformation/let"><code translate="no" dir="ltr">let(...)</code></a> stage (referred to as <code translate="no" dir="ltr">define(...)</code> in some SDKs) is a non-filtering stage that explicitly brings data from the parent scope into a named variable for use in subsequent nested scopes.</p> <h3 id="array_subqueries">Array Subqueries</h3> <p>An Array subquery is a special case of expression subquery that materializes the entire result set of the subquery into an array. If the subquery returns zero rows, it evaluates to an empty array. It never returns a <code translate="no" dir="ltr">null</code> array. Such queries are useful when the full results are required in the final result, such as when materializing a nested or correlated collection.</p> <p>Queries can filter, sort, &amp; aggregate in the subquery to also reduce the amount of data that needs to be fetched and returned to help reduce the cost of the query. The order of the subquery is respected, meaning that a <code translate="no" dir="ltr">sort(...)</code> stage in the subquery controls the order of results in the final array.</p> <p>Use the <code translate="no" dir="ltr">toArrayExpression()</code> SDK wrapper to convert a query into an array.</p> <h3 id="scalar_subqueries">Scalar Subqueries</h3> <p>Scalar subqueries are often used in a <a href="stages/transformation/select"><code translate="no" dir="ltr">select(...)</code></a> or <a href="stages/transformation/where"><code translate="no" dir="ltr">where(...)</code></a> stage as allow filtering or resulting the result of a subquery without materializing the full query directly.</p> <p>A scalar subquery which produce zero results will evaluate to <code translate="no" dir="ltr">null</code> itself, while a subquery which evaluates to multiple elements will result in a runtime error.</p> <p>When a scalar subquery produces only a single field per-result, the field is <em>elevated</em> to be the top-level result for the subquery. This is most commonly seen when the subquery ends with a <code translate="no" dir="ltr">select(field("user_name"))</code> or <code translate="no" dir="ltr">aggregate(countAll().as("total"))</code> where the schema of the subquery is just a single field. Otherwise when a subquery can produce multiple fields they are wrapped in a map.</p> <p>Use the <code translate="no" dir="ltr">toScalarExpression()</code> SDK wrapper to convert a query into a scalar expression.</p> <h3 id="subcollection_subqueries">
-<code translate="no" dir="ltr">subcollection(...)</code> Subqueries</h3> <p>While offered as a stage, the <a href="stages/input/subcollection"><code translate="no" dir="ltr">subcollection(...)</code></a> input stage allows performing joins over Cloud Firestore's hierarchical data model. In a hierarchical model, queries often need to retrieve a document alongside data from its own subcollections. While you can achieve this using a <a href="stages/input/collection-group"><code translate="no" dir="ltr">collection_group(...)</code></a> input stage followed by a filter on the parent reference, <code translate="no" dir="ltr">subcollection(...)</code> provides a much more concise syntax.</p> <p>Other than the implicit join condition, this acts similarly to an array subquery, returning an empty result if no documents are matched, even if the nested collection does not exist.</p> <p>It is fundamentally <strong>syntactic sugar</strong>: it automatically uses the <code translate="no" dir="ltr">__name__</code> of the document in the outer scope as the join key to resolve the hierarchical relationship. This makes it the preferred way to perform lookups across collections linked in a parent-child relationship.</p> <h2 id="examples">Examples</h2> <h3 id="example_data">Example data</h3> <p>The following loads a set of test data to use in all following examples.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<code translate="no" dir="ltr">subcollection(...)</code> Subqueries</h3> <p>While offered as a stage, the <a href="stages/input/subcollection"><code translate="no" dir="ltr">subcollection(...)</code></a> input stage allows performing joins over Cloud Firestore's hierarchical data model. In a hierarchical model, queries often need to retrieve a document alongside data from its own subcollections. While you can achieve this using a <a href="stages/input/collection-group"><code translate="no" dir="ltr">collection_group(...)</code></a> input stage followed by a filter on the parent reference, <code translate="no" dir="ltr">subcollection(...)</code> provides a much more concise syntax.</p> <p>Other than the implicit join condition, this acts similarly to an array subquery, returning an empty result if no documents are matched, even if the nested collection does not exist.</p> <p>It is fundamentally <strong>syntactic sugar</strong>: it automatically uses the <code translate="no" dir="ltr">__name__</code> of the document in the outer scope as the join key to resolve the hierarchical relationship. This makes it the preferred way to perform lookups across collections linked in a parent-child relationship.</p> <h2 id="examples">Examples</h2> <h3 id="example_data">Example data</h3> <p>The following loads a set of test data to use in all following examples.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">// Load set of cities.
 const cities = db.collection("cities");
@@ -85,7 +85,7 @@ await reviews.add({ restaurant: rest5, rating: 3, reviewer_id: "George" });
 await reviews.add({ restaurant: rest6, rating: 5, reviewer_id: "Hannah" });
 await reviews.add({ restaurant: rest6, rating: 4, reviewer_id: "Ian" });
 await reviews.add({ restaurant: rest7, rating: 5, reviewer_id: "Julia" });
-</pre></section> </div> <h3 id="lookup_a_document_in_another_collection">Lookup a Document in Another Collection</h3> <p>The following query on the <code translate="no" dir="ltr">reviews</code> collection group performs a lookup into the <code translate="no" dir="ltr">restaurant</code> collection group using a primary key reference.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h3 id="lookup_a_document_in_another_collection">Lookup a Document in Another Collection</h3> <p>The following query on the <code translate="no" dir="ltr">reviews</code> collection group performs a lookup into the <code translate="no" dir="ltr">restaurant</code> collection group using a primary key reference.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">let results = await db.pipeline()
   .collectionGroup("reviews")
@@ -148,7 +148,7 @@ await reviews.add({ restaurant: rest7, rating: 5, reviewer_id: "Julia" });
   reviewer_id "Julia",
   restaurant: { name: "Georgetown Coffee", type: "cafe" }
 }
-</pre> <h3 id="combine_multiple_collections">Combine Multiple Collections</h3> <p>The following query fetches all pizza places from the <code translate="no" dir="ltr">restaurants</code> collection group, and uses an array subquery to fetch and embed their associated reviews directly into the response.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="combine_multiple_collections">Combine Multiple Collections</h3> <p>The following query fetches all pizza places from the <code translate="no" dir="ltr">restaurants</code> collection group, and uses an array subquery to fetch and embed their associated reviews directly into the response.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">let results = await db.pipeline()
   .collectionGroup("restaurants")
@@ -179,7 +179,7 @@ await reviews.add({ restaurant: rest7, rating: 5, reviewer_id: "Julia" });
     { rating: 3, reviewer_id "George" }
   ]
 }
-</pre> <h3 id="aggregate_across_multiple_collections">Aggregate Across Multiple Collections</h3> <p>The following query on the <code translate="no" dir="ltr">restaurants</code> collection group uses a correlated subquery to get the average rating for each restaurant from the <code translate="no" dir="ltr">reviews</code> collection group.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="aggregate_across_multiple_collections">Aggregate Across Multiple Collections</h3> <p>The following query on the <code translate="no" dir="ltr">restaurants</code> collection group uses a correlated subquery to get the average rating for each restaurant from the <code translate="no" dir="ltr">reviews</code> collection group.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">let results = await db.pipeline()
   .collectionGroup("restaurants")
@@ -203,7 +203,7 @@ await reviews.add({ restaurant: rest7, rating: 5, reviewer_id: "Julia" });
   name: "Venice Pizza",
   avg_rating: 3.0
 }
-</pre> <h3 id="top-n_per_group_subquery_with_limit">Top-N Per Group (Subquery with Limit)</h3> <p>The following query fetches all documents from the <code translate="no" dir="ltr">restaurants</code> collection group, and uses a correlated subquery to fetch the top 2 highest-rated reviews for each restaurant.</p> <p>This ensures that the array of reviews does not grow too large and hits the query's memory limit.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="top-n_per_group_subquery_with_limit">Top-N Per Group (Subquery with Limit)</h3> <p>The following query fetches all documents from the <code translate="no" dir="ltr">restaurants</code> collection group, and uses a correlated subquery to fetch the top 2 highest-rated reviews for each restaurant.</p> <p>This ensures that the array of reviews does not grow too large and hits the query's memory limit.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">let results = await db.pipeline()
   .collectionGroup("restaurants")
@@ -263,7 +263,7 @@ await reviews.add({ restaurant: rest7, rating: 5, reviewer_id: "Julia" });
     { rating: 5, reviewer_id "Julia" }
   ]
 }
-</pre> <h3 id="join_subcollections">Join Subcollections</h3> <p>The following query scans the <code translate="no" dir="ltr">cities</code> collection and uses the <a href="stages/input/subcollection"><code translate="no" dir="ltr">subcollection(...)</code></a> stage to implicitly join over documents from a nested collection to find the number of restaurants per city.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="join_subcollections">Join Subcollections</h3> <p>The following query scans the <code translate="no" dir="ltr">cities</code> collection and uses the <a href="stages/input/subcollection"><code translate="no" dir="ltr">subcollection(...)</code></a> stage to implicitly join over documents from a nested collection to find the number of restaurants per city.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">let results = await db.pipeline()
   .collection("cities")
@@ -301,7 +301,7 @@ await reviews.add({ restaurant: rest7, rating: 5, reviewer_id: "Julia" });
   country: "Japan",
   restaurant_count: 0
 }
-</pre> <h3 id="express_multiple_join_conditions">Express Multiple Join Conditions</h3> <p>The following query scans the <code translate="no" dir="ltr">restaurants</code> collection group and performs a multi-field join with the <code translate="no" dir="ltr">reviews</code> collection group to find owners reviewing their own restaurants.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="express_multiple_join_conditions">Express Multiple Join Conditions</h3> <p>The following query scans the <code translate="no" dir="ltr">restaurants</code> collection group and performs a multi-field join with the <code translate="no" dir="ltr">reviews</code> collection group to find owners reviewing their own restaurants.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">let results = await db.pipeline()
   .collectionGroup("restaurants")
@@ -321,7 +321,7 @@ await reviews.add({ restaurant: rest7, rating: 5, reviewer_id: "Julia" });
   type: "mexican",
   owner_id: "Edward"
 }
-</pre> <h3 id="anti-join_not_exists">Anti-Join (<code translate="no" dir="ltr">NOT EXISTS</code>)</h3> <p>The following query scans the <code translate="no" dir="ltr">restaurants</code> collection group and finds all restaurants that have no reviews yet.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="anti-join_not_exists">Anti-Join (<code translate="no" dir="ltr">NOT EXISTS</code>)</h3> <p>The following query scans the <code translate="no" dir="ltr">restaurants</code> collection group and finds all restaurants that have no reviews yet.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">let results = await db.pipeline()
   .collectionGroup("restaurants")
@@ -340,7 +340,7 @@ await reviews.add({ restaurant: rest7, rating: 5, reviewer_id: "Julia" });
   type: "sushi",
   owner_id: "Ken Kenji"
 }
-</pre> <h3 id="subquery_as_join">Subquery as Join</h3> <p>The following query flattens the relationship between each pizza place and its reviews. By placing the subquery inside an <a href="stages/transformation/unnest"><code translate="no" dir="ltr">unnest(...)</code></a> stage, the server duplicates the outer restaurant document for each matching review, producing flat, joined documents (similar to a SQL <code translate="no" dir="ltr">INNER JOIN</code>).</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="subquery_as_join">Subquery as Join</h3> <p>The following query flattens the relationship between each pizza place and its reviews. By placing the subquery inside an <a href="stages/transformation/unnest"><code translate="no" dir="ltr">unnest(...)</code></a> stage, the server duplicates the outer restaurant document for each matching review, producing flat, joined documents (similar to a SQL <code translate="no" dir="ltr">INNER JOIN</code>).</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">let results = await db.pipeline()
   .collectionGroup("restaurants")
@@ -376,7 +376,7 @@ await reviews.add({ restaurant: rest7, rating: 5, reviewer_id: "Julia" });
   owner_id: "Luigi Romano",
   review: { rating: 3, reviewer_id "George" }
 }
-</pre> <h3 id="uncorrelated_subquery_as_filter">Uncorrelated Subquery as Filter</h3> <p>The following query on the <code translate="no" dir="ltr">reviews</code> collection performs filters using a uncorrelated subquery on itself to find reviews greater than the average rating.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="uncorrelated_subquery_as_filter">Uncorrelated Subquery as Filter</h3> <p>The following query on the <code translate="no" dir="ltr">reviews</code> collection performs filters using a uncorrelated subquery on itself to find reviews greater than the average rating.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">let results = await db.pipeline()
   .collection("reviews")

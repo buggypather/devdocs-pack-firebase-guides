@@ -10,7 +10,7 @@
 <p>Add the client library for Cloud Storage for Firebase to your app.</p> <p>Note that you can skip this task, but you must then <em>always</em> <a href="#include-file-info-explicitly">explicitly include the MIME type and URL values in your requests</a>.</p>
 </li> </ol> <h3 id="upload-file">
 <strong>Step 2</strong>: Upload a file to a bucket</h3> <p>In the Cloud Storage documentation, you can learn all the different ways to upload files to a bucket. For example, you can upload local files from the end-user's device, such as photos and videos from the camera. Learn more: <a href="../../storage/ios/upload-files">iOS+</a> | <a href="../../storage/android/upload-files">Android</a> | <a href="../../storage/web/upload-files">Web</a> | <a href="../../storage/flutter/upload-files">Flutter</a> | <a href="../../storage/unity/upload-files">Unity</a></p> <p>When you upload a file to a bucket, Cloud Storage automatically applies the following two pieces of information to the file. You'll need to include these values in the request (as shown in the next step of this guide).</p> <ul> <li><p><strong>MIME type</strong>: This is the media type of the file (for example, <code translate="no" dir="ltr">image/png</code>). We'll automatically try to detect the MIME type during upload and apply that metadata to the object in the bucket. However, you can optionally specify the MIME type during upload.</p></li> <li><p><strong>Cloud Storage for Firebase URL</strong>: This is a unique identifier for the file. The URL must start with <code translate="no" dir="ltr">gs://</code>.</p></li> </ul> <h3 id="include-file-info-in-request">
-<strong>Step 3</strong>: Include the file's MIME type and URL in a multimodal request</h3> <p>Once you have a file stored in a bucket, you can include its MIME type and URL in a request. Note that these examples show a non-streaming <code translate="no" dir="ltr">generateContent</code> request, but you can also use URLs with streaming and chat.</p> <aside class="special"><strong>Important:</strong><span> Make sure to review which <a href="#supported-files-and-urls">types of files and URLs</a> are supported by <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs.</span></aside> <p>To include the file in the request, you can use either of the following options:</p> <ul> <li><p><strong>Option 1:</strong> <a href="#include-file-info-with-reference">Include the MIME type and URL using a Storage reference</a></p></li> <li><p><strong>Option 2:</strong> <a href="#include-file-info-explicitly">Include the MIME type and URL explicitly</a></p></li> </ul> <h4 id="include-file-info-with-reference">Option 1: Include the MIME type and URL using a Storage reference</h4> <table class="orange"> <tr class="alt"> <td> <em>Before trying this example, make sure that you've completed the <a href="../get-started">getting started guide for the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs</a>.</em> </td> </tr> </table> <p>Use this option if you've just uploaded the file to the bucket, and you want to immediately include the file (via a Storage reference) in the request. The call requires both the MIME type and the Cloud Storage for Firebase URL.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<strong>Step 3</strong>: Include the file's MIME type and URL in a multimodal request</h3> <p>Once you have a file stored in a bucket, you can include its MIME type and URL in a request. Note that these examples show a non-streaming <code translate="no" dir="ltr">generateContent</code> request, but you can also use URLs with streaming and chat.</p> <aside class="special"><strong>Important:</strong><span> Make sure to review which <a href="#supported-files-and-urls">types of files and URLs</a> are supported by <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs.</span></aside> <p>To include the file in the request, you can use either of the following options:</p> <ul> <li><p><strong>Option 1:</strong> <a href="#include-file-info-with-reference">Include the MIME type and URL using a Storage reference</a></p></li> <li><p><strong>Option 2:</strong> <a href="#include-file-info-explicitly">Include the MIME type and URL explicitly</a></p></li> </ul> <h4 id="include-file-info-with-reference">Option 1: Include the MIME type and URL using a Storage reference</h4> <table class="orange"> <tr class="alt"> <td> <em>Before trying this example, make sure that you've completed the <a href="../get-started">getting started guide for the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs</a>.</em> </td> </tr> </table> <p>Use this option if you've just uploaded the file to the bucket, and you want to immediately include the file (via a Storage reference) in the request. The call requires both the MIME type and the Cloud Storage for Firebase URL.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Upload an image file using Cloud Storage for Firebase.
 let storageRef = Storage.storage().reference(withPath: "images/image.jpg")
@@ -35,7 +35,7 @@ let result = try await model.generateContent(prompt, imagePart)
 if let text = result.text {
   print(text)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
 <pre data-language="kotlin">// Upload an image file using Cloud Storage for Firebase.
 val storageRef = Firebase.storage.reference.child("images/image.jpg")
@@ -64,7 +64,7 @@ try {
 } catch (e: GoogleGenerativeAIException) {
     // An error occurred while generating text.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <sup><em>For Java, the methods in this SDK return a <a href="https://developer.android.com/guide/background/asynchronous/listenablefuture" class="external"><code translate="no" dir="ltr">ListenableFuture</code></a>.</em></sup> 
 <pre data-language="java">// Upload an image file using Cloud Storage for Firebase.
 StorageReference storage = FirebaseStorage.getInstance().getReference("images/image.jpg");
@@ -105,7 +105,7 @@ storage.putFile(fileUri).addOnSuccessListener(taskSnapshot -&gt; {
     // An error occurred while uploading the file.
     e.printStackTrace();
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">// Upload an image file using Cloud Storage for Firebase.
 const storageRef = ref(storage, "image.jpg");
@@ -123,7 +123,7 @@ const imagePart = { type: "fileData", fileData: { mimeType, fileUri: storageUrl 
 // To generate text output, call generateContent with the prompt and imagePart.
 const result = await model.generateContent([prompt, imagePart]);
 console.log(result.response.text());
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">// Upload an image file using Cloud Storage for Firebase.
 final storageRef = FirebaseStorage.instance.ref();
@@ -146,7 +146,7 @@ final response = await model.generateContent([
   Content.multi([prompt, filePart])
 ]);
 print(response.text);
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">var storageRef = FirebaseStorage.DefaultInstance.GetReference("images/image.jpg");
 var metadata = await storageRef.PutFileAsync(filePathToJpg);
@@ -164,7 +164,7 @@ var fileData = ModelContent.FileData(mimeType, storageURL);
 // To generate text output, call GenerateContentAsync with the prompt and fileData.
 var response = await model.GenerateContentAsync(new [] { prompt, fileData });
 UnityEngine.Debug.Log(response.Text ?? "No text in response.");
-</pre></section> </div> <h4 id="include-file-info-explicitly">Option 2: Include the MIME type and URL explicitly</h4> <table class="orange"> <tr class="alt"> <td> <em>Before trying this example, make sure that you've completed the <a href="../get-started">getting started guide for the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs</a>.</em> </td> </tr> </table> <p>Use this option if you know the values for the MIME type and Cloud Storage for Firebase URL, and you want to include them explicitly in the multimodal request. The call requires both the MIME type and the URL.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> </div> <h4 id="include-file-info-explicitly">Option 2: Include the MIME type and URL explicitly</h4> <table class="orange"> <tr class="alt"> <td> <em>Before trying this example, make sure that you've completed the <a href="../get-started">getting started guide for the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs</a>.</em> </td> </tr> </table> <p>Use this option if you know the values for the MIME type and Cloud Storage for Firebase URL, and you want to include them explicitly in the multimodal request. The call requires both the MIME type and the URL.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">let prompt = "What's in this picture?"
 // Construct an imagePart that explicitly includes the MIME type and
@@ -176,7 +176,7 @@ let result = try await model.generateContent(prompt, imagePart)
 if let text = result.text {
   print(text)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
 <pre data-language="kotlin">// Construct a prompt that explicitly includes the MIME type and Cloud Storage for Firebase URL values.
 val prompt = content {
@@ -186,7 +186,7 @@ val prompt = content {
 // To generate text output, call generateContent with the prompt.
 val response = model.generateContent(prompt)
 println(response.text)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <sup><em>For Java, the methods in this SDK return a <a href="https://developer.android.com/guide/background/asynchronous/listenablefuture" class="external"><code translate="no" dir="ltr">ListenableFuture</code></a>.</em></sup> 
 <pre data-language="java">// Construct a prompt that explicitly includes the MIME type and Cloud Storage for Firebase URL values.
 Content prompt = new Content.Builder()
@@ -209,7 +209,7 @@ Futures.addCallback(response, new FutureCallback&lt;&gt;() {
         t.printStackTrace();
     }
 }, executor);
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">const prompt = "What's in this picture?";
 // Construct an imagePart that explicitly includes the MIME type and Cloud Storage for Firebase URL values.
@@ -218,7 +218,7 @@ const imagePart = { type: "fileData", fileData: { mimeType: "image/jpeg", fileUr
 // To generate text output, call generateContent with the prompt and imagePart.
 const result = await model.generateContent([prompt, imagePart]);
 console.log(result.response.text());
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">final prompt = TextPart("What's in the picture?");
 // Construct a filePart that explicitly includes the MIME type and Cloud Storage for Firebase URL values.
@@ -228,7 +228,7 @@ final response = await model.generateContent([
   Content.multi([prompt, filePart])
 ]);
 print(response.text);
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">var prompt = ModelContent.Text("What's in this picture?");
 // Construct a FileData that explicitly includes the MIME type and

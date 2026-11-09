@@ -1,4 +1,4 @@
-<h1>Use file metadata with Cloud Storage on Android</h1> <p>After uploading a file to Cloud Storage reference, you can also get and update the file metadata, for example to view or update the content type. Files can also store custom key/value pairs with additional file metadata.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside> <h2 id="get_file_metadata">Get File Metadata</h2> <p>File metadata contains common properties such as <code translate="no" dir="ltr">name</code>, <code translate="no" dir="ltr">size</code>, and <code translate="no" dir="ltr">contentType</code> (often referred to as MIME type) in addition to some less common ones like <code translate="no" dir="ltr">contentDisposition</code> and <code translate="no" dir="ltr">timeCreated</code>. This metadata can be retrieved from a Cloud Storage reference using the <code translate="no" dir="ltr">getMetadata()</code> method.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<h1>Use file metadata with Cloud Storage on Android</h1> <p>After uploading a file to Cloud Storage reference, you can also get and update the file metadata, for example to view or update the content type. Files can also store custom key/value pairs with additional file metadata.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside> <h2 id="get_file_metadata">Get File Metadata</h2> <p>File metadata contains common properties such as <code translate="no" dir="ltr">name</code>, <code translate="no" dir="ltr">size</code>, and <code translate="no" dir="ltr">contentType</code> (often referred to as MIME type) in addition to some less common ones like <code translate="no" dir="ltr">contentDisposition</code> and <code translate="no" dir="ltr">timeCreated</code>. This metadata can be retrieved from a Cloud Storage reference using the <code translate="no" dir="ltr">getMetadata()</code> method.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Create a storage reference from our app
 val storageRef = storage.reference
 
@@ -8,7 +8,7 @@ val forestRef = storageRef.child("images/forest.jpg")</pre>
     // Metadata now contains the metadata for 'images/forest.jpg'
 }.addOnFailureListener {
     // Uh-oh, an error occurred!
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Create a storage reference from our app
 StorageReference storageRef = storage.getReference();
 
@@ -24,7 +24,7 @@ StorageReference forestRef = storageRef.child("images/forest.jpg");</pre>
     public void onFailure(@NonNull Exception exception) {
         // Uh-oh, an error occurred!
     }
-});</pre> </section> </div> <h2 id="update_file_metadata">Update File Metadata</h2> <p>You can update file metadata at any time after the file upload completes by using the <code translate="no" dir="ltr">updateMetadata()</code> method. Refer to the <a href="#file-metadata-properties">full list</a> for more information on what properties can be updated. Only the properties specified in the metadata are updated, all others are left unmodified.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> </div> <h2 id="update_file_metadata">Update File Metadata</h2> <p>You can update file metadata at any time after the file upload completes by using the <code translate="no" dir="ltr">updateMetadata()</code> method. Refer to the <a href="#file-metadata-properties">full list</a> for more information on what properties can be updated. Only the properties specified in the metadata are updated, all others are left unmodified.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Create a storage reference from our app
 val storageRef = storage.reference
 
@@ -41,7 +41,7 @@ forestRef.updateMetadata(metadata).addOnSuccessListener { updatedMetadata -&gt;
     // Updated metadata is in updatedMetadata
 }.addOnFailureListener {
     // Uh-oh, an error occurred!
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Create a storage reference from our app
 StorageReference storageRef = storage.getReference();
 
@@ -66,7 +66,7 @@ forestRef.updateMetadata(metadata)
             public void onFailure(@NonNull Exception exception) {
                 // Uh-oh, an error occurred!
             }
-        });</pre> </section> </div> <p>You can delete writable metadata properties by passing <code translate="no" dir="ltr">null</code>:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+        });</pre> </section> </div> <p>You can delete writable metadata properties by passing <code translate="no" dir="ltr">null</code>:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Create file metadata with property to delete
 val metadata = storageMetadata {
     contentType = null
@@ -77,7 +77,7 @@ forestRef.updateMetadata(metadata).addOnSuccessListener { updatedMetadata -&gt;
     // updatedMetadata.contentType should be null
 }.addOnFailureListener {
     // Uh-oh, an error occurred!
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Create file metadata with property to delete
 StorageMetadata metadata = new StorageMetadata.Builder()
         .setContentType(null)
@@ -96,11 +96,11 @@ forestRef.updateMetadata(metadata)
             public void onFailure(@NonNull Exception exception) {
                 // Uh-oh, an error occurred!
             }
-        });</pre> </section> </div> <h2 id="handle_errors">Handle Errors</h2> <p>There are a number of reasons why errors may occur on getting or updating metadata, including the file not existing, or the user not having permission to access the desired file. More information on errors can be found in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="custom_metadata">Custom Metadata</h2> <p>You can specify custom metadata using the <code translate="no" dir="ltr">setCustomMetadata()</code> method in the <code translate="no" dir="ltr">StorageMetadata.Builder</code> class.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+        });</pre> </section> </div> <h2 id="handle_errors">Handle Errors</h2> <p>There are a number of reasons why errors may occur on getting or updating metadata, including the file not existing, or the user not having permission to access the desired file. More information on errors can be found in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="custom_metadata">Custom Metadata</h2> <p>You can specify custom metadata using the <code translate="no" dir="ltr">setCustomMetadata()</code> method in the <code translate="no" dir="ltr">StorageMetadata.Builder</code> class.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val metadata = storageMetadata {
     setCustomMetadata("location", "Yosemite, CA, USA")
     setCustomMetadata("activity", "Hiking")
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">StorageMetadata metadata = new StorageMetadata.Builder()
         .setCustomMetadata("location", "Yosemite, CA, USA")
         .setCustomMetadata("activity", "Hiking")

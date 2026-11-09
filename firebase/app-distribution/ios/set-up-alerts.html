@@ -4,27 +4,27 @@
 <p>Open the Podfile you created for the project (or run <code translate="no" dir="ltr">pod init</code> to create one), then add the following line inside the target section:</p> 
 <pre>pod 'FirebaseAppDistribution'</pre>
 </li> <li><p>In the directory of your podfile, run <code translate="no" dir="ltr">pod install</code>, then open the created <code translate="no" dir="ltr">.xcworkspace</code> file.</p></li> <li>
-<p>Import the Firebase module in your <code translate="no" dir="ltr">App</code> struct or <code translate="no" dir="ltr">UIApplicationDelegate</code>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Import the Firebase module in your <code translate="no" dir="ltr">App</code> struct or <code translate="no" dir="ltr">UIApplicationDelegate</code>:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">import FirebaseCore
 import FirebaseAppDistribution
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">@import FirebaseCore;
 @import FirebaseAppDistribution;
 </pre></section> </div>
 </li> <li>
-<p>Configure a <code translate="no" dir="ltr">FirebaseApp</code> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Configure a <code translate="no" dir="ltr">FirebaseApp</code> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Use Firebase library to configure APIs
 FirebaseApp.configure()
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">// Use Firebase library to configure APIs
 [FIRApp configure];
 </pre></section> </div>
 </li> <li>
-<p>If swizzling is disabled, pass any opened URLs to the App Distribution SDK in your implementation of <code translate="no" dir="ltr">application(_:open:options:)</code>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>If swizzling is disabled, pass any opened URLs to the App Distribution SDK in your implementation of <code translate="no" dir="ltr">application(_:open:options:)</code>:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">func application(_ app: UIApplication, 
                  open url: URL,
@@ -37,7 +37,7 @@ FirebaseApp.configure()
 
    return false
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">- (BOOL)application:(UIApplication *)app 
             openURL:(NSURL *)url 
@@ -54,7 +54,7 @@ FirebaseApp.configure()
 </li> <li><p>Finally, recompile your app.</p></li> </ol> <h2 id="configure-alerts">
 <strong>Step 3</strong>: Configure in-app alerts</h2> <p>The App Distribution SDK provides two ways of setting up in-app build alerts for your testers: a basic alert configuration, which comes with pre-built app update and sign-in dialogues to display to testers, and an advanced alert configuration, which allows you to customize your own user interface. We recommend first using the basic alert configuration if you're new to the App Distribution SDK.</p> <h3 id="basic-config"><strong>Basic configuration</strong></h3> <p>Use <code translate="no" dir="ltr">checkForUpdate</code> to display a pre-built enable alerts dialogue to testers who haven't yet enabled alerts, and then check if a new build is available. When called, the method enacts the following sequence:</p> <ol> <li><p>Checks if a tester has enabled alerts by prompting them to sign into App Distribution with their Google account.</p></li> <li>
 <p>If the tester has not yet enabled alerts, displays a pre-built dialogue.</p> <p>Enabling alerts is a one-time process on the test device and persists across updates of your app. Alerts remain enabled on the test device until either the app is uninstalled, or until the <code translate="no" dir="ltr">signOutTester</code> method is called. See the method's reference documentation (<a href="https://firebase.google.com/docs/reference/swift/firebaseappdistribution/api/reference/Classes">Swift</a> or <a href="https://firebase.google.com/docs/reference/ios/firebaseappdistribution/api/reference/Classes">Objective-C</a>) for more information.</p>
-</li> <li><p>Checks for newly available builds for the tester to install.</p></li> </ol> <p>You can invoke <code translate="no" dir="ltr">checkForUpdate()</code> at any point in your app. For example, you can prompt your testers to install newly available builds at startup by including <code translate="no" dir="ltr">checkForUpdate()</code> in the <code translate="no" dir="ltr">onAppear(perform:)</code> of your app's root view.</p> <p>The following example checks whether or not the tester has enabled alerts and has access to a new build, and if so, displays a dialogue when the build is available to install:</p>  <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</li> <li><p>Checks for newly available builds for the tester to install.</p></li> </ol> <p>You can invoke <code translate="no" dir="ltr">checkForUpdate()</code> at any point in your app. For example, you can prompt your testers to install newly available builds at startup by including <code translate="no" dir="ltr">checkForUpdate()</code> in the <code translate="no" dir="ltr">onAppear(perform:)</code> of your app's root view.</p> <p>The following example checks whether or not the tester has enabled alerts and has access to a new build, and if so, displays a dialogue when the build is available to install:</p>  <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on macOS, Mac Catalyst, tvOS or watchOS targets. </div> 
 <pre data-language="swift">AppDistribution.appDistribution().checkForUpdate(completion: { release, error in
@@ -83,7 +83,7 @@ FirebaseApp.configure()
   // self should be a UIViewController.
   self.present(uialert, animated: true, completion: nil)
 })
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on macOS, Mac Catalyst, tvOS or watchOS targets. </div> 
 <pre data-language="objectivec">[[FIRAppDistribution appDistribution]
@@ -111,7 +111,7 @@ style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {}];
     [self presentViewController:alert animated:YES completion:nil];
   }
 }];
-</pre></section> </div> <h3 id="advanced-config"><strong>Advanced configuration</strong></h3> <p>The methods <code translate="no" dir="ltr">signInTester()</code> and <code translate="no" dir="ltr">isTesterSignedIn</code> give you more flexibility customizing your tester's sign-in experience, so it can better match your app's look and feel.</p> <p>The following example checks whether the tester has already signed into their Firebase App Distribution tester account, so you can choose to display your sign-in UI only for testers who haven't yet signed in. After the tester has signed in, you can then call <code translate="no" dir="ltr">checkForUpdate()</code> to check whether the tester has access to a new build.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> </div> <h3 id="advanced-config"><strong>Advanced configuration</strong></h3> <p>The methods <code translate="no" dir="ltr">signInTester()</code> and <code translate="no" dir="ltr">isTesterSignedIn</code> give you more flexibility customizing your tester's sign-in experience, so it can better match your app's look and feel.</p> <p>The following example checks whether the tester has already signed into their Firebase App Distribution tester account, so you can choose to display your sign-in UI only for testers who haven't yet signed in. After the tester has signed in, you can then call <code translate="no" dir="ltr">checkForUpdate()</code> to check whether the tester has access to a new build.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on macOS, Mac Catalyst, tvOS or watchOS targets. </div> 
 <pre data-language="swift">// Sign in a tester without automatically checking for update
@@ -132,7 +132,7 @@ if (AppDistribution.appDistribution().isTesterSignedIn) {
       // completion block for check for update
   })
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on macOS, Mac Catalyst, tvOS or watchOS targets. </div> 
 <pre data-language="objectivec">// Sign in a tester without automatically checking for update

@@ -1,20 +1,20 @@
 <h1>Saving Data</h1> <p>This document covers the four methods for writing data to your Firebase Realtime Database: set, update, push, and transactions support.</p>  <h2 id="section-ways-to-save">Ways to Save Data</h2> <table> <tr> <td>set</td> <td>Write or replace data to a <strong>defined path</strong>, like <code translate="no" dir="ltr">messages/users/&lt;username&gt;</code>
 </td> </tr> <tr> <td>update</td> <td>Update some of the keys for a defined path without replacing all of the data</td> </tr> <tr> <td>push</td> <td>
 <strong>Add to a list of data</strong> in the database. Every time you push a new node onto a list, your database generates a unique key, like <code translate="no" dir="ltr">messages/users/&lt;unique-user-id&gt;/&lt;username&gt;</code>
-</td> </tr> <tr> <td>transaction</td> <td>Use transactions when working with complex data that could be corrupted by concurrent updates</td> </tr> </table>  <h2 id="section-set" data-nav="Saving Data">Saving Data</h2> <p> The basic database write operation is a set which saves new data to the specified database reference, replacing any existing data at that path. To understand set, we'll build a simple blogging app. The data for your app is stored at this database reference: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+</td> </tr> <tr> <td>transaction</td> <td>Use transactions when working with complex data that could be corrupted by concurrent updates</td> </tr> </table>  <h2 id="section-set" data-nav="Saving Data">Saving Data</h2> <p> The basic database write operation is a set which saves new data to the specified database reference, replacing any existing data at that path. To understand set, we'll build a simple blogging app. The data for your app is stored at this database reference: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">final FirebaseDatabase database = FirebaseDatabase.getInstance();
-DatabaseReference ref = database.getReference("server/saving-data/fireblog");</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+DatabaseReference ref = database.getReference("server/saving-data/fireblog");</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">// Import Admin SDK
 const { getDatabase } = require('firebase-admin/database');
 
 // Get a database reference to our blog
 const db = getDatabase();
-const ref = db.ref('server/saving-data/fireblog');</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+const ref = db.ref('server/saving-data/fireblog');</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python"># Import database module.
 from firebase_admin import db
 
 # Get a database reference to our blog.
-ref = db.reference('server/saving-data/fireblog')</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+ref = db.reference('server/saving-data/fireblog')</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">// Create a database client from App.
 client, err := app.Database(ctx)
 if err != nil {
@@ -22,7 +22,7 @@ if err != nil {
 }
 
 // Get a database reference to our blog.
-ref := client.NewRef("server/saving-data/fireblog")</pre> </section> </div> <p> Let's start by saving some user data. We'll store each user by a unique username, and we'll also store their full name and date of birth. Since each user will have a unique username, it makes sense to use the set method here instead of the push method since you already have the key and don't need to create one. </p> <p>First, create a database reference to your user data. Then use <code translate="no" dir="ltr">set()</code> / <code translate="no" dir="ltr">setValue()</code> to save a user object to the database with the user's username, full name, and birthday. You can pass set a string, number, boolean, <code translate="no" dir="ltr">null</code>, array or any JSON object. Passing <code translate="no" dir="ltr">null</code> will remove the data at the specified location. In this case you'll pass it an object:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+ref := client.NewRef("server/saving-data/fireblog")</pre> </section> </div> <p> Let's start by saving some user data. We'll store each user by a unique username, and we'll also store their full name and date of birth. Since each user will have a unique username, it makes sense to use the set method here instead of the push method since you already have the key and don't need to create one. </p> <p>First, create a database reference to your user data. Then use <code translate="no" dir="ltr">set()</code> / <code translate="no" dir="ltr">setValue()</code> to save a user object to the database with the user's username, full name, and birthday. You can pass set a string, number, boolean, <code translate="no" dir="ltr">null</code>, array or any JSON object. Passing <code translate="no" dir="ltr">null</code> will remove the data at the specified location. In this case you'll pass it an object:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">public static class User {
 
   public String date_of_birth;
@@ -45,7 +45,7 @@ Map&lt;String, User&gt; users = new HashMap&lt;&gt;();
 users.put("alanisawesome", new User("June 23, 1912", "Alan Turing"));
 users.put("gracehop", new User("December 9, 1906", "Grace Hopper"));
 
-usersRef.setValueAsync(users);</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+usersRef.setValueAsync(users);</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const usersRef = ref.child('users');
 usersRef.set({
   alanisawesome: {
@@ -56,7 +56,7 @@ usersRef.set({
     date_of_birth: 'December 9, 1906',
     full_name: 'Grace Hopper'
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">users_ref = ref.child('users')
 users_ref.set({
     'alanisawesome': {
@@ -67,7 +67,7 @@ users_ref.set({
         'date_of_birth': 'December 9, 1906',
         'full_name': 'Grace Hopper'
     }
-})</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+})</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">// User is a json-serializable type.
 type User struct {
 	DateOfBirth string `json:"date_of_birth,omitempty"`
@@ -88,9 +88,9 @@ err := usersRef.Set(ctx, map[string]*User{
 })
 if err != nil {
 	log.Fatalln("Error setting value:", err)
-}</pre> </section> </div> <p> When a JSON object is saved to the database, the object properties are automatically mapped to database child locations in a nested fashion. Now if you navigate to the URL <a href="https://docs-examples.firebaseio.com/server/saving-data/fireblog/users/alanisawesome/full_name">https://docs-examples.firebaseio.com/server/saving-data/fireblog/users/alanisawesome/full_name</a>, we'll see the value "Alan Turing". You can also save data directly to a child location: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <p> When a JSON object is saved to the database, the object properties are automatically mapped to database child locations in a nested fashion. Now if you navigate to the URL <a href="https://docs-examples.firebaseio.com/server/saving-data/fireblog/users/alanisawesome/full_name">https://docs-examples.firebaseio.com/server/saving-data/fireblog/users/alanisawesome/full_name</a>, we'll see the value "Alan Turing". You can also save data directly to a child location: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">usersRef.child("alanisawesome").setValueAsync(new User("June 23, 1912", "Alan Turing"));
-usersRef.child("gracehop").setValueAsync(new User("December 9, 1906", "Grace Hopper"));</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+usersRef.child("gracehop").setValueAsync(new User("December 9, 1906", "Grace Hopper"));</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const usersRef = ref.child('users');
 usersRef.child('alanisawesome').set({
   date_of_birth: 'June 23, 1912',
@@ -99,7 +99,7 @@ usersRef.child('alanisawesome').set({
 usersRef.child('gracehop').set({
   date_of_birth: 'December 9, 1906',
   full_name: 'Grace Hopper'
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">users_ref.child('alanisawesome').set({
     'date_of_birth': 'June 23, 1912',
     'full_name': 'Alan Turing'
@@ -107,7 +107,7 @@ usersRef.child('gracehop').set({
 users_ref.child('gracehop').set({
     'date_of_birth': 'December 9, 1906',
     'full_name': 'Grace Hopper'
-})</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+})</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">if err := usersRef.Child("alanisawesome").Set(ctx, &amp;User{
 	DateOfBirth: "June 23, 1912",
 	FullName:    "Alan Turing",
@@ -132,41 +132,41 @@ if err := usersRef.Child("gracehop").Set(ctx, &amp;User{
       "full_name": "Grace Hopper"
     }
   }
-}</pre> <p> The first example will only trigger one event on clients that are watching the data, whereas the second example will trigger two. It is important to note that if data already existed at <code translate="no" dir="ltr">usersRef</code>, the first approach would overwrite it, but the second method would only modify the value of each separate child node while leaving other children of <code translate="no" dir="ltr">usersRef</code> unchanged. </p> <aside class="warning">Setting the value will overwrite the data at the specified location, including any child nodes.</aside>  <h2 id="section-update">Updating Saved Data</h2> <p> If you want to write to multiple children of a database location at the same time without overwriting other child nodes, you can use the update method as shown below: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> <p> The first example will only trigger one event on clients that are watching the data, whereas the second example will trigger two. It is important to note that if data already existed at <code translate="no" dir="ltr">usersRef</code>, the first approach would overwrite it, but the second method would only modify the value of each separate child node while leaving other children of <code translate="no" dir="ltr">usersRef</code> unchanged. </p> <aside class="warning">Setting the value will overwrite the data at the specified location, including any child nodes.</aside>  <h2 id="section-update">Updating Saved Data</h2> <p> If you want to write to multiple children of a database location at the same time without overwriting other child nodes, you can use the update method as shown below: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">DatabaseReference hopperRef = usersRef.child("gracehop");
 Map&lt;String, Object&gt; hopperUpdates = new HashMap&lt;&gt;();
 hopperUpdates.put("nickname", "Amazing Grace");
 
-hopperRef.updateChildrenAsync(hopperUpdates);</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+hopperRef.updateChildrenAsync(hopperUpdates);</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const usersRef = ref.child('users');
 const hopperRef = usersRef.child('gracehop');
 hopperRef.update({
   'nickname': 'Amazing Grace'
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">hopper_ref = users_ref.child('gracehop')
 hopper_ref.update({
     'nickname': 'Amazing Grace'
-})</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+})</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">hopperRef := usersRef.Child("gracehop")
 if err := hopperRef.Update(ctx, map[string]interface{}{
 	"nickname": "Amazing Grace",
 }); err != nil {
 	log.Fatalln("Error updating child:", err)
-}</pre> </section> </div> <p> This will update Grace's data to include her nickname. If you had used set here instead of update, it would have deleted both <code translate="no" dir="ltr">full_name</code> and <code translate="no" dir="ltr">date_of_birth</code> from your <code translate="no" dir="ltr">hopperRef</code>. </p> <p> The Firebase Realtime Database also supports multi-path updates. This means that update can now update values at multiple locations in your database at the same time, a powerful feature which allows helps you <a href="https://firebase.googleblog.com/2013/04/denormalizing-your-data-is-normal.html">denormalize your data</a>. Using multi-path updates, you can add nicknames to both Grace and Alan at the same time: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <p> This will update Grace's data to include her nickname. If you had used set here instead of update, it would have deleted both <code translate="no" dir="ltr">full_name</code> and <code translate="no" dir="ltr">date_of_birth</code> from your <code translate="no" dir="ltr">hopperRef</code>. </p> <p> The Firebase Realtime Database also supports multi-path updates. This means that update can now update values at multiple locations in your database at the same time, a powerful feature which allows helps you <a href="https://firebase.googleblog.com/2013/04/denormalizing-your-data-is-normal.html">denormalize your data</a>. Using multi-path updates, you can add nicknames to both Grace and Alan at the same time: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">Map&lt;String, Object&gt; userUpdates = new HashMap&lt;&gt;();
 userUpdates.put("alanisawesome/nickname", "Alan The Machine");
 userUpdates.put("gracehop/nickname", "Amazing Grace");
 
-usersRef.updateChildrenAsync(userUpdates);</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+usersRef.updateChildrenAsync(userUpdates);</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const usersRef = ref.child('users');
 usersRef.update({
   'alanisawesome/nickname': 'Alan The Machine',
   'gracehop/nickname': 'Amazing Grace'
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">users_ref.update({
     'alanisawesome/nickname': 'Alan The Machine',
     'gracehop/nickname': 'Amazing Grace'
-})</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+})</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">if err := usersRef.Update(ctx, map[string]interface{}{
 	"alanisawesome/nickname": "Alan The Machine",
 	"gracehop/nickname":      "Amazing Grace",
@@ -186,12 +186,12 @@ usersRef.update({
       "nickname": "Amazing Grace"
     }
   }
-}</pre> <p> Note that trying to update objects by writing objects with the paths included will result in different behavior. Let's take a look at what happens if you instead try to update Grace and Alan this way: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> <p> Note that trying to update objects by writing objects with the paths included will result in different behavior. Let's take a look at what happens if you instead try to update Grace and Alan this way: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">Map&lt;String, Object&gt; userNicknameUpdates = new HashMap&lt;&gt;();
 userNicknameUpdates.put("alanisawesome", new User(null, null, "Alan The Machine"));
 userNicknameUpdates.put("gracehop", new User(null, null, "Amazing Grace"));
 
-usersRef.updateChildrenAsync(userNicknameUpdates);</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+usersRef.updateChildrenAsync(userNicknameUpdates);</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const usersRef = ref.child('users');
 usersRef.update({
   'alanisawesome': {
@@ -200,7 +200,7 @@ usersRef.update({
   'gracehop': {
     'nickname': 'Amazing Grace'
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">users_ref.update({
     'alanisawesome': {
         'nickname': 'Alan The Machine'
@@ -208,7 +208,7 @@ usersRef.update({
     'gracehop': {
         'nickname': 'Amazing Grace'
     }
-})</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+})</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">if err := usersRef.Update(ctx, map[string]interface{}{
 	"alanisawesome": &amp;User{Nickname: "Alan The Machine"},
 	"gracehop":      &amp;User{Nickname: "Amazing Grace"},
@@ -224,7 +224,7 @@ usersRef.update({
       "nickname": "Amazing Grace"
     }
   }
-}</pre> <aside> <h4 id="updating-nested-data">Updating Nested Data</h4> Given a single key path like <code translate="no" dir="ltr">alanisawesome</code>, only the data at the first child level are updated, and any data passed in beyond the first child level is a treated as a set operation. Multi-path behavior allows longer paths (like <code translate="no" dir="ltr">alanisawesome/nickname</code>) to be used without overwriting data. This is why the first example differs from the second example. </aside> <h3 id="section-completion-callback" data-nav="Adding a Callback">Adding a Completion Callback</h3> <p> In Node.js and Java Admin SDKs, if you'd like to know when your data has been committed, you can add a completion callback. Both set and update methods in these SDKs take an optional completion callback that is called when the write has been committed to the database. If the call was unsuccessful for some reason, the callback is passed an error object indicating why the failure occurred. In Python and Go Admin SDKs, all write methods are blocking. That is, the write methods do not return until the writes are committed to the database. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> <aside> <h4 id="updating-nested-data">Updating Nested Data</h4> Given a single key path like <code translate="no" dir="ltr">alanisawesome</code>, only the data at the first child level are updated, and any data passed in beyond the first child level is a treated as a set operation. Multi-path behavior allows longer paths (like <code translate="no" dir="ltr">alanisawesome/nickname</code>) to be used without overwriting data. This is why the first example differs from the second example. </aside> <h3 id="section-completion-callback" data-nav="Adding a Callback">Adding a Completion Callback</h3> <p> In Node.js and Java Admin SDKs, if you'd like to know when your data has been committed, you can add a completion callback. Both set and update methods in these SDKs take an optional completion callback that is called when the write has been committed to the database. If the call was unsuccessful for some reason, the callback is passed an error object indicating why the failure occurred. In Python and Go Admin SDKs, all write methods are blocking. That is, the write methods do not return until the writes are committed to the database. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">DatabaseReference dataRef = ref.child("data");
 dataRef.setValue("I'm writing data", new DatabaseReference.CompletionListener() {
   @Override
@@ -235,7 +235,7 @@ dataRef.setValue("I'm writing data", new DatabaseReference.CompletionListener() 
       System.out.println("Data saved successfully.");
     }
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">dataRef.set('I\'m writing data', (error) =&gt; {
   if (error) {
     console.log('Data could not be saved.' + error);
@@ -255,7 +255,7 @@ dataRef.setValue("I'm writing data", new DatabaseReference.CompletionListener() 
       "title": "The Turing Machine"
     }
   }
-}</pre> <aside> <h4 id="push-vs-transaction">Push vs Transaction</h4> When working with lists of data <code translate="no" dir="ltr">push()</code> ensures a unique and chronological key. You may be tempted to use transactions instead to generate your own keys, but push is a far better choice. Transactions are slower and more complex. They require one or more round trips to the server. A key generated by `push()` on the client works while offline and is optimized for performance. </aside> <p> If a user adds a new post it would be stored as <code translate="no" dir="ltr">/posts/2</code>. This would work if only a single author were adding posts, but in your collaborative blogging application many users may add posts at the same time. If two authors write to <code translate="no" dir="ltr">/posts/2</code> simultaneously, then one of the posts would be deleted by the other. </p> <p> To solve this, the <strong>Firebase clients provide a <code translate="no" dir="ltr">push()</code> function that generates a unique <em>key</em> for each new child</strong>. By using unique child keys, several clients can add children to the same location at the same time without worrying about write conflicts. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> <aside> <h4 id="push-vs-transaction">Push vs Transaction</h4> When working with lists of data <code translate="no" dir="ltr">push()</code> ensures a unique and chronological key. You may be tempted to use transactions instead to generate your own keys, but push is a far better choice. Transactions are slower and more complex. They require one or more round trips to the server. A key generated by `push()` on the client works while offline and is optimized for performance. </aside> <p> If a user adds a new post it would be stored as <code translate="no" dir="ltr">/posts/2</code>. This would work if only a single author were adding posts, but in your collaborative blogging application many users may add posts at the same time. If two authors write to <code translate="no" dir="ltr">/posts/2</code> simultaneously, then one of the posts would be deleted by the other. </p> <p> To solve this, the <strong>Firebase clients provide a <code translate="no" dir="ltr">push()</code> function that generates a unique <em>key</em> for each new child</strong>. By using unique child keys, several clients can add children to the same location at the same time without worrying about write conflicts. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">public static class Post {
 
   public String author;
@@ -273,7 +273,7 @@ DatabaseReference newPostRef = postsRef.push();
 newPostRef.setValueAsync(new Post("gracehop", "Announcing COBOL, a New Programming Language"));
 
 // We can also chain the two calls together
-postsRef.push().setValueAsync(new Post("alanisawesome", "The Turing Machine"));</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+postsRef.push().setValueAsync(new Post("alanisawesome", "The Turing Machine"));</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const newPostRef = postsRef.push();
 newPostRef.set({
   author: 'gracehop',
@@ -284,7 +284,7 @@ newPostRef.set({
 postsRef.push().set({
   author: 'alanisawesome',
   title: 'The Turing Machine'
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">posts_ref = ref.child('posts')
 
 new_post_ref = posts_ref.push()
@@ -297,7 +297,7 @@ new_post_ref.set({
 posts_ref.push().set({
     'author': 'alanisawesome',
     'title': 'The Turing Machine'
-})</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+})</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">// Post is a json-serializable type.
 type Post struct {
 	Author string `json:"author,omitempty"`
@@ -336,39 +336,39 @@ if _, err := postsRef.Push(ctx, &amp;Post{
       "title": "The Turing Machine"
     }
   }
-}</pre> <p> In JavaScript, Python and Go, the pattern of calling <code translate="no" dir="ltr">push()</code> and then immediately calling <code translate="no" dir="ltr">set()</code> is so common that the Firebase SDK lets you combine them by passing the data to be set directly to <code translate="no" dir="ltr">push()</code> as follows: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
-<pre data-language="java">// No Java equivalent</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+}</pre> <p> In JavaScript, Python and Go, the pattern of calling <code translate="no" dir="ltr">push()</code> and then immediately calling <code translate="no" dir="ltr">set()</code> is so common that the Firebase SDK lets you combine them by passing the data to be set directly to <code translate="no" dir="ltr">push()</code> as follows: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
+<pre data-language="java">// No Java equivalent</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">// This is equivalent to the calls to push().set(...) above
 postsRef.push({
   author: 'gracehop',
   title: 'Announcing COBOL, a New Programming Language'
-});;</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});;</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python"># This is equivalent to the calls to push().set(...) above
 posts_ref.push({
     'author': 'gracehop',
     'title': 'Announcing COBOL, a New Programming Language'
-})</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+})</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">if _, err := postsRef.Push(ctx, &amp;Post{
 	Author: "gracehop",
 	Title:  "Announcing COBOL, a New Programming Language",
 }); err != nil {
 	log.Fatalln("Error pushing child node:", err)
-}</pre> </section> </div> <h3 id="getting-the-unique-key-generated-by-push">Getting the unique key generated by push()</h3> <p>Calling <code translate="no" dir="ltr">push()</code> will return a reference to the new data path, which you can use to get the key or set data to it. The following code will result in the same data as the above example, but now we'll have access to the unique key that was generated:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <h3 id="getting-the-unique-key-generated-by-push">Getting the unique key generated by push()</h3> <p>Calling <code translate="no" dir="ltr">push()</code> will return a reference to the new data path, which you can use to get the key or set data to it. The following code will result in the same data as the above example, but now we'll have access to the unique key that was generated:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">// Generate a reference to a new location and add some data using push()
 DatabaseReference pushedPostRef = postsRef.push();
 
 // Get the unique ID generated by a push()
-String postId = pushedPostRef.getKey();</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+String postId = pushedPostRef.getKey();</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">// Generate a reference to a new location and add some data using push()
 const newPostRef = postsRef.push();
 
 // Get the unique key generated by push()
-const postId = newPostRef.key;</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+const postId = newPostRef.key;</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python"># Generate a reference to a new location and add some data using push()
 new_post_ref = posts_ref.push()
 
 # Get the unique key generated by push()
-post_id = new_post_ref.key</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+post_id = new_post_ref.key</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">// Generate a reference to a new location and add some data using Push()
 newPostRef, err := postsRef.Push(ctx, nil)
 if err != nil {
@@ -376,7 +376,7 @@ if err != nil {
 }
 
 // Get the unique key generated by Push()
-postID := newPostRef.Key</pre> </section> </div> <p>As you can see, you can get the value of the unique key from your <code translate="no" dir="ltr">push()</code> reference.</p> <p>In the next section on <a href="retrieve-data">Retrieving Data</a>, we'll learn how to read this data from a Firebase database.</p>  <h2 id="section-transactions">Saving Transactional Data</h2> <p> When working with complex data that could be corrupted by concurrent modifications, such as incremental counters, the SDK provides a <a href="https://firebase.google.com/docs/reference/node/firebase.database.Reference#transaction">transaction operation</a>. </p> <p> In Java and Node.js, you give the transaction operation two callbacks: an update function and an optional completion callback. In Python and Go, the transaction operation is blocking and therefore it only accepts the update function. </p> <p> The update function takes the current state of the data as an argument and should return the new desired state you would like to write. For example, if you wanted to increment the number of upvotes on a specific blog post, you would write a transaction like the following: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+postID := newPostRef.Key</pre> </section> </div> <p>As you can see, you can get the value of the unique key from your <code translate="no" dir="ltr">push()</code> reference.</p> <p>In the next section on <a href="retrieve-data">Retrieving Data</a>, we'll learn how to read this data from a Firebase database.</p>  <h2 id="section-transactions">Saving Transactional Data</h2> <p> When working with complex data that could be corrupted by concurrent modifications, such as incremental counters, the SDK provides a <a href="https://firebase.google.com/docs/reference/node/firebase.database.Reference#transaction">transaction operation</a>. </p> <p> In Java and Node.js, you give the transaction operation two callbacks: an update function and an optional completion callback. In Python and Go, the transaction operation is blocking and therefore it only accepts the update function. </p> <p> The update function takes the current state of the data as an argument and should return the new desired state you would like to write. For example, if you wanted to increment the number of upvotes on a specific blog post, you would write a transaction like the following: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">DatabaseReference upvotesRef = ref.child("server/saving-data/fireblog/posts/-JRHTHaIs-jNPLXOQivY/upvotes");
 upvotesRef.runTransaction(new Transaction.Handler() {
   @Override
@@ -396,11 +396,11 @@ upvotesRef.runTransaction(new Transaction.Handler() {
       DatabaseError databaseError, boolean committed, DataSnapshot dataSnapshot) {
     System.out.println("Transaction completed");
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const upvotesRef = db.ref('server/saving-data/fireblog/posts/-JRHTHaIs-jNPLXOQivY/upvotes');
 upvotesRef.transaction((current_value) =&gt; {
   return (current_value || 0) + 1;
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">def increment_votes(current_value):
     return current_value + 1 if current_value else 1
 
@@ -409,7 +409,7 @@ try:
     new_vote_count = upvotes_ref.transaction(increment_votes)
     print('Transaction completed')
 except db.TransactionAbortedError:
-    print('Transaction failed to commit')</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print('Transaction failed to commit')</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">fn := func(t db.TransactionNode) (interface{}, error) {
 	var currentValue int
 	if err := t.Unmarshal(&amp;currentValue); err != nil {

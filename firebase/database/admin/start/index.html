@@ -1,4 +1,4 @@
-<h1>Introduction to the Admin Database SDK</h1> <p>With the Admin SDK, you can read and write Realtime Database data with full admin privileges, or with finer-grained limited privileges. In this document, we'll guide you through adding the Firebase Admin SDK to your project for accessing the Firebase Realtime Database.</p> <aside> <p>Realtime Database instances can be created in different geographic regions, with separate <code translate="no" dir="ltr">firebaseio.com</code> and <code translate="no" dir="ltr">firebasedatabase.app</code> URL schemes. Admin SDK methods for setting URLs can use either scheme. For currently-supported regions and URL schemes, see the guides topic on <a href="../../../projects/locations#rtdb-locations">selecting locations in Firebase projects</a>.</p> </aside> <h2 id="admin-sdk-setup">Admin SDK Setup</h2> <p>To get started with the Firebase Realtime Database on your server, you'll first need to <a href="../../../admin/setup#prerequisites">set up the Firebase Admin SDK</a> in your language of choice.</p> <aside class="warning"> <p>If you are interested in using the Node.js SDK as a client for end-user access (for example, in a Node.js desktop or IoT application), as opposed to admin access from a privileged environment (like a server), you should instead follow the <a href="../../web/start">instructions for setting up the client JavaScript SDK</a>.</p> </aside> <h2 id="admin-sdk-authentication">Admin SDK Authentication</h2> <p> Before you can access the Firebase Realtime Database from a server using the Firebase Admin SDK, you must authenticate your server with Firebase. When you authenticate a server, rather than sign in with a user account's credentials as you would in a client app, you authenticate with a <a href="https://developers.google.com/identity/protocols/OAuth2ServiceAccount"><i>service account</i></a> which identifies your server to Firebase. </p> <p> You can get two different levels of access when you authenticate using the Firebase Admin SDK: </p> <table class="responsive"> <tr><th colspan="2">Firebase Admin SDK Auth Access Levels</th></tr> <tr> <td><strong>Administrative privileges</strong></td> <td>Complete read and write access to a project's Realtime Database. Use with caution to complete administrative tasks such as data migration or restructuring that require unrestricted access to your project's resources.</td> </tr> <tr> <td><strong>Limited privileges</strong></td> <td>Access to a project's Realtime Database, limited to only the resources your server needs. Use this level to complete administrative tasks that have well-defined access requirements. For example, when running a summarization job that reads data across the entire database, you can protect against accidental writes by setting a read-only security rule and then initializing the Admin SDK with privileges limited by that rule. </td> </tr> </table> <h3 id="authenticate-with-admin-privileges">Authenticate with admin privileges</h3> <p> When you initialize the Firebase Admin SDK with the credentials for a service account with the <b>Editor</b> role on your Firebase project, that instance has complete read and write access to your project's Realtime Database. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<h1>Introduction to the Admin Database SDK</h1> <p>With the Admin SDK, you can read and write Realtime Database data with full admin privileges, or with finer-grained limited privileges. In this document, we'll guide you through adding the Firebase Admin SDK to your project for accessing the Firebase Realtime Database.</p> <aside> <p>Realtime Database instances can be created in different geographic regions, with separate <code translate="no" dir="ltr">firebaseio.com</code> and <code translate="no" dir="ltr">firebasedatabase.app</code> URL schemes. Admin SDK methods for setting URLs can use either scheme. For currently-supported regions and URL schemes, see the guides topic on <a href="../../../projects/locations#rtdb-locations">selecting locations in Firebase projects</a>.</p> </aside> <h2 id="admin-sdk-setup">Admin SDK Setup</h2> <p>To get started with the Firebase Realtime Database on your server, you'll first need to <a href="../../../admin/setup#prerequisites">set up the Firebase Admin SDK</a> in your language of choice.</p> <aside class="warning"> <p>If you are interested in using the Node.js SDK as a client for end-user access (for example, in a Node.js desktop or IoT application), as opposed to admin access from a privileged environment (like a server), you should instead follow the <a href="../../web/start">instructions for setting up the client JavaScript SDK</a>.</p> </aside> <h2 id="admin-sdk-authentication">Admin SDK Authentication</h2> <p> Before you can access the Firebase Realtime Database from a server using the Firebase Admin SDK, you must authenticate your server with Firebase. When you authenticate a server, rather than sign in with a user account's credentials as you would in a client app, you authenticate with a <a href="https://developers.google.com/identity/protocols/OAuth2ServiceAccount"><i>service account</i></a> which identifies your server to Firebase. </p> <p> You can get two different levels of access when you authenticate using the Firebase Admin SDK: </p> <table class="responsive"> <tr><th colspan="2">Firebase Admin SDK Auth Access Levels</th></tr> <tr> <td><strong>Administrative privileges</strong></td> <td>Complete read and write access to a project's Realtime Database. Use with caution to complete administrative tasks such as data migration or restructuring that require unrestricted access to your project's resources.</td> </tr> <tr> <td><strong>Limited privileges</strong></td> <td>Access to a project's Realtime Database, limited to only the resources your server needs. Use this level to complete administrative tasks that have well-defined access requirements. For example, when running a summarization job that reads data across the entire database, you can protect against accidental writes by setting a read-only security rule and then initializing the Admin SDK with privileges limited by that rule. </td> </tr> </table> <h3 id="authenticate-with-admin-privileges">Authenticate with admin privileges</h3> <p> When you initialize the Firebase Admin SDK with the credentials for a service account with the <b>Editor</b> role on your Firebase project, that instance has complete read and write access to your project's Realtime Database. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">// Initialize the SDK with Application Default Credentials
 FirebaseOptions options = FirebaseOptions.builder()
     .setCredentials(GoogleCredentials.getApplicationDefault())
@@ -20,7 +20,7 @@ ref.addListenerForSingleValueEvent(new ValueEventListener() {
   @Override
   public void onCancelled(DatabaseError error) {
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">import { initializeApp } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 
@@ -35,7 +35,7 @@ const db = getDatabase();
 const ref = db.ref("restricted_access/secret_document");
 ref.once("value", (snapshot) =&gt; {
   console.log(snapshot.val());
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
@@ -50,7 +50,7 @@ firebase_admin.initialize_app(cred, {
 
 # As an admin, the app has access to read and write all data, regradless of Security Rules
 ref = db.reference('restricted_access/secret_document')
-print(ref.get())</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+print(ref.get())</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ctx := context.Background()
 conf := &amp;firebase.Config{
 	DatabaseURL: "https://databaseName.firebaseio.com",
@@ -91,7 +91,7 @@ fmt.Println(data)</pre> </section> </div> <aside class="note"> <p>Your service o
       ".write": "auth.uid === 'my-service-worker'"
     }
   }
-}</pre> <p> Then, on your server, when you initialize the Firebase app, use the <code translate="no" dir="ltr">databaseAuthVariableOverride</code> option to override the <code translate="no" dir="ltr">auth</code> object used by your database rules. In this custom <code translate="no" dir="ltr">auth</code> object, set the <code translate="no" dir="ltr">uid</code> field to the identifier you used to represent your service in your Security Rules. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> <p> Then, on your server, when you initialize the Firebase app, use the <code translate="no" dir="ltr">databaseAuthVariableOverride</code> option to override the <code translate="no" dir="ltr">auth</code> object used by your database rules. In this custom <code translate="no" dir="ltr">auth</code> object, set the <code translate="no" dir="ltr">uid</code> field to the identifier you used to represent your service in your Security Rules. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">// Initialize the app with a custom auth variable, limiting the server's access
 Map&lt;String, Object&gt; auth = new HashMap&lt;String, Object&gt;();
 auth.put("uid", "my-service-worker");
@@ -114,7 +114,7 @@ ref.addListenerForSingleValueEvent(new ValueEventListener() {
         String res = dataSnapshot.getValue();
         System.out.println(res);
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">import { initializeApp } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 
@@ -132,7 +132,7 @@ const db = getDatabase();
 const ref = db.ref("/some_resource");
 ref.once("value", (snapshot) =&gt; {
   console.log(snapshot.val());
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
@@ -150,7 +150,7 @@ firebase_admin.initialize_app(cred, {
 
 # The app only has access as defined in the Security Rules
 ref = db.reference('/some_resource')
-print(ref.get())</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+print(ref.get())</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ctx := context.Background()
 // Initialize the app with a custom auth variable, limiting the server's access
 ao := map[string]interface{}{"uid": "my-service-worker"}
@@ -178,7 +178,7 @@ var data map[string]interface{}
 if err := ref.Get(ctx, &amp;data); err != nil {
 	log.Fatalln("Error reading from database:", err)
 }
-fmt.Println(data)</pre> </section> </div> <p>In some cases, you may want to downscope the Admin SDKs to act as an unauthenticated client. You can do this by providing a value of <code translate="no" dir="ltr">null</code> for the database auth variable override.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+fmt.Println(data)</pre> </section> </div> <p>In some cases, you may want to downscope the Admin SDKs to act as an unauthenticated client. You can do this by providing a value of <code translate="no" dir="ltr">null</code> for the database auth variable override.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">// Initialize the app with Application Default Credentials
 FirebaseOptions options = FirebaseOptions.builder()
     .setCredentials(GoogleCredentials.getApplicationDefault())
@@ -198,7 +198,7 @@ ref.addListenerForSingleValueEvent(new ValueEventListener() {
         String res = dataSnapshot.getValue();
         System.out.println(res);
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">import { initializeApp } from 'firebase-admin/app';
 import { getDatabase } from 'firebase-admin/database';
 
@@ -214,7 +214,7 @@ const db = getDatabase();
 const ref = db.ref("/public_resource");
 ref.once("value", (snapshot) =&gt; {
   console.log(snapshot.val());
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
@@ -230,7 +230,7 @@ firebase_admin.initialize_app(cred, {
 
 # The app only has access to public data as defined in the Security Rules
 ref = db.reference('/public_resource')
-print(ref.get())</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+print(ref.get())</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ctx := context.Background()
 // Initialize the app with a nil auth variable, limiting the server's access
 var nilMap map[string]interface{}

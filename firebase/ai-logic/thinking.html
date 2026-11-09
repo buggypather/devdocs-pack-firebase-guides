@@ -1,4 +1,4 @@
-<h1>Thinking</h1> <p>All the <span class='\"notranslate\"'>Gemini</span> models use an internal "thinking process" that significantly improves their reasoning and multi-step planning abilities, making them highly effective for complex tasks such as coding, advanced mathematics, and data analysis.</p>  <p>Thinking models offer the following configurations and options:</p> <ul> <li><p><strong>Control the amount of thinking</strong><br> You can configure <a href="#thinking-levels"><em><strong>thinking levels</strong></em></a> to control how much "thinking" that a model can do. This configuration is particularly important if reducing latency or cost is a priority. Also, review the <a href="#task-complexity">comparison of task difficulties</a> to decide how much a model might need its thinking capability.</p></li> <li><p><strong>Get thought summaries</strong><br> You can enable <a href="#thought-summaries"><em><strong>thought summaries</strong></em></a> to include with the generated response. These summaries are synthesized versions of the model's raw thoughts and offer insights into the model's internal reasoning process.</p></li> <li><p><strong>Handle thought signatures</strong><br> The <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs automatically handle <a href="#thought-signatures"><em><strong>thought signatures</strong></em></a> for you, which ensures that the model has access to the thought context from previous turns specifically when using function calling.</p></li> </ul> <p>Make sure to review the <a href="#best-practices">best practices and prompting guidance</a> for using thinking models.</p> <aside class="note">Note the following: <ul> <li> The <span class='\"notranslate\"'>Gemini 2.5</span> models use <em>thinking budget</em> instead of <em>thinking level</em>. The general-use <span class='\"notranslate\"'>Gemini 3.x</span> models and the latest Gemini Nano Banana models support <em>thinking budget</em> for backwards-compatibility. However, the <span class='\"notranslate\"'>Gemini 4.x</span> models do <em><strong>not</strong></em> support <em>thinking budget</em> (and will return a 400 error if it's set). </li> <li> The <span class='\"notranslate\"'>Gemini</span> TTS models do <em><strong>not</strong></em> support the thinking capability. </li> <li> The Gemini Live API models support the thinking capability. However, <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support adding a thinking <em>configuration</em> for the Live API models, but that feature is coming soon! </li> </ul> </aside> <p><br></p> <hr> <h2 id="best-practices">Best practices &amp; prompting guidance for using thinking models</h2> <p>We recommend testing your prompt in <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a> or <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/agent-studio/quickstart" class="external"><span class='\"notranslate\"'>Agent Studio</span></a> where you can view the full thinking process. You can identify any areas where the model may have gone astray so that you can refine your prompts to get more consistent and accurate responses.</p> <p>Begin with a general prompt that describes the desired outcome, and observe the model's initial thoughts on how it determines its response. If the response isn't as expected, help the model generate a better response by using any of the following <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/thinking#prompting-techniques" class="external">prompting techniques</a>:</p> <ul> <li>Provide step-by-step instructions</li> <li>Provide several examples of input-output pairs</li> <li>Provide guidance for how the output and responses should be phrased and be formatted</li> <li>Provide specific verification steps</li> </ul> <p>In addition to prompting, consider using these recommendations:</p> <ul> <li><p>Set <a href="system-instructions">system instructions</a>, which are like a "preamble" that you add before the model gets exposed to any further instructions from the prompt or end user. They let you steer the behavior of the model based on your specific needs and use cases.</p></li> <li><p>Set a <a href="#thinking-level">thinking level</a> to control how much thinking the model can do. If you set it high, then the model can think more, if needed. If you set it lower, then the model won't "overthink" its response, and it also reserves more of the total token output limit for the actual response and can help reduce latency and cost.</p></li> <li><p>Enable <a href="monitoring#ai-monitoring-in-console">AI monitoring in the Firebase console</a> to monitor the count of thinking tokens and the latency of your requests that have thinking enabled. And if you have <a href="#thought-summaries">thought summaries</a> enabled, they will display in the console where you can inspect the model's detailed reasoning to help you debug and refine your prompts.</p></li> </ul> <p><br></p> <hr class="full-width"> <h2 id="control-thinking-amount">Control the amount of thinking</h2> <p>You can configure <a href="#thinking-levels"><em><strong>thinking levels</strong></em></a> to control how much "thinking" and reasoning that a model can do before it returns a response. This configuration is particularly important if reducing latency or cost is a priority.</p> <p>Make sure to review the <a href="#task-complexity">comparison of task difficulties</a> to decide how much a model might need its thinking capability. Here's some high-level guidance:</p> <ul> <li>Set a lower thinking value for less complex tasks or if reducing latency or cost is a priority for you.</li> <li>Set a higher thinking value for more complex tasks.</li> </ul> <h3 id="thinking-levels">Thinking levels</h3> <p>To control how much thinking a model can do to generate its response, you can specify a <em><strong>thinking level</strong></em> for the amount of thinking tokens that it's allowed to use.</p> <aside class="note">Note the following: <ul> <li> The general-use <span class='\"notranslate\"'>Gemini 3.x</span> and later models and the latest Gemini Nano Banana models always use thinking. You <em><strong>cannot</strong></em> disable or turn off thinking for these models. </li> <li> The general-use <span class='\"notranslate\"'>Gemini 3.x</span> and later models and the latest Gemini Nano Banana models always use <em>dynamic thinking</em>. This means that the model decides when and how much it thinks up to the configured amount. </li> <li> The <span class='\"notranslate\"'>Gemini 2.5</span> models use <em>thinking budget</em> instead of <em>thinking level</em>. The general-use <span class='\"notranslate\"'>Gemini 3.x</span> models and the latest Gemini Nano Banana models support <em>thinking budget</em> for backwards-compatibility. However, the <span class='\"notranslate\"'>Gemini 4.x</span> models do <em><strong>not</strong></em> support <em>thinking budget</em> (and will return a 400 error if it's set). </li> </ul> </aside> <h4 id="set-thinking-level">Set the thinking level</h4> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>Set the thinking level in a <code translate="no" dir="ltr">GenerationConfig</code> as part of creating the <code translate="no" dir="ltr">GenerativeModel</code> instance. The configuration is maintained for the lifetime of the instance. If you want to use different thinking levels for different requests, then create <code translate="no" dir="ltr">GenerativeModel</code> instances configured with each level.</p> <p>Learn about <a href="#supported-thinking-level-values">supported values for thinking level</a> later in this section.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<h1>Thinking</h1> <p>All the <span class='\"notranslate\"'>Gemini</span> models use an internal "thinking process" that significantly improves their reasoning and multi-step planning abilities, making them highly effective for complex tasks such as coding, advanced mathematics, and data analysis.</p>  <p>Thinking models offer the following configurations and options:</p> <ul> <li><p><strong>Control the amount of thinking</strong><br> You can configure <a href="#thinking-levels"><em><strong>thinking levels</strong></em></a> to control how much "thinking" that a model can do. This configuration is particularly important if reducing latency or cost is a priority. Also, review the <a href="#task-complexity">comparison of task difficulties</a> to decide how much a model might need its thinking capability.</p></li> <li><p><strong>Get thought summaries</strong><br> You can enable <a href="#thought-summaries"><em><strong>thought summaries</strong></em></a> to include with the generated response. These summaries are synthesized versions of the model's raw thoughts and offer insights into the model's internal reasoning process.</p></li> <li><p><strong>Handle thought signatures</strong><br> The <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs automatically handle <a href="#thought-signatures"><em><strong>thought signatures</strong></em></a> for you, which ensures that the model has access to the thought context from previous turns specifically when using function calling.</p></li> </ul> <p>Make sure to review the <a href="#best-practices">best practices and prompting guidance</a> for using thinking models.</p> <aside class="note">Note the following: <ul> <li> The <span class='\"notranslate\"'>Gemini 2.5</span> models use <em>thinking budget</em> instead of <em>thinking level</em>. The general-use <span class='\"notranslate\"'>Gemini 3.x</span> models and the latest Gemini Nano Banana models support <em>thinking budget</em> for backwards-compatibility. However, the <span class='\"notranslate\"'>Gemini 4.x</span> models do <em><strong>not</strong></em> support <em>thinking budget</em> (and will return a 400 error if it's set). </li> <li> The <span class='\"notranslate\"'>Gemini</span> TTS models do <em><strong>not</strong></em> support the thinking capability. </li> <li> The Gemini Live API models support the thinking capability. However, <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support adding a thinking <em>configuration</em> for the Live API models, but that feature is coming soon! </li> </ul> </aside> <p><br></p> <hr> <h2 id="best-practices">Best practices &amp; prompting guidance for using thinking models</h2> <p>We recommend testing your prompt in <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a> or <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/agent-studio/quickstart" class="external"><span class='\"notranslate\"'>Agent Studio</span></a> where you can view the full thinking process. You can identify any areas where the model may have gone astray so that you can refine your prompts to get more consistent and accurate responses.</p> <p>Begin with a general prompt that describes the desired outcome, and observe the model's initial thoughts on how it determines its response. If the response isn't as expected, help the model generate a better response by using any of the following <a href="https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/thinking#prompting-techniques" class="external">prompting techniques</a>:</p> <ul> <li>Provide step-by-step instructions</li> <li>Provide several examples of input-output pairs</li> <li>Provide guidance for how the output and responses should be phrased and be formatted</li> <li>Provide specific verification steps</li> </ul> <p>In addition to prompting, consider using these recommendations:</p> <ul> <li><p>Set <a href="system-instructions">system instructions</a>, which are like a "preamble" that you add before the model gets exposed to any further instructions from the prompt or end user. They let you steer the behavior of the model based on your specific needs and use cases.</p></li> <li><p>Set a <a href="#thinking-level">thinking level</a> to control how much thinking the model can do. If you set it high, then the model can think more, if needed. If you set it lower, then the model won't "overthink" its response, and it also reserves more of the total token output limit for the actual response and can help reduce latency and cost.</p></li> <li><p>Enable <a href="monitoring#ai-monitoring-in-console">AI monitoring in the Firebase console</a> to monitor the count of thinking tokens and the latency of your requests that have thinking enabled. And if you have <a href="#thought-summaries">thought summaries</a> enabled, they will display in the console where you can inspect the model's detailed reasoning to help you debug and refine your prompts.</p></li> </ul> <p><br></p> <hr class="full-width"> <h2 id="control-thinking-amount">Control the amount of thinking</h2> <p>You can configure <a href="#thinking-levels"><em><strong>thinking levels</strong></em></a> to control how much "thinking" and reasoning that a model can do before it returns a response. This configuration is particularly important if reducing latency or cost is a priority.</p> <p>Make sure to review the <a href="#task-complexity">comparison of task difficulties</a> to decide how much a model might need its thinking capability. Here's some high-level guidance:</p> <ul> <li>Set a lower thinking value for less complex tasks or if reducing latency or cost is a priority for you.</li> <li>Set a higher thinking value for more complex tasks.</li> </ul> <h3 id="thinking-levels">Thinking levels</h3> <p>To control how much thinking a model can do to generate its response, you can specify a <em><strong>thinking level</strong></em> for the amount of thinking tokens that it's allowed to use.</p> <aside class="note">Note the following: <ul> <li> The general-use <span class='\"notranslate\"'>Gemini 3.x</span> and later models and the latest Gemini Nano Banana models always use thinking. You <em><strong>cannot</strong></em> disable or turn off thinking for these models. </li> <li> The general-use <span class='\"notranslate\"'>Gemini 3.x</span> and later models and the latest Gemini Nano Banana models always use <em>dynamic thinking</em>. This means that the model decides when and how much it thinks up to the configured amount. </li> <li> The <span class='\"notranslate\"'>Gemini 2.5</span> models use <em>thinking budget</em> instead of <em>thinking level</em>. The general-use <span class='\"notranslate\"'>Gemini 3.x</span> models and the latest Gemini Nano Banana models support <em>thinking budget</em> for backwards-compatibility. However, the <span class='\"notranslate\"'>Gemini 4.x</span> models do <em><strong>not</strong></em> support <em>thinking budget</em> (and will return a 400 error if it's set). </li> </ul> </aside> <h4 id="set-thinking-level">Set the thinking level</h4> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>Set the thinking level in a <code translate="no" dir="ltr">GenerationConfig</code> as part of creating the <code translate="no" dir="ltr">GenerativeModel</code> instance. The configuration is maintained for the lifetime of the instance. If you want to use different thinking levels for different requests, then create <code translate="no" dir="ltr">GenerativeModel</code> instances configured with each level.</p> <p>Learn about <a href="#supported-thinking-level-values">supported values for thinking level</a> later in this section.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p>Set the thinking level in a <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="swift">
 // ...
@@ -17,7 +17,7 @@ let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="kotlin">
 // ...
@@ -38,7 +38,7 @@ val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="java">
 // ...
@@ -64,7 +64,7 @@ GenerativeModelFutures model = GenerativeModelFutures.from(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/js/ai.generationconfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="javascript">
 // ...
@@ -84,7 +84,7 @@ const model = getGenerativeModel(ai, { model: "GEMINI_3.x_MODEL_NAME", generatio
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 <p>Set the values of the parameters in a <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerationConfig-class.html" class="external"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="dart">
 // ...
@@ -105,7 +105,7 @@ final model = FirebaseAI.googleAI().generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/generation-config"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="csharp">
 // ...
@@ -139,8 +139,8 @@ var model = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI()).GetGenerativeM
 </td> <td style="text-align:center">
  (default)</td> <td style="text-align:center"></td> <td style="text-align:center"></td> <td style="text-align:center"></td> </tr> <tr> <td> <span class='\"notranslate\"'>Gemini Nano Banana Pro</span><br> <code translate="no" dir="ltr">gemini-3-pro-image</code> </td> <td style="text-align:center"></td> <td style="text-align:center"></td> <td style="text-align:center"></td> <td style="text-align:center">
  (default)</td> </tr> </tbody> </table> <p><sup><b>1</b> <em><code translate="no" dir="ltr">gemini-4-argon</code>, <code translate="no" dir="ltr">gemini-3.8-flash</code>, and <code translate="no" dir="ltr">gemini-3.7-flash</code> do <strong>not</strong> support the <code translate="no" dir="ltr">MINIMAL</code> thinking level. If you set the thinking level to <code translate="no" dir="ltr">MINIMAL</code>, the request will <strong>fail</strong> with a 400 error.</em> </sup></p> <p><br></p> <hr> <h3 id="thinking-budget">Thinking budgets <em>(<span class='\"notranslate\"'>Gemini 2.5</span> models)</em>
-</h3> <aside class="warning"><strong>Warning:</strong><span> <span class='\"notranslate\"'>Gemini 2.5</span> models are deprecated. For the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>, they will shut down on October 20, 2026. <a href="faq-and-troubleshooting#discontinued-models">Learn more.</a></span></aside> <p>To control how much thinking a <span class='\"notranslate\"'>Gemini 2.5</span> model can do to generate its response, you can specify a <em><strong>thinking budget</strong></em> for the amount of thinking tokens that it's allowed to use.</p> <aside class="note"><strong>Note:</strong><span> For Gemini Live API models, <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support adding a thinking configuration, but that feature is coming soon!</span></aside> <p><section class="expandable" id="set-thinking-budget"> <h4 class="showalways" id="set-thinking-budget">Set the thinking budget <em>(<span class='\"notranslate\"'>Gemini 2.5</span> models)</em>
-</h4></section></p> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>Set the thinking budget in a <code translate="no" dir="ltr">GenerationConfig</code> as part of creating the <code translate="no" dir="ltr">GenerativeModel</code> instance for a <span class='\"notranslate\"'>Gemini 2.5</span> model. The configuration is maintained for the lifetime of the instance. If you want to use different thinking budgets for different requests, then create <code translate="no" dir="ltr">GenerativeModel</code> instances configured with each budget.</p> <p>Learn about <a href="#supported-thinking-budget-values">supported values for thinking budget</a> later in this section.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</h3> <aside class="warning"><strong>Warning:</strong><span> General-use <span class='\"notranslate\"'>Gemini 2.5</span> models are deprecated or shut down. For the <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>, they shut down on October 20, 2026. For the <span class='\"notranslate\"'>Gemini Developer API</span>, starting December 1, 2026, requests to <code translate="no" dir="ltr">gemini-2.5-pro</code> and <code translate="no" dir="ltr">gemini-2.5-flash</code> will automatically route to <code translate="no" dir="ltr">gemini-3.8-flash</code> and <code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (respectively), which do <em>not</em> support disabling thinking via <code translate="no" dir="ltr">thinkingBudget: 0</code>. <a href="faq-and-troubleshooting#shutdown-models-list">Learn more.</a></span></aside> <p>To control how much thinking a <span class='\"notranslate\"'>Gemini 2.5</span> model can do to generate its response, you can specify a <em><strong>thinking budget</strong></em> for the amount of thinking tokens that it's allowed to use.</p> <aside class="note"><strong>Note:</strong><span> For Gemini Live API models, <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support adding a thinking configuration, but that feature is coming soon!</span></aside> <p><section class="expandable" id="set-thinking-budget"> <h4 class="showalways" id="set-thinking-budget">Set the thinking budget <em>(<span class='\"notranslate\"'>Gemini 2.5</span> models)</em>
+</h4></section></p> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>Set the thinking budget in a <code translate="no" dir="ltr">GenerationConfig</code> as part of creating the <code translate="no" dir="ltr">GenerativeModel</code> instance for a <span class='\"notranslate\"'>Gemini 2.5</span> model. The configuration is maintained for the lifetime of the instance. If you want to use different thinking budgets for different requests, then create <code translate="no" dir="ltr">GenerativeModel</code> instances configured with each budget.</p> <p>Learn about <a href="#supported-thinking-budget-values">supported values for thinking budget</a> later in this section.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p>Set the thinking budget in a <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="swift">
 // ...
@@ -159,7 +159,7 @@ let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="kotlin">
 // ...
@@ -180,7 +180,7 @@ val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="java">
 // ...
@@ -206,7 +206,7 @@ GenerativeModelFutures model = GenerativeModelFutures.from(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/js/ai.generationconfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="javascript">
 // ...
@@ -226,7 +226,7 @@ const model = getGenerativeModel(ai, { model: "GEMINI_2.5_MODEL_NAME", generatio
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 <p>Set the values of the parameters in a <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerationConfig-class.html" class="external"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="dart">
 // ...
@@ -247,7 +247,7 @@ final model = FirebaseAI.googleAI().generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/generation-config"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="csharp">
 // ...
@@ -282,7 +282,7 @@ var model = FirebaseAI.GetInstance(FirebaseAI.Backend.GoogleAI()).GetGenerativeM
 <p><strong>Moderate tasks — some thinking is likely necessary</strong><br> Common requests that benefit from a degree of step-by-step processing or deeper understanding. Examples:</p> <ul> <li>"Create an analogy between photosynthesis and growing up."</li> <li>"Compare and contrast electric cars and hybrid cars."</li> </ul>
 </li> <li>
 <p><strong>Hard tasks — maximum thinking may be necessary</strong><br> Truly complex challenges, such as solving complex math problems or coding tasks. These types of tasks require the model to engage its full reasoning and planning capabilities, often involving many internal steps before providing an answer. Examples:</p> <ul> <li>"Solve problem 1 in AIME 2025: Find the sum of all integer bases b &gt; 9 for which 17b is a divisor of 97b."</li> <li>"Write Python code for a web application that visualizes real-time stock market data, including user authentication. Make it as efficient as possible."</li> </ul>
-</li> </ul> <p><br></p> <hr class="full-width"> <h2 id="thought-summaries">Thought summaries</h2> <p><em><strong>Thought summaries</strong></em> are synthesized versions of the model's raw thoughts and offer insights into the model's internal reasoning process.</p> <p>Here are some reasons to include thought summaries in responses:</p> <ul> <li><p>You can display the thought summary in your app's UI or make them accessible to your users. The thought summary is returned as a separate part in the response so that you have more control over how it's used in your app.</p></li> <li><p>If you also enable <a href="monitoring#ai-monitoring-in-console">AI monitoring in the Firebase console</a>, then thought summaries display in the console where you can inspect the model's detailed reasoning to help you debug and refine your prompts.</p></li> </ul> <p>Here are some key notes about thought summaries:</p> <ul> <li><p>Thought summaries are <em>not</em> controlled by <a href="#thinking-budget">thinking budgets</a> (budgets <em>only</em> apply to the model's raw thoughts). However, if <a href="#disable-thinking">thinking is disabled</a>, then the model won't return a thought summary.</p></li> <li><p>Thought summaries are considered part of the model's regular generated-text response and count as output tokens.</p></li> </ul> <aside class="note"><b>Note</b>: For Gemini Live API models, <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support enabling thought summaries, but that feature is coming soon! </aside> <h3 id="enable-thought-summaries">Enable thought summaries</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>You can enable thought summaries by setting <code translate="no" dir="ltr">includeThoughts</code> to true in your model configuration. You can then access the summary by checking the <code translate="no" dir="ltr">thoughtSummary</code> field from the response.</p> <p>Here's an example demonstrating how to enable and retrieve thought summaries with the response:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</li> </ul> <p><br></p> <hr class="full-width"> <h2 id="thought-summaries">Thought summaries</h2> <p><em><strong>Thought summaries</strong></em> are synthesized versions of the model's raw thoughts and offer insights into the model's internal reasoning process.</p> <p>Here are some reasons to include thought summaries in responses:</p> <ul> <li><p>You can display the thought summary in your app's UI or make them accessible to your users. The thought summary is returned as a separate part in the response so that you have more control over how it's used in your app.</p></li> <li><p>If you also enable <a href="monitoring#ai-monitoring-in-console">AI monitoring in the Firebase console</a>, then thought summaries display in the console where you can inspect the model's detailed reasoning to help you debug and refine your prompts.</p></li> </ul> <p>Here are some key notes about thought summaries:</p> <ul> <li><p>Thought summaries are <em>not</em> controlled by <a href="#thinking-budget">thinking budgets</a> (budgets <em>only</em> apply to the model's raw thoughts). However, if <a href="#disable-thinking">thinking is disabled</a>, then the model won't return a thought summary.</p></li> <li><p>Thought summaries are considered part of the model's regular generated-text response and count as output tokens.</p></li> </ul> <aside class="note"><b>Note</b>: For Gemini Live API models, <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not yet</em> support enabling thought summaries, but that feature is coming soon! </aside> <h3 id="enable-thought-summaries">Enable thought summaries</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>You can enable thought summaries by setting <code translate="no" dir="ltr">includeThoughts</code> to true in your model configuration. You can then access the summary by checking the <code translate="no" dir="ltr">thoughtSummary</code> field from the response.</p> <p>Here's an example demonstrating how to enable and retrieve thought summaries with the response:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="swift">
 // ...
@@ -310,7 +310,7 @@ guard let text = response.text else {
 }
 print("Answer: \(text)")
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="kotlin">
 // ...
@@ -339,7 +339,7 @@ response.text?.let {
     println("Answer: $it")
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="java">
 // ...
@@ -382,7 +382,7 @@ Futures.addCallback(responseFuture, new FutureCallback() {
     }
 }, MoreExecutors.directExecutor());
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/js/ai.generationconfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="javascript">
 // ...
@@ -410,7 +410,7 @@ if (response.thoughtSummary()) {
 const text = response.text();
 console.log(`Answer: ${text}`);
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 <p>Enable thought summaries in the <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerationConfig-class.html" class="external"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="dart">
 // ...
@@ -439,7 +439,7 @@ if (response.text != null) {
   print('Answer: ${response.text}');
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/generation-config"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="csharp">
 // ...
@@ -511,7 +511,7 @@ if (response.Text != null) {
 #     equation: (-2)² + 4(-2) + 4 = 0. That's 4 - 8 + 4 = 0. It checks out.
 #
 #     Conclusion: the solution is x = -2. Confirmed.
-</pre>  <h4 id="enable-thought-summaries-streaming">Stream thought summaries</h4> <p>You can also view thought summaries if you choose to stream a response using <code translate="no" dir="ltr">generateContentStream</code>. This will return rolling, incremental summaries during the response generation.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre>  <h4 id="enable-thought-summaries-streaming">Stream thought summaries</h4> <p>You can also view thought summaries if you choose to stream a response using <code translate="no" dir="ltr">generateContentStream</code>. This will return rolling, incremental summaries during the response generation.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="swift">
 // ...
@@ -551,7 +551,7 @@ for try await response in stream {
   }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="kotlin">
 // ...
@@ -590,7 +590,7 @@ model.generateContentStream("solve x^2 + 4x + 4 = 0").collect { response -&gt;
     }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="java">
 // ...
@@ -641,7 +641,7 @@ responseStream.subscribe(response -&gt; {
     // Handle error
 });
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/js/ai.generationconfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="javascript">
 // ...
@@ -686,7 +686,7 @@ for await (const chunk of result.stream) {
   }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 <p>Enable thought summaries in the <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerationConfig-class.html" class="external"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="dart">
 // ...
@@ -725,7 +725,7 @@ await for (final response in responses) {
   }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 <p>Enable thought summaries in the <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/generation-config"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="csharp">
 // ...
@@ -771,7 +771,7 @@ await foreach (var response in stream)
     }
 }
 
-</pre></section> </div> <p><br></p> <hr class="full-width"> <h2 id="thought-signatures">Thought signatures</h2> <aside class="special"><strong>Important:</strong><span> The <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs automatically handle thought signatures for you. Also note that you can't enable or disable thought signatures (this is a limitation from the underlying <span class='\"notranslate\"'>Gemini API</span> providers). Thought signatures are considered input tokens.</span></aside> <p>When using thinking in multi-turn interactions, the model doesn't have access to thought context from previous turns. However, if you're using <a href="function-calling">function calling</a>, you can take advantage of <em><strong>thought signatures</strong></em> to maintain thought context across turns. Thought signatures are encrypted representations of the model's internal thought process, and they're available when using thinking <em>and</em> function calling. Specifically, thought signatures are generated when:</p> <ul> <li>Thinking is enabled and thoughts are generated.</li> <li>The request includes function declarations.</li> </ul> <p><strong>To take advantage of thought signatures, use function calling as normal.</strong> The <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs simplify the process by managing the state and automatically handling thought signatures for you. The SDKs automatically pass any generated thought signatures between subsequent <code translate="no" dir="ltr">sendMessage</code> or <code translate="no" dir="ltr">sendMessageStream</code> calls in a <code translate="no" dir="ltr">Chat</code> session.</p> <p><br></p> <hr class="full-width"> <h2 id="pricing-and-tokens">Pricing and counting thinking tokens</h2> <p>Thinking tokens use the same <a href="pricing">pricing</a> as text-output tokens. If you enable <a href="#thought-summaries">thought summaries</a>, they are considered to be thinking tokens and are priced accordingly.</p> <p>You can enable <a href="monitoring#ai-monitoring-in-console">AI monitoring in the Firebase console</a> to monitor the count of thinking tokens for requests that have thinking enabled.</p> <p>You can get the total number of thinking tokens from the <code translate="no" dir="ltr">thoughtsTokenCount</code> field in the <code translate="no" dir="ltr">usageMetadata</code> attribute of the response:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> </div> <p><br></p> <hr class="full-width"> <h2 id="thought-signatures">Thought signatures</h2> <aside class="special"><strong>Important:</strong><span> The <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs automatically handle thought signatures for you. Also note that you can't enable or disable thought signatures (this is a limitation from the underlying <span class='\"notranslate\"'>Gemini API</span> providers). Thought signatures are considered input tokens.</span></aside> <p>When using thinking in multi-turn interactions, the model doesn't have access to thought context from previous turns. However, if you're using <a href="function-calling">function calling</a>, you can take advantage of <em><strong>thought signatures</strong></em> to maintain thought context across turns. Thought signatures are encrypted representations of the model's internal thought process, and they're available when using thinking <em>and</em> function calling. Specifically, thought signatures are generated when:</p> <ul> <li>Thinking is enabled and thoughts are generated.</li> <li>The request includes function declarations.</li> </ul> <p><strong>To take advantage of thought signatures, use function calling as normal.</strong> The <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs simplify the process by managing the state and automatically handling thought signatures for you. The SDKs automatically pass any generated thought signatures between subsequent <code translate="no" dir="ltr">sendMessage</code> or <code translate="no" dir="ltr">sendMessageStream</code> calls in a <code translate="no" dir="ltr">Chat</code> session.</p> <p><br></p> <hr class="full-width"> <h2 id="pricing-and-tokens">Pricing and counting thinking tokens</h2> <p>Thinking tokens use the same <a href="pricing">pricing</a> as text-output tokens. If you enable <a href="#thought-summaries">thought summaries</a>, they are considered to be thinking tokens and are priced accordingly.</p> <p>You can enable <a href="monitoring#ai-monitoring-in-console">AI monitoring in the Firebase console</a> to monitor the count of thinking tokens for requests that have thinking enabled.</p> <p>You can get the total number of thinking tokens from the <code translate="no" dir="ltr">thoughtsTokenCount</code> field in the <code translate="no" dir="ltr">usageMetadata</code> attribute of the response:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// ...
 
@@ -780,7 +780,7 @@ let response = try await model.generateContent("Why is the sky blue?")
 if let usageMetadata = response.usageMetadata {
   print("Thoughts Token Count: \(usageMetadata.thoughtsTokenCount)")
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// ...
 
@@ -789,7 +789,7 @@ val response = model.generateContent("Why is the sky blue?")
 response.usageMetadata?.let { usageMetadata -&gt;
     println("Thoughts Token Count: ${usageMetadata.thoughtsTokenCount}")
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// ...
 
@@ -811,7 +811,7 @@ Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;(
         t.printStackTrace();
     }
 }, executor);
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">// ...
 
@@ -820,7 +820,7 @@ const response = await model.generateContent("Why is the sky blue?");
 if (response?.usageMetadata?.thoughtsTokenCount != null) {
     console.log(`Thoughts Token Count: ${response.usageMetadata.thoughtsTokenCount}`);
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">// ...
 
@@ -831,7 +831,7 @@ final response = await model.generateContent(
 if (response?.usageMetadata case final usageMetadata?) {
   print("Thoughts Token Count: ${usageMetadata.thoughtsTokenCount}");
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">// ...
 

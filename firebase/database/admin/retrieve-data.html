@@ -1,4 +1,4 @@
-<h1>Retrieving Data</h1> <p> This document covers the basics of retrieving database data, how data is ordered, and how to perform simple queries on data. Data retrieval in the Admin SDK is implemented slightly differently across different programming languages. </p> <ol> <li> <strong>Asynchronous listeners:</strong> Data stored in a Firebase Realtime Database is retrieved by attaching an asynchronous listener to a database reference. The listener is triggered once for the initial state of the data and again anytime the data changes. An event listener may receive several different <a href="#section-event-types">types of events</a>. This mode of data retrieval is supported in Java, Node.js and Python Admin SDKs. </li> <li> <strong>Blocking reads:</strong> Data stored in a Firebase Realtime Database is retrieved by invoking a blocking method on a database reference, which returns the data stored at the reference. Each method call is a onetime operation. That means the SDK does not register any callbacks that listen to subsequent data updates. This model of data retrieval is supported in Python and Go Admin SDKs. </li> </ol> <aside class="note"> <p>The Go Admin SDK currently only supports blocking reads. It cannot be used to add event listeners that receive realtime update notifications. </p> </aside>  <h2 id="section-start">Getting Started</h2> <p> Let's revisit the blogging example from the previous article to understand how to read data from a Firebase database. Recall that the blog posts in the example app are stored at the database URL <a href="https://docs-examples.firebaseio.com/server/saving-data/fireblog/posts">https://docs-examples.firebaseio.com/server/saving-data/fireblog/posts.json</a>. To read your post data, you can do the following: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+<h1>Retrieving Data</h1> <p> This document covers the basics of retrieving database data, how data is ordered, and how to perform simple queries on data. Data retrieval in the Admin SDK is implemented slightly differently across different programming languages. </p> <ol> <li> <strong>Asynchronous listeners:</strong> Data stored in a Firebase Realtime Database is retrieved by attaching an asynchronous listener to a database reference. The listener is triggered once for the initial state of the data and again anytime the data changes. An event listener may receive several different <a href="#section-event-types">types of events</a>. This mode of data retrieval is supported in Java, Node.js and Python Admin SDKs. </li> <li> <strong>Blocking reads:</strong> Data stored in a Firebase Realtime Database is retrieved by invoking a blocking method on a database reference, which returns the data stored at the reference. Each method call is a onetime operation. That means the SDK does not register any callbacks that listen to subsequent data updates. This model of data retrieval is supported in Python and Go Admin SDKs. </li> </ol> <aside class="note"> <p>The Go Admin SDK currently only supports blocking reads. It cannot be used to add event listeners that receive realtime update notifications. </p> </aside>  <h2 id="section-start">Getting Started</h2> <p> Let's revisit the blogging example from the previous article to understand how to read data from a Firebase database. Recall that the blog posts in the example app are stored at the database URL <a href="https://docs-examples.firebaseio.com/server/saving-data/fireblog/posts">https://docs-examples.firebaseio.com/server/saving-data/fireblog/posts.json</a>. To read your post data, you can do the following: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">public static class Post {
 
   public String author;
@@ -26,7 +26,7 @@ ref.addValueEventListener(new ValueEventListener() {
   public void onCancelled(DatabaseError databaseError) {
     System.out.println("The read failed: " + databaseError.getCode());
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">// Get a database reference to our posts
 const db = getDatabase();
 const ref = db.ref('server/saving-data/fireblog/posts');
@@ -36,7 +36,7 @@ ref.on('value', (snapshot) =&gt; {
   console.log(snapshot.val());
 }, (errorObject) =&gt; {
   console.log('The read failed: ' + errorObject.name);
-}); </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+}); </pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python"># Import database module.
 from firebase_admin import db
 
@@ -44,7 +44,7 @@ from firebase_admin import db
 ref = db.reference('server/saving-data/fireblog/posts')
 
 # Read the data at the posts reference (this is a blocking operation)
-print(ref.get())</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+print(ref.get())</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">// Post is a json-serializable type.
 type Post struct {
 	Author string `json:"author,omitempty"`
@@ -64,7 +64,7 @@ ref := client.NewRef("server/saving-data/fireblog/posts")
 var post Post
 if err := ref.Get(ctx, &amp;post); err != nil {
 	log.Fatalln("Error reading value:", err)
-}</pre> </section> </div> <aside> In Java and Node.js, you can pass an optional cancel callback to an event subscription that is called if the read is ever cancelled. A read would be cancelled if the app client doesn't have permission to read from that database reference. This callback is passed an <code translate="no" dir="ltr">error</code> object indicating why the failure occurred. In Python and Go, the <code translate="no" dir="ltr">get()</code> / <code translate="no" dir="ltr">Get()</code> operation fails by raising an exception in case of an error. </aside> <p>If you run the above code, you'll see an object containing all your posts logged to the console. <strong>In case of Node.js and Java, the listener function is called anytime new data is added to your database reference, and you don't need to write any extra code to make this happen.</strong></p> <p>In Java and Node.js, the callback function receives a <code translate="no" dir="ltr">DataSnapshot</code>, which is a snapshot of the data. A snapshot is a picture of the data at a particular database reference at a single point in time. Calling <code translate="no" dir="ltr">val()</code> / <code translate="no" dir="ltr">getValue()</code> on a snapshot returns a language-specific object representation of the data. If no data exists at the reference's location, the snapshot's value is <code translate="no" dir="ltr">null</code>. The <code translate="no" dir="ltr">get()</code> method in Python returns a Python representation of the data directly. The <code translate="no" dir="ltr">Get()</code> function in Go unmarshals the data into a given data structure.</p> <p>Notice that we used the <code translate="no" dir="ltr">value</code> event type in the example above, which reads the entire contents of a Firebase database reference, even if only one piece of data changed. <code translate="no" dir="ltr">value</code> is one of the five different event types listed below that you can use to read data from the database.</p>  <h2 id="section-event-types">Read Event Types in Java and Node.js</h2> <h3 id="value">Value</h3> <p> The <code translate="no" dir="ltr">value</code> event is used to read a static snapshot of the contents at a given database path, as they existed at the time of the read event. It is triggered once with the initial data and again every time the data changes. The event callback is passed a snapshot containing all data at that location, including child data. In the code example above, <code translate="no" dir="ltr">value</code> returned all of the blog posts in your app. Everytime a new blog post is added, the callback function will return all of the posts. </p> <h3 id="child-added">Child Added</h3> <p> The <code translate="no" dir="ltr">child_added</code> event is typically used when retrieving a list of items from the database. Unlike <code translate="no" dir="ltr">value</code> which returns the entire contents of the location, <code translate="no" dir="ltr">child_added</code> is triggered once for each existing child and then again every time a new child is added to the specified path. The event callback is passed a snapshot containing the new child's data. For ordering purposes, it is also passed a second argument containing the key of the previous child. </p> <p>If you want to retrieve only the data on each new post added to your blogging app, you could use <code translate="no" dir="ltr">child_added</code>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <aside> In Java and Node.js, you can pass an optional cancel callback to an event subscription that is called if the read is ever cancelled. A read would be cancelled if the app client doesn't have permission to read from that database reference. This callback is passed an <code translate="no" dir="ltr">error</code> object indicating why the failure occurred. In Python and Go, the <code translate="no" dir="ltr">get()</code> / <code translate="no" dir="ltr">Get()</code> operation fails by raising an exception in case of an error. </aside> <p>If you run the above code, you'll see an object containing all your posts logged to the console. <strong>In case of Node.js and Java, the listener function is called anytime new data is added to your database reference, and you don't need to write any extra code to make this happen.</strong></p> <p>In Java and Node.js, the callback function receives a <code translate="no" dir="ltr">DataSnapshot</code>, which is a snapshot of the data. A snapshot is a picture of the data at a particular database reference at a single point in time. Calling <code translate="no" dir="ltr">val()</code> / <code translate="no" dir="ltr">getValue()</code> on a snapshot returns a language-specific object representation of the data. If no data exists at the reference's location, the snapshot's value is <code translate="no" dir="ltr">null</code>. The <code translate="no" dir="ltr">get()</code> method in Python returns a Python representation of the data directly. The <code translate="no" dir="ltr">Get()</code> function in Go unmarshals the data into a given data structure.</p> <p>Notice that we used the <code translate="no" dir="ltr">value</code> event type in the example above, which reads the entire contents of a Firebase database reference, even if only one piece of data changed. <code translate="no" dir="ltr">value</code> is one of the five different event types listed below that you can use to read data from the database.</p>  <h2 id="section-event-types">Read Event Types in Java and Node.js</h2> <h3 id="value">Value</h3> <p> The <code translate="no" dir="ltr">value</code> event is used to read a static snapshot of the contents at a given database path, as they existed at the time of the read event. It is triggered once with the initial data and again every time the data changes. The event callback is passed a snapshot containing all data at that location, including child data. In the code example above, <code translate="no" dir="ltr">value</code> returned all of the blog posts in your app. Everytime a new blog post is added, the callback function will return all of the posts. </p> <h3 id="child-added">Child Added</h3> <p> The <code translate="no" dir="ltr">child_added</code> event is typically used when retrieving a list of items from the database. Unlike <code translate="no" dir="ltr">value</code> which returns the entire contents of the location, <code translate="no" dir="ltr">child_added</code> is triggered once for each existing child and then again every time a new child is added to the specified path. The event callback is passed a snapshot containing the new child's data. For ordering purposes, it is also passed a second argument containing the key of the previous child. </p> <p>If you want to retrieve only the data on each new post added to your blogging app, you could use <code translate="no" dir="ltr">child_added</code>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">ref.addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -85,14 +85,14 @@ if err := ref.Get(ctx, &amp;post); err != nil {
 
   @Override
   public void onCancelled(DatabaseError databaseError) {}
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">// Retrieve new posts as they are added to our database
 ref.on('child_added', (snapshot, prevChildKey) =&gt; {
   const newPost = snapshot.val();
   console.log('Author: ' + newPost.author);
   console.log('Title: ' + newPost.title);
   console.log('Previous Post ID: ' + prevChildKey);
-});</pre> </section> </div> <p>In this example the snapshot will contain an object with an individual blog post. Because the SDK converts posts to objects by retrieving the value, you have access to the post's author and title properties by calling <code translate="no" dir="ltr">author</code> and <code translate="no" dir="ltr">title</code> respectively. You also have access to the previous post ID from the second <code translate="no" dir="ltr">prevChildKey</code> argument.</p> <h3 id="child-changed">Child Changed</h3> <p> The <code translate="no" dir="ltr">child_changed</code> event is triggered any time a child node is modified. This includes any modifications to descendants of the child node. It is typically used in conjunction with <code translate="no" dir="ltr">child_added</code> and <code translate="no" dir="ltr">child_removed</code> to respond to changes to a list of items. The snapshot passed to the event callback contains the updated data for the child. </p> <p>You can use <code translate="no" dir="ltr">child_changed</code> to read updated data on blog posts when they are edited:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+});</pre> </section> </div> <p>In this example the snapshot will contain an object with an individual blog post. Because the SDK converts posts to objects by retrieving the value, you have access to the post's author and title properties by calling <code translate="no" dir="ltr">author</code> and <code translate="no" dir="ltr">title</code> respectively. You also have access to the previous post ID from the second <code translate="no" dir="ltr">prevChildKey</code> argument.</p> <h3 id="child-changed">Child Changed</h3> <p> The <code translate="no" dir="ltr">child_changed</code> event is triggered any time a child node is modified. This includes any modifications to descendants of the child node. It is typically used in conjunction with <code translate="no" dir="ltr">child_added</code> and <code translate="no" dir="ltr">child_removed</code> to respond to changes to a list of items. The snapshot passed to the event callback contains the updated data for the child. </p> <p>You can use <code translate="no" dir="ltr">child_changed</code> to read updated data on blog posts when they are edited:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">ref.addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {}
@@ -111,12 +111,12 @@ ref.on('child_added', (snapshot, prevChildKey) =&gt; {
 
   @Override
   public void onCancelled(DatabaseError databaseError) {}
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">// Get the data on a post that has changed
 ref.on('child_changed', (snapshot) =&gt; {
   const changedPost = snapshot.val();
   console.log('The updated post title is ' + changedPost.title);
-});</pre> </section> </div> <h3 id="child-removed">Child Removed</h3> <p> The <code translate="no" dir="ltr">child_removed</code> event is triggered when an immediate child is removed. It is typically used in conjunction with <code translate="no" dir="ltr">child_added</code> and <code translate="no" dir="ltr">child_changed</code>. The snapshot passed to the event callback contains the data for the removed child. </p> <p>In the blog example, you can use <code translate="no" dir="ltr">child_removed</code> to log a notification about the deleted post to the console:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+});</pre> </section> </div> <h3 id="child-removed">Child Removed</h3> <p> The <code translate="no" dir="ltr">child_removed</code> event is triggered when an immediate child is removed. It is typically used in conjunction with <code translate="no" dir="ltr">child_added</code> and <code translate="no" dir="ltr">child_changed</code>. The snapshot passed to the event callback contains the data for the removed child. </p> <p>In the blog example, you can use <code translate="no" dir="ltr">child_removed</code> to log a notification about the deleted post to the console:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">ref.addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {}
@@ -135,7 +135,7 @@ ref.on('child_changed', (snapshot) =&gt; {
 
   @Override
   public void onCancelled(DatabaseError databaseError) {}
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">// Get a reference to our posts
 const ref = db.ref('server/saving-data/fireblog/posts');
 
@@ -143,7 +143,7 @@ const ref = db.ref('server/saving-data/fireblog/posts');
 ref.on('child_removed', (snapshot) =&gt; {
   const deletedPost = snapshot.val();
   console.log('The blog post titled \'' + deletedPost.title + '\' has been deleted');
-});</pre> </section> </div> <h3 id="child-moved">Child Moved</h3> <p> The <code translate="no" dir="ltr">child_moved</code> event is used when working with ordered data, which is covered in the <a href="#section-ordered-data">next section</a>. </p>  <h2 id="section-event-guarantees">Event Guarantees</h2> <p>The Firebase database makes several important guarantees regarding events:</p> <table> <tr> <th class="text-center">Database Event Guarantees</th> </tr> <tr> <td>Events will always be triggered when local state changes.</td> </tr> <tr> <td> Events will always eventually reflect the correct state of the data, even in cases where local operations or timing cause temporary differences, such as in the temporary loss of network connection. </td> </tr> <tr> <td>Writes from a single client will always be written to the server and broadcast out to other users in-order.</td> </tr> <tr> <td>Value events are always triggered last and are guaranteed to contain updates from any other events which occurred before that snapshot was taken.</td> </tr> </table> <p> Since value events are always triggered last, the following example will always work: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+});</pre> </section> </div> <h3 id="child-moved">Child Moved</h3> <p> The <code translate="no" dir="ltr">child_moved</code> event is used when working with ordered data, which is covered in the <a href="#section-ordered-data">next section</a>. </p>  <h2 id="section-event-guarantees">Event Guarantees</h2> <p>The Firebase database makes several important guarantees regarding events:</p> <table> <tr> <th class="text-center">Database Event Guarantees</th> </tr> <tr> <td>Events will always be triggered when local state changes.</td> </tr> <tr> <td> Events will always eventually reflect the correct state of the data, even in cases where local operations or timing cause temporary differences, such as in the temporary loss of network connection. </td> </tr> <tr> <td>Writes from a single client will always be written to the server and broadcast out to other users in-order.</td> </tr> <tr> <td>Value events are always triggered last and are guaranteed to contain updates from any other events which occurred before that snapshot was taken.</td> </tr> </table> <p> Since value events are always triggered last, the following example will always work: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">final AtomicInteger count = new AtomicInteger();
 
 ref.addChildEventListener(new ChildEventListener() {
@@ -168,7 +168,7 @@ ref.addListenerForSingleValueEvent(new ValueEventListener() {
 
   @Override
   public void onCancelled(DatabaseError databaseError) {}
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">let count = 0;
 
 ref.on('child_added', (snap) =&gt; {
@@ -180,7 +180,7 @@ ref.on('child_added', (snap) =&gt; {
 // triggered before this point
 ref.once('value', (snap) =&gt; {
   console.log('initial data loaded!', snap.numChildren() === count);
-});</pre> </section> </div>  <h2 id="section-detaching-callbacks">Detaching Callbacks</h2> <p>Callbacks are removed by specifying the event type and the callback function to be removed, like the following:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+});</pre> </section> </div>  <h2 id="section-detaching-callbacks">Detaching Callbacks</h2> <p>Callbacks are removed by specifying the event type and the callback function to be removed, like the following:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">// Create and attach listener
 ValueEventListener listener = new ValueEventListener() {
     // ...
@@ -188,16 +188,16 @@ ValueEventListener listener = new ValueEventListener() {
 ref.addValueEventListener(listener);
 
 // Remove listener
-ref.removeEventListener(listener);</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
-<pre data-language="javascript">ref.off('value', originalCallback);</pre> </section> </div> <p>If you passed a scope context into <code translate="no" dir="ltr">on()</code>, it must be passed when detaching the callback:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
-<pre data-language="java">// Not applicable for Java</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
-<pre data-language="javascript">ref.off('value', originalCallback, ctx);</pre> </section> </div> <aside class="special">If a callback has been added multiple times to a data location, it is called multiple times for each event and you must detach it multiple times in order to remove it completely.</aside> <p>If you would like to remove all callbacks at a location, you can do the following:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
-<pre data-language="java">// No Java equivalent, listeners must be removed individually.</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+ref.removeEventListener(listener);</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">ref.off('value', originalCallback);</pre> </section> </div> <p>If you passed a scope context into <code translate="no" dir="ltr">on()</code>, it must be passed when detaching the callback:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
+<pre data-language="java">// Not applicable for Java</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
+<pre data-language="javascript">ref.off('value', originalCallback, ctx);</pre> </section> </div> <aside class="special">If a callback has been added multiple times to a data location, it is called multiple times for each event and you must detach it multiple times in order to remove it completely.</aside> <p>If you would like to remove all callbacks at a location, you can do the following:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
+<pre data-language="java">// No Java equivalent, listeners must be removed individually.</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">// Remove all value callbacks
 ref.off('value');
 
 // Remove all callbacks of any type
-ref.off();</pre> </section> </div>  <h2 id="section-reading-once">Reading Data Once</h2> <p> In some cases it may be useful for a callback to be called once and then immediately removed. We've created a helper function to make this easy: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+ref.off();</pre> </section> </div>  <h2 id="section-reading-once">Reading Data Once</h2> <p> In some cases it may be useful for a callback to be called once and then immediately removed. We've created a helper function to make this easy: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">ref.addListenerForSingleValueEvent(new ValueEventListener() {
   @Override
   public void onDataChange(DataSnapshot dataSnapshot) {
@@ -208,10 +208,10 @@ ref.off();</pre> </section> </div>  <h2 id="section-reading-once">Reading Data O
   public void onCancelled(DatabaseError databaseError) {
     // ...
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">ref.once('value', (data) =&gt; {
   // do some stuff once
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python"># Import database module.
 from firebase_admin import db
 
@@ -219,7 +219,7 @@ from firebase_admin import db
 ref = db.reference('server/saving-data/fireblog/posts')
 
 # Read the data at the posts reference (this is a blocking operation)
-print(ref.get())</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+print(ref.get())</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">// Create a database client from App.
 client, err := app.Database(ctx)
 if err != nil {
@@ -245,7 +245,7 @@ if err := ref.Get(ctx, &amp;post); err != nil {
     "length" : 9,
     "weight" : 2500
   }
-}</pre> <p>You can order data in three ways: by <strong>child key</strong>, by <strong>key</strong>, or by <strong>value</strong>. A basic database query starts with one of these ordering functions, each of which are explained below.</p> <h3 id="ordering-by-a-specified-child-key">Ordering by a specified child key</h3> <p>You can order nodes by a common child key by passing that key to <code translate="no" dir="ltr">orderByChild()</code>. For example, to read all dinosaurs ordered by height, you can do the following: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> <p>You can order data in three ways: by <strong>child key</strong>, by <strong>key</strong>, or by <strong>value</strong>. A basic database query starts with one of these ordering functions, each of which are explained below.</p> <h3 id="ordering-by-a-specified-child-key">Ordering by a specified child key</h3> <p>You can order nodes by a common child key by passing that key to <code translate="no" dir="ltr">orderByChild()</code>. For example, to read all dinosaurs ordered by height, you can do the following: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">public static class Dinosaur {
 
   public int height;
@@ -266,16 +266,16 @@ dinosaursRef.orderByChild("height").addChildEventListener(new ChildEventListener
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const ref = db.ref('dinosaurs');
 
 ref.orderByChild('height').on('child_added', (snapshot) =&gt; {
   console.log(snapshot.key + ' was ' + snapshot.val().height + ' meters tall');
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 snapshot = ref.order_by_child('height').get()
 for key, val in snapshot.items():
-    print(f'{key} was {val} meters tall')</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(f'{key} was {val} meters tall')</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">// Dinosaur is a json-serializable type.
 type Dinosaur struct {
 	Height int `json:"height"`
@@ -310,7 +310,7 @@ for _, r := range results {
       "weight" : 2500
     }
   }
-}</pre> <p> To query the height now, you can use the full path to the object rather than a single key: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> <p> To query the height now, you can use the full path to the object rather than a single key: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">dinosaursRef.orderByChild("dimensions/height").addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -318,15 +318,15 @@ for _, r := range results {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const ref = db.ref('dinosaurs');
 ref.orderByChild('dimensions/height').on('child_added', (snapshot) =&gt; {
   console.log(snapshot.key + ' was ' + snapshot.val().height + ' meters tall');
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 snapshot = ref.order_by_child('dimensions/height').get()
 for key, val in snapshot.items():
-    print(f'{key} was {val} meters tall')</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(f'{key} was {val} meters tall')</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("dinosaurs")
 
 results, err := ref.OrderByChild("dimensions/height").GetOrdered(ctx)
@@ -339,7 +339,7 @@ for _, r := range results {
 		log.Fatalln("Error unmarshaling result:", err)
 	}
 	fmt.Printf("%s was %d meteres tall", r.Key(), d.Height)
-}</pre> </section> </div> <p> Queries can only order by one key at a time. Calling <code translate="no" dir="ltr">orderByChild()</code> multiple times on the same query throws an error. </p> <aside class="special"> <h4 id="using-indexes-for-improved-performance">Using Indexes For Improved Performance</h4> <p> If you want to use <code translate="no" dir="ltr">orderByChild()</code> on a production app, you should define the keys you are indexing on via the <code translate="no" dir="ltr">.indexOn</code> rule in your Security and Firebase Rules. While you are allowed to create these queries ad-hoc on the client, you will see greatly improved performance when using <code translate="no" dir="ltr">.indexOn</code>. <a href="../security/indexing-data">Read the documentation</a> on the <code translate="no" dir="ltr">.indexOn</code> rule for more information. </p> </aside> <h3 id="ordering-by-key">Ordering by key</h3> <p> You can also order nodes by their keys using the <code translate="no" dir="ltr">orderByKey()</code> method. The following example reads all dinosaurs in alphabetical order: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <p> Queries can only order by one key at a time. Calling <code translate="no" dir="ltr">orderByChild()</code> multiple times on the same query throws an error. </p> <aside class="special"> <h4 id="using-indexes-for-improved-performance">Using Indexes For Improved Performance</h4> <p> If you want to use <code translate="no" dir="ltr">orderByChild()</code> on a production app, you should define the keys you are indexing on via the <code translate="no" dir="ltr">.indexOn</code> rule in your Security and Firebase Rules. While you are allowed to create these queries ad-hoc on the client, you will see greatly improved performance when using <code translate="no" dir="ltr">.indexOn</code>. <a href="../security/indexing-data">Read the documentation</a> on the <code translate="no" dir="ltr">.indexOn</code> rule for more information. </p> </aside> <h3 id="ordering-by-key">Ordering by key</h3> <p> You can also order nodes by their keys using the <code translate="no" dir="ltr">orderByKey()</code> method. The following example reads all dinosaurs in alphabetical order: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">dinosaursRef.orderByKey().addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -347,14 +347,14 @@ for _, r := range results {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">var ref = db.ref('dinosaurs');
 ref.orderByKey().on('child_added', (snapshot) =&gt; {
   console.log(snapshot.key);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 snapshot = ref.order_by_key().get()
-print(snapshot)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+print(snapshot)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("dinosaurs")
 
 results, err := ref.OrderByKey().GetOrdered(ctx)
@@ -379,7 +379,7 @@ fmt.Println(snapshot)</pre> </section> </div> <h3 id="ordering-by-value">Orderin
     "stegosaurus" : 5,
     "triceratops" : 22
   }
-}</pre> <p>To sort the dinosaurs by their score, you could construct the following query:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> <p>To sort the dinosaurs by their score, you could construct the following query:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">DatabaseReference scoresRef = database.getReference("scores");
 scoresRef.orderByValue().addChildEventListener(new ChildEventListener() {
   @Override
@@ -388,17 +388,17 @@ scoresRef.orderByValue().addChildEventListener(new ChildEventListener() {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const scoresRef = db.ref('scores');
 scoresRef.orderByValue().on('value', (snapshot) =&gt; {
   snapshot.forEach((data) =&gt; {
     console.log('The ' + data.key + ' dinosaur\'s score is ' + data.val());
   });
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('scores')
 snapshot = ref.order_by_value().get()
 for key, val in snapshot.items():
-    print(f'The {key} dinosaur\'s score is {val}')</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(f'The {key} dinosaur\'s score is {val}')</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("scores")
 
 results, err := ref.OrderByValue().GetOrdered(ctx)
@@ -411,7 +411,7 @@ for _, r := range results {
 		log.Fatalln("Error unmarshaling result:", err)
 	}
 	fmt.Printf("The %s dinosaur's score is %d\n", r.Key(), score)
-}</pre> </section> </div> <p>See the <a href="#section-ordered-data">How Data is Ordered</a> section for an explanation on how <code translate="no" dir="ltr">null</code>, boolean, string, and object values are sorted when using <code translate="no" dir="ltr">orderByValue()</code>.</p> <aside class="special"> <h4 id="indexing-on-values-for-improved-performance">Indexing on Values for Improved Performance</h4> <p> If you want to use <code translate="no" dir="ltr">orderByValue()</code> in a production app, you should add <code translate="no" dir="ltr">.value</code> to your rules at the appropriate index. <a href="../security/indexing-data">Read the documentation</a> on the <code translate="no" dir="ltr">.indexOn</code> rule for more information. </p> </aside>  <h2 id="section-complex-queries">Complex Queries</h2> <p>Now that it is clear how your data is ordered, you can use the <strong>limit</strong> or <strong>range</strong> methods described below to construct more complex queries.</p> <h3 id="limit-queries">Limit Queries</h3> <p> The <code translate="no" dir="ltr">limitToFirst()</code> and <code translate="no" dir="ltr">limitToLast()</code> queries are used to set a maximum number of children to be synced for a given callback. If you set a limit of 100, you will initially only receive up to 100 <code translate="no" dir="ltr">child_added</code> events. If you have fewer than 100 messages stored in your database, a <code translate="no" dir="ltr">child_added</code> event will fire for each message. However, if you have over 100 messages, you will only receive a <code translate="no" dir="ltr">child_added</code> event for 100 of those messages. These are the first 100 ordered messages if you are using <code translate="no" dir="ltr">limitToFirst()</code> or the last 100 ordered messages if you are using <code translate="no" dir="ltr">limitToLast()</code>. As items change, you will receive <code translate="no" dir="ltr">child_added</code> events for items that enter the query and <code translate="no" dir="ltr">child_removed</code> events for items that leave it, so that the total number stays at 100. </p> <p> Using the dinosaur facts database and <code translate="no" dir="ltr">orderByChild()</code>, you can find the two heaviest dinosaurs: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <p>See the <a href="#section-ordered-data">How Data is Ordered</a> section for an explanation on how <code translate="no" dir="ltr">null</code>, boolean, string, and object values are sorted when using <code translate="no" dir="ltr">orderByValue()</code>.</p> <aside class="special"> <h4 id="indexing-on-values-for-improved-performance">Indexing on Values for Improved Performance</h4> <p> If you want to use <code translate="no" dir="ltr">orderByValue()</code> in a production app, you should add <code translate="no" dir="ltr">.value</code> to your rules at the appropriate index. <a href="../security/indexing-data">Read the documentation</a> on the <code translate="no" dir="ltr">.indexOn</code> rule for more information. </p> </aside>  <h2 id="section-complex-queries">Complex Queries</h2> <p>Now that it is clear how your data is ordered, you can use the <strong>limit</strong> or <strong>range</strong> methods described below to construct more complex queries.</p> <h3 id="limit-queries">Limit Queries</h3> <p> The <code translate="no" dir="ltr">limitToFirst()</code> and <code translate="no" dir="ltr">limitToLast()</code> queries are used to set a maximum number of children to be synced for a given callback. If you set a limit of 100, you will initially only receive up to 100 <code translate="no" dir="ltr">child_added</code> events. If you have fewer than 100 messages stored in your database, a <code translate="no" dir="ltr">child_added</code> event will fire for each message. However, if you have over 100 messages, you will only receive a <code translate="no" dir="ltr">child_added</code> event for 100 of those messages. These are the first 100 ordered messages if you are using <code translate="no" dir="ltr">limitToFirst()</code> or the last 100 ordered messages if you are using <code translate="no" dir="ltr">limitToLast()</code>. As items change, you will receive <code translate="no" dir="ltr">child_added</code> events for items that enter the query and <code translate="no" dir="ltr">child_removed</code> events for items that leave it, so that the total number stays at 100. </p> <p> Using the dinosaur facts database and <code translate="no" dir="ltr">orderByChild()</code>, you can find the two heaviest dinosaurs: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">dinosaursRef.orderByChild("weight").limitToLast(2).addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -419,15 +419,15 @@ for _, r := range results {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const ref = db.ref('dinosaurs');
 ref.orderByChild('weight').limitToLast(2).on('child_added', (snapshot) =&gt; {
   console.log(snapshot.key);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 snapshot = ref.order_by_child('weight').limit_to_last(2).get()
 for key in snapshot:
-    print(key)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(key)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("dinosaurs")
 
 results, err := ref.OrderByChild("weight").LimitToLast(2).GetOrdered(ctx)
@@ -436,7 +436,7 @@ if err != nil {
 }
 for _, r := range results {
 	fmt.Println(r.Key())
-}</pre> </section> </div> <p> The <code translate="no" dir="ltr">child_added</code> callback is triggered exactly two times, unless there are less than two dinosaurs stored in the database. It will also get fired for every new, heavier dinosaur that gets added to the database. In Python, the query directly returns an <code translate="no" dir="ltr">OrderedDict</code> containing the two heaviest dinosaurs. </p> <p> Similarly, you can find the two shortest dinosaurs by using <code translate="no" dir="ltr">limitToFirst()</code>: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <p> The <code translate="no" dir="ltr">child_added</code> callback is triggered exactly two times, unless there are less than two dinosaurs stored in the database. It will also get fired for every new, heavier dinosaur that gets added to the database. In Python, the query directly returns an <code translate="no" dir="ltr">OrderedDict</code> containing the two heaviest dinosaurs. </p> <p> Similarly, you can find the two shortest dinosaurs by using <code translate="no" dir="ltr">limitToFirst()</code>: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">dinosaursRef.orderByChild("weight").limitToFirst(2).addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -444,15 +444,15 @@ for _, r := range results {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const ref = db.ref('dinosaurs');
 ref.orderByChild('height').limitToFirst(2).on('child_added', (snapshot) =&gt; {
   console.log(snapshot.key);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 snapshot = ref.order_by_child('height').limit_to_first(2).get()
 for key in snapshot:
-    print(key)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(key)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("dinosaurs")
 
 results, err := ref.OrderByChild("height").LimitToFirst(2).GetOrdered(ctx)
@@ -461,7 +461,7 @@ if err != nil {
 }
 for _, r := range results {
 	fmt.Println(r.Key())
-}</pre> </section> </div> <p> The <code translate="no" dir="ltr">child_added</code> callback is triggered exactly two times, unless there are less than two dinosaurs stored in the database. It will also get fired again if one of the first two dinosaurs is removed from the database, as a new dinosaur will now be the second shortest. In Python, the query directly returns an <code translate="no" dir="ltr">OrderedDict</code> containing the shortest dinosaurs. </p> <p>You can also conduct limit queries with <code translate="no" dir="ltr">orderByValue()</code>. If you want to create a leaderboard with the top 3 highest scoring dino sports dinosaurs, you could do the following:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <p> The <code translate="no" dir="ltr">child_added</code> callback is triggered exactly two times, unless there are less than two dinosaurs stored in the database. It will also get fired again if one of the first two dinosaurs is removed from the database, as a new dinosaur will now be the second shortest. In Python, the query directly returns an <code translate="no" dir="ltr">OrderedDict</code> containing the shortest dinosaurs. </p> <p>You can also conduct limit queries with <code translate="no" dir="ltr">orderByValue()</code>. If you want to create a leaderboard with the top 3 highest scoring dino sports dinosaurs, you could do the following:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">scoresRef.orderByValue().limitToFirst(3).addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -469,17 +469,17 @@ for _, r := range results {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const scoresRef = db.ref('scores');
 scoresRef.orderByValue().limitToLast(3).on('value', (snapshot)  =&gt;{
   snapshot.forEach((data) =&gt; {
     console.log('The ' + data.key + ' dinosaur\'s score is ' + data.val());
   });
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">scores_ref = db.reference('scores')
 snapshot = scores_ref.order_by_value().limit_to_last(3).get()
 for key, val in snapshot.items():
-    print(f'The {key} dinosaur\'s score is {val}')</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(f'The {key} dinosaur\'s score is {val}')</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("scores")
 
 results, err := ref.OrderByValue().LimitToLast(3).GetOrdered(ctx)
@@ -492,7 +492,7 @@ for _, r := range results {
 		log.Fatalln("Error unmarshaling result:", err)
 	}
 	fmt.Printf("The %s dinosaur's score is %d\n", r.Key(), score)
-}</pre> </section> </div> <h3 id="range-queries">Range Queries</h3> <p> Using <code translate="no" dir="ltr">startAt()</code>, <code translate="no" dir="ltr">endAt()</code>, and <code translate="no" dir="ltr">equalTo()</code> allows you to choose arbitrary starting and ending points for your queries. For example, if you wanted to find all dinosaurs that are at least three meters tall, you can combine <code translate="no" dir="ltr">orderByChild()</code> and <code translate="no" dir="ltr">startAt()</code>: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <h3 id="range-queries">Range Queries</h3> <p> Using <code translate="no" dir="ltr">startAt()</code>, <code translate="no" dir="ltr">endAt()</code>, and <code translate="no" dir="ltr">equalTo()</code> allows you to choose arbitrary starting and ending points for your queries. For example, if you wanted to find all dinosaurs that are at least three meters tall, you can combine <code translate="no" dir="ltr">orderByChild()</code> and <code translate="no" dir="ltr">startAt()</code>: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">dinosaursRef.orderByChild("height").startAt(3).addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -500,15 +500,15 @@ for _, r := range results {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const ref = db.ref('dinosaurs');
 ref.orderByChild('height').startAt(3).on('child_added', (snapshot) =&gt; {
   console.log(snapshot.key);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 snapshot = ref.order_by_child('height').start_at(3).get()
 for key in snapshot:
-    print(key)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(key)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("dinosaurs")
 
 results, err := ref.OrderByChild("height").StartAt(3).GetOrdered(ctx)
@@ -517,7 +517,7 @@ if err != nil {
 }
 for _, r := range results {
 	fmt.Println(r.Key())
-}</pre> </section> </div> <p> You can use <code translate="no" dir="ltr">endAt()</code> to find all dinosaurs whose names come before Pterodactyl lexicographically: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <p> You can use <code translate="no" dir="ltr">endAt()</code> to find all dinosaurs whose names come before Pterodactyl lexicographically: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">dinosaursRef.orderByKey().endAt("pterodactyl").addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -525,15 +525,15 @@ for _, r := range results {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const ref = db.ref('dinosaurs');
 ref.orderByKey().endAt('pterodactyl').on('child_added', (snapshot) =&gt; {
   console.log(snapshot.key);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 snapshot = ref.order_by_key().end_at('pterodactyl').get()
 for key in snapshot:
-    print(key)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(key)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("dinosaurs")
 
 results, err := ref.OrderByKey().EndAt("pterodactyl").GetOrdered(ctx)
@@ -542,7 +542,7 @@ if err != nil {
 }
 for _, r := range results {
 	fmt.Println(r.Key())
-}</pre> </section> </div> <aside class="special"> <code translate="no" dir="ltr">startAt()</code> and <code translate="no" dir="ltr">endAt()</code> are inclusive, meaning "pterodactyl" will match the query above. </aside> <p> You can combine <code translate="no" dir="ltr">startAt()</code> and <code translate="no" dir="ltr">endAt()</code> to limit both ends of your query. The following example finds all dinosaurs whose name starts with the letter "b": </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <aside class="special"> <code translate="no" dir="ltr">startAt()</code> and <code translate="no" dir="ltr">endAt()</code> are inclusive, meaning "pterodactyl" will match the query above. </aside> <p> You can combine <code translate="no" dir="ltr">startAt()</code> and <code translate="no" dir="ltr">endAt()</code> to limit both ends of your query. The following example finds all dinosaurs whose name starts with the letter "b": </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">dinosaursRef.orderByKey().startAt("b").endAt("b\uf8ff").addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -550,15 +550,15 @@ for _, r := range results {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">var ref = db.ref('dinosaurs');
 ref.orderByKey().startAt('b').endAt('b\uf8ff').on('child_added', (snapshot) =&gt; {
   console.log(snapshot.key);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 snapshot = ref.order_by_key().start_at('b').end_at('b\uf8ff').get()
 for key in snapshot:
-    print(key)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(key)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("dinosaurs")
 
 results, err := ref.OrderByKey().StartAt("b").EndAt("b\uf8ff").GetOrdered(ctx)
@@ -567,7 +567,7 @@ if err != nil {
 }
 for _, r := range results {
 	fmt.Println(r.Key())
-}</pre> </section> </div> <aside class="special"> The <code translate="no" dir="ltr">\uf8ff</code> character used in the query above is a very high code point in the Unicode range. Because it is after most regular characters in Unicode, the query matches all values that start with a b. </aside> <p> The <code translate="no" dir="ltr">equalTo()</code> method allows you to filter based on exact matches. As is the case with the other range queries, it will fire for each matching child node. For example, you can use the following query to find all dinosaurs which are 25 meters tall: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <aside class="special"> The <code translate="no" dir="ltr">\uf8ff</code> character used in the query above is a very high code point in the Unicode range. Because it is after most regular characters in Unicode, the query matches all values that start with a b. </aside> <p> The <code translate="no" dir="ltr">equalTo()</code> method allows you to filter based on exact matches. As is the case with the other range queries, it will fire for each matching child node. For example, you can use the following query to find all dinosaurs which are 25 meters tall: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">dinosaursRef.orderByChild("height").equalTo(25).addChildEventListener(new ChildEventListener() {
   @Override
   public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
@@ -575,15 +575,15 @@ for _, r := range results {
   }
 
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const ref = db.ref('dinosaurs');
 ref.orderByChild('height').equalTo(25).on('child_added', (snapshot) =&gt; {
   console.log(snapshot.key);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 snapshot = ref.order_by_child('height').equal_to(25).get()
 for key in snapshot:
-    print(key)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print(key)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("dinosaurs")
 
 results, err := ref.OrderByChild("height").EqualTo(25).GetOrdered(ctx)
@@ -592,7 +592,7 @@ if err != nil {
 }
 for _, r := range results {
 	fmt.Println(r.Key())
-}</pre> </section> </div> <p> Range queries are also useful when you need to paginate your data. </p> <aside class="special">You can also combine <code translate="no" dir="ltr">orderByValue()</code> with <code translate="no" dir="ltr">startAt()</code> and <code translate="no" dir="ltr">endAt()</code> to construct range queries.</aside> <h3 id="putting-it-all-together">Putting it all together</h3> <p> You can combine all of these techniques to create complex queries. For example, you can find the name of the dinosaur that is just shorter than Stegosaurus: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+}</pre> </section> </div> <p> Range queries are also useful when you need to paginate your data. </p> <aside class="special">You can also combine <code translate="no" dir="ltr">orderByValue()</code> with <code translate="no" dir="ltr">startAt()</code> and <code translate="no" dir="ltr">endAt()</code> to construct range queries.</aside> <h3 id="putting-it-all-together">Putting it all together</h3> <p> You can combine all of these techniques to create complex queries. For example, you can find the name of the dinosaur that is just shorter than Stegosaurus: </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">dinosaursRef.child("stegosaurus").child("height").addValueEventListener(new ValueEventListener() {
   @Override
   public void onDataChange(DataSnapshot stegoHeightSnapshot) {
@@ -617,7 +617,7 @@ for _, r := range results {
   public void onCancelled(DatabaseError databaseError) {
     // ...
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">  const ref = db.ref('dinosaurs');
   ref.child('stegosaurus').child('height').on('value', (stegosaurusHeightSnapshot) =&gt; {
     const favoriteDinoHeight = stegosaurusHeightSnapshot.val();
@@ -636,7 +636,7 @@ for _, r := range results {
         console.log('The stegosaurus is the shortest dino');
       }
     });
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">ref = db.reference('dinosaurs')
 favotire_dino_height = ref.child('stegosaurus').child('height').get()
 query = ref.order_by_child('height').end_at(favotire_dino_height).limit_to_last(2)
@@ -648,7 +648,7 @@ if len(snapshot) == 2:
         print(f'The dinosaur just shorter than the stegosaurus is {key}')
         return
 else:
-    print('The stegosaurus is the shortest dino')</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+    print('The stegosaurus is the shortest dino')</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">ref := client.NewRef("dinosaurs")
 
 var favDinoHeight int

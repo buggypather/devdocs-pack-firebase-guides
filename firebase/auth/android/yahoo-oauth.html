@@ -3,22 +3,22 @@
 <li> When registering apps with these providers, be sure to register the <code translate="no" dir="ltr">*.firebaseapp.com</code> domain for your project as the redirect domain for your app. </li> </ol> </li> <li> Click <b>Save</b>. </li> <li>
 <p>Specify your app's SHA-1 fingerprint if you haven't already.</p> <ol> <li><p>In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/" class="external"><strong>General</strong> tab</a>.</p></li> <li><p>Scroll down to the <strong>Your apps</strong> card, select your Android app, and add your SHA-1 fingerprint in the <strong>SHA certificate fingerprints</strong> field.</p></li> </ol> <p>See <a href="https://developers.google.com/android/guides/client-auth">Authenticating Your Client</a> for details on how to get your app's SHA fingerprint.</p>
 </li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building an Android app, the easiest way to authenticate your users with Firebase using their Yahoo accounts is to handle the entire sign-in flow with the Firebase Android SDK.</p> <p>To handle the sign-in flow with the Firebase Android SDK, follow these steps:</p> <ol> <li>
-<p>Construct an instance of an <strong>OAuthProvider</strong> using its <strong>Builder</strong> with the provider ID <strong>yahoo.com</strong>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Construct an instance of an <strong>OAuthProvider</strong> using its <strong>Builder</strong> with the provider ID <strong>yahoo.com</strong>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
-<pre data-language="kotlin">val provider = OAuthProvider.newBuilder("yahoo.com")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<pre data-language="kotlin">val provider = OAuthProvider.newBuilder("yahoo.com")</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">OAuthProvider.Builder provider = OAuthProvider.newBuilder("yahoo.com");</pre></section> </div>
 </li> <li>
-<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">// Prompt user to re-authenticate to Yahoo.
 provider.addCustomParameter("prompt", "login")
 
 // Localize to French.
-provider.addCustomParameter("language", "fr")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+provider.addCustomParameter("language", "fr")</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">// Prompt user to re-authenticate to Yahoo.
@@ -27,12 +27,12 @@ provider.addCustomParameter("prompt", "login");
 // Localize to French.
 provider.addCustomParameter("language", "fr");</pre></section> </div> <p>For the parameters Yahoo supports, see the <a href="https://developer.yahoo.com/oauth2/guide/openid_connect/getting_started.html">Yahoo OAuth documentation</a>. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters()</code>. These parameters are <strong>client_id</strong>, <strong>redirect_uri</strong>, <strong>response_type</strong>, <strong>scope</strong> and <strong>state</strong>.</p>
 </li> <li>
-<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond <code translate="no" dir="ltr">profile</code> and <code translate="no" dir="ltr">email</code> that you want to request from the authentication provider. If your application requires access to private user data from Yahoo APIs, you'll need to request permissions to Yahoo APIs under <strong>API Permissions</strong> in the Yahoo developer console. Requested OAuth scopes must be exact matches to the preconfigured ones in the app's API permissions. For example if, read/write access is requested to user contacts and preconfigured in the app's API permissions, <code translate="no" dir="ltr">sdct-w</code> has to be passed instead of the readonly OAuth scope <code translate="no" dir="ltr">sdct-r</code>. Otherwise,the flow will fail and an error would be shown to the end user.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond <code translate="no" dir="ltr">profile</code> and <code translate="no" dir="ltr">email</code> that you want to request from the authentication provider. If your application requires access to private user data from Yahoo APIs, you'll need to request permissions to Yahoo APIs under <strong>API Permissions</strong> in the Yahoo developer console. Requested OAuth scopes must be exact matches to the preconfigured ones in the app's API permissions. For example if, read/write access is requested to user contacts and preconfigured in the app's API permissions, <code translate="no" dir="ltr">sdct-w</code> has to be passed instead of the readonly OAuth scope <code translate="no" dir="ltr">sdct-r</code>. Otherwise,the flow will fail and an error would be shown to the end user.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">// Request read access to a user's email addresses.
 // This must be preconfigured in the app's API permissions.
-provider.scopes = listOf("mail-r", "sdct-w")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+provider.scopes = listOf("mail-r", "sdct-w")</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">// Request read access to a user's email addresses.
@@ -48,7 +48,7 @@ List&lt;String&gt; scopes =
         };
 provider.setScopes(scopes);</pre> To learn more, refer to the <a href="https://developer.yahoo.com/oauth2/guide/yahoo_scopes/">Yahoo scopes documentation</a>.</section> </div>
 </li> <li>
-<p>Authenticate with Firebase using the OAuth provider object. Note that unlike other FirebaseAuth operations, this will take control of your UI by popping up a <a href="https://developer.chrome.com/multidevice/android/customtabs">Custom Chrome Tab</a>. As a result, do not reference your Activity in the OnSuccessListeners and OnFailureListeners that you attach as they will immediately detach when the operation starts the UI.</p> <p>You should first check if you've already received a response. Signing in via this method puts your Activity in the background, which means that it can be reclaimed by the system during the sign in flow. In order to make sure that you don't make the user try again if this happens, you should check if a result is already present.</p> <p>To check if there is a pending result, call <code translate="no" dir="ltr">getPendingAuthResult</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Authenticate with Firebase using the OAuth provider object. Note that unlike other FirebaseAuth operations, this will take control of your UI by popping up a <a href="https://developer.chrome.com/multidevice/android/customtabs">Custom Chrome Tab</a>. As a result, do not reference your Activity in the OnSuccessListeners and OnFailureListeners that you attach as they will immediately detach when the operation starts the UI.</p> <p>You should first check if you've already received a response. Signing in via this method puts your Activity in the background, which means that it can be reclaimed by the system during the sign in flow. In order to make sure that you don't make the user try again if this happens, you should check if a result is already present.</p> <p>To check if there is a pending result, call <code translate="no" dir="ltr">getPendingAuthResult</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">val pendingResultTask = firebaseAuth.pendingAuthResult
@@ -70,7 +70,7 @@ if (pendingResultTask != null) {
 } else {
     // There's no pending result so you need to start the sign-in flow.
     // See below.
-}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">Task&lt;AuthResult&gt; pendingResultTask = firebaseAuth.getPendingAuthResult();
@@ -100,7 +100,7 @@ if (pendingResultTask != null) {
 } else {
     // There's no pending result so you need to start the sign-in flow.
     // See below.
-}</pre></section> </div> <p>To start the sign in flow, call <code translate="no" dir="ltr">startActivityForSignInWithProvider</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+}</pre></section> </div> <p>To start the sign in flow, call <code translate="no" dir="ltr">startActivityForSignInWithProvider</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">firebaseAuth
@@ -116,7 +116,7 @@ if (pendingResultTask != null) {
     }
     .addOnFailureListener {
         // Handle failure.
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">firebaseAuth
@@ -142,7 +142,7 @@ if (pendingResultTask != null) {
                     }
                 });</pre></section> </div> <p>On successful completion, the OAuth access token associated with the provider can be retrieved from the <code translate="no" dir="ltr">OAuthCredential</code> object returned.</p> <p>Using the OAuth access token, you can call the <a href="https://developer.yahoo.com/oauth2/guide/apirequests/">Yahoo API</a>.</p> <p>Where <code translate="no" dir="ltr">YAHOO_USER_UID</code> is the Yahoo user's ID which can be parsed from the <code translate="no" dir="ltr">firebaseAuth.getCurrentUser().getProviderData().get(0).getUid()</code> field or from <code translate="no" dir="ltr">authResult.getAdditionalUserInfo().getProfile()</code>.</p>
 </li> <li>
-<p>While the above examples focus on sign-in flows, you also have the ability to link a Yahoo provider to an existing user using <code translate="no" dir="ltr">startActivityForLinkWithProvider</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>While the above examples focus on sign-in flows, you also have the ability to link a Yahoo provider to an existing user using <code translate="no" dir="ltr">startActivityForLinkWithProvider</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">// The user is already signed-in.
@@ -160,7 +160,7 @@ firebaseUser
     }
     .addOnFailureListener {
         // Handle failure.
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">// The user is already signed-in.
@@ -189,7 +189,7 @@ firebaseUser
                     }
                 });</pre></section> </div>
 </li> <li>
-<p>The same pattern can be used with <code translate="no" dir="ltr">startActivityForReauthenticateWithProvider</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>The same pattern can be used with <code translate="no" dir="ltr">startActivityForReauthenticateWithProvider</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">// The user is already signed-in.
@@ -204,7 +204,7 @@ firebaseUser
     }
     .addOnFailureListener {
         // Handle failure.
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">// The user is already signed-in.
@@ -229,8 +229,8 @@ firebaseUser
                         // Handle failure.
                     }
                 });</pre></section> </div>
-</li> </ol> <section class="expandable"> <h2 class="showalways" id="advanced:-handle-the-sign-in-flow-manually">Advanced: Handle the sign-in flow manually</h2> <p>Unlike other OAuth providers supported by Firebase such as Google, Facebook, and Twitter, where sign-in can directly be achieved with OAuth access token based credentials, Firebase Auth does not support the same capability for providers such as Yahoo due to the inability of the Firebase Auth server to verify the audience of Yahoo OAuth access tokens. This is a critical security requirement and could expose applications and websites to replay attacks where a Yahoo OAuth access token obtained for one project (attacker) can be used to sign in to another project (victim). Instead, Firebase Auth offers the ability to handle the entire OAuth flow and the authorization code exchange using the OAuth client ID and secret configured in the Firebase Console. As the authorization code can only be used in conjunction with a specific client ID/secret, an authorization code obtained for one project cannot be used with another. </p> <p>If these providers are required to be used in unsupported environments, a third party OAuth library and <a href="../admin/create-custom-tokens">Firebase custom authentication</a> would need to be used. The former is needed to authenticate with the provider and the latter to exchange the provider's credential for a custom token.</p> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseUser"> <code translate="no" dir="ltr">FirebaseUser</code></a> object. See <a href="manage-users"> Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#signOut()"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
-<pre data-language="kotlin">Firebase.auth.signOut()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+</li> </ol> <section class="expandable"> <h2 class="showalways" id="advanced:-handle-the-sign-in-flow-manually">Advanced: Handle the sign-in flow manually</h2> <p>Unlike other OAuth providers supported by Firebase such as Google, Facebook, and Twitter, where sign-in can directly be achieved with OAuth access token based credentials, Firebase Auth does not support the same capability for providers such as Yahoo due to the inability of the Firebase Auth server to verify the audience of Yahoo OAuth access tokens. This is a critical security requirement and could expose applications and websites to replay attacks where a Yahoo OAuth access token obtained for one project (attacker) can be used to sign in to another project (victim). Instead, Firebase Auth offers the ability to handle the entire OAuth flow and the authorization code exchange using the OAuth client ID and secret configured in the Firebase Console. As the authorization code can only be used in conjunction with a specific client ID/secret, an authorization code obtained for one project cannot be used with another. </p> <p>If these providers are required to be used in unsupported environments, a third party OAuth library and <a href="../admin/create-custom-tokens">Firebase custom authentication</a> would need to be used. The former is needed to authenticate with the provider and the latter to exchange the provider's credential for a custom token.</p> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseUser"> <code translate="no" dir="ltr">FirebaseUser</code></a> object. See <a href="manage-users"> Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#signOut()"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">Firebase.auth.signOut()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseAuth.getInstance().signOut();</pre> </section> </div><div class="_attribution">
   <p class="_attribution-p">
     &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>

@@ -6,14 +6,14 @@
 <p>Use <a href="../../ios/swift-package-manager">Swift Package Manager</a> to install and manage Firebase dependencies.</p> <p>In Xcode, with your app project open, navigate to <strong>File &gt; Add Packages</strong>, add the Firebase Apple platforms SDK repository (<code translate="no" dir="ltr">https://github.com/firebase/firebase-ios-sdk</code>), and choose the <strong>FirebaseAppCheck</strong> library.</p> <aside class="note"><b>Note:</b> If you've already added the Firebase Apple platforms SDK to your project, you can add <b>FirebaseAppCheck</b> to your app target using the <b>Frameworks, Libraries, and Embedded Content</b> section of your target's settings.</aside>
 </li> <li><p>In Xcode, add the <strong>App Attest</strong> capability to your app.</p></li> <li>
 <p>In your project's <code translate="no" dir="ltr">.entitlements</code> file, set the App Attest environment to <code translate="no" dir="ltr">production</code>.</p> <aside class="note"><strong>Note:</strong><span> App Check currently doesn't accept tokens generated in the App Attest sandbox environment.</span></aside>
-</li> </ol> <h2 id="initialize">3. Initialize App Check</h2> <p>You will need to initialize App Check before you use any other Firebase SDKs.</p> <p>First, write an implementation of <code translate="no" dir="ltr">AppCheckProviderFactory</code>. The specifics of your implementation will depend on your use case.</p> <p>For example, If you only have users on iOS 14 and later, you can simply always create <code translate="no" dir="ltr">AppAttestProvider</code> objects:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</li> </ol> <h2 id="initialize">3. Initialize App Check</h2> <p>You will need to initialize App Check before you use any other Firebase SDKs.</p> <p>First, write an implementation of <code translate="no" dir="ltr">AppCheckProviderFactory</code>. The specifics of your implementation will depend on your use case.</p> <p>For example, If you only have users on iOS 14 and later, you can simply always create <code translate="no" dir="ltr">AppAttestProvider</code> objects:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p> <strong>Note:</strong> This Firebase product is not available on watchOS targets. </p>
 
 <pre data-language="swift">class YourSimpleAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
   func createProvider(with app: FirebaseApp) -&gt; AppCheckProvider? {
     return AppAttestProvider(app: app)
   }
-}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 <p> <strong>Note:</strong> This Firebase product is not available on watchOS targets.</p> 
 <pre data-language="objectivec">@interface YourSimpleAppCheckProviderFactory : NSObject &lt;FIRAppCheckProviderFactory&gt;
 @end
@@ -24,7 +24,7 @@
   return [[FIRAppAttestProvider alloc] initWithApp:app];
 }
 
-@end</pre></section> </div> <p>Or, you can create <code translate="no" dir="ltr">AppAttestProvider</code> objects on iOS 14 and later, and fall back to <code translate="no" dir="ltr">DeviceCheckProvider</code> on earlier versions:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+@end</pre></section> </div> <p>Or, you can create <code translate="no" dir="ltr">AppAttestProvider</code> objects on iOS 14 and later, and fall back to <code translate="no" dir="ltr">DeviceCheckProvider</code> on earlier versions:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p> <strong>Note:</strong> This Firebase product is not available on watchOS targets. </p>
 
 <pre data-language="swift">class YourAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
@@ -35,7 +35,7 @@
       return DeviceCheckProvider(app: app)
     }
   }
-}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 <p> <strong>Note:</strong> This Firebase product is not available on watchOS targets. </p>
 
 <pre data-language="objectivec">@interface YourAppCheckProviderFactory : NSObject &lt;FIRAppCheckProviderFactory&gt;
@@ -51,13 +51,13 @@
   }
 }
 
-@end</pre></section> </div> <p>After you have implemented a <code translate="no" dir="ltr">AppCheckProviderFactory</code> class, configure App Check to use it:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+@end</pre></section> </div> <p>After you have implemented a <code translate="no" dir="ltr">AppCheckProviderFactory</code> class, configure App Check to use it:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p> <strong>Note:</strong> This Firebase product is not available on watchOS targets. </p>
 
 <pre data-language="swift">let providerFactory = YourAppCheckProviderFactory()
 AppCheck.setAppCheckProviderFactory(providerFactory)
 
-FirebaseApp.configure()</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+FirebaseApp.configure()</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 <p> <strong>Note:</strong> This Firebase product is not available on watchOS targets. </p>
 
 <pre data-language="objectivec">YourAppCheckProviderFactory *providerFactory =

@@ -1,6 +1,6 @@
 <h1>Get started using App Check with a custom provider on Apple platforms</h1> <p>This page shows you how to enable App Check in an Apple app, using <a href="custom-provider">your custom App Check provider</a>. When you enable App Check, you help ensure that only your app can access your project's Firebase resources.</p> <p>If you want to use App Check with the built-in providers, see the docs for <a href="app-attest-provider">App Check with App Attest</a> and <a href="devicecheck-provider">App Check with DeviceCheck</a>.</p> <h2 id="before_you_begin">Before you begin</h2> <ul> <li><p><a href="../../ios/setup">Add Firebase to your Apple project</a> if you haven’t already done so.</p></li> <li><p><a href="../custom-provider">Implement your custom App Check provider's server-side logic</a>.</p></li> </ul> <h2 id="install-sdk">1. Add the App Check library to your app</h2> <ol> <li>
 <p>Use <a href="../../ios/swift-package-manager">Swift Package Manager</a> to install and manage Firebase dependencies.</p> <p>In Xcode, with your app project open, navigate to <strong>File &gt; Add Packages</strong>, add the Firebase Apple platforms SDK repository (<code translate="no" dir="ltr">https://github.com/firebase/firebase-ios-sdk</code>), and choose the <strong>FirebaseAppCheck</strong> library.</p> <aside class="note"><b>Note:</b> If you've already added the Firebase Apple platforms SDK to your project, you can add <b>FirebaseAppCheck</b> to your app target using the <b>Frameworks, Libraries, and Embedded Content</b> section of your target's settings.</aside>
-</li> </ol> <h2 id="implement-classes">2. Implement the App Check protocols</h2> <p>First, you need to create classes that implement the <code translate="no" dir="ltr">AppCheckProvider</code> and <code translate="no" dir="ltr">AppCheckProviderFactory</code> protocols.</p> <p>Your <code translate="no" dir="ltr">AppCheckProvider</code> class must have a <code translate="no" dir="ltr">getToken(completion:)</code> method, which collects whatever information your custom App Check provider requires as proof of authenticity, and sends it to your token acquisition service in exchange for an App Check token. The App Check SDK handles token caching, so always get a new token in your implementation of <code translate="no" dir="ltr">getToken(completion:)</code>.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</li> </ol> <h2 id="implement-classes">2. Implement the App Check protocols</h2> <p>First, you need to create classes that implement the <code translate="no" dir="ltr">AppCheckProvider</code> and <code translate="no" dir="ltr">AppCheckProviderFactory</code> protocols.</p> <p>Your <code translate="no" dir="ltr">AppCheckProvider</code> class must have a <code translate="no" dir="ltr">getToken(completion:)</code> method, which collects whatever information your custom App Check provider requires as proof of authenticity, and sends it to your token acquisition service in exchange for an App Check token. The App Check SDK handles token caching, so always get a new token in your implementation of <code translate="no" dir="ltr">getToken(completion:)</code>.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">class YourCustomAppCheckProvider: NSObject, AppCheckProvider {
   var app: FirebaseApp
@@ -31,7 +31,7 @@
     return try await getTokenTask.value
   }
 
-}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">@interface YourCustomAppCheckProvider : NSObject &lt;FIRAppCheckProvider&gt;
 
@@ -68,13 +68,13 @@
     });
 }
 
-@end</pre></section> </div> <p>Also, implement a <code translate="no" dir="ltr">AppCheckProviderFactory</code> class that creates instances of your <code translate="no" dir="ltr">AppCheckProvider</code> implementation:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+@end</pre></section> </div> <p>Also, implement a <code translate="no" dir="ltr">AppCheckProviderFactory</code> class that creates instances of your <code translate="no" dir="ltr">AppCheckProvider</code> implementation:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">class YourCustomAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
   func createProvider(with app: FirebaseApp) -&gt; AppCheckProvider? {
     return YourCustomAppCheckProvider(withFirebaseApp: app)
   }
-}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">@interface YourCustomAppCheckProviderFactory : NSObject &lt;FIRAppCheckProviderFactory&gt;
 @end
@@ -85,12 +85,12 @@
     return [[YourCustomAppCheckProvider alloc] initWithApp:app];
 }
 
-@end</pre></section> </div> <h2 id="initialize">3. Initialize App Check</h2> <p>Add the following initialization code to your app delegate or app initializer:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+@end</pre></section> </div> <h2 id="initialize">3. Initialize App Check</h2> <p>Add the following initialization code to your app delegate or app initializer:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">let providerFactory = YourAppCheckProviderFactory()
 AppCheck.setAppCheckProviderFactory(providerFactory)
 
-FirebaseApp.configure()</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+FirebaseApp.configure()</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">YourAppCheckProviderFactory *providerFactory =
         [[YourAppCheckProviderFactory alloc] init];

@@ -1,4 +1,4 @@
-<h1>Import Users</h1> <p>The Firebase Admin SDK provides the <a href="https://firebase.google.com/docs/reference/admin/node/firebase-admin.auth.baseauth#baseauthimportusers"><code translate="no" dir="ltr">Auth.importUsers()</code></a> API for importing users in bulk to Firebase Authentication with elevated privileges. While this feature is also available in the <a href="../../cli/auth#authimport">Firebase CLI</a>, the Admin SDK lets you upload existing users from an external authentication system or other Firebase project programmatically without having to create intermediate CSV or JSON files.</p> <p>The user import API offers the following advantages:</p> <ul> <li>Ability to migrate users from an external authentication system using a different password hashing algorithm.</li> <li>Ability to migrate users from another Firebase project.</li> <li>Optimization for speedy and efficient bulk import operations. This operation processes users without checking for <code translate="no" dir="ltr">uid</code>, <code translate="no" dir="ltr">email</code>, <code translate="no" dir="ltr">phoneNumber</code> or other identifier duplication.</li> <li>Ability to migrate existing or create new OAuth users (Google, Facebook, etc).</li> <li>Ability to import users with custom claims directly in bulk.</li> </ul> <h2 id="usage">Usage</h2> <p>Up to 1000 users can be imported in a single API call. Note that this operation is optimized for speed and does not check for <code translate="no" dir="ltr">uid</code>, <code translate="no" dir="ltr">email</code>, <code translate="no" dir="ltr">phoneNumber</code> and other unique identifier duplication. Importing a user that collides with an existing <code translate="no" dir="ltr">uid</code> will replace the existing user. Importing a user with any other field duplicated (e.g. <code translate="no" dir="ltr">email</code>) will result in an additional user with the same value. Consequently, when you use this API, you must ensure that you do not duplicate any unique fields.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Import Users</h1> <p>The Firebase Admin SDK provides the <a href="https://firebase.google.com/docs/reference/admin/node/firebase-admin.auth.baseauth#baseauthimportusers"><code translate="no" dir="ltr">Auth.importUsers()</code></a> API for importing users in bulk to Firebase Authentication with elevated privileges. While this feature is also available in the <a href="../../cli/auth#authimport">Firebase CLI</a>, the Admin SDK lets you upload existing users from an external authentication system or other Firebase project programmatically without having to create intermediate CSV or JSON files.</p> <p>The user import API offers the following advantages:</p> <ul> <li>Ability to migrate users from an external authentication system using a different password hashing algorithm.</li> <li>Ability to migrate users from another Firebase project.</li> <li>Optimization for speedy and efficient bulk import operations. This operation processes users without checking for <code translate="no" dir="ltr">uid</code>, <code translate="no" dir="ltr">email</code>, <code translate="no" dir="ltr">phoneNumber</code> or other identifier duplication.</li> <li>Ability to migrate existing or create new OAuth users (Google, Facebook, etc).</li> <li>Ability to import users with custom claims directly in bulk.</li> </ul> <h2 id="usage">Usage</h2> <p>Up to 1000 users can be imported in a single API call. Note that this operation is optimized for speed and does not check for <code translate="no" dir="ltr">uid</code>, <code translate="no" dir="ltr">email</code>, <code translate="no" dir="ltr">phoneNumber</code> and other unique identifier duplication. Importing a user that collides with an existing <code translate="no" dir="ltr">uid</code> will replace the existing user. Importing a user with any other field duplicated (e.g. <code translate="no" dir="ltr">email</code>) will result in an additional user with the same value. Consequently, when you use this API, you must ensure that you do not duplicate any unique fields.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">// Up to 1000 users can be imported at once.
 const userImportRecords = [
@@ -16,7 +16,7 @@ const userImportRecords = [
   },
   //...
 ];
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">// Up to 1000 users can be imported at once.
 List&lt;ImportUserRecord&gt; users = new ArrayList&lt;&gt;();
@@ -32,7 +32,7 @@ users.add(ImportUserRecord.builder()
     .setPasswordHash("passwordHash2".getBytes())
     .setPasswordSalt("salt2".getBytes())
     .build());
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"># Up to 1000 users can be imported at once.
 users = [
@@ -49,7 +49,7 @@ users = [
         password_salt=b'salt2'
     ),
 ]
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">// Up to 1000 users can be imported at once.
 var users []*auth.UserToImport
@@ -63,7 +63,7 @@ users = append(users, (&amp;auth.UserToImport{}).
 	Email("user2@example.com").
 	PasswordHash([]byte("passwordHash2")).
 	PasswordSalt([]byte("salt2")))
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">//  Up to 1000 users can be imported at once.
 var users = new List&lt;ImportUserRecordArgs&gt;()
@@ -83,7 +83,7 @@ var users = new List&lt;ImportUserRecordArgs&gt;()
         PasswordSalt = Encoding.ASCII.GetBytes("salt2"),
     },
 };
-</pre></section> </div> <p>In this example, the hashing options are specified to help Firebase securely authenticate these users the next time they try to sign in with Firebase Authentication. On successful sign-in, Firebase re-hashes the user's password with the internal Firebase hashing algorithm. Learn more about the required fields per algorithm below.</p> <p>Firebase Authentication attempts to upload the entire list of provided users even when a user-specific error occurs. The operation returns a result with the summary of successful and failed imports. Error details are returned per failed user import.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>In this example, the hashing options are specified to help Firebase securely authenticate these users the next time they try to sign in with Firebase Authentication. On successful sign-in, Firebase re-hashes the user's password with the internal Firebase hashing algorithm. Learn more about the required fields per algorithm below.</p> <p>Firebase Authentication attempts to upload the entire list of provided users even when a user-specific error occurs. The operation returns a result with the summary of successful and failed imports. Error details are returned per failed user import.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .importUsers(userImportRecords, {
@@ -108,7 +108,7 @@ var users = new List&lt;ImportUserRecordArgs&gt;()
   .catch((error) =&gt; {
     // Some unrecoverable error occurred that prevented the operation from running.
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">UserImportOptions options = UserImportOptions.withHash(
     HmacSha256.builder()
@@ -125,7 +125,7 @@ try {
 } catch (FirebaseAuthException e) {
   // Some unrecoverable error occurred that prevented the operation from running.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">hash_alg = auth.UserImportHash.hmac_sha256(key=b'secret_key')
 try:
@@ -138,7 +138,7 @@ try:
 except exceptions.FirebaseError:
     # Some unrecoverable error occurred that prevented the operation from running.
     pass
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">client, err := app.Auth(ctx)
 if err != nil {
@@ -158,7 +158,7 @@ log.Printf("Failed to import %d users\n", result.FailureCount)
 for _, e := range result.Errors {
 	log.Printf("Failed to import user at index: %d due to error: %s\n", e.Index, e.Reason)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">var options = new UserImportOptions()
 {
@@ -187,7 +187,7 @@ catch (FirebaseAuthException)
 </pre></section> </div> <p>If no password hashing is needed (phone number, custom token user, OAuth user etc.), do not provide hashing options.</p> <h2 id="import_users_with_firebase_scrypt_hashed_passwords">Import users with Firebase scrypt hashed passwords</h2> <p>By default, Firebase uses a <a href="https://github.com/firebase/scrypt">modified Firebase version of the scrypt hashing algorithm</a> to store passwords. Importing passwords hashed with modified scrypt is useful for migrating users from another existing Firebase project. In order to do so, the internal parameters need to be determined for the original project.</p> <p>Firebase generates unique password hash parameters for each Firebase project. Here's how to access these parameters:</p> <ol> <li><p>In the Firebase console, go to the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/users" class="external"><strong>Users</strong> tab</a>.</p></li> <li><p>Select <strong>Password Hash Parameters</strong> from the drop-down in the upper-right corner of the table list of users.</p></li> </ol> <p>Parameters needed to construct the hash options for this algorithm include:</p> <ul> <li>
 <code translate="no" dir="ltr">key</code>: the signer key normally provided in base64 encoding.</li> <li>
 <code translate="no" dir="ltr">saltSeparator</code>: the salt separator normally provided in base64 encoding (optional).</li> <li>
-<code translate="no" dir="ltr">rounds</code>: the number of rounds used to hash the passwords.</li> <li><p><code translate="no" dir="ltr">memoryCost</code>: the memory cost required for this algorithm.</p></li> </ul> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<code translate="no" dir="ltr">rounds</code>: the number of rounds used to hash the passwords.</li> <li><p><code translate="no" dir="ltr">memoryCost</code>: the memory cost required for this algorithm.</p></li> </ul> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .importUsers(
@@ -221,7 +221,7 @@ catch (FirebaseAuthException)
   .catch((error) =&gt; {
     console.log('Error importing users :', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">try {
   List&lt;ImportUserRecord&gt; users = Collections.singletonList(ImportUserRecord.builder()
@@ -246,7 +246,7 @@ catch (FirebaseAuthException)
 } catch (FirebaseAuthException e) {
   System.out.println("Error importing users: " + e.getMessage());
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">users = [
     auth.ImportUserRecord(
@@ -271,7 +271,7 @@ try:
         print('Failed to import user:', err.reason)
 except exceptions.FirebaseError as error:
     print('Error importing users:', error)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">b64URLdecode := func(s string) []byte {
 	b, err := base64.URLEncoding.DecodeString(s)
@@ -312,7 +312,7 @@ if err != nil {
 for _, e := range result.Errors {
 	log.Println("Failed to import user", e.Reason)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">try
 {
@@ -354,7 +354,7 @@ catch (FirebaseAuthException e)
 </pre></section> </div> <h2 id="import_users_with_standard_scrypt_hashed_passwords">Import users with standard scrypt hashed passwords</h2> <p>Firebase Authentication supports the standard scrypt algorithm as well as the modified version (above). For the standard scrypt algorithm, the following hashing parameters are required:</p> <ul> <li>
 <code translate="no" dir="ltr">memoryCost</code>: the CPU/memory cost of the hashing algorithm.</li> <li>
 <code translate="no" dir="ltr">parallelization</code>: the parallelization of the hashing algorithm.</li> <li>
-<code translate="no" dir="ltr">blockSize</code>: the block size (normally 8) of the hashing algorithm.</li> <li><p><code translate="no" dir="ltr">derivedKeyLength</code>: The derived key length of the hashing algorithm</p></li> </ul> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<code translate="no" dir="ltr">blockSize</code>: the block size (normally 8) of the hashing algorithm.</li> <li><p><code translate="no" dir="ltr">derivedKeyLength</code>: The derived key length of the hashing algorithm</p></li> </ul> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .importUsers(
@@ -386,7 +386,7 @@ catch (FirebaseAuthException e)
   .catch((error) =&gt; {
     console.log('Error importing users :', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">try {
   List&lt;ImportUserRecord&gt; users = Collections.singletonList(ImportUserRecord.builder()
@@ -409,7 +409,7 @@ catch (FirebaseAuthException e)
 } catch (FirebaseAuthException e) {
   System.out.println("Error importing users: " + e.getMessage());
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">users = [
     auth.ImportUserRecord(
@@ -428,7 +428,7 @@ try:
         print('Failed to import user:', err.reason)
 except exceptions.FirebaseError as error:
     print('Error importing users:', error)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">users := []*auth.UserToImport{
 	(&amp;auth.UserToImport{}).
@@ -450,7 +450,7 @@ if err != nil {
 for _, e := range result.Errors {
 	log.Println("Failed to import user", e.Reason)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">try
 {
@@ -487,7 +487,7 @@ catch (FirebaseAuthException e)
     Console.WriteLine($"Error importing users: {e.Message}");
 }
 
-</pre></section> </div> <h2 id="import_users_with_hmac_hashed_passwords">Import users with HMAC hashed passwords</h2> <p>HMAC hashing algorithms include: <code translate="no" dir="ltr">HMAC_MD5</code>, <code translate="no" dir="ltr">HMAC_SHA1</code>, <code translate="no" dir="ltr">HMAC_SHA256</code> and <code translate="no" dir="ltr">HMAC_SHA512</code>. For these hashing algorithms, you must provide the hash signer key.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="import_users_with_hmac_hashed_passwords">Import users with HMAC hashed passwords</h2> <p>HMAC hashing algorithms include: <code translate="no" dir="ltr">HMAC_MD5</code>, <code translate="no" dir="ltr">HMAC_SHA1</code>, <code translate="no" dir="ltr">HMAC_SHA256</code> and <code translate="no" dir="ltr">HMAC_SHA512</code>. For these hashing algorithms, you must provide the hash signer key.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .importUsers(
@@ -517,7 +517,7 @@ catch (FirebaseAuthException e)
   .catch((error) =&gt; {
     console.log('Error importing users :', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">try {
   List&lt;ImportUserRecord&gt; users = Collections.singletonList(ImportUserRecord.builder()
@@ -537,7 +537,7 @@ catch (FirebaseAuthException e)
 } catch (FirebaseAuthException e) {
   System.out.println("Error importing users: " + e.getMessage());
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">users = [
     auth.ImportUserRecord(
@@ -555,7 +555,7 @@ try:
         print('Failed to import user:', err.reason)
 except exceptions.FirebaseError as error:
     print('Error importing users:', error)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">users := []*auth.UserToImport{
 	(&amp;auth.UserToImport{}).
@@ -574,7 +574,7 @@ if err != nil {
 for _, e := range result.Errors {
 	log.Println("Failed to import user", e.Reason)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">try
 {
@@ -608,7 +608,7 @@ catch (FirebaseAuthException e)
     Console.WriteLine($"Error importing users: {e.Message}");
 }
 
-</pre></section> </div> <h2 id="import_users_with_md5_sha_and_pbkdf_hashed_passwords">Import users with MD5, SHA and PBKDF hashed passwords</h2> <p>MD5, SHA and PBKDF hashing algorithms include: <code translate="no" dir="ltr">MD5</code>, <code translate="no" dir="ltr">SHA1</code>, <code translate="no" dir="ltr">SHA256</code>, <code translate="no" dir="ltr">SHA512</code>, <code translate="no" dir="ltr">PBKDF_SHA1</code> and <code translate="no" dir="ltr">PBKDF2_SHA256</code>. For these hashing algorithms, you must provide the number of rounds (between 0 and 8192 for <code translate="no" dir="ltr">MD5</code>, between 1 and 8192 for <code translate="no" dir="ltr">SHA1</code>, <code translate="no" dir="ltr">SHA256</code> and <code translate="no" dir="ltr">SHA512</code>, and between 0 and 120000 for <code translate="no" dir="ltr">PBKDF_SHA1</code> and <code translate="no" dir="ltr">PBKDF2_SHA256</code>) used originally to hash the password. If a single hashing function was originally applied, rounds must be set to 1.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="import_users_with_md5_sha_and_pbkdf_hashed_passwords">Import users with MD5, SHA and PBKDF hashed passwords</h2> <p>MD5, SHA and PBKDF hashing algorithms include: <code translate="no" dir="ltr">MD5</code>, <code translate="no" dir="ltr">SHA1</code>, <code translate="no" dir="ltr">SHA256</code>, <code translate="no" dir="ltr">SHA512</code>, <code translate="no" dir="ltr">PBKDF_SHA1</code> and <code translate="no" dir="ltr">PBKDF2_SHA256</code>. For these hashing algorithms, you must provide the number of rounds (between 0 and 8192 for <code translate="no" dir="ltr">MD5</code>, between 1 and 8192 for <code translate="no" dir="ltr">SHA1</code>, <code translate="no" dir="ltr">SHA256</code> and <code translate="no" dir="ltr">SHA512</code>, and between 0 and 120000 for <code translate="no" dir="ltr">PBKDF_SHA1</code> and <code translate="no" dir="ltr">PBKDF2_SHA256</code>) used originally to hash the password. If a single hashing function was originally applied, rounds must be set to 1.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .importUsers(
@@ -637,7 +637,7 @@ catch (FirebaseAuthException e)
   .catch((error) =&gt; {
     console.log('Error importing users :', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">try {
   List&lt;ImportUserRecord&gt; users = Collections.singletonList(ImportUserRecord.builder()
@@ -657,7 +657,7 @@ catch (FirebaseAuthException e)
 } catch (FirebaseAuthException e) {
   System.out.println("Error importing users: " + e.getMessage());
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">users = [
     auth.ImportUserRecord(
@@ -675,7 +675,7 @@ try:
         print('Failed to import user:', err.reason)
 except exceptions.FirebaseError as error:
     print('Error importing users:', error)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">users := []*auth.UserToImport{
 	(&amp;auth.UserToImport{}).
@@ -694,7 +694,7 @@ if err != nil {
 for _, e := range result.Errors {
 	log.Println("Failed to import user", e.Reason)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">try
 {
@@ -728,7 +728,7 @@ catch (FirebaseAuthException e)
     Console.WriteLine($"Error importing users: {e.Message}");
 }
 
-</pre></section> </div> <h2 id="import_users_with_bcrypt_hashed_passwords">Import users with BCRYPT hashed passwords</h2> <p>For BCRYPT hashed passwords, neither additional hash parameters, nor password salts per user are required.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="import_users_with_bcrypt_hashed_passwords">Import users with BCRYPT hashed passwords</h2> <p>For BCRYPT hashed passwords, neither additional hash parameters, nor password salts per user are required.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .importUsers(
@@ -754,7 +754,7 @@ catch (FirebaseAuthException e)
   .catch((error) =&gt; {
     console.log('Error importing users :', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">try {
   List&lt;ImportUserRecord&gt; users = Collections.singletonList(ImportUserRecord.builder()
@@ -771,7 +771,7 @@ catch (FirebaseAuthException e)
 } catch (FirebaseAuthException e) {
   System.out.println("Error importing users: " + e.getMessage());
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">users = [
     auth.ImportUserRecord(
@@ -789,7 +789,7 @@ try:
         print('Failed to import user:', err.reason)
 except exceptions.FirebaseError as error:
     print('Error importing users:', error)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">users := []*auth.UserToImport{
 	(&amp;auth.UserToImport{}).
@@ -806,7 +806,7 @@ if err != nil {
 for _, e := range result.Errors {
 	log.Println("Failed to import user", e.Reason)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">try
 {
@@ -843,7 +843,7 @@ catch (FirebaseAuthException e)
 <code translate="no" dir="ltr">parallelism</code>: the degree of parallelism, provided as an integer. Must be between 1 and 16 (inclusive)</li> <li>
 <code translate="no" dir="ltr">iterations</code>: the number of iterations to perform, provided as an integer. Must be between 1 and 16 (inclusive)</li> <li>
 <code translate="no" dir="ltr">memoryCostKib</code>: the memory cost required for this algorithm in kibibytes, must be less than 32768.</li> <li>
-<code translate="no" dir="ltr">version</code>: the version of the Argon2 algorithm (<code translate="no" dir="ltr">VERSION_10</code> or <code translate="no" dir="ltr">VERSION_13</code>). Optional, defaults to VERSION_13 if not specified.</li> <li><p><code translate="no" dir="ltr">associatedData</code>: additional associated data, provided as a byte array, that is appended to the hash value to provide an additional layer of security. Optional, this data is base64 encoded before it is sent to the API.</p></li> </ul> <div> <section><p class="_firebase-tab"><strong>Java</strong></p>
+<code translate="no" dir="ltr">version</code>: the version of the Argon2 algorithm (<code translate="no" dir="ltr">VERSION_10</code> or <code translate="no" dir="ltr">VERSION_13</code>). Optional, defaults to VERSION_13 if not specified.</li> <li><p><code translate="no" dir="ltr">associatedData</code>: additional associated data, provided as a byte array, that is appended to the hash value to provide an additional layer of security. Optional, this data is base64 encoded before it is sent to the API.</p></li> </ul> <div> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">try {
   List&lt;ImportUserRecord&gt; users = Collections.singletonList(ImportUserRecord.builder()
@@ -869,7 +869,7 @@ catch (FirebaseAuthException e)
 } catch (FirebaseAuthException e) {
   System.out.println("Error importing users: " + e.getMessage());
 }
-</pre></section> </div> <h2 id="import_users_without_passwords">Import users without passwords</h2> <p>You can import users without passwords. Users without passwords can be imported in combination with users that have OAuth providers, custom claims and phone numbers, and so on.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="import_users_without_passwords">Import users without passwords</h2> <p>You can import users without passwords. Users without passwords can be imported in combination with users that have OAuth providers, custom claims and phone numbers, and so on.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .importUsers([
@@ -902,7 +902,7 @@ catch (FirebaseAuthException e)
   .catch((error) =&gt; {
     console.log('Error importing users :', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">try {
   List&lt;ImportUserRecord&gt; users = Collections.singletonList(ImportUserRecord.builder()
@@ -928,7 +928,7 @@ catch (FirebaseAuthException e)
 } catch (FirebaseAuthException e) {
   System.out.println("Error importing users: " + e.getMessage());
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">users = [
     auth.ImportUserRecord(
@@ -956,7 +956,7 @@ try:
         print('Failed to import user:', err.reason)
 except exceptions.FirebaseError as error:
     print('Error importing users:', error)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">users := []*auth.UserToImport{
 	(&amp;auth.UserToImport{}).
@@ -984,7 +984,7 @@ if err != nil {
 for _, e := range result.Errors {
 	log.Println("Failed to import user", e.Reason)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">try
 {

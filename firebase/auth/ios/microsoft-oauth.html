@@ -4,20 +4,20 @@
 <p>Add custom URL schemes to your Xcode project: </p>
 <ol> <li> Open your project configuration: double-click the project name in the left tree view. Select your app from the <b>TARGETS</b> section, then select the <b>Info</b> tab, and expand the <b>URL Types</b> section. </li> <li> Click the <b>+</b> button, and add your Encoded App ID as a URL scheme. Leave the other fields blank. <p> You can find your Encoded App ID in the Firebase console: go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/general/"><b>General</b> tab</a>, then scroll down to the <b>Your apps</b> section to view details about your iOS app. </p> <p> When completed, your config should look something similar to the following (but with your application-specific values): </p> <img src="https://firebase.google.com/static/docs/auth/images/app-id-url-scheme.png" alt="Screenshot of Xcode's custom URL scheme setup interface" class="screenshot"> </li> </ol>
 </li> <li>
-<p>Create an instance of an <strong>OAuthProvider</strong> using the provider ID <strong>microsoft.com</strong>.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p>Create an instance of an <strong>OAuthProvider</strong> using the provider ID <strong>microsoft.com</strong>.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">    var provider = OAuthProvider(providerID: "microsoft.com")
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">    FIROAuthProvider *provider = [FIROAuthProvider providerWithProviderID:@"microsoft.com"];
     </pre> </section> </div>
 </li> <li>
-<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">    provider.customParameters = [
       "prompt": "consent",
       "login_hint": "user@firstadd.onmicrosoft.com"
     ]
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">    [provider setCustomParameters:@{@"prompt": @"consent", @"login_hint": @"user@firstadd.onmicrosoft.com"}];
-    </pre> </section> </div> <p>For the parameters Microsoft supports, see the <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v1-protocols-oauth-code">Microsoft OAuth documentation</a>. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters</code>. These parameters are <strong>client_id</strong>, <strong>response_type</strong>, <strong>redirect_uri</strong>, <strong>state</strong>, <strong>scope</strong> and <strong>response_mode</strong>.</p> <p>To allow only users from a particular Azure AD tenant to sign into the application, either the friendly domain name of the Azure AD tenant or the tenant's GUID identifier can be used. This can be done by specifying the "tenant" field in the custom parameters object.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <p>For the parameters Microsoft supports, see the <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v1-protocols-oauth-code">Microsoft OAuth documentation</a>. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters</code>. These parameters are <strong>client_id</strong>, <strong>response_type</strong>, <strong>redirect_uri</strong>, <strong>state</strong>, <strong>scope</strong> and <strong>response_mode</strong>.</p> <p>To allow only users from a particular Azure AD tenant to sign into the application, either the friendly domain name of the Azure AD tenant or the tenant's GUID identifier can be used. This can be done by specifying the "tenant" field in the custom parameters object.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">    provider.customParameters = [
       // Optional "tenant" parameter in case you are using an Azure AD
       // tenant. eg. '8eaef023-2b34-4da1-9baa-8bc8c9d6a490' or
@@ -25,7 +25,7 @@
       // tokens. The default value is "common".
       "tenant": "TENANT_ID"
     ]
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">    // Optional "tenant" parameter in case you are using an Azure AD tenant.
     // eg. '8eaef023-2b34-4da1-9baa-8bc8c9d6a490' or
     // 'contoso.onmicrosoft.com' or "common" for tenant-independent tokens.
@@ -33,13 +33,13 @@
     provider.customParameters = @{@"tenant": @"TENANT_ID"};
     </pre> </section> </div>
 </li> <li>
-<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond basic profile that you want to request from the authentication provider.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond basic profile that you want to request from the authentication provider.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">    provider.scopes = ["mail.read", "calendars.read"]
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">    [provider setScopes:@[@"mail.read", @"calendars.read"]];
     </pre> </section> </div> <p>To learn more, refer to the <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent">Microsoft permissions and consent documentation</a>.</p>
 </li> <li><p><strong>Optional</strong>: If you want to customize the way your app presents the <code translate="no" dir="ltr">SFSafariViewController</code> or <code translate="no" dir="ltr">UIWebView</code> when displaying the reCAPTCHA to the user, create a custom class that conforms to the <code translate="no" dir="ltr">AuthUIDelegate</code> protocol, and pass it to <code translate="no" dir="ltr">credentialWithUIDelegate</code>.</p></li> <li>
-<p>Authenticate with Firebase using the OAuth provider object.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p>Authenticate with Firebase using the OAuth provider object.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">    // Replace nil with the custom class that conforms to AuthUIDelegate
     // you created in last step to use a customized web view.
     provider.getCredentialWith(nil) { credential, error in
@@ -60,7 +60,7 @@
         }
       }
     }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">    [provider getCredentialWithUIDelegate:nil
                                completion:^(FIRAuthCredential *_Nullable credential, NSError *_Nullable error) {
       if (error) {
@@ -84,7 +84,7 @@
     </pre> </section> </div> <p>Using the OAuth access token, you can call the <a href="https://docs.microsoft.com/en-us/graph/overview">Microsoft Graph API</a>.</p> <p>For example, to get basic profile information, you can call the REST API, passing the access token in the <code translate="no" dir="ltr">Authorization</code> header:</p> 
 <pre>https://graph.microsoft.com/v1.0/me</pre> <p>Unlike other providers supported by Firebase Auth, Microsoft does not provide a photo URL and instead, the binary data for a profile photo has to be requested via <a href="https://docs.microsoft.com/en-us/graph/api/profilephoto-get">Microsoft Graph API</a>.</p> <p>In addition to the OAuth access token, the user's OAuth <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/id-tokens">ID token</a> can also be retrieved from the <code translate="no" dir="ltr">OAuthCredential</code> object. The <code translate="no" dir="ltr">sub</code> claim in the ID token is app-specific and will not match the federated user identifier used by Firebase Auth and accessible via <code translate="no" dir="ltr">user.providerData[0].uid</code>. The <code translate="no" dir="ltr">oid</code> claim field should be used instead. When using a Azure AD tenant to sign-in, the <code translate="no" dir="ltr">oid</code> claim will be an exact match. However for the non-tenant case, the <code translate="no" dir="ltr">oid</code> field is padded. For a federated ID <code translate="no" dir="ltr">4b2eabcdefghijkl</code>, the <code translate="no" dir="ltr">oid</code> will have have a form <code translate="no" dir="ltr">00000000-0000-0000-4b2e-abcdefghijkl</code>.</p>
 </li> <li>
-<p>While the above examples focus on sign-in flows, you also have the ability to link a Microsoft provider to an existing user using <code translate="no" dir="ltr">linkWithCredential</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p>While the above examples focus on sign-in flows, you also have the ability to link a Microsoft provider to an existing user using <code translate="no" dir="ltr">linkWithCredential</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">    Auth().currentUser.link(withCredential: credential) { authResult, error in
       if error != nil {
         // Handle error.
@@ -96,7 +96,7 @@
       // OAuth ID token can also be retrieved:
       // (authResult.credential as? OAuthCredential)?.idToken
     }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">    [[FIRAuth auth].currentUser
         linkWithCredential:credential
                 completion:^(FIRAuthDataResult * _Nullable authResult, NSError * _Nullable error) {
@@ -112,7 +112,7 @@
     }];
     </pre> </section> </div>
 </li> <li>
-<p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithCredential</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithCredential</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">    Auth().currentUser.reauthenticateWithCredential(withCredential: credential) { authResult, error in
       if error != nil {
         // Handle error.
@@ -126,7 +126,7 @@
       // OAuth ID token can also be retrieved:
       // (authResult.credential as? OAuthCredential)?.idToken
     }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">    [[FIRAuth auth].currentUser
         reauthenticateWithCredential:credential
                           completion:^(FIRAuthDataResult * _Nullable authResult, NSError * _Nullable error) {
@@ -143,7 +143,7 @@
       // ((FIROAuthCredential *)authResult.credential).idToken
     }];
     </pre> </section> </div>
-</li> </ol> <section class="expandable"> <h2 class="showalways" id="handling-account-exists-with-different-credential-errors">Handling account-exists-with-different-credential Errors</h2> <p>If you enabled the <b>One account per email address</b> setting in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, when a user tries to sign in a to a provider (such as Microsoft) with an email that already exists for another Firebase user's provider (such as Google), the error <code translate="no" dir="ltr">FIRAuthErrorCodeAccountExistsWithDifferentCredential</code> is thrown along with a temporary <code translate="no" dir="ltr">FIRAuthCredential</code> object (Microsoft credential). To complete the sign in to the intended provider, the user has to sign first to the existing provider (Google) and then link to the former <code translate="no" dir="ltr">FIRAuthCredential</code> (Microsoft credential). This would look as illustrated below:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+</li> </ol> <section class="expandable"> <h2 class="showalways" id="handling-account-exists-with-different-credential-errors">Handling account-exists-with-different-credential Errors</h2> <p>If you enabled the <b>One account per email address</b> setting in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, when a user tries to sign in a to a provider (such as Microsoft) with an email that already exists for another Firebase user's provider (such as Google), the error <code translate="no" dir="ltr">FIRAuthErrorCodeAccountExistsWithDifferentCredential</code> is thrown along with a temporary <code translate="no" dir="ltr">FIRAuthCredential</code> object (Microsoft credential). To complete the sign in to the intended provider, the user has to sign first to the existing provider (Google) and then link to the former <code translate="no" dir="ltr">FIRAuthCredential</code> (Microsoft credential). This would look as illustrated below:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">  // Sign-in with an OAuth credential.
   provider.getCredentialWith(nil) { credential, error in
     // An account with the same email already exists.
@@ -189,7 +189,7 @@
     }
   }
 
-  </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+  </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">  // Sign-in with an OAuth credential.
   [provider getCredentialWithUIDelegate:nil
                              completion:^(FIRAuthCredential *_Nullable credential, NSError *_Nullable error) {
@@ -244,13 +244,13 @@
       }];
     }
   }];
-  </pre> </section> </div> </section> <section class="expandable"> <h2 class="showalways" id="advanced:-handle-the-sign-in-flow-manually">Advanced: Handle the sign-in flow manually</h2> <p>Unlike other OAuth providers supported by Firebase such as Google, Facebook, and Twitter, where sign-in can directly be achieved with OAuth access token based credentials, Firebase Auth does not support the same capability for providers such as Microsoft due to the inability of the Firebase Auth server to verify the audience of Microsoft OAuth access tokens. This is a critical security requirement and could expose applications and websites to replay attacks where a Microsoft OAuth access token obtained for one project (attacker) can be used to sign in to another project (victim). Instead, Firebase Auth offers the ability to handle the entire OAuth flow and the authorization code exchange using the OAuth client ID and secret configured in the Firebase Console. As the authorization code can only be used in conjunction with a specific client ID/secret, an authorization code obtained for one project cannot be used with another. </p> <p>If these providers are required to be used in unsupported environments, a third party OAuth library and <a href="../admin/create-custom-tokens">Firebase custom authentication</a> would need to be used. The former is needed to authenticate with the provider and the latter to exchange the provider’s credential for a custom token.</p> </section> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_user"><code translate="no" dir="ltr">User</code> </a> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_auth#ab0d5111f05c3f1906243852cc8ef41b1"> <code translate="no" dir="ltr">signOut:</code></a>.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  </pre> </section> </div> </section> <section class="expandable"> <h2 class="showalways" id="advanced:-handle-the-sign-in-flow-manually">Advanced: Handle the sign-in flow manually</h2> <p>Unlike other OAuth providers supported by Firebase such as Google, Facebook, and Twitter, where sign-in can directly be achieved with OAuth access token based credentials, Firebase Auth does not support the same capability for providers such as Microsoft due to the inability of the Firebase Auth server to verify the audience of Microsoft OAuth access tokens. This is a critical security requirement and could expose applications and websites to replay attacks where a Microsoft OAuth access token obtained for one project (attacker) can be used to sign in to another project (victim). Instead, Firebase Auth offers the ability to handle the entire OAuth flow and the authorization code exchange using the OAuth client ID and secret configured in the Firebase Console. As the authorization code can only be used in conjunction with a specific client ID/secret, an authorization code obtained for one project cannot be used with another. </p> <p>If these providers are required to be used in unsupported environments, a third party OAuth library and <a href="../admin/create-custom-tokens">Firebase custom authentication</a> would need to be used. The former is needed to authenticate with the provider and the latter to exchange the provider’s credential for a custom token.</p> </section> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_user"><code translate="no" dir="ltr">User</code> </a> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_auth#ab0d5111f05c3f1906243852cc8ef41b1"> <code translate="no" dir="ltr">signOut:</code></a>.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let firebaseAuth = Auth.auth()
 do {
   try firebaseAuth.signOut()
 } catch let signOutError as NSError {
   print("Error signing out: %@", signOutError)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">NSError *signOutError;
 BOOL status = [[FIRAuth auth] signOut:&amp;signOutError];
 if (!status) {

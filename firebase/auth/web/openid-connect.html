@@ -1,23 +1,23 @@
 <h1>Authenticate Using OpenID Connect in web apps</h1> <p>If you've upgraded to Firebase Authentication with Identity Platform, you can authenticate your users with Firebase using the OpenID Connect (OIDC) compliant provider of your choice. This makes it possible to use identity providers not natively supported by Firebase.</p> <h2 id="before_you_begin">Before you begin</h2> <p>To sign in users using an OIDC provider, you must first collect some information from the provider:</p> <ul> <li><p><strong>Client ID</strong>: A string unique to the provider that identifies your app. Your provider might assign you a different client ID for each platform you support. This is one of the values of the <code translate="no" dir="ltr">aud</code> claim in ID tokens issued by your provider.</p></li> <li><p><strong>Client secret</strong>: A secret string that the provider uses to confirm ownership of a client ID. For every client ID, you will need a matching client secret. (This value is required only if you're using the <em>auth code flow</em>, which is strongly recommended.)</p></li> <li><p><strong>Issuer</strong>: A string that identifies your provider. This value must be a URL that, when appended with <code translate="no" dir="ltr">/.well-known/openid-configuration</code>, is the location of the provider's OIDC discovery document. For example, if the issuer is <code translate="no" dir="ltr">https://auth.example.com</code>, the discovery document must be available at <code translate="no" dir="ltr">https://auth.example.com/.well-known/openid-configuration</code>.</p></li> </ul> <p>After you have the above information, enable OpenID Connect as a sign-in provider for your Firebase project:</p> <ol> <li><p><a href="../../web/setup">Add Firebase to your JavaScript project</a>.</p></li> <li><p>If you haven't upgraded to Firebase Authentication with Identity Platform, do so. OpenID Connect authentication is only available in upgraded projects.</p></li> <li><p>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><strong>Authentication</strong></a>.</p></li> <li><p>In the <strong>Sign-in method</strong> tab, click <strong>Add new provider</strong>, and then click <strong>OpenID Connect</strong>.</p></li> <li>
 <p>Select whether you will be using the <em>authorization code flow</em> or the <em>implicit grant flow</em>.</p> <p><strong>You should use always the code flow if your provider supports it</strong>. The implicit flow is less secure and using it is strongly discouraged.</p>
 </li> <li><p>Give a name to this provider. Note the provider ID that's generated: something like <code translate="no" dir="ltr">oidc.example-provider</code>. You'll need this ID when you add sign-in code to your app.</p></li> <li><p>Specify your client ID and client secret, and your provider's issuer string. These values must exactly match the values your provider assigned to you.</p></li> <li><p>Save your changes.</p></li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>The easiest way to authenticate your users with Firebase using your OIDC provider is to handle the entire sign-in flow with the Firebase SDK.</p> <p>To handle the sign-in flow with the Firebase JavaScript SDK, follow these steps:</p> <ol> <li>
-<p>Create an instance of an <code translate="no" dir="ltr">OAuthProvider</code> using the provider ID you got in the Firebase console.</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Create an instance of an <code translate="no" dir="ltr">OAuthProvider</code> using the provider ID you got in the Firebase console.</p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">import { OAuthProvider } from "firebase/auth";
 
 const provider = new OAuthProvider('oidc.example-provider');
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">var provider = new firebase.auth.OAuthProvider('oidc.example-provider');
 </pre></section> </div>
 </li> <li>
-<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">provider.setCustomParameters({
   // Target specific email with login hint.
   login_hint: 'user@example.com'
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">provider.setCustomParameters({
   // Target specific email with login hint.
@@ -25,26 +25,26 @@ const provider = new OAuthProvider('oidc.example-provider');
 });
 </pre></section> </div> <p>Check with your provider for the parameters it supports. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters</code>. These parameters are <code translate="no" dir="ltr">client_id</code>, <code translate="no" dir="ltr">response_type</code>, <code translate="no" dir="ltr">redirect_uri</code>, <code translate="no" dir="ltr">state</code>, <code translate="no" dir="ltr">scope</code> and <code translate="no" dir="ltr">response_mode</code>.</p>
 </li> <li>
-<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond basic profile that you want to request from the authentication provider.</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond basic profile that you want to request from the authentication provider.</p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">provider.addScope('mail.read');
 provider.addScope('calendars.read');
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">provider.addScope('mail.read');
 provider.addScope('calendars.read');
 </pre> <p>Check with your provider for the scopes it supports.</p></section> </div>
 </li> <li>
-<p>Authenticate with Firebase using the OAuth provider object.</p> <p>You can either redirect the user to the provider's sign-in page or open the sign-in page in a pop-up browser window.</p> <p><strong>Redirect flow</strong></p> <p>Redirect to the provider sign-in page by calling <code translate="no" dir="ltr">signInWithRedirect()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+<p>Authenticate with Firebase using the OAuth provider object.</p> <p>You can either redirect the user to the provider's sign-in page or open the sign-in page in a pop-up browser window.</p> <p><strong>Redirect flow</strong></p> <p>Redirect to the provider sign-in page by calling <code translate="no" dir="ltr">signInWithRedirect()</code>:</p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">import { getAuth, signInWithRedirect } from "firebase/auth";
 
 const auth = getAuth();
 signInWithRedirect(auth, provider);
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">firebase.auth().signInWithRedirect(provider);
-</pre></section> </div> <p>After the user completes sign-in and returns to your app, you can obtain the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult()</code>.</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> </div> <p>After the user completes sign-in and returns to your app, you can obtain the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult()</code>.</p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">import { getAuth, getRedirectResult, OAuthProvider } from "firebase/auth";
 
@@ -62,7 +62,7 @@ getRedirectResult(auth)
   .catch((error) =&gt; {
     // Handle error.
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">firebase.auth().getRedirectResult()
   .then((result) =&gt; {
@@ -79,7 +79,7 @@ getRedirectResult(auth)
   .catch((error) =&gt; {
     // Handle error.
   });
-</pre></section> </div> <p><strong>Pop-up flow</strong></p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> </div> <p><strong>Pop-up flow</strong></p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">import { getAuth, signInWithPopup, OAuthProvider } from "firebase/auth";
 
@@ -97,7 +97,7 @@ signInWithPopup(auth, provider)
   .catch((error) =&gt; {
     // Handle error.
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">firebase.auth().signInWithPopup(provider)
   .then((result) =&gt; {
@@ -115,7 +115,7 @@ signInWithPopup(auth, provider)
     // Handle error.
   });
 </pre></section> </div>
-</li> <li><p>While the above examples focus on sign-in flows, you can use the same pattern to link an OIDC provider to an existing user using <code translate="no" dir="ltr">linkWithRedirect()</code> and <code translate="no" dir="ltr">linkWithPopup()</code>, and re-authenticate a user with <code translate="no" dir="ltr">reauthenticateWithRedirect()</code> and <code translate="no" dir="ltr">reauthenticateWithPopup()</code>, which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p></li> </ol> <h2 id="manual">Handle the sign-in flow manually</h2> <p>If you've already implemented the OpenID Connect sign-in flow in your app, you can use the ID token directly to authenticate with Firebase:</p> <div> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</li> <li><p>While the above examples focus on sign-in flows, you can use the same pattern to link an OIDC provider to an existing user using <code translate="no" dir="ltr">linkWithRedirect()</code> and <code translate="no" dir="ltr">linkWithPopup()</code>, and re-authenticate a user with <code translate="no" dir="ltr">reauthenticateWithRedirect()</code> and <code translate="no" dir="ltr">reauthenticateWithPopup()</code>, which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p></li> </ol> <h2 id="manual">Handle the sign-in flow manually</h2> <p>If you've already implemented the OpenID Connect sign-in flow in your app, you can use the ID token directly to authenticate with Firebase:</p> <div> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">import { getAuth, signInWithCredential, OAuthProvider } from "firebase/auth";
 
@@ -136,7 +136,7 @@ signInWithCredential(getAuth(), credential)
     .catch((error) =&gt; {
         // Handle error.
     });
-</pre></section> <section><p class="_firebase-tab"><strong>Web (namespaced API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (namespaced API)</strong></p>
 
 <pre data-language="javascript">const provider = new OAuthProvider("oidc.example-provider");
 const credential = provider.credential({

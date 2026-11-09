@@ -1,5 +1,5 @@
 <h1>Data validation</h1> <p>You can use Firebase Security Rules to conditionally write new data based on existing data in your database or storage bucket. You can also write rules that enforce data validations by restricting writes based on the new data being written. Read on to learn more about rules that use existing data to create security conditions.</p> <p>Select a product in each section to learn more about data validation rules.</p>  <h2 id="restrictions_on_new_data">Restrictions on new data</h2> 
-<div class="ds-selector-tabs"> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p> <p>If you want to make sure that a document that contains a specific field isn't created, you can include the field in the <code translate="no" dir="ltr">allow</code> condition. For example, if you want to deny creation of any documents that contain the <code translate="no" dir="ltr">ranking</code> field, you would disallow it in the <code translate="no" dir="ltr">create</code> condition.</p> 
+<div class="ds-selector-tabs"> <section><p class="_code-tab"><strong>Cloud Firestore</strong></p> <p>If you want to make sure that a document that contains a specific field isn't created, you can include the field in the <code translate="no" dir="ltr">allow</code> condition. For example, if you want to deny creation of any documents that contain the <code translate="no" dir="ltr">ranking</code> field, you would disallow it in the <code translate="no" dir="ltr">create</code> condition.</p> 
 <pre data-language="">  service cloud.firestore {
     match /databases/{database}/documents {
       // Disallow
@@ -8,7 +8,7 @@
       }
     }
   }
-</pre> </section><section><p class="_firebase-tab"><strong>Realtime Database</strong></p> <p>If you want to make sure that data that contains certain values isn't added to your database, you'd include that value in your rules and disallow it for writes. For example, if you want to deny any writes that contain <code translate="no" dir="ltr">ranking</code> values, you would disallow writes for any documents with <code translate="no" dir="ltr">ranking</code> values.</p> 
+</pre> </section><section><p class="_code-tab"><strong>Realtime Database</strong></p> <p>If you want to make sure that data that contains certain values isn't added to your database, you'd include that value in your rules and disallow it for writes. For example, if you want to deny any writes that contain <code translate="no" dir="ltr">ranking</code> values, you would disallow writes for any documents with <code translate="no" dir="ltr">ranking</code> values.</p> 
 <pre data-language="">  {
     "rules": {
       // Write is allowed for all paths
@@ -17,7 +17,7 @@
       ".validate": "!newData.hasChild('ranking')
     }
   }
-</pre> </section><section><p class="_firebase-tab"><strong>Cloud Storage</strong></p> <p>If you want to make sure that a file that contains specific metadata isn't created, you can include the metadata in the <code translate="no" dir="ltr">allow</code> condition. For example, if you want to deny creation of any files that contain <code translate="no" dir="ltr">ranking</code> metadata, you would disallow it in the <code translate="no" dir="ltr">create</code> condition.</p> 
+</pre> </section><section><p class="_code-tab"><strong>Cloud Storage</strong></p> <p>If you want to make sure that a file that contains specific metadata isn't created, you can include the metadata in the <code translate="no" dir="ltr">allow</code> condition. For example, if you want to deny creation of any files that contain <code translate="no" dir="ltr">ranking</code> metadata, you would disallow it in the <code translate="no" dir="ltr">create</code> condition.</p> 
 <pre data-language="">  service firebase.storage {
     match /b/{bucket}/o {
       match /files/{fileName} {
@@ -28,7 +28,7 @@
   }
 </pre> </section>
 </div> <h2 id="use_existing_data_in">Use existing data in Firebase Security Rules</h2> 
-<div class="ds-selector-tabs"> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p> <p>Many apps store access control information as fields on documents in the database. Cloud Firestore Security Rules can dynamically allow or deny access based on document data:</p> 
+<div class="ds-selector-tabs"> <section><p class="_code-tab"><strong>Cloud Firestore</strong></p> <p>Many apps store access control information as fields on documents in the database. Cloud Firestore Security Rules can dynamically allow or deny access based on document data:</p> 
 <pre data-language="">  service cloud.firestore {
     match /databases/{database}/documents {
       // Allow the user to read data if the document has the 'visibility'
@@ -49,7 +49,7 @@
       }
     }
   }
-</pre> </section><section><p class="_firebase-tab"><strong>Realtime Database</strong></p> <p>In Realtime Database, use <code translate="no" dir="ltr">.validate</code> rules to enforce data structures and validate the format and content of data. Security Rules run <code translate="no" dir="ltr">.validate</code> rules after verifying that a <code translate="no" dir="ltr">.write</code> rule grants access.</p> <p>The <code translate="no" dir="ltr">.validate</code> rules do not cascade. If any validation rule fails on any path or subpath in the rule, the entire write operation will be rejected. Additionally, the validate definitions only check for non-null values, and subsequently ignore any requests that are deleting data.</p> <p>Consider the following <code translate="no" dir="ltr">.validate</code> rules:</p> 
+</pre> </section><section><p class="_code-tab"><strong>Realtime Database</strong></p> <p>In Realtime Database, use <code translate="no" dir="ltr">.validate</code> rules to enforce data structures and validate the format and content of data. Security Rules run <code translate="no" dir="ltr">.validate</code> rules after verifying that a <code translate="no" dir="ltr">.write</code> rule grants access.</p> <p>The <code translate="no" dir="ltr">.validate</code> rules do not cascade. If any validation rule fails on any path or subpath in the rule, the entire write operation will be rejected. Additionally, the validate definitions only check for non-null values, and subsequently ignore any requests that are deleting data.</p> <p>Consider the following <code translate="no" dir="ltr">.validate</code> rules:</p> 
 <pre data-language="">  {
     "rules": {
       // write is allowed for all paths
@@ -72,7 +72,7 @@
       }
     }
   }
-</pre> <p>Write requests to a database with the rules above would have the following results:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+</pre> <p>Write requests to a database with the rules above would have the following results:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_code-tab"><strong>JavaScript</strong></p> 
 <pre data-language="">var ref = db.ref("/widget");
 
 // PERMISSION_DENIED: does not have children color and size
@@ -90,7 +90,7 @@ ref.set({ size: 21, color: 'blue'});
 // If the record already exists and has a color, this will
 // succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
 // will fail to validate
-ref.child('size').set(99);</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+ref.child('size').set(99);</pre> </section>  <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="objectivec">FIRDatabaseReference *ref = [[[FIRDatabase database] reference] child: @"widget"];
 
 // PERMISSION_DENIED: does not have children color and size
@@ -108,7 +108,7 @@ ref.child('size').set(99);</pre> </section>  <section> <p class="_firebase-tab">
 // If the record already exists and has a color, this will
 // succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
 // will fail to validate
-[[ref child:@"size"] setValue: @99];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+[[ref child:@"size"] setValue: @99];</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="swift">var ref = FIRDatabase.database().reference().child("widget")
 
 // PERMISSION_DENIED: does not have children color and size
@@ -126,7 +126,7 @@ ref.setValue(["size": 21, "color": "blue"])
 // If the record already exists and has a color, this will
 // succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
 // will fail to validate
-ref.child("size").setValue(99);</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+ref.child("size").setValue(99);</pre> </section>  <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
 DatabaseReference ref = database.getReference("widget");
 
@@ -151,7 +151,7 @@ ref.setValue(map);
 // If the record already exists and has a color, this will
 // succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
 // will fail to validate
-ref.child("size").setValue(99);</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+ref.child("size").setValue(99);</pre> </section>  <section> <p class="_code-tab"><strong>REST</strong></p> 
 <pre data-language=""># PERMISSION_DENIED: does not have children color and size
 curl -X PUT -d 'foo' \
 https://docs-examples.firebaseio.com/rest/securing-data/example.json
@@ -172,7 +172,7 @@ https://docs-examples.firebaseio.com/rest/securing-data/example.json
 # succeed, otherwise it will fail since newData.hasChildren(['color', 'size'])
 # will fail to validate
 curl -X PUT -d '99' \
-https://docs-examples.firebaseio.com/rest/securing-data/example/size.json</pre> </section> </div> <aside class="note"><strong>Note:</strong><span> Validation rules are not meant to completely replace data validation code in your app. We recommend that you also perform input validation client-side for best performance and best user experience when your app is offline.</span></aside> </section><section><p class="_firebase-tab"><strong>Cloud Storage</strong></p> <p>When evaluating rules, you may also want to evaluate the metadata of the file being uploaded, downloaded, modified, or deleted. This lets you create complex and powerful rules that do things like only allow files with certain content types to be uploaded, or only files greater than a certain size to be deleted.</p> <p>The <code translate="no" dir="ltr">resource</code> object contains key-value pairs with file metadata surfaced in a Cloud Storage object. These properties can be inspected on <code translate="no" dir="ltr">read</code> or <code translate="no" dir="ltr">write</code> requests to ensure data integrity. The <code translate="no" dir="ltr">resource</code> object checks metadata on existing files in your Cloud Storage bucket.</p> 
+https://docs-examples.firebaseio.com/rest/securing-data/example/size.json</pre> </section> </div> <aside class="note"><strong>Note:</strong><span> Validation rules are not meant to completely replace data validation code in your app. We recommend that you also perform input validation client-side for best performance and best user experience when your app is offline.</span></aside> </section><section><p class="_code-tab"><strong>Cloud Storage</strong></p> <p>When evaluating rules, you may also want to evaluate the metadata of the file being uploaded, downloaded, modified, or deleted. This lets you create complex and powerful rules that do things like only allow files with certain content types to be uploaded, or only files greater than a certain size to be deleted.</p> <p>The <code translate="no" dir="ltr">resource</code> object contains key-value pairs with file metadata surfaced in a Cloud Storage object. These properties can be inspected on <code translate="no" dir="ltr">read</code> or <code translate="no" dir="ltr">write</code> requests to ensure data integrity. The <code translate="no" dir="ltr">resource</code> object checks metadata on existing files in your Cloud Storage bucket.</p> 
 <pre data-language="">  service firebase.storage {
     match /b/{bucket}/o {
       match /images {

@@ -9,14 +9,14 @@
 </li> </ol> <h2 id="choosing_an_enrollment_pattern">Choosing an enrollment pattern</h2> <p>You can choose whether your app requires multi-factor authentication, and how and when to enroll your users. Some common patterns include:</p> <ul> <li><p>Enroll the user's second factor as part of registration. Use this method if your app requires multi-factor authentication for all users.</p></li> <li><p>Offer a skippable option to enroll a second factor during registration. Apps that want to encourage, but not require, multi-factor authentication might prefer this approach.</p></li> <li><p>Provide the ability to add a second factor from the user's account or profile management page, instead of the sign up screen. This minimizes friction during the registration process, while still making multi-factor authentication available for security-sensitive users.</p></li> <li><p>Require adding a second factor incrementally when the user wants to access features with increased security requirements.</p></li> </ul> <h2 id="enrolling_a_second_factor">Enrolling a second factor</h2> <p>To enroll a new secondary factor for a user:</p> <ol> <li><p>Re-authenticate the user.</p></li> <li>
 <p>Ask the user enter their phone number.</p> <aside class="note"><strong>Note:</strong><span> Google stores and uses phone numbers to improve spam and abuse prevention across all Google services. Ensure you obtain appropriate consent from your users before sending their phone numbers to Authentication.</span></aside>
 </li> <li>
-<p>Get a multi-factor session for the user:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Get a multi-factor session for the user:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">user.multiFactor.session.addOnCompleteListener { task -&gt;
     if (task.isSuccessful) {
         val multiFactorSession: MultiFactorSession? = task.result
     }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">user.getMultiFactor().getSession()
   .addOnCompleteListener(
@@ -30,7 +30,7 @@
       });
 </pre></section> </div>
 </li> <li>
-<p>Build an <code translate="no" dir="ltr">OnVerificationStateChangedCallbacks</code> object to handle different events in the verification process:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Build an <code translate="no" dir="ltr">OnVerificationStateChangedCallbacks</code> object to handle different events in the verification process:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val callbacks = object : OnVerificationStateChangedCallbacks() {
     override fun onVerificationCompleted(credential: PhoneAuthCredential) {
@@ -72,7 +72,7 @@
         // ...
     }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">OnVerificationStateChangedCallbacks callbacks =
 new OnVerificationStateChangedCallbacks() {
@@ -117,7 +117,7 @@ new OnVerificationStateChangedCallbacks() {
 };
 </pre></section> </div>
 </li> <li>
-<p>Initialize a <code translate="no" dir="ltr">PhoneInfoOptions</code> object with the user's phone number, the multi-factor session, and your callbacks:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Initialize a <code translate="no" dir="ltr">PhoneInfoOptions</code> object with the user's phone number, the multi-factor session, and your callbacks:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val phoneAuthOptions = PhoneAuthOptions.newBuilder()
     .setPhoneNumber(phoneNumber)
@@ -125,7 +125,7 @@ new OnVerificationStateChangedCallbacks() {
     .setMultiFactorSession(MultiFactorSession)
     .setCallbacks(callbacks)
     .build()
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">PhoneAuthOptions phoneAuthOptions =
   PhoneAuthOptions.newBuilder()
@@ -136,36 +136,36 @@ new OnVerificationStateChangedCallbacks() {
       .build();
 </pre></section> </div> <p>By default, instant verification is enabled. To disable it, add a call to <code translate="no" dir="ltr">requireSmsValidation(true)</code>.</p>
 </li> <li>
-<p>Send a verification message to the user's phone:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Send a verification message to the user's phone:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">PhoneAuthProvider.verifyPhoneNumber(phoneAuthOptions)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">PhoneAuthProvider.verifyPhoneNumber(phoneAuthOptions);
 </pre></section> </div> <p>While not required, it's a best practice to inform users beforehand that they will receive an SMS message, and that standard rates apply.</p>
 </li> <li>
-<p>Once the SMS code is sent, ask the user to verify the code:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Once the SMS code is sent, ask the user to verify the code:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// Ask user for the verification code.
 val credential = PhoneAuthProvider.getCredential(verificationId, verificationCode)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// Ask user for the verification code.
 PhoneAuthCredential credential
   = PhoneAuthProvider.getCredential(verificationId, verificationCode);
 </pre></section> </div>
 </li> <li>
-<p>Initialize a <code translate="no" dir="ltr">MultiFactorAssertion</code> object with the <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Initialize a <code translate="no" dir="ltr">MultiFactorAssertion</code> object with the <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val multiFactorAssertion
   = PhoneMultiFactorGenerator.getAssertion(credential)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">MultiFactorAssertion multiFactorAssertion
   = PhoneMultiFactorGenerator.getAssertion(credential);
 </pre></section> </div>
 </li> <li>
-<p>Complete the enrollment. Optionally, you can specify a display name for the second factor. This is useful for users with multiple second factors, since the phone number is masked during the authentication flow (for example, +1******1234).</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Complete the enrollment. Optionally, you can specify a display name for the second factor. This is useful for users with multiple second factors, since the phone number is masked during the authentication flow (for example, +1******1234).</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// Complete enrollment. This will update the underlying tokens
 // and trigger ID token change listener.
@@ -176,7 +176,7 @@ FirebaseAuth.getInstance()
     ?.addOnCompleteListener {
         // ...
     }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// Complete enrollment. This will update the underlying tokens
 // and trigger ID token change listener.
@@ -192,7 +192,7 @@ FirebaseAuth.getInstance()
       }
       });
 </pre></section> </div>
-</li> </ol> <p>The code below shows a complete example of enrolling a second factor:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</li> </ol> <p>The code below shows a complete example of enrolling a second factor:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val multiFactorAssertion = PhoneMultiFactorGenerator.getAssertion(credential)
 user.multiFactor.session
@@ -223,7 +223,7 @@ FirebaseAuth.getInstance()
     ?.addOnCompleteListener {
         // ...
     }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">MultiFactorAssertion multiFactorAssertion = PhoneMultiFactorGenerator.getAssertion(credential);
 user.getMultiFactor().getSession()
@@ -264,7 +264,7 @@ FirebaseAuth.getInstance()
       }
       });
 </pre></section> </div> <p>Congratulations! You successfully registered a second authentication factor for a user.</p> <aside class="special"><strong>Important:</strong><span> You should strongly encourage your users to register more than one second factor for account recovery purposes. If a user only registers a single second factor and later loses access to it, they will be locked out of their account.</span></aside> <h2 id="signing_users_in_with_a_second_factor">Signing users in with a second factor</h2> <p>To sign in a user with two-factor SMS verification:</p> <ol> <li>
-<p>Sign the user in with their first factor, then catch the <code translate="no" dir="ltr">FirebaseAuthMultiFactorException</code> exception. This error contains a resolver, which you can use to obtain the user's enrolled second factors. It also contains an underlying session proving the user successfully authenticated with their first factor.</p> <p>For example, if the user's first factor was an email and password:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Sign the user in with their first factor, then catch the <code translate="no" dir="ltr">FirebaseAuthMultiFactorException</code> exception. This error contains a resolver, which you can use to obtain the user's enrolled second factors. It also contains an underlying session proving the user successfully authenticated with their first factor.</p> <p>For example, if the user's first factor was an email and password:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">FirebaseAuth.getInstance()
     .signInWithEmailAndPassword(email, password)
@@ -286,7 +286,7 @@ FirebaseAuth.getInstance()
                 // Handle other errors, such as wrong password.
             }
         })
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">FirebaseAuth.getInstance()
   .signInWithEmailAndPassword(email, password)
@@ -312,7 +312,7 @@ FirebaseAuth.getInstance()
       });
 </pre></section> </div> <p>If the user's first factor is a federated provider, such as OAuth, catch the error after calling <code translate="no" dir="ltr">startActivityForSignInWithProvider()</code>.</p>
 </li> <li>
-<p>If the user has multiple secondary factors enrolled, ask them which one to use:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>If the user has multiple secondary factors enrolled, ask them which one to use:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// Ask user which second factor to use.
 // You can get the list of enrolled second factors using
@@ -331,7 +331,7 @@ if (multiFactorResolver.hints[selectedIndex].factorId
 } else {
     // Unsupported second factor.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// Ask user which second factor to use.
 // You can get the masked phone number using
@@ -356,7 +356,7 @@ MultiFactorInfo selectedHint =
 }
 </pre></section> </div>
 </li> <li>
-<p>Initialize a <code translate="no" dir="ltr">PhoneAuthOptions</code> object with the hint and multi-factor session. These values are contained in the resolver attached to the <code translate="no" dir="ltr">FirebaseAuthMultiFactorException</code>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Initialize a <code translate="no" dir="ltr">PhoneAuthOptions</code> object with the hint and multi-factor session. These values are contained in the resolver attached to the <code translate="no" dir="ltr">FirebaseAuthMultiFactorException</code>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val phoneAuthOptions = PhoneAuthOptions.newBuilder()
     .setMultiFactorHint(selectedHint)
@@ -365,7 +365,7 @@ MultiFactorInfo selectedHint =
     .setCallbacks(callbacks) // Optionally disable instant verification.
     // .requireSmsValidation(true)
     .build()
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">PhoneAuthOptions phoneAuthOptions =
   PhoneAuthOptions.newBuilder()
@@ -378,38 +378,38 @@ MultiFactorInfo selectedHint =
       .build();
 </pre></section> </div>
 </li> <li>
-<p>Send a verification message to the user's phone:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Send a verification message to the user's phone:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// Send SMS verification code
 PhoneAuthProvider.verifyPhoneNumber(phoneAuthOptions)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// Send SMS verification code
 PhoneAuthProvider.verifyPhoneNumber(phoneAuthOptions);
 </pre></section> </div>
 </li> <li>
-<p>Once the SMS code is sent, ask the user to verify the code:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Once the SMS code is sent, ask the user to verify the code:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// Ask user for the verification code. Then, pass it to getCredential:
 val credential =
     PhoneAuthProvider.getCredential(verificationId, verificationCode)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// Ask user for the verification code. Then, pass it to getCredential:
 PhoneAuthCredential credential
     = PhoneAuthProvider.getCredential(verificationId, verificationCode);
 </pre></section> </div>
 </li> <li>
-<p>Initialize a <code translate="no" dir="ltr">MultiFactorAssertion</code> object with the <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Initialize a <code translate="no" dir="ltr">MultiFactorAssertion</code> object with the <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val multiFactorAssertion = PhoneMultiFactorGenerator.getAssertion(credential)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">MultiFactorAssertion multiFactorAssertion
     = PhoneMultiFactorGenerator.getAssertion(credential);
 </pre></section> </div>
 </li> <li>
-<p>Call <code translate="no" dir="ltr">resolver.resolveSignIn()</code> to complete secondary authentication. You can then access the original sign-in result, which includes the standard provider-specific data and authentication credentials:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Call <code translate="no" dir="ltr">resolver.resolveSignIn()</code> to complete secondary authentication. You can then access the original sign-in result, which includes the standard provider-specific data and authentication credentials:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">multiFactorResolver
     .resolveSignIn(multiFactorAssertion)
@@ -431,7 +431,7 @@ PhoneAuthCredential credential
             //   OAuth ID token.
         }
     }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">multiFactorResolver
   .resolveSignIn(multiFactorAssertion)
@@ -457,7 +457,7 @@ PhoneAuthCredential credential
       }
       });
 </pre></section> </div>
-</li> </ol> <p>The code below shows a complete example of signing in a multi-factor user:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</li> </ol> <p>The code below shows a complete example of signing in a multi-factor user:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">FirebaseAuth.getInstance()
     .signInWithEmailAndPassword(email, password)
@@ -512,7 +512,7 @@ PhoneAuthCredential credential
             // Handle other errors such as wrong password.
         }
     }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">FirebaseAuth.getInstance()
   .signInWithEmailAndPassword(email, password)

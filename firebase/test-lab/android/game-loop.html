@@ -13,13 +13,13 @@
    &lt;/intent-filter&gt;
 &lt;/activity&gt;</pre> <p>This allows Test Lab to launch your game by triggering it with a specific intent.</p> <aside class="note"><strong>Note:</strong><span> Game loops require a separate, dedicated intent filter that is not used for other purposes. Your activity can include other intent filters. To learn more about intent filters, see the <a href="https://developer.android.com/guide/topics/manifest/intent-filter-element.html" class="external">&lt;intent-filter&gt; reference page.</a> </span></aside>
 </li> <li>
-<p>In your code (we recommend inside the <code translate="no" dir="ltr">onCreate</code> method declaration), add the following:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>In your code (we recommend inside the <code translate="no" dir="ltr">onCreate</code> method declaration), add the following:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val launchIntent = intent
 if (launchIntent.action == "com.google.intent.action.TEST_LOOP") {
     val scenario = launchIntent.getIntExtra("scenario", 0)
     // Code to handle your game loop here
-}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">Intent launchIntent = getIntent();
 if(launchIntent.getAction().equals("com.google.intent.action.TEST_LOOP")) {
@@ -27,9 +27,9 @@ if(launchIntent.getAction().equals("com.google.intent.action.TEST_LOOP")) {
     // Code to handle your game loop here
 }</pre></section> </div> <p>This allows your activity to check the intent that launches it. You can also add this code later if you prefer (e.g., after initially loading your game engine).</p>
 </li> <li>
-<p>Recommended: At the end of the test, add:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Recommended: At the end of the test, add:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
-<pre data-language="kotlin">yourActivity.finish()</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<pre data-language="kotlin">yourActivity.finish()</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">yourActivity.finish();</pre></section> </div> <p>This closes your app when the Game Loop test is complete. The test relies on your app's UI framework to start the next loop, and closing your app tells it that the test is finished.</p>
 </li> </ol> <h2 id="create-and-run">Create and run a Game Loop test</h2> <p>After you configure your app for Game Loop tests, you can immediately create a test and run it in your gaming app. You can choose to run a test in Test Lab using either the <a href="#run-console">Firebase console</a> or the <a href="#run-gcloud">gcloud command line interface (CLI)</a>, or on a <a href="#run-local">local device using the Test Loop Manager</a>.</p> <h3 id="run-local">Run on a local device</h3> <p>Test Lab's <strong>Test Loop Manager</strong> is an open source app that helps you integrate Game Loop tests and run them on your local devices. It also allows your Quality Assurance team to run the same game loops on their devices.</p> <p>To run a test on a local device using the Test Loop Manager:</p> <ol> <li>Download the <a href="https://dl.google.com/firebase/testlab/testloopmanager.apk">Test Loop Manager</a> on a phone or tablet and install it by running: 
@@ -46,21 +46,21 @@ if(launchIntent.getAction().equals("com.google.intent.action.TEST_LOOP")) {
  --type=game-loop --app=&lt;var&gt;path-to-apk&lt;/var&gt; \
  --device model=herolte,version=23
 </pre> <aside class="note"><strong>Note:</strong><span> At this step, you can choose to run a subset of loops instead of just one loop. For more information on running multiple loops at once, see <a href="#optional-features">Optional features</a>.</span></aside>
-</li> </ol> <p>For more information on getting started with the gcloud CLI, see <a href="command-line">Start testing from the gcloud command line.</a></p> <h2 id="optional-features">Optional features</h2> <p>Test Lab offers several optional features that let you further customize your tests, including the ability to write output data, support for multiple game loops, and labels for related loops.</p> <h3 id="write-output-data">Write output data</h3> <p>When Test Lab launches your game, it specifies a URL pointing to a local result file on the test device, accessible using <code translate="no" dir="ltr">launchIntent.getData()</code>. Your game can write test results, performance metrics, and logs (<code translate="no" dir="ltr">logFile</code>) directly to this location during your test run.</p> <p>You can write <em>any arbitrary content</em> to the <code translate="no" dir="ltr">logFile</code>, such as plain text, CSV data, frame rendering times, or custom diagnostic reports. There are no restrictions or formatting requirements for the content you write; it captures the file when your test finishes and uploads it to your Cloud Storage bucket alongside your other test artifacts.</p> <p>Test Lab follows established best practices for sharing a file between apps described in <a href="https://developer.android.com/training/secure-file-sharing/share-file.html" class="external">Sharing a File</a>. In your activity's <code translate="no" dir="ltr">onCreate()</code> method, where your intent is located, you can retrieve and check your data output file by running the following code:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</li> </ol> <p>For more information on getting started with the gcloud CLI, see <a href="command-line">Start testing from the gcloud command line.</a></p> <h2 id="optional-features">Optional features</h2> <p>Test Lab offers several optional features that let you further customize your tests, including the ability to write output data, support for multiple game loops, and labels for related loops.</p> <h3 id="write-output-data">Write output data</h3> <p>When Test Lab launches your game, it specifies a URL pointing to a local result file on the test device, accessible using <code translate="no" dir="ltr">launchIntent.getData()</code>. Your game can write test results, performance metrics, and logs (<code translate="no" dir="ltr">logFile</code>) directly to this location during your test run.</p> <p>You can write <em>any arbitrary content</em> to the <code translate="no" dir="ltr">logFile</code>, such as plain text, CSV data, frame rendering times, or custom diagnostic reports. There are no restrictions or formatting requirements for the content you write; it captures the file when your test finishes and uploads it to your Cloud Storage bucket alongside your other test artifacts.</p> <p>Test Lab follows established best practices for sharing a file between apps described in <a href="https://developer.android.com/training/secure-file-sharing/share-file.html" class="external">Sharing a File</a>. In your activity's <code translate="no" dir="ltr">onCreate()</code> method, where your intent is located, you can retrieve and check your data output file by running the following code:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val launchIntent = intent
 val logFile = launchIntent.data
 logFile?.let {
     Log.i(TAG, "Log file ${it.encodedPath}")
     // ...
-}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">Intent launchIntent = getIntent();
 Uri logFile = launchIntent.getData();
 if (logFile != null) {
     Log.i(TAG, "Log file " + logFile.getEncodedPath());
     // ...
-}</pre></section> </div> <p>If you want to write to the file from the C++ side of your game app, you can pass in the file descriptor instead of the file path:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+}</pre></section> </div> <p>If you want to write to the file from the C++ side of your game app, you can pass in the file descriptor instead of the file path:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val launchIntent = intent
 val logFile = launchIntent.data
@@ -82,7 +82,7 @@ logFile?.let {
 }
 
 // C++ code invoked here.
-// native_function(fd);</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+// native_function(fd);</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">Intent launchIntent = getIntent();
 Uri logFile = launchIntent.getData();
@@ -104,7 +104,7 @@ if (logFile != null) {
 }
 
 // C++ code invoked here.
-// native_function(fd);</pre></section> <section><p class="_firebase-tab"><strong>C++</strong></p>
+// native_function(fd);</pre></section> <section><p class="_code-tab"><strong>C++</strong></p>
 
 <pre data-language="cpp">#include &lt;unistd.h&gt;
 JNIEXPORT void JNICALL
@@ -169,10 +169,10 @@ int my_file_descriptor = dup(log_file_descriptor);
   android:value="5" /&gt;</pre> <p>This launch intent contains the target loop as an integer parameter. In the <code translate="no" dir="ltr">android:value</code> field, you can specify an integer from 1 to 1024 (the maximum number of loops allowed for a single test). Note that loops are indexed starting from 1, not 0.</p>
 </li> <li><p>In the Test Loop Manager app, a selection screen appears that allows you to select which loop(s) you want to run. If you select multiple loops, each loop is launched in sequence after the preceding loop completes.</p></li> </ol>
 </li> <li><p>If you're running a test with the Firebase console, enter a list or a range of loop numbers in the <strong>Scenarios</strong> field.</p></li> <li><p>If you're running a test with the gcloud CLI, specify a list of loop numbers by using the <code translate="no" dir="ltr">--scenario-numbers</code> flag. For example, <code translate="no" dir="ltr">--scenario-numbers=1,3,5</code> runs loops 1, 3, and 5.</p></li> <li>
-<p>If you're writing C++ and want to change the behavior of your loop, pass the following extra to your native C++ code:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>If you're writing C++ and want to change the behavior of your loop, pass the following extra to your native C++ code:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val launchIntent = intent
-val scenario = launchIntent.getIntExtra("scenario", 0)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+val scenario = launchIntent.getIntExtra("scenario", 0)</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">Intent launchIntent = getIntent();
 int scenario = launchIntent.getIntExtra("scenario", 0);</pre></section> </div> <p>You can now change the behavior of your loop based on the resulting <code translate="no" dir="ltr">int</code> value.</p>

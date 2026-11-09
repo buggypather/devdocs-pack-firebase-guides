@@ -1,16 +1,16 @@
-<h1>Manage Users in Firebase</h1> <h2 id="create_a_user">Create a user</h2> <p>You have the following options for creating a new user:</p> <ul> <li><p><strong>From your app</strong>: Create a new user in your Firebase project by calling the <a href="password-auth#create_a_password-based_account"><code translate="no" dir="ltr">createUserWithEmailAndPassword</code></a> method or by signing in a user for the first time using a federated identity provider, such as <a href="google-signin">Google Sign-In</a> or <a href="facebook-login">Facebook Login</a>.</p></li> <li><p><strong>In the Firebase console</strong>: Create a new password-authenticated user in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/users" class="external"><strong>Users</strong> tab</a>.</p></li> </ul> <h2 id="get_the_currently_signed-in_user">Get the currently signed-in user</h2> <p>The recommended way to get the current user is by calling the <code translate="no" dir="ltr">getCurrentUser</code> method. If no user is signed in, <code translate="no" dir="ltr">getCurrentUser</code> returns null:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<h1>Manage Users in Firebase</h1> <h2 id="create_a_user">Create a user</h2> <p>You have the following options for creating a new user:</p> <ul> <li><p><strong>From your app</strong>: Create a new user in your Firebase project by calling the <a href="password-auth#create_a_password-based_account"><code translate="no" dir="ltr">createUserWithEmailAndPassword</code></a> method or by signing in a user for the first time using a federated identity provider, such as <a href="google-signin">Google Sign-In</a> or <a href="facebook-login">Facebook Login</a>.</p></li> <li><p><strong>In the Firebase console</strong>: Create a new password-authenticated user in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/users" class="external"><strong>Users</strong> tab</a>.</p></li> </ul> <h2 id="get_the_currently_signed-in_user">Get the currently signed-in user</h2> <p>The recommended way to get the current user is by calling the <code translate="no" dir="ltr">getCurrentUser</code> method. If no user is signed in, <code translate="no" dir="ltr">getCurrentUser</code> returns null:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser
 if (user != null) {
     // User is signed in
 } else {
     // No user is signed in
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 if (user != null) {
     // User is signed in
 } else {
     // No user is signed in
-}</pre> </section> </div> <p>There are some cases where <code translate="no" dir="ltr">getCurrentUser</code> will return a non-null <code translate="no" dir="ltr">FirebaseUser</code> but the underlying token is not valid. This can happen, for example, if the user was deleted on another device and the local token has not refreshed. In this case, you may get a valid user <code translate="no" dir="ltr">getCurrentUser</code> but subsequent calls to authenticated resources will fail.</p> <p><code translate="no" dir="ltr">getCurrentUser</code> might also return <code translate="no" dir="ltr">null</code> because the auth object has not finished initializing.</p> <p>If you attach an <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth.AuthStateListener">AuthStateListener</a> you will get a callback every time the underlying token state changes. This can be useful to react to edge cases like those mentioned above.</p> <h2 id="get_a_users_profile">Get a user's profile</h2> <p>To get a user's profile information, use the accessor methods of an instance of <code translate="no" dir="ltr">FirebaseUser</code>. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> </div> <p>There are some cases where <code translate="no" dir="ltr">getCurrentUser</code> will return a non-null <code translate="no" dir="ltr">FirebaseUser</code> but the underlying token is not valid. This can happen, for example, if the user was deleted on another device and the local token has not refreshed. In this case, you may get a valid user <code translate="no" dir="ltr">getCurrentUser</code> but subsequent calls to authenticated resources will fail.</p> <p><code translate="no" dir="ltr">getCurrentUser</code> might also return <code translate="no" dir="ltr">null</code> because the auth object has not finished initializing.</p> <p>If you attach an <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth.AuthStateListener">AuthStateListener</a> you will get a callback every time the underlying token state changes. This can be useful to react to edge cases like those mentioned above.</p> <h2 id="get_a_users_profile">Get a user's profile</h2> <p>To get a user's profile information, use the accessor methods of an instance of <code translate="no" dir="ltr">FirebaseUser</code>. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser
 user?.let {
     // Name, email address, and profile photo Url
@@ -25,7 +25,7 @@ user?.let {
     // authenticate with your backend server, if you have one. Use
     // FirebaseUser.getIdToken() instead.
     val uid = it.uid
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 if (user != null) {
     // Name, email address, and profile photo Url
@@ -40,7 +40,7 @@ if (user != null) {
     // authenticate with your backend server, if you have one. Use
     // FirebaseUser.getIdToken() instead.
     String uid = user.getUid();
-}</pre> </section> </div> <h2 id="get_a_users_provider-specific_profile_information">Get a user's provider-specific profile information</h2> <p>To get the profile information retrieved from the sign-in providers linked to a user, use the <code translate="no" dir="ltr">getProviderData</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> </div> <h2 id="get_a_users_provider-specific_profile_information">Get a user's provider-specific profile information</h2> <p>To get the profile information retrieved from the sign-in providers linked to a user, use the <code translate="no" dir="ltr">getProviderData</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser
 user?.let {
     for (profile in it.providerData) {
@@ -55,7 +55,7 @@ user?.let {
         val email = profile.email
         val photoUrl = profile.photoUrl
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 if (user != null) {
     for (UserInfo profile : user.getProviderData()) {
@@ -70,7 +70,7 @@ if (user != null) {
         String email = profile.getEmail();
         Uri photoUrl = profile.getPhotoUrl();
     }
-}</pre> </section> </div> <h2 id="update_a_users_profile">Update a user's profile</h2> <p>You can update a user's basic profile information—the user's display name and profile photo URL—with the <code translate="no" dir="ltr">updateProfile</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> </div> <h2 id="update_a_users_profile">Update a user's profile</h2> <p>You can update a user's basic profile information—the user's display name and profile photo URL—with the <code translate="no" dir="ltr">updateProfile</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser
 
 val profileUpdates = userProfileChangeRequest {
@@ -83,7 +83,7 @@ user!!.updateProfile(profileUpdates)
         if (task.isSuccessful) {
             Log.d(TAG, "User profile updated.")
         }
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
 UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
@@ -99,7 +99,7 @@ user.updateProfile(profileUpdates)
                     Log.d(TAG, "User profile updated.");
                 }
             }
-        });</pre> </section> </div> <h2 id="set_a_users_email_address">Set a user's email address</h2> <p>You can set a user's email address with the <code translate="no" dir="ltr">updateEmail</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+        });</pre> </section> </div> <h2 id="set_a_users_email_address">Set a user's email address</h2> <p>You can set a user's email address with the <code translate="no" dir="ltr">updateEmail</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser
 
 user!!.updateEmail("user@example.com")
@@ -107,7 +107,7 @@ user!!.updateEmail("user@example.com")
         if (task.isSuccessful) {
             Log.d(TAG, "User email address updated.")
         }
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
 user.updateEmail("user@example.com")
@@ -118,7 +118,7 @@ user.updateEmail("user@example.com")
                     Log.d(TAG, "User email address updated.");
                 }
             }
-        });</pre> </section> </div> <aside class="special"><strong>Important:</strong><span> To set a user's email address, the user must have signed in recently. See <a href="#re-authenticate_a_user">Re-authenticate a user</a>.</span></aside> <h2 id="send_a_user_a_verification_email">Send a user a verification email</h2> <p>You can send an address verification email to a user with the <code translate="no" dir="ltr">sendEmailVerification</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+        });</pre> </section> </div> <aside class="special"><strong>Important:</strong><span> To set a user's email address, the user must have signed in recently. See <a href="#re-authenticate_a_user">Re-authenticate a user</a>.</span></aside> <h2 id="send_a_user_a_verification_email">Send a user a verification email</h2> <p>You can send an address verification email to a user with the <code translate="no" dir="ltr">sendEmailVerification</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser
 
 user!!.sendEmailVerification()
@@ -126,7 +126,7 @@ user!!.sendEmailVerification()
         if (task.isSuccessful) {
             Log.d(TAG, "Email sent.")
         }
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseAuth auth = FirebaseAuth.getInstance();
 FirebaseUser user = auth.getCurrentUser();
 
@@ -138,13 +138,13 @@ user.sendEmailVerification()
                     Log.d(TAG, "Email sent.");
                 }
             }
-        });</pre> </section> </div> <p>You can customize which email template is used in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/emails" class="external"><strong>Templates</strong> tab</a> of the Firebase console. See <a href="https://support.google.com/firebase/answer/7000714">Email Templates</a> in Firebase Help Center.</p> <p>It is also possible to pass state via a <a href="passing-state-in-email-actions">continue URL</a> to redirect back to the app when sending a verification email.</p> <p>Additionally you can localize the verification email by updating the language code on the Auth instance before sending the email. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+        });</pre> </section> </div> <p>You can customize which email template is used in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/emails" class="external"><strong>Templates</strong> tab</a> of the Firebase console. See <a href="https://support.google.com/firebase/answer/7000714">Email Templates</a> in Firebase Help Center.</p> <p>It is also possible to pass state via a <a href="passing-state-in-email-actions">continue URL</a> to redirect back to the app when sending a verification email.</p> <p>Additionally you can localize the verification email by updating the language code on the Auth instance before sending the email. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">auth.setLanguageCode("fr")
 // To apply the default app language instead of explicitly setting it.
-// auth.useAppLanguage()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+// auth.useAppLanguage()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">auth.setLanguageCode("fr");
 // To apply the default app language instead of explicitly setting it.
-// auth.useAppLanguage();</pre> </section> </div> <h2 id="set_a_users_password">Set a user's password</h2> <p>You can set a user's password with the <code translate="no" dir="ltr">updatePassword</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+// auth.useAppLanguage();</pre> </section> </div> <h2 id="set_a_users_password">Set a user's password</h2> <p>You can set a user's password with the <code translate="no" dir="ltr">updatePassword</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser
 val newPassword = "SOME-SECURE-PASSWORD"
 
@@ -153,7 +153,7 @@ user!!.updatePassword(newPassword)
         if (task.isSuccessful) {
             Log.d(TAG, "User password updated.")
         }
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 String newPassword = "SOME-SECURE-PASSWORD";
 
@@ -165,7 +165,7 @@ user.updatePassword(newPassword)
                     Log.d(TAG, "User password updated.");
                 }
             }
-        });</pre> </section> </div> <aside class="special"><strong>Important:</strong><span> To set a user's password, the user must have signed in recently. See <a href="#re-authenticate_a_user">Re-authenticate a user</a>.</span></aside> <h2 id="send_a_password_reset_email">Send a password reset email</h2> <p>You can send a password reset email to a user with the <code translate="no" dir="ltr">sendPasswordResetEmail</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+        });</pre> </section> </div> <aside class="special"><strong>Important:</strong><span> To set a user's password, the user must have signed in recently. See <a href="#re-authenticate_a_user">Re-authenticate a user</a>.</span></aside> <h2 id="send_a_password_reset_email">Send a password reset email</h2> <p>You can send a password reset email to a user with the <code translate="no" dir="ltr">sendPasswordResetEmail</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val emailAddress = "user@example.com"
 
 Firebase.auth.sendPasswordResetEmail(emailAddress)
@@ -173,7 +173,7 @@ Firebase.auth.sendPasswordResetEmail(emailAddress)
         if (task.isSuccessful) {
             Log.d(TAG, "Email sent.")
         }
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseAuth auth = FirebaseAuth.getInstance();
 String emailAddress = "user@example.com";
 
@@ -185,13 +185,13 @@ auth.sendPasswordResetEmail(emailAddress)
                     Log.d(TAG, "Email sent.");
                 }
             }
-        });</pre> </section> </div> <p>You can customize which email template is used in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/emails" class="external"><strong>Templates</strong> tab</a> of the Firebase console. See <a href="https://support.google.com/firebase/answer/7000714">Email Templates</a> in Firebase Help Center.</p> <p>It is also possible to pass state via a <a href="passing-state-in-email-actions">continue URL</a> to redirect back to the app when sending a password reset email.</p> <p>Additionally you can localize the password reset email by updating the language code on the Auth instance before sending the email. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+        });</pre> </section> </div> <p>You can customize which email template is used in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/emails" class="external"><strong>Templates</strong> tab</a> of the Firebase console. See <a href="https://support.google.com/firebase/answer/7000714">Email Templates</a> in Firebase Help Center.</p> <p>It is also possible to pass state via a <a href="passing-state-in-email-actions">continue URL</a> to redirect back to the app when sending a password reset email.</p> <p>Additionally you can localize the password reset email by updating the language code on the Auth instance before sending the email. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">auth.setLanguageCode("fr")
 // To apply the default app language instead of explicitly setting it.
-// auth.useAppLanguage()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+// auth.useAppLanguage()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">auth.setLanguageCode("fr");
 // To apply the default app language instead of explicitly setting it.
-// auth.useAppLanguage();</pre> </section> </div> <p>You can also send password reset emails from the Firebase console.</p> <h2 id="delete_a_user">Delete a user</h2> <p>You can delete a user account with the <code translate="no" dir="ltr">delete</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+// auth.useAppLanguage();</pre> </section> </div> <p>You can also send password reset emails from the Firebase console.</p> <h2 id="delete_a_user">Delete a user</h2> <p>You can delete a user account with the <code translate="no" dir="ltr">delete</code> method. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser!!
 
 user.delete()
@@ -199,7 +199,7 @@ user.delete()
         if (task.isSuccessful) {
             Log.d(TAG, "User account deleted.")
         }
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
 user.delete()
@@ -210,7 +210,7 @@ user.delete()
                     Log.d(TAG, "User account deleted.");
                 }
             }
-        });</pre> </section> </div> <aside class="special"><strong>Important:</strong><span> To delete a user, the user must have signed in recently. See <a href="#re-authenticate_a_user">Re-authenticate a user</a>.</span></aside> <p>You can also delete users in the Firebase console in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/users" class="external"><strong>Users</strong> tab</a>.</p> <h2 id="re-authenticate_a_user">Re-authenticate a user</h2> <p>Some security-sensitive actions—such as <a href="#delete_a_user">deleting an account</a>, <a href="#set_a_users_email_address">setting a primary email address</a>, and <a href="#set_a_users_password">changing a password</a>—require that the user has recently signed in. If you perform one of these actions, and the user signed in too long ago, the action fails and throws <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuthRecentLoginRequiredException"><code translate="no" dir="ltr">FirebaseAuthRecentLoginRequiredException</code></a>. When this happens, re-authenticate the user by getting new sign-in credentials from the user and passing the credentials to <code translate="no" dir="ltr">reauthenticate</code>. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+        });</pre> </section> </div> <aside class="special"><strong>Important:</strong><span> To delete a user, the user must have signed in recently. See <a href="#re-authenticate_a_user">Re-authenticate a user</a>.</span></aside> <p>You can also delete users in the Firebase console in the <strong>Security</strong> &gt; <strong>Authentication</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/users" class="external"><strong>Users</strong> tab</a>.</p> <h2 id="re-authenticate_a_user">Re-authenticate a user</h2> <p>Some security-sensitive actions—such as <a href="#delete_a_user">deleting an account</a>, <a href="#set_a_users_email_address">setting a primary email address</a>, and <a href="#set_a_users_password">changing a password</a>—require that the user has recently signed in. If you perform one of these actions, and the user signed in too long ago, the action fails and throws <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuthRecentLoginRequiredException"><code translate="no" dir="ltr">FirebaseAuthRecentLoginRequiredException</code></a>. When this happens, re-authenticate the user by getting new sign-in credentials from the user and passing the credentials to <code translate="no" dir="ltr">reauthenticate</code>. For example:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser!!
 
 // Get auth credentials from the user for re-authentication. The example below shows
@@ -221,7 +221,7 @@ val credential = EmailAuthProvider
 
 // Prompt the user to re-provide their sign-in credentials
 user.reauthenticate(credential)
-    .addOnCompleteListener { Log.d(TAG, "User re-authenticated.") }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .addOnCompleteListener { Log.d(TAG, "User re-authenticated.") }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
 // Get auth credentials from the user for re-authentication. The example below shows

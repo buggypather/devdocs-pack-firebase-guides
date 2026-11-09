@@ -1,6 +1,6 @@
 <h1>Verify App Check tokens from a custom backend</h1>  <p>You can use App Check to protect non-Google custom backend resources for your app, like your own self-hosted backend. To do so, you'll need to do both of the following:</p> <ul> <li>Modify your app client to send an App Check token along with each request to your backend, as described on the pages for <a href="ios/custom-resource">iOS+</a>, <a href="android/custom-resource">Android</a>, <a href="web/custom-resource">web</a>, <a href="flutter/custom-resource">Flutter</a>, <a href="unity/custom-resource">Unity</a>, or <a href="cpp/custom-resource">C++</a>.</li> <li>Modify your backend to require a valid App Check token with every request, as described on this page.</li> </ul> <h2 id="verification">Token verification</h2> <p>To verify App Check tokens on your backend, add logic to your API endpoints that does the following:</p> <ul> <li><p>Check that each request include an App Check token.</p></li> <li>
 <p>Verify the App Check token using the Admin SDK.</p> <p>If verification succeeds, the Admin SDK returns the decoded App Check token. Successful verification indicates the token originated from an app belonging to your Firebase project.</p>
-</li> </ul> <p>Reject any request that fails either check. For example:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</li> </ul> <p>Reject any request that fails either check. For example:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 <p>If you haven't already installed the <a href="../admin/setup">Node.js Admin SDK</a>, do so.</p> <p>Then, using Express.js middleware as an example:</p> 
 <pre data-language="javascript">import express from "express";
 import { initializeApp } from "firebase-admin/app";
@@ -32,7 +32,7 @@ const appCheckVerification = async (req, res, next) =&gt; {
 expressApp.get("/yourApiEndpoint", [appCheckVerification], (req, res) =&gt; {
     // Handle request.
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 <p>If you haven't already installed the <a href="../admin/setup">Python Admin SDK</a>, do so.</p> <p>Then, in your API endpoint handlers, call <code translate="no" dir="ltr">app_check.verify_token()</code> and reject the request if it fails. In the following example, a function decorated with <code translate="no" dir="ltr">@before_request</code> performs this task for all requests:</p> 
 <pre data-language="python">import firebase_admin
 from firebase_admin import app_check
@@ -55,7 +55,7 @@ def verify_app_check() -&gt; None:
 def your_api_endpoint(request: flask.Request):
     # Handle request.
     ...
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 <p>If you haven't already installed the <a href="../admin/setup">Admin SDK for Go</a>, do so.</p> <p>Then, in your API endpoint handlers, call <code translate="no" dir="ltr">appcheck.Client.VerifyToken()</code> and reject the request if it fails. In the following example, a wrapper function adds this logic to the endpoint handlers:</p> 
 <pre data-language="go">package main
 
@@ -112,7 +112,7 @@ func requireAppCheck(handler func(http.ResponseWriter, *http.Request)) func(http
 func yourApiEndpointHandler(w http.ResponseWriter, r *http.Request) {
     // Handle request.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Other</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Other</strong></p>
 <p>If your backend is written in another language, you can use a general-purpose JWT library, such as one found at <a href="https://jwt.io/libraries" class="external">jwt.io</a>, to verify App Check tokens.</p> <p>Your token verification logic must complete the following steps:</p> <ol> <li>Obtain the Firebase App Check public JSON Web Key (JWK) Set from the App Check JWKS endpoint: <code translate="no" dir="ltr">https://firebaseappcheck.googleapis.com/v1/jwks</code>
 </li> <li>Verify the App Check token’s signature to ensure it is legitimate.</li> <li>Ensure that the token’s header uses the algorithm RS256.</li> <li>Ensure that the token’s header has type JWT.</li> <li>Ensure that the token is issued by Firebase App Check under your project.</li> <li>Ensure that the token has not expired.</li> <li>Ensure that the token’s audience matches your project.</li> <li>
 <strong>Optional</strong>: Check that the token’s subject matches your app’s App ID.</li> </ol> <p>The capabilities of JWT libraries can differ; be sure to manually complete any steps not handled by the library you choose.</p> <p>The following example performs the necessary steps in Ruby using the <code translate="no" dir="ltr">jwt</code> gem as a Rack middleware layer.</p> 
@@ -179,7 +179,7 @@ run Application.new
 </pre></section> </div> <h2 id="replay-protection">Replay protection (beta)</h2> <p>To protect an endpoint from replay attacks, you can consume the App Check token after verifying it so that it can be used only once.</p> <aside class="note"><strong>Note:</strong><span> The replay protection beta supports only the Node.js and Python SDKs.</span></aside> <p>Using replay protection adds a network round trip to the token verification call, and therefore adds latency to any endpoint that uses it. For this reason, we recommend that you enable replay protection only on particularly sensitive endpoints.</p> <p>To use replay protection, do the following:</p> <ol> <li>
 <p>In the <a href="https://console.cloud.google.com/iam-admin/iam">Cloud console</a>, grant the "Firebase App Check Token Verifier" role to the service account used to verify tokens.</p> <ul> <li>If you initialized the Admin SDK with the Admin SDK service account credentials you downloaded from the Firebase console, the required role is already granted.</li> <li>If you're using 1st generation Cloud Functions with the default Admin SDK configuration, grant the role to the <strong>App Engine default service account</strong>. See <a href="https://cloud.google.com/appengine/docs/legacy/standard/python/service-account#modifying_the_default_service_account">Changing service account permissions</a>.</li> <li>If you're using 2nd generation Cloud Functions with the default Admin SDK configuration, grant the role to the <strong>Default compute service account</strong>.</li> </ul>
 </li> <li>
-<p>To consume a token, pass <code translate="no" dir="ltr">{ consume: true }</code> (Node.js) or <code translate="no" dir="ltr">consume=True</code> (Python) to the token verification call, and then examine the result object. If the token was already consumed, reject the request or take corrective action, such as requiring the caller to pass other checks:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<p>To consume a token, pass <code translate="no" dir="ltr">{ consume: true }</code> (Node.js) or <code translate="no" dir="ltr">consume=True</code> (Python) to the token verification call, and then examine the result object. If the token was already consumed, reject the request or take corrective action, such as requiring the caller to pass other checks:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const appCheckClaims = await getAppCheck().verifyToken(appCheckToken, { consume: true });
 
@@ -189,7 +189,7 @@ if (appCheckClaims.alreadyConsumed) {
 }
 
 // If verifyToken() succeeds and alreadyConsumed is not set, okay to continue.
-</pre> <p>This verifies the token and then flags it as consumed. Future invocations of <code translate="no" dir="ltr">verifyToken(appCheckToken, { consume: true })</code> on the same token set <code translate="no" dir="ltr">alreadyConsumed</code> to <code translate="no" dir="ltr">true</code>. (Note that <code translate="no" dir="ltr">verifyToken()</code> doesn't reject a consumed token or even check whether it's consumed if <code translate="no" dir="ltr">consume</code> isn't set.)</p></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre> <p>This verifies the token and then flags it as consumed. Future invocations of <code translate="no" dir="ltr">verifyToken(appCheckToken, { consume: true })</code> on the same token set <code translate="no" dir="ltr">alreadyConsumed</code> to <code translate="no" dir="ltr">true</code>. (Note that <code translate="no" dir="ltr">verifyToken()</code> doesn't reject a consumed token or even check whether it's consumed if <code translate="no" dir="ltr">consume</code> isn't set.)</p></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">app_check_claims = app_check.verify_token(app_check_token, consume=True)
 

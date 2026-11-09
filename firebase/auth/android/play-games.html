@@ -29,30 +29,30 @@
 <p>On the Play Games services configuration page, click <strong>Add Credential</strong>.</p> <ol> <li>Select the <strong>Game server</strong> type.</li> <li>In the <strong>OAuth client</strong> field, select your project's web client ID. Be sure this is the same client ID you specified when you enabled Play Games sign-in.</li> <li>Save your changes.</li> </ol>
 </li> <li>
 <p>Still on the Play Games services configuration page, click <strong>Add Credential</strong> again.</p> <ol> <li>Select the <strong>Android</strong> type.</li> <li>In the <strong>OAuth client</strong> field, select your project's Android client ID. (If you don't see your Android client ID, be sure you set your game's SHA-1 fingerprint in the Firebase console.)</li> <li>Save your changes.</li> </ol>
-</li> <li><p>On the <strong>Testers</strong> page, add the email addresses of any users who need to be able to sign in to your game before you release it on the Play Store.</p></li> </ol> <h2 id="integrate_play_games_sign-in_into_your_game">Integrate Play Games sign-in into your game</h2> <p>First, integrate Play Games sign-in into your app. See <a href="https://developers.google.com/games/services/android/signin">Sign in to Android Games</a> for complete instructions.</p> <p>In your integration, when you build the <code translate="no" dir="ltr">GoogleSignInOptions</code> object, use the <code translate="no" dir="ltr">DEFAULT_GAMES_SIGN_IN</code> configuration and call <code translate="no" dir="ltr">requestServerAuthCode</code>:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+</li> <li><p>On the <strong>Testers</strong> page, add the email addresses of any users who need to be able to sign in to your game before you release it on the Play Store.</p></li> </ol> <h2 id="integrate_play_games_sign-in_into_your_game">Integrate Play Games sign-in into your game</h2> <p>First, integrate Play Games sign-in into your app. See <a href="https://developers.google.com/games/services/android/signin">Sign in to Android Games</a> for complete instructions.</p> <p>In your integration, when you build the <code translate="no" dir="ltr">GoogleSignInOptions</code> object, use the <code translate="no" dir="ltr">DEFAULT_GAMES_SIGN_IN</code> configuration and call <code translate="no" dir="ltr">requestServerAuthCode</code>:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN)
     .requestServerAuthCode(getString(R.string.default_web_client_id))
-    .build()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .build()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN)
         .requestServerAuthCode(getString(R.string.default_web_client_id))
         .build();</pre> </section> </div> <p>You must pass your web server client ID to the <code translate="no" dir="ltr">requestServerAuthCode</code> method. This is the ID that you provided when you enabled Play Games sign-in in the Firebase console.</p> <h2 id="authenticate_with_firebase">Authenticate with Firebase</h2> <p>After you add Play Games sign-in to your app, you need to set up Firebase to use the Google Account credentials that you get when a player signs in successfully with Play Games.</p> <ol> <li>
-<p>First, in your sign-in activity's <code translate="no" dir="ltr">onCreate</code> method, get the shared instance of the <code translate="no" dir="ltr">FirebaseAuth</code> object:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<p>First, in your sign-in activity's <code translate="no" dir="ltr">onCreate</code> method, get the shared instance of the <code translate="no" dir="ltr">FirebaseAuth</code> object:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">private lateinit var auth: FirebaseAuth
 // ...
 // Initialize Firebase Auth
-auth = Firebase.auth</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+auth = Firebase.auth</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">private FirebaseAuth mAuth;
 // ...
 // Initialize Firebase Auth
 mAuth = FirebaseAuth.getInstance();</pre> </section> </div>
 </li> <li>
-<p>When initializing your Activity, check to see if the player is already signed in with Firebase:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<p>When initializing your Activity, check to see if the player is already signed in with Firebase:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">override fun onStart() {
     super.onStart()
     // Check if user is signed in (non-null) and update UI accordingly.
     val currentUser = auth.currentUser
     updateUI(currentUser)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">@Override
 public void onStart() {
     super.onStart();
@@ -61,7 +61,7 @@ public void onStart() {
     updateUI(currentUser);
 }</pre> </section> </div> <p>If the player isn't signed in, present the player with your game's signed-out experience, including the option to sign in.</p>
 </li> <li>
-<p>After a player signs in with Play Games either silently or interactively, get the auth code from the <code translate="no" dir="ltr">GoogleSignInAccount</code> object, exchange it for a Firebase credential, and authenticate with Firebase using the Firebase credential:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<p>After a player signs in with Play Games either silently or interactively, get the auth code from the <code translate="no" dir="ltr">GoogleSignInAccount</code> object, exchange it for a Firebase credential, and authenticate with Firebase using the Firebase credential:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Call this both in the silent sign-in task's OnCompleteListener and in the
 // Activity's onActivityResult handler.
 private fun firebaseAuthWithPlayGames(acct: GoogleSignInAccount) {
@@ -89,7 +89,7 @@ private fun firebaseAuthWithPlayGames(acct: GoogleSignInAccount) {
 
             // ...
         }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Call this both in the silent sign-in task's OnCompleteListener and in the
 // Activity's onActivityResult handler.
 private void firebaseAuthWithPlayGames(GoogleSignInAccount acct) {
@@ -118,7 +118,7 @@ private void firebaseAuthWithPlayGames(GoogleSignInAccount acct) {
                 }
             });
 }</pre> </section> </div> <p>If the call to <code translate="no" dir="ltr">signInWithCredential</code> succeeds you can use the <code translate="no" dir="ltr">getCurrentUser</code> method to get the user's account data.</p>
-</li> </ol> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to their Play Games ID. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project.</p> <p>In your game, you can get the user's Firebase UID from the <code translate="no" dir="ltr">FirebaseUser</code> object:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+</li> </ol> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to their Play Games ID. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project.</p> <p>In your game, you can get the user's Firebase UID from the <code translate="no" dir="ltr">FirebaseUser</code> object:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val user = auth.currentUser
 user?.let {
     val playerName = it.displayName
@@ -128,15 +128,15 @@ user?.let {
     // have one; use FirebaseUser.getIdToken() instead.
     val uid = it.uid
 }
-</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseUser user = mAuth.getCurrentUser();
 String playerName = user.getDisplayName();
 
 // The user's Id, unique to the Firebase project.
 // Do NOT use this value to authenticate with your backend server, if you
 // have one; use FirebaseUser.getIdToken() instead.
-String uid = user.getUid();</pre> </section> </div> <p>In your Firebase Realtime Database and Cloud Storage Security Rules, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p> <p>To get a user's Play Games player information or to access Play Games services, use the APIs provided by the <a href="https://developers.google.com/games/services/android/quickstart">Google Play Games SDK</a>.</p> <p>To sign out a user, call <code translate="no" dir="ltr">FirebaseAuth.signOut()</code>:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
-<pre data-language="kotlin">Firebase.auth.signOut()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+String uid = user.getUid();</pre> </section> </div> <p>In your Firebase Realtime Database and Cloud Storage Security Rules, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p> <p>To get a user's Play Games player information or to access Play Games services, use the APIs provided by the <a href="https://developers.google.com/games/services/android/quickstart">Google Play Games SDK</a>.</p> <p>To sign out a user, call <code translate="no" dir="ltr">FirebaseAuth.signOut()</code>:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">Firebase.auth.signOut()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseAuth.getInstance().signOut();</pre> </section> </div><div class="_attribution">
   <p class="_attribution-p">
     &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>

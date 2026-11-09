@@ -1,4 +1,4 @@
-<h1>Upload files with Cloud Storage on Apple platforms</h1> <p>Cloud Storage for Firebase allows you to quickly and easily upload files to a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket provided and managed by Firebase.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside><aside class="note"><strong>Note:</strong><span> For Spark plan projects, Firebase blocks upload and hosting of certain executable file types for Windows (files with <code translate="no" dir="ltr">.exe</code>, <code translate="no" dir="ltr">.dll</code> and <code translate="no" dir="ltr">.bat</code> extensions), Android (<code translate="no" dir="ltr">.apk</code> extension) and Apple (<code translate="no" dir="ltr">.ipa</code> extension) by Cloud Storage for Firebase and Firebase Hosting. This policy exists to prevent abuse on our platform. Projects on the Blaze plan are not affected. For more information, see <a href="https://firebase.google.com/support/faq#storage-exe-restrictions">this FAQ</a>.</span></aside> <h2 id="create_a_reference">Create a Reference</h2> <p>To upload a file, first <a href="create-reference">create a Cloud Storage reference</a> to the location in Cloud Storage you want to upload the file to.</p> <p>You can create a reference by appending child paths to the root of your Cloud Storage bucket:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<h1>Upload files with Cloud Storage on Apple platforms</h1> <p>Cloud Storage for Firebase allows you to quickly and easily upload files to a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket provided and managed by Firebase.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside><aside class="note"><strong>Note:</strong><span> For Spark plan projects, Firebase blocks upload and hosting of certain executable file types for Windows (files with <code translate="no" dir="ltr">.exe</code>, <code translate="no" dir="ltr">.dll</code> and <code translate="no" dir="ltr">.bat</code> extensions), Android (<code translate="no" dir="ltr">.apk</code> extension) and Apple (<code translate="no" dir="ltr">.ipa</code> extension) by Cloud Storage for Firebase and Firebase Hosting. This policy exists to prevent abuse on our platform. Projects on the Blaze plan are not affected. For more information, see <a href="https://firebase.google.com/support/faq#storage-exe-restrictions">this FAQ</a>.</span></aside> <h2 id="create_a_reference">Create a Reference</h2> <p>To upload a file, first <a href="create-reference">create a Cloud Storage reference</a> to the location in Cloud Storage you want to upload the file to.</p> <p>You can create a reference by appending child paths to the root of your Cloud Storage bucket:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create a root reference
 let storageRef = storage.reference()
 
@@ -11,7 +11,7 @@ let mountainImagesRef = storageRef.child("images/mountains.jpg")
 // While the file names are the same, the references point to different files
 mountainsRef.name == mountainImagesRef.name            // true
 mountainsRef.fullPath == mountainImagesRef.fullPath    // false
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create a root reference
 FIRStorageReference *storageRef = [storage reference];
 
@@ -24,7 +24,7 @@ FIRStorageReference *mountainImagesRef = [storageRef child:@"images/mountains.jp
 // While the file names are the same, the references point to different files
 [mountainsRef.name isEqualToString:mountainImagesRef.name];         // true
 [mountainsRef.fullPath isEqualToString:mountainImagesRef.fullPath]; // false
-  </pre> </section> </div> <p>You cannot upload data with a reference to the root of your Cloud Storage bucket. Your reference must point to a child URL.</p> <h2 id="upload_files">Upload Files</h2> <p>Once you have a reference, you can upload files to Cloud Storage in two ways:</p> <ol> <li>Upload from data in memory</li> <li>Upload from a URL representing a file on device</li> </ol> <h3 id="upload_from_data_in_memory">Upload from data in memory</h3> <p>The <code translate="no" dir="ltr">putData:metadata:completion:</code> method is the simplest way to upload a file to Cloud Storage. <code translate="no" dir="ltr">putData:metadata:completion:</code> takes an NSData object and returns an <code translate="no" dir="ltr">FIRStorageUploadTask</code>, which you can use to manage your upload and monitor its status.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  </pre> </section> </div> <p>You cannot upload data with a reference to the root of your Cloud Storage bucket. Your reference must point to a child URL.</p> <h2 id="upload_files">Upload Files</h2> <p>Once you have a reference, you can upload files to Cloud Storage in two ways:</p> <ol> <li>Upload from data in memory</li> <li>Upload from a URL representing a file on device</li> </ol> <h3 id="upload_from_data_in_memory">Upload from data in memory</h3> <p>The <code translate="no" dir="ltr">putData:metadata:completion:</code> method is the simplest way to upload a file to Cloud Storage. <code translate="no" dir="ltr">putData:metadata:completion:</code> takes an NSData object and returns an <code translate="no" dir="ltr">FIRStorageUploadTask</code>, which you can use to manage your upload and monitor its status.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Data in memory
 let data = Data()
 
@@ -47,7 +47,7 @@ let uploadTask = riversRef.putData(data, metadata: nil) { (metadata, error) in
     }
   }
 }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Data in memory
 NSData *data = [NSData dataWithContentsOfFile:@"rivers.jpg"];
 
@@ -74,7 +74,7 @@ FIRStorageUploadTask *uploadTask = [riversRef putData:data
     }];
   }
 }];
-  </pre> </section> </div> <h3 id="upload_from_a_local_file">Upload from a local file</h3> <p>You can upload local files on the devices, such as photos and videos from the camera, with the <code translate="no" dir="ltr">putFile:metadata:completion:</code> method. <code translate="no" dir="ltr">putFile:metadata:completion:</code> takes an <code translate="no" dir="ltr">NSURL</code> and returns an <code translate="no" dir="ltr">FIRStorageUploadTask</code>, which you can use to manage your upload and monitor its status.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  </pre> </section> </div> <h3 id="upload_from_a_local_file">Upload from a local file</h3> <p>You can upload local files on the devices, such as photos and videos from the camera, with the <code translate="no" dir="ltr">putFile:metadata:completion:</code> method. <code translate="no" dir="ltr">putFile:metadata:completion:</code> takes an <code translate="no" dir="ltr">NSURL</code> and returns an <code translate="no" dir="ltr">FIRStorageUploadTask</code>, which you can use to manage your upload and monitor its status.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// File located on disk
 let localFile = URL(string: "path/to/image")!
 
@@ -97,7 +97,7 @@ let uploadTask = riversRef.putFile(from: localFile, metadata: nil) { metadata, e
     }
   }
 }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// File located on disk
 NSURL *localFile = [NSURL URLWithString:@"path/to/image"];
 
@@ -121,7 +121,7 @@ FIRStorageUploadTask *uploadTask = [riversRef putFile:localFile metadata:nil com
     }];
   }
 }];
-  </pre> </section> </div> <p>If you want to actively manage your upload, you can use the <code translate="no" dir="ltr">putData:</code> or <code translate="no" dir="ltr">putFile:</code> methods and observe the upload task, rather than using the completion handler. See <a href="#manage_uploads">Manage Uploads</a> for more information.</p> <h2 id="add_file_metadata">Add File Metadata</h2> <p>You can also include metadata when you upload files. This metadata contains typical file metadata properties such as <code translate="no" dir="ltr">name</code>, <code translate="no" dir="ltr">size</code>, and <code translate="no" dir="ltr">contentType</code> (commonly referred to as MIME type). The <code translate="no" dir="ltr">putFile:</code> method automatically infers the content type from the <code translate="no" dir="ltr">NSURL</code> filename extension, but you can override the auto-detected type by specifying <code translate="no" dir="ltr">contentType</code> in the metadata. If you do not provide a <code translate="no" dir="ltr">contentType</code> and Cloud Storage cannot infer a default from the file extension, Cloud Storage uses <code translate="no" dir="ltr">application/octet-stream</code>. See the <a href="file-metadata">Use File Metadata</a> section for more information about file metadata.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  </pre> </section> </div> <p>If you want to actively manage your upload, you can use the <code translate="no" dir="ltr">putData:</code> or <code translate="no" dir="ltr">putFile:</code> methods and observe the upload task, rather than using the completion handler. See <a href="#manage_uploads">Manage Uploads</a> for more information.</p> <h2 id="add_file_metadata">Add File Metadata</h2> <p>You can also include metadata when you upload files. This metadata contains typical file metadata properties such as <code translate="no" dir="ltr">name</code>, <code translate="no" dir="ltr">size</code>, and <code translate="no" dir="ltr">contentType</code> (commonly referred to as MIME type). The <code translate="no" dir="ltr">putFile:</code> method automatically infers the content type from the <code translate="no" dir="ltr">NSURL</code> filename extension, but you can override the auto-detected type by specifying <code translate="no" dir="ltr">contentType</code> in the metadata. If you do not provide a <code translate="no" dir="ltr">contentType</code> and Cloud Storage cannot infer a default from the file extension, Cloud Storage uses <code translate="no" dir="ltr">application/octet-stream</code>. See the <a href="file-metadata">Use File Metadata</a> section for more information about file metadata.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create storage reference
 let mountainsRef = storageRef.child("images/mountains.jpg")
 
@@ -134,7 +134,7 @@ mountainsRef.putData(data, metadata: metadata)
 
 // Upload file and metadata
 mountainsRef.putFile(from: localFile, metadata: metadata)
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create storage reference
 FIRStorageReference *mountainsRef = [storageRef child:@"images/mountains.jpg"];
 
@@ -147,7 +147,7 @@ FIRStorageUploadTask *uploadTask = [mountainsRef putData:data metadata:metadata]
 
 // Upload file and metadata
 uploadTask = [mountainsRef putFile:localFile metadata:metadata];
-  </pre> </section> </div> <h2 id="manage_uploads">Manage Uploads</h2> <p>In addition to starting uploads, you can pause, resume, and cancel uploads using the <code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, and <code translate="no" dir="ltr">cancel</code> methods. These methods raise <code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, and <code translate="no" dir="ltr">cancel</code> events. Canceling an upload causes the upload to fail with an error indicating that the upload was canceled.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  </pre> </section> </div> <h2 id="manage_uploads">Manage Uploads</h2> <p>In addition to starting uploads, you can pause, resume, and cancel uploads using the <code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, and <code translate="no" dir="ltr">cancel</code> methods. These methods raise <code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, and <code translate="no" dir="ltr">cancel</code> events. Canceling an upload causes the upload to fail with an error indicating that the upload was canceled.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Start uploading a file
 let uploadTask = storageRef.putFile(from: localFile)
 
@@ -159,7 +159,7 @@ uploadTask.resume()
 
 // Cancel the upload
 uploadTask.cancel()
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Start uploading a file
 FIRStorageUploadTask *uploadTask = [storageRef putFile:localFile];
 
@@ -171,19 +171,19 @@ FIRStorageUploadTask *uploadTask = [storageRef putFile:localFile];
 
 // Cancel the upload
 [uploadTask cancel];
-  </pre> </section> </div> <h2 id="monitor_upload_progress">Monitor Upload Progress</h2> <p>You can attach observers to <code translate="no" dir="ltr">FIRStorageUploadTask</code>s in order to monitor the progress of the upload. Adding an observer returns a <code translate="no" dir="ltr">FIRStorageHandle</code> that can be used to remove the observer.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  </pre> </section> </div> <h2 id="monitor_upload_progress">Monitor Upload Progress</h2> <p>You can attach observers to <code translate="no" dir="ltr">FIRStorageUploadTask</code>s in order to monitor the progress of the upload. Adding an observer returns a <code translate="no" dir="ltr">FIRStorageHandle</code> that can be used to remove the observer.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Add a progress observer to an upload task
 let observer = uploadTask.observe(.progress) { snapshot in
   // A progress event occured
 }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Add a progress observer to an upload task
 NSString *observer = [uploadTask observeStatus:FIRStorageTaskStatusProgress
                                         handler:^(FIRStorageTaskSnapshot *snapshot) {
   // A progress event occurred
 }];
   </pre> </section> </div> <p>These observers can be added to an <code translate="no" dir="ltr">FIRStorageTaskStatus</code> event:</p> <table> <thead> <tr> <th>
-<code translate="no" dir="ltr">FIRStorageTaskStatus</code> Event</th> <th>Typical Usage</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusResume</code></td> <td>This event fires when the task starts or resumes uploading, and is often used in conjunction with the <code translate="no" dir="ltr">FIRStorageTaskStatusPause</code> event.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusProgress</code></td> <td>This event fires any time data is uploading to Cloud Storage, and can be used to populate an upload progress indicator.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusPause</code></td> <td>This event fires any time the upload is paused, and is often used in conjunction with the <code translate="no" dir="ltr">FIRStorageTaskStatusResume</code> event.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusSuccess</code></td> <td>This event fires when a upload has completed successfully.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusFailure</code></td> <td>This event fires when a upload has failed. Inspect the error to determine the failure reason.</td> </tr> </tbody> </table> <p>When an event occurs, an <code translate="no" dir="ltr">FIRStorageTaskSnapshot</code> object is passed back. This snapshot is an immutable view of the task, at the time the event occurred. This object contains the following properties:</p> <table> <thead> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">progress</code></td> <td><code translate="no" dir="ltr">NSProgress</code></td> <td>An <code translate="no" dir="ltr">NSProgress</code> object containing the progress of the upload.</td> </tr> <tr> <td><code translate="no" dir="ltr">error</code></td> <td><code translate="no" dir="ltr">NSError</code></td> <td>An error that occurred during upload, if any.</td> </tr> <tr> <td><code translate="no" dir="ltr">metadata</code></td> <td><code translate="no" dir="ltr">FIRStorageMetadata</code></td> <td>During upload contains metadata being uploaded. After an <code translate="no" dir="ltr">FIRTaskStatusSuccess</code> event, contains the uploaded file's metadata.</td> </tr> <tr> <td><code translate="no" dir="ltr">task</code></td> <td><code translate="no" dir="ltr">FIRStorageUploadTask</code></td> <td>The task this is a snapshot of, which can be used to manage (<code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, <code translate="no" dir="ltr">cancel</code>) the task.</td> </tr> <tr> <td><code translate="no" dir="ltr">reference</code></td> <td><code translate="no" dir="ltr">FIRStorageReference</code></td> <td>The reference this task came from.</td> </tr> </tbody> </table> <p>You can also remove observers, either individually, by status, or by removing all of them.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<code translate="no" dir="ltr">FIRStorageTaskStatus</code> Event</th> <th>Typical Usage</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusResume</code></td> <td>This event fires when the task starts or resumes uploading, and is often used in conjunction with the <code translate="no" dir="ltr">FIRStorageTaskStatusPause</code> event.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusProgress</code></td> <td>This event fires any time data is uploading to Cloud Storage, and can be used to populate an upload progress indicator.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusPause</code></td> <td>This event fires any time the upload is paused, and is often used in conjunction with the <code translate="no" dir="ltr">FIRStorageTaskStatusResume</code> event.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusSuccess</code></td> <td>This event fires when a upload has completed successfully.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusFailure</code></td> <td>This event fires when a upload has failed. Inspect the error to determine the failure reason.</td> </tr> </tbody> </table> <p>When an event occurs, an <code translate="no" dir="ltr">FIRStorageTaskSnapshot</code> object is passed back. This snapshot is an immutable view of the task, at the time the event occurred. This object contains the following properties:</p> <table> <thead> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">progress</code></td> <td><code translate="no" dir="ltr">NSProgress</code></td> <td>An <code translate="no" dir="ltr">NSProgress</code> object containing the progress of the upload.</td> </tr> <tr> <td><code translate="no" dir="ltr">error</code></td> <td><code translate="no" dir="ltr">NSError</code></td> <td>An error that occurred during upload, if any.</td> </tr> <tr> <td><code translate="no" dir="ltr">metadata</code></td> <td><code translate="no" dir="ltr">FIRStorageMetadata</code></td> <td>During upload contains metadata being uploaded. After an <code translate="no" dir="ltr">FIRTaskStatusSuccess</code> event, contains the uploaded file's metadata.</td> </tr> <tr> <td><code translate="no" dir="ltr">task</code></td> <td><code translate="no" dir="ltr">FIRStorageUploadTask</code></td> <td>The task this is a snapshot of, which can be used to manage (<code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, <code translate="no" dir="ltr">cancel</code>) the task.</td> </tr> <tr> <td><code translate="no" dir="ltr">reference</code></td> <td><code translate="no" dir="ltr">FIRStorageReference</code></td> <td>The reference this task came from.</td> </tr> </tbody> </table> <p>You can also remove observers, either individually, by status, or by removing all of them.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create a task listener handle
 let observer = uploadTask.observe(.progress) { snapshot in
   // A progress event occurred
@@ -197,7 +197,7 @@ uploadTask.removeAllObservers(for: .progress)
 
 // Remove all observers
 uploadTask.removeAllObservers()
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create a task listener handle
 NSString *observer = [uploadTask observeStatus:FIRStorageTaskStatusProgress
                                        handler:^(FIRStorageTaskSnapshot *snapshot) {
@@ -212,7 +212,7 @@ NSString *observer = [uploadTask observeStatus:FIRStorageTaskStatusProgress
 
 // Remove all observers
 [uploadTask removeAllObservers];
-  </pre> </section> </div> <p>To prevent memory leaks, all observers are removed after an <code translate="no" dir="ltr">FIRStorageTaskStatusSuccess</code> or <code translate="no" dir="ltr">FIRStorageTaskStatusFailure</code> occurs.</p> <h2 id="error_handling">Error Handling</h2> <p>There are a number of reasons why errors may occur on upload, including the local file not existing, or the user not having permission to upload the desired file. You can find more information about errors in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="full_example">Full Example</h2> <p>A full example of an upload with progress monitoring and error handling is shown below:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  </pre> </section> </div> <p>To prevent memory leaks, all observers are removed after an <code translate="no" dir="ltr">FIRStorageTaskStatusSuccess</code> or <code translate="no" dir="ltr">FIRStorageTaskStatusFailure</code> occurs.</p> <h2 id="error_handling">Error Handling</h2> <p>There are a number of reasons why errors may occur on upload, including the local file not existing, or the user not having permission to upload the desired file. You can find more information about errors in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="full_example">Full Example</h2> <p>A full example of an upload with progress monitoring and error handling is shown below:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Local file you want to upload
 let localFile = URL(string: "path/to/image")!
 
@@ -266,7 +266,7 @@ uploadTask.observe(.failure) { snapshot in
     }
   }
 }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Local file you want to upload
 NSURL *localFile = [NSURL URLWithString:@"path/to/image"];
 

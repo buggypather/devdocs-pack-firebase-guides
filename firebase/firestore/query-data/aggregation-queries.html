@@ -1,7 +1,7 @@
-<h1>Summarize data with aggregation queries</h1> <p>An aggregation query processes the data from multiple index entries to return a single summary value.</p>  <p>Cloud Firestore supports the following aggregation queries:</p> <ul> <li><code translate="no" dir="ltr">count()</code></li> <li><code translate="no" dir="ltr">sum()</code></li> <li><code translate="no" dir="ltr">average()</code></li> </ul> <p>Cloud Firestore calculates the aggregation and transmits only the result back to your application. Compared to executing a full query and calculating the aggregation in your app, aggregation queries save on both billed document reads and bytes transferred.</p> <p>Aggregation queries rely on the existing index configuration that your queries already use, and scale proportionally to the number of index entries scanned. Latency increases with the number of items in the aggregation.</p> <aside class="note"><strong>Note:</strong><span> While the code samples cover multiple languages, the text explaining the samples refers to the Web method names.</span></aside> <h2 id="use_the_count_aggregation">Use the <code translate="no" dir="ltr">count()</code> aggregation</h2> <p>The <code translate="no" dir="ltr">count()</code> aggregation query lets you determine the number of documents in a collection or query.</p> <p>For more information about the example data, see <a href="get-data">Getting data</a>.</p> <p>The following <code translate="no" dir="ltr">count()</code> aggregation returns the total number of cities in the <code translate="no" dir="ltr">cities</code> collection.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
+<h1>Summarize data with aggregation queries</h1> <p>An aggregation query processes the data from multiple index entries to return a single summary value.</p>  <p>Cloud Firestore supports the following aggregation queries:</p> <ul> <li><code translate="no" dir="ltr">count()</code></li> <li><code translate="no" dir="ltr">sum()</code></li> <li><code translate="no" dir="ltr">average()</code></li> </ul> <p>Cloud Firestore calculates the aggregation and transmits only the result back to your application. Compared to executing a full query and calculating the aggregation in your app, aggregation queries save on both billed document reads and bytes transferred.</p> <p>Aggregation queries rely on the existing index configuration that your queries already use, and scale proportionally to the number of index entries scanned. Latency increases with the number of items in the aggregation.</p> <aside class="note"><strong>Note:</strong><span> While the code samples cover multiple languages, the text explaining the samples refers to the Web method names.</span></aside> <h2 id="use_the_count_aggregation">Use the <code translate="no" dir="ltr">count()</code> aggregation</h2> <p>The <code translate="no" dir="ltr">count()</code> aggregation query lets you determine the number of documents in a collection or query.</p> <p>For more information about the example data, see <a href="get-data">Getting data</a>.</p> <p>The following <code translate="no" dir="ltr">count()</code> aggregation returns the total number of cities in the <code translate="no" dir="ltr">cities</code> collection.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
 <pre data-language="javascript">const coll = collection(db, "cities");
 const snapshot = await getCountFromServer(coll);
-console.log('count: ', snapshot.data().count);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+console.log('count: ', snapshot.data().count);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">let query = db.collection("cities")
 let countQuery = query.count
 do {
@@ -9,7 +9,7 @@ do {
   print(snapshot.count)
 } catch {
   print(error)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRCollectionReference *query = [self.db collectionWithPath:@"cities"];
 [query.count aggregationWithSource:FIRAggregateSourceServer
                         completion:^(FIRAggregateQuerySnapshot *snapshot,
@@ -19,7 +19,7 @@ do {
     } else {
         NSLog(@"Cities count: %@", snapshot.count);
     }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Query query = db.collection("cities");
 AggregateQuery countQuery = query.count();
 countQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListener&lt;AggregateQuerySnapshot&gt;() {
@@ -33,7 +33,7 @@ countQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListe
             Log.d(TAG, "Count failed: ", task.getException());
         }
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val query = db.collection("cities")
 val countQuery = query.count()
 countQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
@@ -44,12 +44,12 @@ countQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     } else {
         Log.d(TAG, "Count failed: ", task.getException())
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">// Returns number of documents in users collection
 db.collection("cities").count().get().then(
       (res) =&gt; print(res.count),
       onError: (e) =&gt; print("Error completing: $e"),
-    );</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
+    );</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="go">package firestore
 
 import (
@@ -95,15 +95,15 @@ func createCountQuery(w io.Writer, projectID string) error {
 	fmt.Fprintf(w, "Number of results from query: %d\n", countValue.GetIntegerValue())
 	return nil
 }
-</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+</pre> </div> </section> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">CollectionReference collection = db.collection("cities");
 AggregateQuerySnapshot snapshot = collection.count().get().get();
 System.out.println("Count: " + snapshot.getCount());
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const collectionRef = db.collection('cities');
 const snapshot = await collectionRef.count().get();
 console.log(snapshot.data().count);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="python">from google.cloud import firestore
 from google.cloud.firestore_v1 import aggregation
 from google.cloud.firestore_v1.base_query import FieldFilter
@@ -129,11 +129,11 @@ def create_count_query(project_id: str) -&gt; None:
         print(f"Alias of results from query: {result[0].alias}")
         print(f"Number of results from query: {result[0].value}")
 
-</pre> </div> </section> </div> <p>The <code translate="no" dir="ltr">count()</code> aggregation takes into account any filters on the query and any <code translate="no" dir="ltr">limit</code> clauses.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
+</pre> </div> </section> </div> <p>The <code translate="no" dir="ltr">count()</code> aggregation takes into account any filters on the query and any <code translate="no" dir="ltr">limit</code> clauses.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
 <pre data-language="javascript">const coll = collection(db, "cities");
 const q = query(coll, where("state", "==", "CA"));
 const snapshot = await getCountFromServer(q);
-console.log('count: ', snapshot.data().count);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+console.log('count: ', snapshot.data().count);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">let query = db.collection("cities").whereField("state", isEqualTo: "CA")
 let countQuery = query.count
 do {
@@ -141,7 +141,7 @@ do {
   print(snapshot.count)
 } catch {
   print(error)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRQuery *query =
     [[self.db collectionWithPath:@"cities"]
                  queryWhereField:@"state"
@@ -154,7 +154,7 @@ do {
     } else {
         NSLog(@"Cities count: %@", snapshot.count);
     }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Query query = db.collection("cities").whereEqualTo("state", "CA");
 AggregateQuery countQuery = query.count();
 countQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListener&lt;AggregateQuerySnapshot&gt;() {
@@ -168,7 +168,7 @@ countQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListe
             Log.d(TAG, "Count failed: ", task.getException());
         }
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val query = db.collection("cities").whereEqualTo("state", "CA")
 val countQuery = query.count()
 countQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
@@ -179,12 +179,12 @@ countQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     } else {
         Log.d(TAG, "Count failed: ", task.getException())
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">// This also works with collection queries.
 db.collection("cities").where("capital", isEqualTo: 10).count().get().then(
       (res) =&gt; print(res.count),
       onError: (e) =&gt; print("Error completing: $e"),
-    );</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
+    );</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="go">package firestore
 
 import (
@@ -230,17 +230,17 @@ func createCountQuery(w io.Writer, projectID string) error {
 	fmt.Fprintf(w, "Number of results from query: %d\n", countValue.GetIntegerValue())
 	return nil
 }
-</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+</pre> </div> </section> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">CollectionReference collection = db.collection("cities");
 Query query = collection.whereEqualTo("state", "CA");
 AggregateQuerySnapshot snapshot = query.count().get().get();
 System.out.println("Count: " + snapshot.getCount());
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const collectionRef = db.collection('cities');
 const query = collectionRef.where('state', '==', 'CA');
 const snapshot = await query.count().get();
 console.log(snapshot.data().count);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="python">from google.cloud import firestore
 from google.cloud.firestore_v1 import aggregation
 from google.cloud.firestore_v1.base_query import FieldFilter
@@ -266,14 +266,14 @@ def create_count_query(project_id: str) -&gt; None:
         print(f"Alias of results from query: {result[0].alias}")
         print(f"Number of results from query: {result[0].value}")
 
-</pre> </div> </section> </div> <h2 id="use_the_sum_aggregation">Use the <code translate="no" dir="ltr">sum()</code> aggregation</h2> <p>Use the <code translate="no" dir="ltr">sum()</code> aggregation to return the total sum of numeric values that match a given query—for example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
+</pre> </div> </section> </div> <h2 id="use_the_sum_aggregation">Use the <code translate="no" dir="ltr">sum()</code> aggregation</h2> <p>Use the <code translate="no" dir="ltr">sum()</code> aggregation to return the total sum of numeric values that match a given query—for example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
 <pre data-language="javascript">const coll = collection(firestore, 'cities');
 const snapshot = await getAggregateFromServer(coll, {
   totalPopulation: sum('population')
 });
 
 console.log('totalPopulation: ', snapshot.data().totalPopulation);
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">let query = db.collection("cities")
 let aggregateQuery = query.aggregate([AggregateField.sum("population")])
 do {
@@ -281,7 +281,7 @@ do {
   print(snapshot.get(AggregateField.sum("population")))
 } catch {
   print(error)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRQuery *query = [self.db collectionWithPath:@"cities"];
 FIRAggregateQuery *aggregateQuery = [query aggregate:@[
     [FIRAggregateField aggregateFieldForSumOfField:@"population"]]];
@@ -293,7 +293,7 @@ FIRAggregateQuery *aggregateQuery = [query aggregate:@[
     } else {
         NSLog(@"Sum: %@", [snapshot valueForAggregateField:[FIRAggregateField aggregateFieldForSumOfField:@"population"]]);
     }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Query query = db.collection("cities");
 AggregateQuery aggregateQuery = query.aggregate(AggregateField.sum("population"));
 aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListener&lt;AggregateQuerySnapshot&gt;() {
@@ -307,7 +307,7 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteL
             Log.d(TAG, "Aggregation failed: ", task.getException());
         }
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val query = db.collection("cities")
 val aggregateQuery = query.aggregate(AggregateField.sum("population"))
 aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
@@ -318,15 +318,15 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     } else {
         Log.d(TAG, "Aggregate failed: ", task.getException())
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">db.collection("cities").aggregate(sum("population")).get().then(
       (res) =&gt; print(res.getAverage("population")),
       onError: (e) =&gt; print("Error completing: $e"),
-    );</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+    );</pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">collection = db.collection("cities");
 snapshot = collection.aggregate(sum("population")).get().get();
 System.out.println("Sum: " + snapshot.get(sum("population")));
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const coll = firestore.collection('cities');
 const sumAggregateQuery = coll.aggregate({
          totalPopulation: AggregateField.sum('population'),
@@ -334,7 +334,7 @@ const sumAggregateQuery = coll.aggregate({
 
 const snapshot = await sumAggregateQuery.get();
 console.log('totalPopulation: ', snapshot.data().totalPopulation);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">collection_ref = client.collection("users")
 aggregate_query = aggregation.AggregationQuery(collection_ref)
 
@@ -344,7 +344,7 @@ results = aggregate_query.get()
 for result in results:
     print(f"Alias of results from query: {result[0].alias}")
     print(f"Sum of results from query: {result[0].value}")
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">func createSumQuery(w io.Writer, projectID string) error {
   ctx := context.Background()
   client, err := firestore.NewClient(ctx, projectID)
@@ -371,7 +371,7 @@ for result in results:
   fmt.Fprintf(w, "Sum of results from query: %d\n", sumValue.GetIntegerValue())
   return nil
 }
-      </pre> </section> </div> <p>The <code translate="no" dir="ltr">sum()</code> aggregation takes into account any filters on the query and any limit clauses—for example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
+      </pre> </section> </div> <p>The <code translate="no" dir="ltr">sum()</code> aggregation takes into account any filters on the query and any limit clauses—for example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
 <pre data-language="javascript">const coll = collection(firestore, 'cities');
 const q = query(coll, where('capital', '==', true));
 const snapshot = await getAggregateFromServer(q, {
@@ -379,7 +379,7 @@ const snapshot = await getAggregateFromServer(q, {
 });
 
 console.log('totalPopulation: ', snapshot.data().totalPopulation);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">let query = db.collection("cities").whereField("capital", isEqualTo: true)
 let aggregateQuery = query.aggregate([AggregateField.sum("population")])
 do {
@@ -387,7 +387,7 @@ do {
   print(snapshot.get(AggregateField.sum("population")))
 } catch {
   print(error)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRQuery *query = [[self.db collectionWithPath:@"cities"]
                    queryWhereFilter:[FIRFilter filterWhereField:@"capital" isEqualTo:@YES]];
 FIRAggregateQuery *aggregateQuery = [query aggregate:@[
@@ -400,7 +400,7 @@ FIRAggregateQuery *aggregateQuery = [query aggregate:@[
     } else {
         NSLog(@"Sum: %@", [snapshot valueForAggregateField:[FIRAggregateField aggregateFieldForSumOfField:@"population"]]);
     }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Query query = db.collection("cities").whereEqualTo("capital", true);
 AggregateQuery aggregateQuery = query.aggregate(AggregateField.sum("population"));
 aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListener&lt;AggregateQuerySnapshot&gt;() {
@@ -414,7 +414,7 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteL
             Log.d(TAG, "Aggregation failed: ", task.getException());
         }
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val query = db.collection("cities").whereEqualTo("capital", true)
 val aggregateQuery = query.aggregate(AggregateField.sum("population"))
 aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
@@ -425,7 +425,7 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     } else {
         Log.d(TAG, "Aggregate failed: ", task.getException())
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">db
     .collection("cities")
     .where("capital", isEqualTo: true)
@@ -434,12 +434,12 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     .then(
       (res) =&gt; print(res.getAverage("population")),
       onError: (e) =&gt; print("Error completing: $e"),
-    );</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+    );</pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">collection = db.collection("cities");
 query = collection.whereEqualTo("state", "CA");
 snapshot = query.aggregate(sum("population")).get().get();
 System.out.println("Sum: " + snapshot.get(sum("population")));
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const coll = firestore.collection('cities');
 const q = coll.where("capital", "==", true);
 const sumAggregateQuery = q.aggregate({
@@ -448,7 +448,7 @@ const sumAggregateQuery = q.aggregate({
 
 const snapshot = await sumAggregateQuery.get();
 console.log('totalPopulation: ', snapshot.data().totalPopulation);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">collection_ref = client.collection("users")
 query = collection_ref.where(filter=FieldFilter("people", "==", "Matthew"))
 aggregate_query = aggregation.AggregationQuery(query)
@@ -459,7 +459,7 @@ results = aggregate_query.get()
 for result in results:
     print(f"Alias of results from query: {result[0].alias}")
     print(f"Sum of results from query: {result[0].value}")
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">func createSumQuery(w io.Writer, projectID string) error {
   ctx := context.Background()
   client, err := firestore.NewClient(ctx, projectID)
@@ -486,14 +486,14 @@ for result in results:
   fmt.Fprintf(w, "Sum of results from query: %d\n", sumValue.GetIntegerValue())
   return nil
 }
-      </pre> </section> </div> <h2 id="use_the_average_aggregation">Use the <code translate="no" dir="ltr">average()</code> aggregation</h2> <p>Use the <code translate="no" dir="ltr">average()</code> aggregation to return the average of numeric values that match a given query, for example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
+      </pre> </section> </div> <h2 id="use_the_average_aggregation">Use the <code translate="no" dir="ltr">average()</code> aggregation</h2> <p>Use the <code translate="no" dir="ltr">average()</code> aggregation to return the average of numeric values that match a given query, for example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
 <pre data-language="javascript">const coll = collection(firestore, 'cities');
 const snapshot = await getAggregateFromServer(coll, {
   averagePopulation: average('population')
 });
 
 console.log('averagePopulation: ', snapshot.data().averagePopulation);
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">let query = db.collection("cities")
 let aggregateQuery = query.aggregate([AggregateField.average("population")])
 do {
@@ -501,7 +501,7 @@ do {
   print(snapshot.get(AggregateField.average("population")))
 } catch {
   print(error)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRQuery *query = [self.db collectionWithPath:@"cities"];
 FIRAggregateQuery *aggregateQuery = [query aggregate:@[
     [FIRAggregateField aggregateFieldForAverageOfField:@"population"]]];
@@ -513,7 +513,7 @@ FIRAggregateQuery *aggregateQuery = [query aggregate:@[
     } else {
         NSLog(@"Avg: %@", [snapshot valueForAggregateField:[FIRAggregateField aggregateFieldForAverageOfField:@"population"]]);
     }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Query query = db.collection("cities");
 AggregateQuery aggregateQuery = query.aggregate(AggregateField.average("population"));
 aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListener&lt;AggregateQuerySnapshot&gt;() {
@@ -527,7 +527,7 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteL
             Log.d(TAG, "Aggregation failed: ", task.getException());
         }
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val query = db.collection("cities")
 val aggregateQuery = query.aggregate(AggregateField.average("population"))
 aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
@@ -538,15 +538,15 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     } else {
         Log.d(TAG, "Aggregate failed: ", task.getException())
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">db.collection("cities").aggregate(average("population")).get().then(
       (res) =&gt; print(res.getAverage("population")),
       onError: (e) =&gt; print("Error completing: $e"),
-    );</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+    );</pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">collection = db.collection("cities");
 snapshot = collection.aggregate(average("population")).get().get();
 System.out.println("Average: " + snapshot.get(average("population")));
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const coll = firestore.collection('cities');
 const averageAggregateQuery = coll.aggregate({
         averagePopulation: AggregateField.average('population'),
@@ -554,7 +554,7 @@ const averageAggregateQuery = coll.aggregate({
 
 const snapshot = await averageAggregateQuery.get();
 console.log('averagePopulation: ', snapshot.data().averagePopulation);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">collection_ref = client.collection("users")
 aggregate_query = aggregation.AggregationQuery(collection_ref)
 
@@ -564,7 +564,7 @@ results = aggregate_query.get()
 for result in results:
     print(f"Alias of results from query: {result[0].alias}")
     print(f"Average of results from query: {result[0].value}")
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">func createAvgQuery(w io.Writer, projectID string) error {
   ctx := context.Background()
   client, err := firestore.NewClient(ctx, projectID)
@@ -591,7 +591,7 @@ for result in results:
   fmt.Fprintf(w, "Avg of results from query: %d\n", avgValue.GetDoubleValue())
   return nil
 }
-      </pre> </section> </div> <p>The <code translate="no" dir="ltr">average()</code> aggregation takes into account any filters on the query and any limit clauses, for example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
+      </pre> </section> </div> <p>The <code translate="no" dir="ltr">average()</code> aggregation takes into account any filters on the query and any limit clauses, for example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
 <pre data-language="javascript">const coll = collection(firestore, 'cities');
 const q = query(coll, where('capital', '==', true));
 const snapshot = await getAggregateFromServer(q, {
@@ -599,7 +599,7 @@ const snapshot = await getAggregateFromServer(q, {
 });
 
 console.log('averagePopulation: ', snapshot.data().averagePopulation);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">let query = db.collection("cities").whereField("capital", isEqualTo: true)
 let aggregateQuery = query.aggregate([AggregateField.average("population")])
 do {
@@ -607,7 +607,7 @@ do {
   print(snapshot.get(AggregateField.average("population")))
 } catch {
   print(error)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRQuery *query = [[self.db collectionWithPath:@"cities"]
                    queryWhereFilter:[FIRFilter filterWhereField:@"capital" isEqualTo:@YES]];
 FIRAggregateQuery *aggregateQuery = [query aggregate:@[
@@ -620,7 +620,7 @@ FIRAggregateQuery *aggregateQuery = [query aggregate:@[
     } else {
         NSLog(@"Avg: %@", [snapshot valueForAggregateField:[FIRAggregateField aggregateFieldForAverageOfField:@"population"]]);
     }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Query query = db.collection("cities").whereEqualTo("capital", true);
 AggregateQuery aggregateQuery = query.aggregate(AggregateField.average("population"));
 aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListener&lt;AggregateQuerySnapshot&gt;() {
@@ -634,7 +634,7 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteL
             Log.d(TAG, "Aggregation failed: ", task.getException());
         }
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val query = db.collection("cities").whereEqualTo("capital", true)
 val aggregateQuery = query.aggregate(AggregateField.average("population"))
 aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
@@ -645,7 +645,7 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     } else {
         Log.d(TAG, "Aggregate failed: ", task.getException())
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">db
     .collection("cities")
     .where("capital", isEqualTo: true)
@@ -654,12 +654,12 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     .then(
       (res) =&gt; print(res.getAverage("population")),
       onError: (e) =&gt; print("Error completing: $e"),
-    );</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+    );</pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">collection = db.collection("cities");
 query = collection.whereEqualTo("state", "CA");
 snapshot = query.aggregate(average("population")).get().get();
 System.out.println("Average: " + snapshot.get(average("population")));
-  </pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+  </pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const coll = firestore.collection('cities');
 const q = coll.where("capital", "==", true);
 const averageAggregateQuery = q.aggregate({
@@ -668,7 +668,7 @@ const averageAggregateQuery = q.aggregate({
 
 const snapshot = await averageAggregateQuery.get();
 console.log('averagePopulation: ', snapshot.data().averagePopulation);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">collection_ref = client.collection("users")
 query = collection_ref.where(filter=FieldFilter("people", "==", "Matthew"))
 aggregate_query = aggregation.AggregationQuery(query)
@@ -679,7 +679,7 @@ results = aggregate_query.get()
 for result in results:
     print(f"Alias of results from query: {result[0].alias}")
     print(f"Average of results from query: {result[0].value}")
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">func createAvgQuery(w io.Writer, projectID string) error {
   ctx := context.Background()
   client, err := firestore.NewClient(ctx, projectID)
@@ -706,7 +706,7 @@ for result in results:
   fmt.Fprintf(w, "Avg of results from query: %d\n", avgValue.GetDoubleValue())
   return nil
 }
-      </pre> </section> </div> <h2 id="calculate_multiple_aggregations_in_a_query">Calculate multiple aggregations in a query</h2> <p>You can combine multiple aggregations in a single aggregation pipeline. This can reduce the number of index reads required. If the query includes aggregations on multiple fields, the query might requires a composite index. In that case, Cloud Firestore suggests an index.</p> <p>The following example performs multiple aggregations in a single aggregation query:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
+      </pre> </section> </div> <h2 id="calculate_multiple_aggregations_in_a_query">Calculate multiple aggregations in a query</h2> <p>You can combine multiple aggregations in a single aggregation pipeline. This can reduce the number of index reads required. If the query includes aggregations on multiple fields, the query might requires a composite index. In that case, Cloud Firestore suggests an index.</p> <p>The following example performs multiple aggregations in a single aggregation query:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable Web v9 modular SDK and <a href="../../web/modular-upgrade">upgrade</a> from version 8.</aside> 
 <pre data-language="javascript">const coll = collection(firestore, 'cities');
 const snapshot = await getAggregateFromServer(coll, {
   countOfDocs: count(),
@@ -717,7 +717,7 @@ const snapshot = await getAggregateFromServer(coll, {
 console.log('countOfDocs: ', snapshot.data().countOfDocs);
 console.log('totalPopulation: ', snapshot.data().totalPopulation);
 console.log('averagePopulation: ', snapshot.data().averagePopulation);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">let query = db.collection("cities")
 let aggregateQuery = query.aggregate([
   AggregateField.count(),
@@ -730,7 +730,7 @@ do {
   print("Average: \(snapshot.get(AggregateField.average("population")))")
 } catch {
   print(error)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRQuery *query = [self.db collectionWithPath:@"cities"];
 FIRAggregateQuery *aggregateQuery = [query aggregate:@[
   [FIRAggregateField aggregateFieldForCount],
@@ -746,7 +746,7 @@ FIRAggregateQuery *aggregateQuery = [query aggregate:@[
     NSLog(@"Sum: %@", [snapshot valueForAggregateField:[FIRAggregateField aggregateFieldForSumOfField:@"population"]]);
     NSLog(@"Avg: %@", [snapshot valueForAggregateField:[FIRAggregateField aggregateFieldForAverageOfField:@"population"]]);
   }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Query query = db.collection("cities");
 AggregateQuery aggregateQuery = query.aggregate(
         AggregateField.count(),
@@ -765,7 +765,7 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteL
             Log.d(TAG, "Aggregation failed: ", task.getException());
         }
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val query = db.collection("cities")
 val aggregateQuery = query.aggregate(
     AggregateField.count(),
@@ -782,7 +782,7 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     } else {
         Log.d(TAG, "Aggregate failed: ", task.getException())
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">db
     .collection("cities")
     .aggregate(
@@ -798,7 +798,7 @@ aggregateQuery.get(AggregateSource.SERVER).addOnCompleteListener { task -&gt;
     print(res.getAverage("population"));
   },
   onError: (e) =&gt; print("Error completing: $e"),
-);</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+);</pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">collection = db.collection("cities");
 query = collection.whereEqualTo("state", "CA");
 AggregateQuery aggregateQuery = query.aggregate(count(), sum("population"), average("population"));
@@ -806,7 +806,7 @@ snapshot = aggregateQuery.get().get();
 System.out.println("Count: " + snapshot.getCount());
 System.out.println("Sum: " + snapshot.get(sum("population")));
 System.out.println("Average: " + snapshot.get(average("population")));
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const coll = firestore.collection('cities');
 const aggregateQuery = coll.aggregate({
     countOfDocs: AggregateField.count(),
@@ -818,7 +818,7 @@ const snapshot = await aggregateQuery.get();
 console.log('countOfDocs: ', snapshot.data().countOfDocs);
 console.log('totalPopulation: ', snapshot.data().totalPopulation);
 console.log('averagePopulation: ', snapshot.data().averagePopulation);
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">collection_ref = client.collection("users")
 query = collection_ref.where(filter=FieldFilter("people", "==", "Matthew"))
 aggregate_query = aggregation.AggregationQuery(query)
@@ -829,7 +829,7 @@ results = aggregate_query.get()
 for result in results:
     print(f"Alias of results from query: {result[0].alias}")
     print(f"Aggregation of results from query: {result[0].value}")
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">func createMultiAggregationQuery(w io.Writer, projectID string) error {
   ctx := context.Background()
   client, err := firestore.NewClient(ctx, projectID)

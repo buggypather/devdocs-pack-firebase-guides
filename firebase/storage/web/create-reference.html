@@ -1,16 +1,16 @@
-<h1>Create a Cloud Storage reference on Web</h1> <p>Your files are stored in a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket. The files in this bucket are presented in a hierarchical structure, just like the file system on your local hard disk, or the data in the Firebase Realtime Database. By creating a reference to a file, your app gains access to it. These references can then be used to upload or download data, get or update metadata or delete the file. A reference can either point to a specific file or to a higher level node in the hierarchy.</p> <p>If you've used the <a href="../../database">Firebase Realtime Database</a>, these paths should seem very familiar to you. However, your file data is stored in Cloud Storage, <strong>not</strong> in the Realtime Database.</p> <h2 id="create_a_reference">Create a Reference</h2> <p>In order to upload or download files, delete files, or get or update metadata, you must create a reference to the file you want to operate on. A reference can be thought of as a pointer to a file in the cloud. References are lightweight, so you can create as many as you need, and they are also reusable for multiple operations.</p> <p>To create a reference, get an instance of the Storage service using <code translate="no" dir="ltr">getStorage()</code> then call <code translate="no" dir="ltr">ref()</code> with the service as an argument. This reference points to the root of your Cloud Storage bucket.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<h1>Create a Cloud Storage reference on Web</h1> <p>Your files are stored in a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket. The files in this bucket are presented in a hierarchical structure, just like the file system on your local hard disk, or the data in the Firebase Realtime Database. By creating a reference to a file, your app gains access to it. These references can then be used to upload or download data, get or update metadata or delete the file. A reference can either point to a specific file or to a higher level node in the hierarchy.</p> <p>If you've used the <a href="../../database">Firebase Realtime Database</a>, these paths should seem very familiar to you. However, your file data is stored in Cloud Storage, <strong>not</strong> in the Realtime Database.</p> <h2 id="create_a_reference">Create a Reference</h2> <p>In order to upload or download files, delete files, or get or update metadata, you must create a reference to the file you want to operate on. A reference can be thought of as a pointer to a file in the cloud. References are lightweight, so you can create as many as you need, and they are also reusable for multiple operations.</p> <p>To create a reference, get an instance of the Storage service using <code translate="no" dir="ltr">getStorage()</code> then call <code translate="no" dir="ltr">ref()</code> with the service as an argument. This reference points to the root of your Cloud Storage bucket.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getStorage, ref } from "firebase/storage";
 
 // Get a reference to the storage service, which is used to create references in your storage bucket
 const storage = getStorage();
 
 // Create a storage reference from our storage service
-const storageRef = ref(storage);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+const storageRef = ref(storage);</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">// Get a reference to the storage service, which is used to create references in your storage bucket
 var storage = firebase.storage();
 
 // Create a storage reference from our storage service
-var storageRef = storage.ref();</pre> </section> </div> <p>You can create a reference to a location lower in the tree, say <code translate="no" dir="ltr">'images/space.jpg'</code> by passing in this path as a second argument when calling <code translate="no" dir="ltr">ref()</code>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+var storageRef = storage.ref();</pre> </section> </div> <p>You can create a reference to a location lower in the tree, say <code translate="no" dir="ltr">'images/space.jpg'</code> by passing in this path as a second argument when calling <code translate="no" dir="ltr">ref()</code>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getStorage, ref } from "firebase/storage";
 
 const storage = getStorage();
@@ -22,7 +22,7 @@ const imagesRef = ref(storage, 'images');
 // Child references can also take paths delimited by '/'
 const spaceRef = ref(storage, 'images/space.jpg');
 // spaceRef now points to "images/space.jpg"
-// imagesRef still points to "images"</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+// imagesRef still points to "images"</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">// Create a child reference
 var imagesRef = storageRef.child('images');
 // imagesRef now points to 'images'
@@ -30,7 +30,7 @@ var imagesRef = storageRef.child('images');
 // Child references can also take paths delimited by '/'
 var spaceRef = storageRef.child('images/space.jpg');
 // spaceRef now points to "images/space.jpg"
-// imagesRef still points to "images"</pre> </section> </div> <h2 id="navigate_with_references">Navigate with References</h2> <p>You can also use the <code translate="no" dir="ltr">parent</code> and <code translate="no" dir="ltr">root</code> properties to navigate up the file hierarchy. <code translate="no" dir="ltr">parent</code> navigates up one level, while <code translate="no" dir="ltr">root</code> navigates all the way to the top.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+// imagesRef still points to "images"</pre> </section> </div> <h2 id="navigate_with_references">Navigate with References</h2> <p>You can also use the <code translate="no" dir="ltr">parent</code> and <code translate="no" dir="ltr">root</code> properties to navigate up the file hierarchy. <code translate="no" dir="ltr">parent</code> navigates up one level, while <code translate="no" dir="ltr">root</code> navigates all the way to the top.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getStorage, ref } from "firebase/storage";
 
 const storage = getStorage();
@@ -42,14 +42,14 @@ const imagesRef = spaceRef.parent;
 
 // Root allows us to move all the way back to the top of our bucket
 const rootRef = spaceRef.root;
-// rootRef now points to the root</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+// rootRef now points to the root</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">// Parent allows us to move to the parent of a reference
 var imagesRef = spaceRef.parent;
 // imagesRef now points to 'images'
 
 // Root allows us to move all the way back to the top of our bucket
 var rootRef = spaceRef.root;
-// rootRef now points to the root</pre> </section> </div> <p><code translate="no" dir="ltr">child()</code>, <code translate="no" dir="ltr">parent</code>, and <code translate="no" dir="ltr">root</code> can be chained together multiple times, as each returns a reference. The exception is the <code translate="no" dir="ltr">parent</code> of <code translate="no" dir="ltr">root</code>, which is <code translate="no" dir="ltr">null</code>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+// rootRef now points to the root</pre> </section> </div> <p><code translate="no" dir="ltr">child()</code>, <code translate="no" dir="ltr">parent</code>, and <code translate="no" dir="ltr">root</code> can be chained together multiple times, as each returns a reference. The exception is the <code translate="no" dir="ltr">parent</code> of <code translate="no" dir="ltr">root</code>, which is <code translate="no" dir="ltr">null</code>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getStorage, ref } from "firebase/storage";
 
 const storage = getStorage();
@@ -60,13 +60,13 @@ const earthRef = ref(spaceRef.parent, 'earth.jpg');
 // earthRef points to 'images/earth.jpg'
 
 // nullRef is null, since the parent of root is null
-const nullRef = spaceRef.root.parent;</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+const nullRef = spaceRef.root.parent;</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">// References can be chained together multiple times
 var earthRef = spaceRef.parent.child('earth.jpg');
 // earthRef points to 'images/earth.jpg'
 
 // nullRef is null, since the parent of root is null
-var nullRef = spaceRef.root.parent;</pre> </section> </div> <h2 id="reference_properties">Reference Properties</h2> <p>You can inspect references to better understand the files they point to using the <code translate="no" dir="ltr">fullPath</code>, <code translate="no" dir="ltr">name</code>, and <code translate="no" dir="ltr">bucket</code> properties. These properties get the full path of the file, the name of the file, and the bucket the file is stored in.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+var nullRef = spaceRef.root.parent;</pre> </section> </div> <h2 id="reference_properties">Reference Properties</h2> <p>You can inspect references to better understand the files they point to using the <code translate="no" dir="ltr">fullPath</code>, <code translate="no" dir="ltr">name</code>, and <code translate="no" dir="ltr">bucket</code> properties. These properties get the full path of the file, the name of the file, and the bucket the file is stored in.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getStorage, ref } from "firebase/storage";
 
 const storage = getStorage();
@@ -81,7 +81,7 @@ spaceRef.fullPath;
 spaceRef.name;
 
 // Reference's bucket is the name of the storage bucket where files are stored
-spaceRef.bucket;</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+spaceRef.bucket;</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">// Reference's path is: 'images/space.jpg'
 // This is analogous to a file path on disk
 spaceRef.fullPath;
@@ -91,7 +91,7 @@ spaceRef.fullPath;
 spaceRef.name;
 
 // Reference's bucket is the name of the storage bucket where files are stored
-spaceRef.bucket;</pre> </section> </div> <h2 id="limitations_on_references">Limitations on References</h2> <p>Reference paths and names can contain any sequence of valid Unicode characters, but certain restrictions are imposed including:</p> <ol> <li>Total length of <code translate="no" dir="ltr">reference.fullPath</code> must be between 1 and 1024 bytes when UTF-8 encoded.</li> <li>No Carriage Return or Line Feed characters.</li> <li>Avoid using <code translate="no" dir="ltr">#</code>, <code translate="no" dir="ltr">[</code>, <code translate="no" dir="ltr">]</code>, <code translate="no" dir="ltr">*</code>, or <code translate="no" dir="ltr">?</code>, as these do not work well with other tools such as the <a href="../../database">Firebase Realtime Database</a> or <a href="https://cloud.google.com/storage/docs/gsutil">gsutil</a>.</li> </ol> <h2 id="full_example">Full Example</h2> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+spaceRef.bucket;</pre> </section> </div> <h2 id="limitations_on_references">Limitations on References</h2> <p>Reference paths and names can contain any sequence of valid Unicode characters, but certain restrictions are imposed including:</p> <ol> <li>Total length of <code translate="no" dir="ltr">reference.fullPath</code> must be between 1 and 1024 bytes when UTF-8 encoded.</li> <li>No Carriage Return or Line Feed characters.</li> <li>Avoid using <code translate="no" dir="ltr">#</code>, <code translate="no" dir="ltr">[</code>, <code translate="no" dir="ltr">]</code>, <code translate="no" dir="ltr">*</code>, or <code translate="no" dir="ltr">?</code>, as these do not work well with other tools such as the <a href="../../database">Firebase Realtime Database</a> or <a href="https://cloud.google.com/storage/docs/gsutil">gsutil</a>.</li> </ol> <h2 id="full_example">Full Example</h2> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getStorage, ref } from "firebase/storage";
 
 const storage = getStorage();
@@ -114,7 +114,7 @@ const path = spaceRef.fullPath;
 const name = spaceRef.name;
 
 // Points to 'images'
-const imagesRefAgain = spaceRef.parent;</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+const imagesRefAgain = spaceRef.parent;</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">// Points to the root reference
 var storageRef = firebase.storage().ref();
 

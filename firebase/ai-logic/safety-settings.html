@@ -2,13 +2,12 @@
 <p><strong>Built-in core protections</strong>:</p> <ul> <li>All <span class='\"notranslate\"'>Gemini</span> models feature <strong>built-in protections</strong> against severe harms (such as child exploitation, cyberattacks, and dangerous weapons).</li> <li>These protections are <strong>always active</strong>, applied automatically to all prompts and responses, and can't be modified or disabled.</li> </ul>
 </li> <li>
 <p><strong>Configurable safety filters</strong>:</p> <ul> <li>The <span class='\"notranslate\"'>Gemini API</span> provides additional <strong>configurable safety filters</strong> which you define using <strong>safety settings</strong> in your app.</li> <li>These settings let you control the <em>threshold</em> at which content is blocked across four main <a href="#harm-categories"><em>harm categories</em></a>: Harassment, Hate speech, Sexually explicit content, and Dangerous content.</li> </ul>
-</li> </ul> <aside class="special"><strong>Important:</strong><span> The model's default behavior and built-in protections cover most safety use cases due to inherent safety and alignment training. Given this, you should only configure explicit safety settings (as described on this page) if your app serves sensitive audiences (such as children) or has strict compliance requirements.</span></aside> <p><a href="#configure-safety-settings" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code samples</a> </p> <h3 id="safety-concepts" class="hide-from-toc">Important safety concepts</h3> <p>When working with safety for <span class='\"notranslate\"'>Gemini</span> models, here are some important concepts to understand:</p> <ul> <li><p><strong>Safety settings</strong>: The configuration you define in your app code specifying which <a href="#harm-categories">harm categories</a> to monitor and at what <a href="#block-thresholds">threshold</a> to block content.</p></li> <li><p><strong>Safety filters</strong>: The server-side classifiers that evaluate prompts and model responses against Google's safety dimensions. The filters block content based on your configured safety settings.</p></li> <li><p><strong>Safety ratings</strong>: The evaluation metadata returned by the model in the response object. The ratings indicate the probability and severity of potential harm detected for each harm category.</p></li> </ul> <aside class="note"><strong>Note:</strong><span> By default, configurable safety filters for harm categories that aren't specified in your app are <strong><code translate="no" dir="ltr">OFF</code></strong>. However, built-in core protections remain active (for example, protections against severe harms (such as child exploitation, cyberattacks, and dangerous weapons)).</span></aside> <h3 id="supported-models" class="hide-from-toc">Supported models</h3> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li>
-<code translate="no" dir="ltr">gemini-3.8-flash</code> (and the older <code translate="no" dir="ltr">gemini-3.7-flash</code>, <code translate="no" dir="ltr">gemini-3.6-flash</code>, and <code translate="no" dir="ltr">gemini-3.5-flash</code>)</li> <li>
+</li> </ul> <aside class="special"><strong>Important:</strong><span> The model's default behavior and built-in protections cover most safety use cases due to inherent safety and alignment training. Given this, you should only configure explicit safety settings (as described on this page) if your app serves sensitive audiences (such as children) or has strict compliance requirements.</span></aside> <p><a href="#configure-safety-settings" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code samples</a> </p> <h3 id="safety-concepts" class="hide-from-toc">Important safety concepts</h3> <p>When working with safety for <span class='\"notranslate\"'>Gemini</span> models, here are some important concepts to understand:</p> <ul> <li><p><strong>Safety settings</strong>: The configuration you define in your app code specifying which <a href="#harm-categories">harm categories</a> to monitor and at what <a href="#block-thresholds">threshold</a> to block content.</p></li> <li><p><strong>Safety filters</strong>: The server-side classifiers that evaluate prompts and model responses against Google's safety dimensions. The filters block content based on your configured safety settings.</p></li> <li><p><strong>Safety ratings</strong>: The evaluation metadata returned by the model in the response object. The ratings indicate the probability and severity of potential harm detected for each harm category.</p></li> </ul> <aside class="note"><strong>Note:</strong><span> By default, configurable safety filters for harm categories that aren't specified in your app are <strong><code translate="no" dir="ltr">OFF</code></strong>. However, built-in core protections remain active (for example, protections against severe harms (such as child exploitation, cyberattacks, and dangerous weapons)).</span></aside> <h3 id="supported-models" class="hide-from-toc">Supported models</h3> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li><code translate="no" dir="ltr">gemini-3.8-flash</code></li> <li>
 <code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> <li>
 <code translate="no" dir="ltr">gemini-nano-banana-2.1</code> (<span class='\"notranslate\"'>Nano Banana 2.1</span>)</li> <li>
 <code translate="no" dir="ltr">gemini-3.1-flash-image</code> (<span class='\"notranslate\"'>Nano Banana 2</span>)</li> <li>
 <code translate="no" dir="ltr">gemini-3.1-flash-lite-image</code> (<span class='\"notranslate\"'>Nano Banana 2 Lite</span>)</li> <li>
-<code translate="no" dir="ltr">gemini-3-pro-image</code> (<span class='\"notranslate\"'>Nano Banana Pro</span>)</li> </ul> <p>The <code translate="no" dir="ltr">gemini-3.1-pro-preview</code> model as well as the general-use and image-generating <span class='\"notranslate\"'>Gemini 2.5</span> models (which are deprecated) also support this capability.</p> <p><br></p> <hr> <h2 id="configure-safety-settings">Configure safety settings in your app</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>You configure safety settings as part of initializing a <code translate="no" dir="ltr">GenerativeModel</code> instance. The configuration is maintained for the lifetime of that model instance.</p> <p>Learn about the available <a href="#harm-categories">harm categories</a> and the <a href="#block-thresholds">thresholds</a> that you can set for each category later on this page.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<code translate="no" dir="ltr">gemini-3-pro-image</code> (<span class='\"notranslate\"'>Nano Banana Pro</span>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <p><br></p> <hr> <h2 id="configure-safety-settings">Configure safety settings in your app</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>You configure safety settings as part of initializing a <code translate="no" dir="ltr">GenerativeModel</code> instance. The configuration is maintained for the lifetime of that model instance.</p> <p>Learn about the available <a href="#harm-categories">harm categories</a> and the <a href="#block-thresholds">thresholds</a> that you can set for each category later on this page.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p>Configure <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/SafetySetting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
 <pre data-language="swift">
 import FirebaseAILogic
@@ -26,7 +25,7 @@ let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <p>Configure <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/SafetySetting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
 <pre data-language="kotlin">
 // ...
@@ -44,7 +43,7 @@ val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <p>Configure <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/SafetySetting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
 <pre data-language="java">
 // ...
@@ -66,7 +65,7 @@ GenerativeModelFutures model = GenerativeModelFutures.from(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 <p>Configure <a href="https://firebase.google.com/docs/reference/js/ai.safetysetting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
 <pre data-language="javascript">
 import { HarmBlockThreshold, HarmCategory, getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
@@ -94,7 +93,7 @@ const model = getGenerativeModel(ai, {
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 <p>Configure <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/SafetySetting-class.html" class="external"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
 <pre data-language="dart">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -112,7 +111,7 @@ final model = FirebaseAI.googleAI().generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 <p>Configure <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/safety-setting"><code translate="no" dir="ltr">SafetySetting</code></a> when creating a <code translate="no" dir="ltr">GenerativeModel</code> instance:</p> 
 <pre data-language="csharp">
 // ...
@@ -170,7 +169,7 @@ var model = ai.GetGenerativeModel(
     "totalTokenCount": 24
   }
 }
-</pre> <h3 id="catch-safety-errors">Catch safety errors in code</h3> <p>When content is blocked, the client SDKs surface the block as an exception or error code so your app can handle it gracefully.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre> <h3 id="catch-safety-errors">Catch safety errors in code</h3> <p>When content is blocked, the client SDKs surface the block as an exception or error code so your app can handle it gracefully.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p>You can catch <code translate="no" dir="ltr">GenerateContentError.promptBlocked</code> or <code translate="no" dir="ltr">GenerateContentError.responseStoppedEarly</code>:</p> 
 <pre data-language="swift">do {
   let response = try await model.generateContent("Your prompt here")
@@ -199,7 +198,7 @@ var model = ai.GetGenerativeModel(
 } catch {
   print("Unexpected error: \(error)")
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <p>You can catch <code translate="no" dir="ltr">PromptBlockedException</code> or inspect <code translate="no" dir="ltr">candidate.finishReason</code>:</p> 
 <pre data-language="kotlin">try {
   val response = model.generateContent("Your prompt here")
@@ -218,7 +217,7 @@ var model = ai.GetGenerativeModel(
 } catch (e: Exception) {
   println("Error generating content: ${e.message}")
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <p>You can catch <code translate="no" dir="ltr">PromptBlockedException</code> or inspect <code translate="no" dir="ltr">candidate.getFinishReason()</code>:</p> 
 <pre data-language="java">try {
   GenerateContentResponse response = model.generateContent("Your prompt here").get();
@@ -251,7 +250,7 @@ var model = ai.GetGenerativeModel(
 } catch (InterruptedException e) {
   System.out.println("Generation was interrupted: " + e.getMessage());
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 <p>You can inspect <code translate="no" dir="ltr">promptFeedback</code> and <code translate="no" dir="ltr">candidate.finishReason</code>:</p> 
 <pre data-language="javascript">try {
   const response = await model.generateContent("Your prompt here");
@@ -272,7 +271,7 @@ var model = ai.GetGenerativeModel(
 } catch (error) {
   console.error("Error generating content:", error);
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 <p>You can inspect <code translate="no" dir="ltr">promptFeedback</code> and <code translate="no" dir="ltr">candidate.finishReason</code>:</p> 
 <pre data-language="dart">try {
   final response = await model.generateContent([Content.text('Your prompt here')]);
@@ -294,7 +293,7 @@ var model = ai.GetGenerativeModel(
 } catch (e) {
   print('Error generating content: $e');
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 <p>You can inspect <code translate="no" dir="ltr">PromptFeedback</code> and <code translate="no" dir="ltr">candidate.FinishReason</code>:</p> 
 <pre data-language="csharp">try {
   var response = await model.GenerateContentAsync("Your prompt here");

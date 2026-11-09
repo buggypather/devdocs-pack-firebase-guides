@@ -8,9 +8,9 @@
   date: 2024-10-17
 }
 </pre> <p>The model passes this structured input data to your app so that your app can call the <code translate="no" dir="ltr">fetchWeather</code> function. When your app receives the weather conditions back from the API, it passes the information along to the model. This weather information allows the model to complete its final processing and generate its response to the initial request of <code translate="no" dir="ltr">What was the weather in Boston on October 17, 2024?</code></p> <p>The model might provide a final natural-language response like: <code translate="no" dir="ltr">On October 17, 2024, in Boston, it was 38 degrees Fahrenheit with partly cloudy skies.</code></p> <p><img src="https://firebase.google.com/static/docs/ai-logic/images/function-calling.png" alt="Diagram showing how function calling involves the model interacting with a function in your app" style="width: 1000px"> <br></p> You can <a href="https://ai.google.dev/gemini-api/docs/function-calling" class="external">learn more about function calling</a> in the <span class='\"notranslate\"'>Gemini Developer API</span> documentation. <h2 id="implement-function-calling">Implement function calling</h2> <p>The following steps in this guide show you how to implement a function call setup similar to the workflow described in <a href="#overview-of-example">Overview of a function calling example</a> (see the top section of this page).</p> <h3 id="supported-models" class="hide-from-toc">Supported models</h3> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li><code translate="no" dir="ltr">gemini-3.8-flash</code></li> <li>
-<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> and <span class='\"notranslate\"'>Gemini 2.5</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <p>The <a href="models#audio-generating-models-live-api">Gemini Live API models</a> also support this capability, but all the code samples in this guide are for the general-use <span class='\"notranslate\"'>Gemini</span> models.</p> <h3 id="before-you-begin">Before you begin</h3> 
+<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <p>The <a href="models#audio-generating-models-live-api">Gemini Live API models</a> also support this capability, but all the code samples in this guide are for the general-use <span class='\"notranslate\"'>Gemini</span> models.</p> <h3 id="before-you-begin">Before you begin</h3> 
 <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>If you haven't already, complete the <a href="get-started">getting started guide</a>, which describes how to set up your Firebase project, connect your app to Firebase, add the SDK, initialize the backend service for your chosen <span class='\"notranslate\"'>Gemini API</span> provider, and create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> <p> <aside class="note">All our docs assume that you're using the <a href="https://firebase.google.com/support/releases">latest versions</a> of the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs. </aside> </p> For testing and iterating on your prompts, we recommend using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>.  <h3 id="write-the-function">
-<strong>Step 1</strong>: Write the function</h3> <p>Imagine that you have an app where a user could enter a prompt like: <code translate="no" dir="ltr">What was the weather in Boston on October 17, 2024?</code>. The <span class='\"notranslate\"'>Gemini</span> models may not know this weather information; however, imagine that you know of an external weather service API that can provide it. The scenario in this guide relies on this hypothetical external API.</p> <p>Write the function in your app that will interact with the hypothetical external API and provide the model with the information it needs to generate its final request. In this weather example, it will be a <code translate="no" dir="ltr">fetchWeather</code> function that makes the call to this hypothetical external API.</p> <aside class="note"><strong>Note:</strong><span> The functions you provide to the model aren't required to call an external API. They could also do things like provide formulas for calculating a value, query a database, return search results across documents, etc.</span></aside><div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<strong>Step 1</strong>: Write the function</h3> <p>Imagine that you have an app where a user could enter a prompt like: <code translate="no" dir="ltr">What was the weather in Boston on October 17, 2024?</code>. The <span class='\"notranslate\"'>Gemini</span> models may not know this weather information; however, imagine that you know of an external weather service API that can provide it. The scenario in this guide relies on this hypothetical external API.</p> <p>Write the function in your app that will interact with the hypothetical external API and provide the model with the information it needs to generate its final request. In this weather example, it will be a <code translate="no" dir="ltr">fetchWeather</code> function that makes the call to this hypothetical external API.</p> <aside class="note"><strong>Note:</strong><span> The functions you provide to the model aren't required to call an external API. They could also do things like provide formulas for calculating a value, query a database, return search results across documents, etc.</span></aside><div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// This function calls a hypothetical external API that returns
 // a collection of weather information for a given location on a given date.
@@ -25,7 +25,7 @@ func fetchWeather(city: String, state: String, date: String) -&gt; JSONObject {
     "cloudConditions": .string("partlyCloudy"),
   ]
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// This function calls a hypothetical external API that returns
 // a collection of weather information for a given location on a given date.
@@ -43,7 +43,7 @@ suspend fun fetchWeather(location: Location, date: String): JsonObject {
         "cloudConditions" to JsonPrimitive("partlyCloudy")
     ))
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// This function calls a hypothetical external API that returns
 // a collection of weather information for a given location on a given date.
@@ -58,7 +58,7 @@ public JsonObject fetchWeather(Location location, String date) {
         "chancePrecipitation", JsonPrimitive("56%"),
         "cloudConditions", JsonPrimitive("partlyCloudy")));
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">// This function calls a hypothetical external API that returns
 // a collection of weather information for a given location on a given date.
@@ -74,7 +74,7 @@ async function fetchWeather({ location, date }) {
     cloudConditions: "partlyCloudy",
   };
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">// This function calls a hypothetical external API that returns
 // a collection of weather information for a given location on a given date.
@@ -93,7 +93,7 @@ Future&lt;Map&lt;String, Object?&gt;&gt; fetchWeather(
   };
   return apiResponse;
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">// This function calls a hypothetical external API that returns
 // a collection of weather information for a given location on a given date.
@@ -113,7 +113,7 @@ System.Collections.Generic.Dictionary&lt;string, object&gt; FetchWeather(
 <strong>Step 2</strong>: Create a function declaration</h3> <p>Create the function declaration that you'll later provide to the model (next step of this guide).</p> <aside class="note"><strong>Note:</strong><span> This guide's example demonstrates providing only one function declaration to the model, but you can provide <strong>up to 128 function declarations</strong> to the model for it to choose among.</span></aside> <p>In your declaration, include as much detail as possible in the descriptions for the function and its parameters.</p> <p>The model uses the information in the function declaration to determine which function to select and how to provide parameter values for the actual call to the function. See <a href="#additional-behaviors-and-options">Additional behaviors and options</a> later on this page for how the model may choose among the functions, as well as how you can control that choice.</p> <p>Note the following about the schema that you provide:</p> <ul> <li>
 <p>You must provide function declarations in a schema format that's compatible with the <a href="https://spec.openapis.org/oas/v3.0.3#schema" class="external">OpenAPI schema</a>. <span class='\"notranslate\"'>Agent Platform</span> offers limited support of the OpenAPI schema.</p> <ul> <li><p>The following attributes are supported: <code translate="no" dir="ltr">type</code>, <code translate="no" dir="ltr">nullable</code>, <code translate="no" dir="ltr">required</code>, <code translate="no" dir="ltr">format</code>, <code translate="no" dir="ltr">description</code>, <code translate="no" dir="ltr">properties</code>, <code translate="no" dir="ltr">items</code>, <code translate="no" dir="ltr">enum</code>.</p></li> <li><p>The following attributes are <em>not</em> supported: <code translate="no" dir="ltr">default</code>, <code translate="no" dir="ltr">optional</code>, <code translate="no" dir="ltr">maximum</code>, <code translate="no" dir="ltr">oneOf</code>.</p></li> </ul>
 </li> <li><p>By default, for <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs, all fields are considered <em>required</em> unless you specify them as optional in an <code translate="no" dir="ltr">optionalProperties</code> array. For these optional fields, the model can populate the fields or skip them. Note that this is opposite from the default behavior of the two <span class='\"notranslate\"'>Gemini API</span> providers if you use their server SDKs or their API directly.</p></li> </ul> <p>For best practices related to the function declarations, including tips for names and descriptions, see <a href="https://ai.google.dev/gemini-api/docs/function-calling#best_practices" class="external">Best practices</a> in the <span class='\"notranslate\"'>Gemini Developer API</span> documentation. </p>
-<p>Here's how you can write a function declaration:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Here's how you can write a function declaration:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">let fetchWeatherTool = FunctionDeclaration(
   name: "fetchWeather",
@@ -136,7 +136,7 @@ System.Collections.Generic.Dictionary&lt;string, object&gt; FetchWeather(
     ),
   ]
 )
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val fetchWeatherTool = FunctionDeclaration(
     "fetchWeather",
@@ -156,7 +156,7 @@ System.Collections.Generic.Dictionary&lt;string, object&gt; FetchWeather(
         ),
     ),
 )
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">FunctionDeclaration fetchWeatherTool = new FunctionDeclaration(
         "fetchWeather",
@@ -169,7 +169,7 @@ System.Collections.Generic.Dictionary&lt;string, object&gt; FetchWeather(
                 Schema.str("The date for which to get the weather. " +
                               "Date must be in the format: YYYY-MM-DD.")),
         Collections.emptyList());
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">const fetchWeatherTool: FunctionDeclarationsTool = {
   functionDeclarations: [
@@ -202,7 +202,7 @@ System.Collections.Generic.Dictionary&lt;string, object&gt; FetchWeather(
     },
   ],
 };
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">final fetchWeatherTool = FunctionDeclaration(
     'fetchWeather',
@@ -227,7 +227,7 @@ System.Collections.Generic.Dictionary&lt;string, object&gt; FetchWeather(
       ),
     },
   );
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">var fetchWeatherTool = new Tool(new FunctionDeclaration(
   name: "fetchWeather",
@@ -246,7 +246,7 @@ System.Collections.Generic.Dictionary&lt;string, object&gt; FetchWeather(
   }
 ));
 </pre></section> </div> <h3 id="provide-declaration-to-model">
-<strong>Step 3</strong>: Provide the function declaration during model initialization</h3> <p>The maximum number of function declarations that you can provide with the request is 128. See <a href="#additional-behaviors-and-options">Additional behaviors and options</a> later on this page for how the model may choose among the functions, as well as how you can control that choice (using a <code translate="no" dir="ltr">toolConfig</code> to set the <em>function calling mode</em>).</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<strong>Step 3</strong>: Provide the function declaration during model initialization</h3> <p>The maximum number of function declarations that you can provide with the request is 128. See <a href="#additional-behaviors-and-options">Additional behaviors and options</a> later on this page for how the model may choose among the functions, as well as how you can control that choice (using a <code translate="no" dir="ltr">toolConfig</code> to set the <em>function calling mode</em>).</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">
 import FirebaseAILogic
@@ -259,7 +259,7 @@ let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
   tools: [.functionDeclarations([fetchWeatherTool])]
 )
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">
 // Initialize the Gemini Developer API backend service.
@@ -270,7 +270,7 @@ val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
     tools = listOf(Tool.functionDeclarations(listOf(fetchWeatherTool)))
 )
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">
 // Initialize the Gemini Developer API backend service.
@@ -283,7 +283,7 @@ GenerativeModelFutures model = GenerativeModelFutures.from(
                         // Provide the function declaration to the model.
                         List.of(Tool.functionDeclarations(List.of(fetchWeatherTool)))));
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">
 import { initializeApp } from "firebase/app";
@@ -308,7 +308,7 @@ const model = getGenerativeModel(firebaseAI, {
   tools: fetchWeatherTool
 });
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -330,7 +330,7 @@ _functionCallModel = FirebaseAI.googleAI().generativeModel(
        ],
      );
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">
 using Firebase;
@@ -345,7 +345,7 @@ var model = FirebaseAI.DefaultInstance.GetGenerativeModel(
 );
 
 </pre></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p> <h3 id="call-the-function">
-<strong>Step 4</strong>: Call the function to invoke the external API</h3> <p>If the model decides that the <code translate="no" dir="ltr">fetchWeather</code> function can indeed help it generate a final response, your app needs to make the actual call to that function using the structured input data provided by the model.</p> <p>Since information needs to be passed back-and-forth between the model and the app, the recommended way to use function calling is through the multi-turn chat interface.</p> <p>The following code snippet shows how your app is told that the model wants to use the <code translate="no" dir="ltr">fetchWeather</code> function. It also shows that the model has provided the necessary input parameter values for the function call (and its underlying external API).</p> <p>In this example, the incoming request contained the prompt <code translate="no" dir="ltr">What was the weather in Boston on October 17, 2024?</code>. From this prompt, the model inferred the input parameters that are required by the <code translate="no" dir="ltr">fetchWeather</code> function (that is, <code translate="no" dir="ltr">city</code>, <code translate="no" dir="ltr">state</code>, and <code translate="no" dir="ltr">date</code>).</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<strong>Step 4</strong>: Call the function to invoke the external API</h3> <p>If the model decides that the <code translate="no" dir="ltr">fetchWeather</code> function can indeed help it generate a final response, your app needs to make the actual call to that function using the structured input data provided by the model.</p> <p>Since information needs to be passed back-and-forth between the model and the app, the recommended way to use function calling is through the multi-turn chat interface.</p> <p>The following code snippet shows how your app is told that the model wants to use the <code translate="no" dir="ltr">fetchWeather</code> function. It also shows that the model has provided the necessary input parameter values for the function call (and its underlying external API).</p> <p>In this example, the incoming request contained the prompt <code translate="no" dir="ltr">What was the weather in Boston on October 17, 2024?</code>. From this prompt, the model inferred the input parameters that are required by the <code translate="no" dir="ltr">fetchWeather</code> function (that is, <code translate="no" dir="ltr">city</code>, <code translate="no" dir="ltr">state</code>, and <code translate="no" dir="ltr">date</code>).</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">let chat = model.startChat()
 let prompt = "What was the weather in Boston on October 17, 2024?"
@@ -373,7 +373,7 @@ for functionCall in response.functionCalls {
   }
   // TODO(developer): Handle other potential function calls, if any.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val prompt = "What was the weather in Boston on October 17, 2024?"
 val chat = model.startChat()
@@ -396,7 +396,7 @@ val functionResponse = fetchWeatherCall?.let {
     val date = it.args["date"]!!.jsonPrimitive.content
     fetchWeather(location, date)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">String prompt = "What was the weather in Boston on October 17, 2024?";
 ChatFutures chatFutures = model.startChat();
@@ -428,7 +428,7 @@ ListenableFuture&lt;JsonObject&gt; handleFunctionCallFuture = Futures.transform(
     }
     return null;
 }, Executors.newSingleThreadExecutor());
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">const chat = model.startChat();
 const prompt = "What was the weather in Boston on October 17, 2024?";
@@ -449,7 +449,7 @@ if (functionCalls.length &gt; 0) {
     }
   }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">final chat = _functionCallModel.startChat();
 const prompt = 'What was the weather in Boston on October 17, 2024?';
@@ -481,7 +481,7 @@ if (functionCalls.isNotEmpty) {
     'No function calls returned by the model',
   );
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">var chat = model.StartChat();
 var prompt = "What was the weather in Boston on October 17, 2024?";
@@ -508,7 +508,7 @@ foreach (var functionCall in response.FunctionCalls) {
   // TODO(developer): Handle other potential function calls, if any.
 }
 </pre></section> </div> <h3 id="provide-function-output-to-model">
-<strong>Step 5</strong>: Provide the function's output to the model to generate the final response</h3> <p>After the <code translate="no" dir="ltr">fetchWeather</code> function returns the weather information, your app needs to pass it back to the model.</p> <p>Then, the model performs its final processing, and generates a final natural-language response like: <code translate="no" dir="ltr">On October 17, 2024 in Boston, it was 38 degrees Fahrenheit with partly cloudy skies.</code></p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<strong>Step 5</strong>: Provide the function's output to the model to generate the final response</h3> <p>After the <code translate="no" dir="ltr">fetchWeather</code> function returns the weather information, your app needs to pass it back to the model.</p> <p>Then, the model performs its final processing, and generates a final natural-language response like: <code translate="no" dir="ltr">On October 17, 2024 in Boston, it was 38 degrees Fahrenheit with partly cloudy skies.</code></p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Send the response(s) from the function back to the model
 // so that the model can use it to generate its final response.
@@ -518,7 +518,7 @@ let finalResponse = try await chat.sendMessage(
 
 // Log the text response.
 print(finalResponse.text ?? "No text in response.")
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// Send the response(s) from the function back to the model
 // so that the model can use it to generate its final response.
@@ -528,7 +528,7 @@ val finalResponse = chat.sendMessage(content("user") {
 
 // Log the text response.
 println(finalResponse.text ?: "No text in response")
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">ListenableFuture&lt;GenerateContentResponse&gt; modelResponseFuture = Futures.transformAsync(
   handleFunctionCallFuture,
@@ -553,7 +553,7 @@ public void onFailure(Throwable t) {
   // handle error
 }
 }, Executors.newSingleThreadExecutor());
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">// Send the response from the function back to the model
 // so that the model can use it to generate its final response.
@@ -567,13 +567,13 @@ result = await chat.sendMessage([
   },
 ]);
 console.log(result.response.text());
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">// Send the response from the function back to the model
 // so that the model can use it to generate its final response.
 response = await chat
      .sendMessage(Content.functionResponse(functionCall.name, functionResult));
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">// Send the response(s) from the function back to the model
 // so that the model can use it to generate its final response.

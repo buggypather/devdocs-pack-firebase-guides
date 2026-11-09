@@ -11,28 +11,28 @@
     // Add the dependency for the Firebase Authentication library
     // When NOT using the BoM, you must specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth:25.0.0")
-}</pre>  </li> <li>Get your project's server keys: <ol> <li> In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk" class="external"><b>Service accounts</b> tab</a>. </li> <li> At the bottom of the <b>Firebase Admin SDK</b> section, click <b>Generate New Private Key</b>. </li> <li> The new service account's public/private key pair is automatically saved on your computer. Copy this file to your authentication server. </li> </ol> </li> </ol> <h2 id="authenticate-with-firebase">Authenticate with Firebase</h2> <ol> <li>In your sign-in activity's <code translate="no" dir="ltr">onCreate</code> method, get the shared instance of the <code translate="no" dir="ltr">FirebaseAuth</code> object: <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre>  </li> <li>Get your project's server keys: <ol> <li> In the Firebase console, go to the <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <b>Settings</b></nobr> &gt; <a href="https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk" class="external"><b>Service accounts</b> tab</a>. </li> <li> At the bottom of the <b>Firebase Admin SDK</b> section, click <b>Generate New Private Key</b>. </li> <li> The new service account's public/private key pair is automatically saved on your computer. Copy this file to your authentication server. </li> </ol> </li> </ol> <h2 id="authenticate-with-firebase">Authenticate with Firebase</h2> <ol> <li>In your sign-in activity's <code translate="no" dir="ltr">onCreate</code> method, get the shared instance of the <code translate="no" dir="ltr">FirebaseAuth</code> object: <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">private lateinit var auth: FirebaseAuth
 // ...
 // Initialize Firebase Auth
-auth = Firebase.auth</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+auth = Firebase.auth</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">private FirebaseAuth mAuth;
 // ...
 // Initialize Firebase Auth
-mAuth = FirebaseAuth.getInstance();</pre> </section> </div> </li> <li>When initializing your Activity, check to see if the user is currently signed in: <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+mAuth = FirebaseAuth.getInstance();</pre> </section> </div> </li> <li>When initializing your Activity, check to see if the user is currently signed in: <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">public override fun onStart() {
     super.onStart()
     // Check if user is signed in (non-null) and update UI accordingly.
     val currentUser = auth.currentUser
     updateUI(currentUser)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">@Override
 public void onStart() {
     super.onStart();
     // Check if user is signed in (non-null) and update UI accordingly.
     FirebaseUser currentUser = mAuth.getCurrentUser();
     updateUI(currentUser);
-}</pre> </section> </div> </li> <li>When users sign in to your app, send their sign-in credentials (for example, their username and password) to your authentication server. Your server checks the credentials and returns a <a href="../admin/create-custom-tokens">custom token</a> if they are valid. </li> <li>After you receive the custom token from your authentication server, pass it to <code translate="no" dir="ltr">signInWithCustomToken</code> to sign in the user: <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> </div> </li> <li>When users sign in to your app, send their sign-in credentials (for example, their username and password) to your authentication server. Your server checks the credentials and returns a <a href="../admin/create-custom-tokens">custom token</a> if they are valid. </li> <li>After you receive the custom token from your authentication server, pass it to <code translate="no" dir="ltr">signInWithCustomToken</code> to sign in the user: <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">customToken?.let {
     auth.signInWithCustomToken(it)
         .addOnCompleteListener(this) { task -&gt;
@@ -52,7 +52,7 @@ public void onStart() {
                 updateUI(null)
             }
         }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">mAuth.signInWithCustomToken(mCustomToken)
         .addOnCompleteListener(this, new OnCompleteListener&lt;AuthResult&gt;() {
             @Override
@@ -70,8 +70,8 @@ public void onStart() {
                     updateUI(null);
                 }
             }
-        });</pre> </section> </div> If sign-in succeeds, the <code translate="no" dir="ltr">AuthStateListener</code> you can use the <code translate="no" dir="ltr">getCurrentUser</code> method to get the user's account data. </li> </ol> <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseUser"> <code translate="no" dir="ltr">FirebaseUser</code></a> object. See <a href="manage-users"> Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#signOut()"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
-<pre data-language="kotlin">Firebase.auth.signOut()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+        });</pre> </section> </div> If sign-in succeeds, the <code translate="no" dir="ltr">AuthStateListener</code> you can use the <code translate="no" dir="ltr">getCurrentUser</code> method to get the user's account data. </li> </ol> <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseUser"> <code translate="no" dir="ltr">FirebaseUser</code></a> object. See <a href="manage-users"> Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#signOut()"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">Firebase.auth.signOut()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseAuth.getInstance().signOut();</pre> </section> </div><div class="_attribution">
   <p class="_attribution-p">
     &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>

@@ -1,6 +1,6 @@
 <h1>Get data with Firestore Pipeline operations</h1> <aside class="note"><strong>Note:</strong><span> For additional Pipelines setup instructions and examples for client server libraries, refer to the <a href="https://cloud.google.com/firestore/docs/pipeline/overview">Cloud Pipelines documentation</a>.</span></aside> <h2 id="background">Background</h2> <p>Pipeline operations provide a new query interface for Cloud Firestore that supports advanced query functionality and complex expressions. It introduces many new functions, including <code translate="no" dir="ltr">min(...)</code>, <code translate="no" dir="ltr">max(...)</code>, <code translate="no" dir="ltr">substring(...)</code>, <code translate="no" dir="ltr">regex_match(...)</code>, and <code translate="no" dir="ltr">array_contains_all(...)</code>, and stages to be able to perform complex transformations.</p> <h2 id="getting_started">Getting Started</h2> <p>To install and initialize client SDKs, refer to the instructions in the following guides:</p> <ul> <li>
 <a href="../enterprise/quickstart#initialize">Get started with mobile and web SDKs</a>.</li> <li>
-<a href="../enterprise/quickstart-server#initialize">Get started with server client libraries</a>.</li> </ul> <h2 id="syntax">Syntax</h2> <p>The following sections give an overview of the syntax for Pipeline operations.</p> <h3 id="concepts">Concepts</h3> <p>One notable difference with Pipeline operations is the introduction of explicit "stage" ordering. This makes it possible to express more complex queries. However, it is a notable deviation from the existing query interface using Core operations where the ordering of stages was implied. Consider the following Pipeline operations example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<a href="../enterprise/quickstart-server#initialize">Get started with server client libraries</a>.</li> </ul> <h2 id="syntax">Syntax</h2> <p>The following sections give an overview of the syntax for Pipeline operations.</p> <h3 id="concepts">Concepts</h3> <p>One notable difference with Pipeline operations is the introduction of explicit "stage" ordering. This makes it possible to express more complex queries. However, it is a notable deviation from the existing query interface using Core operations where the ordering of stages was implied. Consider the following Pipeline operations example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">const pipeline = db.pipeline()
   // Step 1: Start a query with collection scope
   .collection("cities")
@@ -10,7 +10,7 @@
   .sort(field("name").ascending())
   // Step 4: Return the top 10. Note applying the limit earlier in the
   // pipeline would have unintentional results.
-  .limit(10);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  .limit(10);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let pipeline = db.pipeline()
   // Step 1: Start a query with collection scope
   .collection("cities")
@@ -20,7 +20,7 @@
   .sort([Field("name").ascending()])
   // Step 4: Return the top 10. Note applying the limit earlier in the pipeline would have
   // unintentional results.
-  .limit(10)</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+  .limit(10)</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val pipeline = db.pipeline()
     // Step 1: Start a query with collection scope
     .collection("cities")
@@ -30,7 +30,7 @@
     .sort(field("name").ascending())
     // Step 4: Return the top 10. Note applying the limit earlier in the pipeline would have
     // unintentional results.
-    .limit(10)</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .limit(10)</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Pipeline pipeline = db.pipeline()
     // Step 1: Start a query with collection scope
     .collection("cities")
@@ -40,7 +40,7 @@
     .sort(field("name").ascending())
     // Step 4: Return the top 10. Note applying the limit earlier in the pipeline would have
     // unintentional results.
-    .limit(10);</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+    .limit(10);</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import Field
 
 pipeline = (
@@ -49,24 +49,24 @@ pipeline = (
     .where(Field.of("population").greater_than(100_000))
     .sort(Field.of("name").ascending())
     .limit(10)
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">pipeline := client.Pipeline().
 	Collection("cities").
 	Where(firestore.FieldOf("population").GreaterThan(100000)).
 	Sort(firestore.Orders(firestore.Ascending(firestore.FieldOf("name")))).
-	Limit(10)</pre> </section> </div> <h3 id="initialization">Initialization</h3> <p>Pipeline operations have a very familiar syntax coming from existing Cloud Firestore queries. To get started, you initialize a query by writing the following:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+	Limit(10)</pre> </section> </div> <h3 id="initialization">Initialization</h3> <p>Pipeline operations have a very familiar syntax coming from existing Cloud Firestore queries. To get started, you initialize a query by writing the following:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">const { getFirestore } = require("firebase/firestore");
 const { execute } = require("firebase/firestore/pipelines");
 const database = getFirestore(app, "enterprise");
-const pipeline = database.pipeline();</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+const pipeline = database.pipeline();</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let firestore = Firestore.firestore(database: "enterprise")
-let pipeline = firestore.pipeline()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+let pipeline = firestore.pipeline()</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val firestore = Firebase.firestore("enterprise")
-val pipeline = firestore.pipeline()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+val pipeline = firestore.pipeline()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseFirestore firestore = FirebaseFirestore.getInstance("enterprise");
-PipelineSource pipeline = firestore.pipeline();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+PipelineSource pipeline = firestore.pipeline();</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">firestore_client = firestore.client(default_app, "your-new-enterprise-database")
-pipeline = firestore_client.pipeline()</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+pipeline = firestore_client.pipeline()</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">client, err := firestore.NewClientWithDatabase(ctx, projectID, databaseID)
 if err != nil {
 	fmt.Fprintf(w, "firestore.NewClientWithDatabase failed: %v", err)
@@ -74,28 +74,28 @@ if err != nil {
 }
 defer client.Close()
 pipeline := client.Pipeline().Collection("books")</pre> </section> </div> <h3 id="structure">Structure</h3> <p>There are a few terms that are important to understand when creating Pipeline operations: stages, expressions, and functions and subquery wrappers.</p> <p><img src="https://docs.cloud.google.com//firestore/native/docs/images/pipeline-queries/pipeline_query_stage_expression.jpg" alt="Example demonstrating stages and expressions in a query"></p> <p><strong>Stages:</strong> A pipeline may consist of one or more stages. Logically, these represent the series of steps (or stages) taken to execute the query.</p> <aside class="note"><strong>Note:</strong><span> In practice, stages may be executed out of order to improve performance. However, this does not modify the intent or correctness of the query.</span></aside> <p><strong>Expressions:</strong> Stages will often accept an expression allowing you to express more complex queries. Expression may be simple and consist of a single function like <code translate="no" dir="ltr">eq("a", 1)</code>. You can also express more complex expressions by nesting expressions like <code translate="no" dir="ltr">and(eq("a", 1), eq("b", 2)).</code></p> <p><strong>Subquery Wrappers:</strong> Functions like <code translate="no" dir="ltr">array()</code> and <code translate="no" dir="ltr">scalar()</code> allow you to embed a nested pipeline as an expression within a stage.</p> <h3 id="fields_constants_variables">Fields / Constants / Variables</h3> <p>Pipeline operations support complex expressions. As such, it is important to differentiate whether a value represents a <strong>field</strong>, a <strong>constant</strong>, or a <strong>variable</strong>.</p> <p>While <strong>fields</strong> refer to data within documents, and <strong>constants</strong> allow specifying any value as an argument to an expression, <strong>variables</strong> allow defining &amp; using temporary values that are scoped to the query execution rather than the documents being processed. The following provides an overview of these concepts, see the <a href="stages/transformation/let"><code translate="no" dir="ltr">let(...)</code></a> stage for more information on how to read &amp; write <strong>variables</strong> during query execution.</p> <table> <thead> <tr> <th style="text-align: left"></th> <th style="text-align: left">Fields</th> <th style="text-align: left">Constants</th> <th style="text-align: left">Variables</th> </tr> </thead> <tbody> <tr> <td style="text-align: left"><strong>Purpose</strong></td> <td style="text-align: left">access or store fields into documents</td> <td style="text-align: left">specify a fixed value</td> <td style="text-align: left">use temporary values during pipeline execution</td> </tr> <tr> <td style="text-align: left"><strong>SDK Usage</strong></td> <td style="text-align: left"><code translate="no" dir="ltr">field("name")</code></td> <td style="text-align: left"><code translate="no" dir="ltr">constant("val")</code></td> <td style="text-align: left"><code translate="no" dir="ltr">variable("name")</code></td> </tr> <tr> <td style="text-align: left"><strong>Scope</strong></td> <td style="text-align: left">local to current document</td> <td style="text-align: left">global</td> <td style="text-align: left">global to pipeline and sub-pipelines</td> </tr> <tr> <td style="text-align: left"><strong>Undefined Reference</strong></td> <td style="text-align: left">evaluates to <code translate="no" dir="ltr">absent</code>
-</td> <td style="text-align: left">N/A</td> <td style="text-align: left">generates runtime error</td> </tr> </tbody> </table> <p><strong>Examples:</strong></p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+</td> <td style="text-align: left">N/A</td> <td style="text-align: left">generates runtime error</td> </tr> </tbody> </table> <p><strong>Examples:</strong></p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">const pipeline = db.pipeline()
   .collection("cities")
-  .where(field("name").equal(constant("Toronto")));</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  .where(field("name").equal(constant("Toronto")));</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let pipeline = db.pipeline()
   .collection("cities")
-  .where(Field("name").equal(Constant("Toronto")))</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+  .where(Field("name").equal(Constant("Toronto")))</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val pipeline = db.pipeline()
     .collection("cities")
-    .where(field("name").equal(constant("Toronto")))</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .where(field("name").equal(constant("Toronto")))</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Pipeline pipeline = db.pipeline()
     .collection("cities")
-    .where(field("name").equal(constant("Toronto")));</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+    .where(field("name").equal(constant("Toronto")));</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import Field, Constant
 
 pipeline = (
     client.pipeline()
     .collection("cities")
     .where(Field.of("name").equal(Constant.of("Toronto")))
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">pipeline := client.Pipeline().Collection("cities").
-	Where(firestore.FieldOf("name").Equal(firestore.ConstantOf("Toronto")))</pre> </section> </div> <h2 id="stages">Stages</h2> <h3 id="input_stages">Input Stages</h3> <p>The input stage represents the first stage of a query. It defines the initial set of documents you are querying over. For Pipeline operations, this largely is similar to existing queries, where most queries start with either a <a href="stages/input/collection"><code translate="no" dir="ltr">collection(...)</code></a> or <a href="stages/input/collection-group"><code translate="no" dir="ltr">collection_group(...)</code></a> stage. Two new input stages are <a href="stages/input/database"><code translate="no" dir="ltr">database()</code></a> and <a href="stages/input/documents"><code translate="no" dir="ltr">documents(...)</code></a> where <a href="stages/input/database"><code translate="no" dir="ltr">database()</code></a> allows returning <strong>all</strong> documents in the database, while <a href="stages/input/documents"><code translate="no" dir="ltr">documents(...)</code></a> acts identical to a batch read.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+	Where(firestore.FieldOf("name").Equal(firestore.ConstantOf("Toronto")))</pre> </section> </div> <h2 id="stages">Stages</h2> <h3 id="input_stages">Input Stages</h3> <p>The input stage represents the first stage of a query. It defines the initial set of documents you are querying over. For Pipeline operations, this largely is similar to existing queries, where most queries start with either a <a href="stages/input/collection"><code translate="no" dir="ltr">collection(...)</code></a> or <a href="stages/input/collection-group"><code translate="no" dir="ltr">collection_group(...)</code></a> stage. Two new input stages are <a href="stages/input/database"><code translate="no" dir="ltr">database()</code></a> and <a href="stages/input/documents"><code translate="no" dir="ltr">documents(...)</code></a> where <a href="stages/input/database"><code translate="no" dir="ltr">database()</code></a> allows returning <strong>all</strong> documents in the database, while <a href="stages/input/documents"><code translate="no" dir="ltr">documents(...)</code></a> acts identical to a batch read.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">let results;
 
 // Return all restaurants in San Francisco
@@ -112,7 +112,7 @@ results = await execute(db.pipeline().documents([
   doc(db, "cities", "SF"),
   doc(db, "cities", "DC"),
   doc(db, "cities", "NY")
-]));</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+]));</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">var results: Pipeline.Snapshot
 
 // Return all restaurants in San Francisco
@@ -129,7 +129,7 @@ results = try await db.pipeline().documents([
   db.collection("cities").document("SF"),
   db.collection("cities").document("DC"),
   db.collection("cities").document("NY")
-]).execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+]).execute()</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">var results: Task&lt;Pipeline.Snapshot&gt;
 
 // Return all restaurants in San Francisco
@@ -146,7 +146,7 @@ results = db.pipeline().documents(
     db.collection("cities").document("SF"),
     db.collection("cities").document("DC"),
     db.collection("cities").document("NY")
-).execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+).execute()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Task&lt;Pipeline.Snapshot&gt; results;
 
 // Return all restaurants in San Francisco
@@ -163,7 +163,7 @@ results = db.pipeline().documents(
     db.collection("cities").document("SF"),
     db.collection("cities").document("DC"),
     db.collection("cities").document("NY")
-).execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+).execute();</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python"># Return all restaurants in San Francisco
 results = client.pipeline().collection("cities/sf/restaurants").execute()
 
@@ -182,7 +182,7 @@ results = (
         client.collection("cities").document("NY"),
     )
     .execute()
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">// Return all restaurants in San Francisco
 results1, err := client.Pipeline().Collection("cities/sf/restaurants").Execute(ctx).Results().GetAll()
 if err != nil {
@@ -215,7 +215,7 @@ results4, err := client.Pipeline().
 if err != nil {
 	fmt.Fprintf(w, "GetAll failed: %v", err)
 	return err
-}</pre> </section> </div> <p>As with all other stages, the order of results from these input stages is not stable. A <a href="stages/transformation/sort"><code translate="no" dir="ltr">sort(...)</code></a> operator should always be added if a specific ordering is required.</p> <h3 id="where">Where</h3> <p>The <a href="stages/transformation/where"><code translate="no" dir="ltr">where(...)</code></a> stage acts as a standard filter operation over documents generated from the previous stage and mostly mirrors the existing "where" syntax for existing queries. Any document for where a given expression evaluates to a non-<code translate="no" dir="ltr">true</code> value is filtered out from the returned documents.</p> <p>Multiple <a href="stages/transformation/where"><code translate="no" dir="ltr">where(...)</code></a> statements can be chained together, and act as an <code translate="no" dir="ltr">and(...)</code> expression. For example the following two queries are logically equivalent and can be used interchangeably.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+}</pre> </section> </div> <p>As with all other stages, the order of results from these input stages is not stable. A <a href="stages/transformation/sort"><code translate="no" dir="ltr">sort(...)</code></a> operator should always be added if a specific ordering is required.</p> <h3 id="where">Where</h3> <p>The <a href="stages/transformation/where"><code translate="no" dir="ltr">where(...)</code></a> stage acts as a standard filter operation over documents generated from the previous stage and mostly mirrors the existing "where" syntax for existing queries. Any document for where a given expression evaluates to a non-<code translate="no" dir="ltr">true</code> value is filtered out from the returned documents.</p> <p>Multiple <a href="stages/transformation/where"><code translate="no" dir="ltr">where(...)</code></a> statements can be chained together, and act as an <code translate="no" dir="ltr">and(...)</code> expression. For example the following two queries are logically equivalent and can be used interchangeably.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">let results;
 
 results = await execute(db.pipeline().collection("books")
@@ -225,7 +225,7 @@ results = await execute(db.pipeline().collection("books")
 
 results = await execute(db.pipeline().collection("books")
   .where(and(field("rating").equal(5), field("published").lessThan(1900)))
-);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">var results: Pipeline.Snapshot
 
 results = try await db.pipeline().collection("books")
@@ -235,7 +235,7 @@ results = try await db.pipeline().collection("books")
 
 results = try await db.pipeline().collection("books")
   .where(Field("rating").equal(5) &amp;&amp; Field("published").lessThan(1900))
-  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+  .execute()</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">var results: Task&lt;Pipeline.Snapshot&gt;
 
 results = db.pipeline().collection("books")
@@ -246,7 +246,7 @@ results = db.pipeline().collection("books")
 results = db.pipeline().collection("books")
     .where(Expression.and(field("rating").equal(5),
       field("published").lessThan(1900)))
-    .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .execute()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Task&lt;Pipeline.Snapshot&gt; results;
 
 results = db.pipeline().collection("books")
@@ -259,7 +259,7 @@ results = db.pipeline().collection("books")
         field("rating").equal(5),
         field("published").lessThan(1900)
     ))
-    .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+    .execute();</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import And, Field
 
 results = (
@@ -275,7 +275,7 @@ results = (
     .collection("books")
     .where(And(Field.of("rating").equal(5), Field.of("published").less_than(1900)))
     .execute()
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">results1, err := client.Pipeline().
 	Collection("books").
 	Where(firestore.FieldOf("rating").Equal(5)).
@@ -296,14 +296,14 @@ results2, err := client.Pipeline().
 if err != nil {
 	fmt.Fprintf(w, "GetAll failed: %v", err)
 	return err
-}</pre> </section> </div> <h3 id="select_add_remove_fields">Select / Add &amp; Remove Fields</h3> <p>The <a href="stages/transformation/select"><code translate="no" dir="ltr">select(...)</code></a>, <a href="stages/transformation/add-fields"><code translate="no" dir="ltr">add_fields(...)</code></a>, &amp; <a href="stages/transformation/remove-fields"><code translate="no" dir="ltr">remove_fields(...)</code></a> all allow you to modify the fields being returned from a previous stage. These three are generally referred to as projection-style stages.</p> <p>The <a href="stages/transformation/select"><code translate="no" dir="ltr">select(...)</code></a> and <a href="stages/transformation/add-fields"><code translate="no" dir="ltr">add_fields(...)</code></a> allow you to specify the result of an expression to a user-provided field name. The <a href="stages/transformation/select"><code translate="no" dir="ltr">select(...)</code></a> will only return the documents with specified field names while <a href="stages/transformation/add-fields"><code translate="no" dir="ltr">add_fields(...)</code></a> extends the schema of the previous stage (potentially overwriting values with identical field names).</p> <p>The <a href="stages/transformation/remove-fields"><code translate="no" dir="ltr">remove_fields(...)</code></a> allows specifying a set of fields to remove from the previous stage. Specifying field names that don't exist is a no-op.</p> <p>See the <a href="#restrict_the_fields_to_return">Restrict the Fields to Return</a> section below but in general using such a stage to restrict the result to only the fields needed in the client is helpful in reducing the cost and latency for most queries.</p> <h3 id="aggregate_distinct">Aggregate / Distinct</h3> <p>The <a href="stages/transformation/aggregate"><code translate="no" dir="ltr">aggregate(...)</code></a> stage lets you perform a series of aggregations over the input documents. By default, all documents are aggregated together, but an optional <code translate="no" dir="ltr">grouping</code> argument can be provided, allowing the input documents aggregated into different buckets.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+}</pre> </section> </div> <h3 id="select_add_remove_fields">Select / Add &amp; Remove Fields</h3> <p>The <a href="stages/transformation/select"><code translate="no" dir="ltr">select(...)</code></a>, <a href="stages/transformation/add-fields"><code translate="no" dir="ltr">add_fields(...)</code></a>, &amp; <a href="stages/transformation/remove-fields"><code translate="no" dir="ltr">remove_fields(...)</code></a> all allow you to modify the fields being returned from a previous stage. These three are generally referred to as projection-style stages.</p> <p>The <a href="stages/transformation/select"><code translate="no" dir="ltr">select(...)</code></a> and <a href="stages/transformation/add-fields"><code translate="no" dir="ltr">add_fields(...)</code></a> allow you to specify the result of an expression to a user-provided field name. The <a href="stages/transformation/select"><code translate="no" dir="ltr">select(...)</code></a> will only return the documents with specified field names while <a href="stages/transformation/add-fields"><code translate="no" dir="ltr">add_fields(...)</code></a> extends the schema of the previous stage (potentially overwriting values with identical field names).</p> <p>The <a href="stages/transformation/remove-fields"><code translate="no" dir="ltr">remove_fields(...)</code></a> allows specifying a set of fields to remove from the previous stage. Specifying field names that don't exist is a no-op.</p> <p>See the <a href="#restrict_the_fields_to_return">Restrict the Fields to Return</a> section below but in general using such a stage to restrict the result to only the fields needed in the client is helpful in reducing the cost and latency for most queries.</p> <h3 id="aggregate_distinct">Aggregate / Distinct</h3> <p>The <a href="stages/transformation/aggregate"><code translate="no" dir="ltr">aggregate(...)</code></a> stage lets you perform a series of aggregations over the input documents. By default, all documents are aggregated together, but an optional <code translate="no" dir="ltr">grouping</code> argument can be provided, allowing the input documents aggregated into different buckets.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">const results = await execute(db.pipeline()
   .collection("books")
   .aggregate(
     field("rating").average().as("avg_rating")
   )
   .distinct(field("genre"))
-);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let results = try await db.pipeline()
   .collection("books")
   .aggregate([
@@ -311,7 +311,7 @@ if err != nil {
   ], groups: [
     Field("genre")
   ])
-  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+  .execute()</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val results = db.pipeline()
     .collection("books")
     .aggregate(
@@ -319,14 +319,14 @@ if err != nil {
             .withAccumulators(AggregateFunction.average("rating").alias("avg_rating"))
             .withGroups(field("genre"))
     )
-    .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .execute()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Task&lt;Pipeline.Snapshot&gt; results = db.pipeline()
     .collection("books")
     .aggregate(AggregateStage
         .withAccumulators(
             AggregateFunction.average("rating").alias("avg_rating"))
         .withGroups(field("genre")))
-    .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+    .execute();</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import Field
 
 results = (
@@ -336,42 +336,42 @@ results = (
         Field.of("rating").average().as_("avg_rating"), groups=[Field.of("genre")]
     )
     .execute()
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">snapshot := client.Pipeline().
 	Collection("books").
 	Aggregate(
 		firestore.Accumulators(firestore.Average("rating").As("avg_rating")),
 		firestore.WithAggregateGroups("genre"),
 	).
-	Execute(ctx)</pre> </section> </div> <p>When <code translate="no" dir="ltr">groupings</code> is not specified, this stage will produce only a single document, otherwise a document will be generated for each unique combination of <code translate="no" dir="ltr">groupings</code> values.</p> <p>The <a href="stages/transformation/distinct"><code translate="no" dir="ltr">distinct(...)</code></a> stage is a simplified aggregation operator which allows generating just the unique <code translate="no" dir="ltr">groupings</code> without any accumulators. It behaves identically to that of <a href="stages/transformation/aggregate"><code translate="no" dir="ltr">aggregate(...)</code></a> in all other regards. The following example shows:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+	Execute(ctx)</pre> </section> </div> <p>When <code translate="no" dir="ltr">groupings</code> is not specified, this stage will produce only a single document, otherwise a document will be generated for each unique combination of <code translate="no" dir="ltr">groupings</code> values.</p> <p>The <a href="stages/transformation/distinct"><code translate="no" dir="ltr">distinct(...)</code></a> stage is a simplified aggregation operator which allows generating just the unique <code translate="no" dir="ltr">groupings</code> without any accumulators. It behaves identically to that of <a href="stages/transformation/aggregate"><code translate="no" dir="ltr">aggregate(...)</code></a> in all other regards. The following example shows:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">const results = await execute(db.pipeline()
   .collection("books")
   .distinct(
     field("author").toUpper().as("author"),
     field("genre")
   )
-);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let results = try await db.pipeline()
   .collection("books")
   .distinct([
     Field("author").toUpper().as("author"),
     Field("genre")
   ])
-  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+  .execute()</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val results = db.pipeline()
     .collection("books")
     .distinct(
         field("author").toUpper().alias("author"),
         field("genre")
     )
-    .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .execute()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Task&lt;Pipeline.Snapshot&gt; results = db.pipeline()
     .collection("books")
     .distinct(
         field("author").toUpper().alias("author"),
         field("genre")
     )
-    .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+    .execute();</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import Field
 
 results = (
@@ -379,14 +379,14 @@ results = (
     .collection("books")
     .distinct(Field.of("author").to_upper().as_("author"), "genre")
     .execute()
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">snapshot := client.Pipeline().
 	Collection("books").
 	Distinct(firestore.Fields(
 		firestore.ToUpper(firestore.FieldOf("author")).As("author"),
 		firestore.FieldOf("genre"),
 	)).
-	Execute(ctx)</pre> </section> </div> <h2 id="functions">Functions</h2> <p>Functions are a building block for creating expressions and complex queries. For a complete list of functions with examples, refer to the <a href="functions/all_functions">Functions reference</a>. As a quick reminder, consider the structure of a typical query:</p> <p><img src="https://docs.cloud.google.com/firestore/native/docs/images/pipeline-queries/pipeline_query_stage_expression.jpg" alt="Example demonstrating stages and functions in a query"></p> <p>Many stages accept expressions which contain one or more functions. The most common function usage will be found in the <a href="stages/transformation/where"><code translate="no" dir="ltr">where(...)</code></a> and <a href="stages/transformation/select"><code translate="no" dir="ltr">select(...)</code></a> stages. There are two main types of functions that you should be familiar with:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+	Execute(ctx)</pre> </section> </div> <h2 id="functions">Functions</h2> <p>Functions are a building block for creating expressions and complex queries. For a complete list of functions with examples, refer to the <a href="functions/all_functions">Functions reference</a>. As a quick reminder, consider the structure of a typical query:</p> <p><img src="https://docs.cloud.google.com/firestore/native/docs/images/pipeline-queries/pipeline_query_stage_expression.jpg" alt="Example demonstrating stages and functions in a query"></p> <p>Many stages accept expressions which contain one or more functions. The most common function usage will be found in the <a href="stages/transformation/where"><code translate="no" dir="ltr">where(...)</code></a> and <a href="stages/transformation/select"><code translate="no" dir="ltr">select(...)</code></a> stages. There are two main types of functions that you should be familiar with:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">let results;
 
 // Type 1: Scalar (for use in non-aggregation stages)
@@ -399,7 +399,7 @@ results = await execute(db.pipeline().collection("books")
 // Example: Return the min price of all books.
 results = await execute(db.pipeline().collection("books")
   .aggregate(field("price").minimum().as("min_price"))
-);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">var results: Pipeline.Snapshot
 
 // Type 1: Scalar (for use in non-aggregation stages)
@@ -414,7 +414,7 @@ results = try await db.pipeline().collection("books")
 // Example: Return the min price of all books.
 results = try await db.pipeline().collection("books")
   .aggregate([Field("price").minimum().as("min_price")])
-  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+  .execute()</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">var results: Task&lt;Pipeline.Snapshot&gt;
 
 // Type 1: Scalar (for use in non-aggregation stages)
@@ -429,7 +429,7 @@ results = db.pipeline().collection("books")
 // Example: Return the min price of all books.
 results = db.pipeline().collection("books")
     .aggregate(AggregateFunction.minimum("price").alias("min_price"))
-    .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .execute()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Task&lt;Pipeline.Snapshot&gt; results;
 
 // Type 1: Scalar (for use in non-aggregation stages)
@@ -444,7 +444,7 @@ results = db.pipeline().collection("books")
 // Example: Return the min price of all books.
 results = db.pipeline().collection("books")
     .aggregate(AggregateFunction.minimum("price").alias("min_price"))
-    .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+    .execute();</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import Field
 
 # Type 1: Scalar (for use in non-aggregation stages)
@@ -465,7 +465,7 @@ results = (
     .collection("books")
     .aggregate(Field.of("price").minimum().as_("min_price"))
     .execute()
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">// Type 1: Scalar (for use in non-aggregation stages)
 // Example: Return the min store price for each book.
 results1, err := client.Pipeline().
@@ -498,35 +498,35 @@ if err != nil {
 <code translate="no" dir="ltr">DEADLINE_EXCEEDED</code> </td> <td>The query you are executing exceeds a 60 second deadline and requires additional optimization. See the performance section for tips. If you are unable to root cause the problem, reach out to the team. </td> </tr> <tr> <td>
 <code translate="no" dir="ltr">RESOURCE_EXHAUSTED</code> </td> <td>The query you are executing exceeds the memory limits and requires additional optimization. See the performance section for tips. If you are unable to root cause the problem, reach out to the team. </td> </tr> <tr> <td>
 <code translate="no" dir="ltr">INTERNAL</code> </td> <td>
-<a href="https://firebase.google.com/support/troubleshooter/databases">Contact</a> the team for support. </td> </tr> </table> <h2 id="performance">Performance</h2> <p>Enterprise edition databases do not require that an index is always present. This means that a query can exhibit higher latency compared to existing queries which would have just failed immediately with a <code translate="no" dir="ltr">FAILED_PRECONDITION</code> missing index error. To improve the performance of Pipeline operations, there are a couple of steps you can take.</p> <h3 id="create_indexes">Create Indexes</h3> <h4 id="index_used">Index Used</h4> <p>Query explain lets you identify if your query is being served by an index or falling back to a less efficient operation like a table scan. If your query is not being fully served from an index, you can create an index by following the instructions.</p> <h4 id="creating_indexes">Creating Indexes</h4> <p>You can follow the existing <a href="../query-data/indexing">index management documentation</a> to create indexes. Before creating an index, familiarize yourself with <a href="../query-data/index-overview">general best practices</a> with indexes in Cloud Firestore. To ensure your query can leverage indexes, follow the <a href="../query-data/index-overview#index_properties">best practices</a> to create indexes with fields in the following order:</p> <ol> <li>All fields that will be used in equality filters (in any order)</li> <li>All fields that will be sorted on (in the same order)</li> <li>Fields that will be used in range or inequality filters in decreasing order of query constraint selectivity</li> </ol> <p>For example, for the following query,</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<a href="https://firebase.google.com/support/troubleshooter/databases">Contact</a> the team for support. </td> </tr> </table> <h2 id="performance">Performance</h2> <p>Enterprise edition databases do not require that an index is always present. This means that a query can exhibit higher latency compared to existing queries which would have just failed immediately with a <code translate="no" dir="ltr">FAILED_PRECONDITION</code> missing index error. To improve the performance of Pipeline operations, there are a couple of steps you can take.</p> <h3 id="create_indexes">Create Indexes</h3> <h4 id="index_used">Index Used</h4> <p>Query explain lets you identify if your query is being served by an index or falling back to a less efficient operation like a table scan. If your query is not being fully served from an index, you can create an index by following the instructions.</p> <h4 id="creating_indexes">Creating Indexes</h4> <p>You can follow the existing <a href="../query-data/indexing">index management documentation</a> to create indexes. Before creating an index, familiarize yourself with <a href="../query-data/index-overview">general best practices</a> with indexes in Cloud Firestore. To ensure your query can leverage indexes, follow the <a href="../query-data/index-overview#index_properties">best practices</a> to create indexes with fields in the following order:</p> <ol> <li>All fields that will be used in equality filters (in any order)</li> <li>All fields that will be sorted on (in the same order)</li> <li>Fields that will be used in range or inequality filters in decreasing order of query constraint selectivity</li> </ol> <p>For example, for the following query,</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">const results = await execute(db.pipeline()
   .collection("books")
   .where(field("published").lessThan(1900))
   .where(field("genre").equal("Science Fiction"))
   .where(field("rating").greaterThan(4.3))
   .sort(field("published").descending())
-);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let results = try await db.pipeline()
   .collection("books")
   .where(Field("published").lessThan(1900))
   .where(Field("genre").equal("Science Fiction"))
   .where(Field("rating").greaterThan(4.3))
   .sort([Field("published").descending()])
-  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+  .execute()</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val results = db.pipeline()
     .collection("books")
     .where(field("published").lessThan(1900))
     .where(field("genre").equal("Science Fiction"))
     .where(field("rating").greaterThan(4.3))
     .sort(field("published").descending())
-    .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .execute()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Task&lt;Pipeline.Snapshot&gt; results = db.pipeline()
     .collection("books")
     .where(field("published").lessThan(1900))
     .where(field("genre").equal("Science Fiction"))
     .where(field("rating").greaterThan(4.3))
     .sort(field("published").descending())
-    .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+    .execute();</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import Field
 
 results = (
@@ -537,42 +537,42 @@ results = (
     .where(Field.of("rating").greater_than(4.3))
     .sort(Field.of("published").descending())
     .execute()
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">snapshot := client.Pipeline().
 	Collection("books").
 	Where(firestore.FieldOf("published").LessThan(1900)).
 	Where(firestore.FieldOf("genre").Equal("Science Fiction")).
 	Where(firestore.FieldOf("rating").GreaterThan(4.3)).
 	Sort(firestore.Orders(firestore.Descending(firestore.FieldOf("published")))).
-	Execute(ctx)</pre> </section> </div> <p>The recommended index is a collection scope index on <code translate="no" dir="ltr">books</code> for <code translate="no" dir="ltr">(genre [...], published DESC, avg_rating DESC).</code></p> <h4 id="index_density">Index density</h4> <p>Cloud Firestore supports sparse and non-sparse indexes. For more information, see <a href="index-overview#index_density">Index density</a>.</p> <h4 id="covered_queries_secondary_indexes">Covered Queries + Secondary Indexes</h4> <p>Cloud Firestore can skip fetching the full document and just return results from the index if all fields being returned are present in a secondary index. This normally leads to a significant latency (and cost) improvement. Using the sample query below:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+	Execute(ctx)</pre> </section> </div> <p>The recommended index is a collection scope index on <code translate="no" dir="ltr">books</code> for <code translate="no" dir="ltr">(genre [...], published DESC, avg_rating DESC).</code></p> <h4 id="index_density">Index density</h4> <p>Cloud Firestore supports sparse and non-sparse indexes. For more information, see <a href="index-overview#index_density">Index density</a>.</p> <h4 id="covered_queries_secondary_indexes">Covered Queries + Secondary Indexes</h4> <p>Cloud Firestore can skip fetching the full document and just return results from the index if all fields being returned are present in a secondary index. This normally leads to a significant latency (and cost) improvement. Using the sample query below:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">const results = await execute(db.pipeline()
   .collection("books")
   .where(field("category").like("%fantasy%"))
   .where(field("title").exists())
   .where(field("author").exists())
   .select(field("title"), field("author"))
-);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let results = try await db.pipeline()
   .collection("books")
   .where(Field("category").like("%fantasy%"))
   .where(Field("title").exists())
   .where(Field("author").exists())
   .select([Field("title"), Field("author")])
-  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+  .execute()</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val results = db.pipeline()
     .collection("books")
     .where(field("category").like("%fantasy%"))
     .where(field("title").exists())
     .where(field("author").exists())
     .select(field("title"), field("author"))
-    .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .execute()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Task&lt;Pipeline.Snapshot&gt; results = db.pipeline()
     .collection("books")
     .where(field("category").like("%fantasy%"))
     .where(field("title").exists())
     .where(field("author").exists())
     .select(field("title"), field("author"))
-    .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+    .execute();</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">from google.cloud.firestore_v1.pipeline_expressions import Field
 
 results = (
@@ -583,7 +583,7 @@ results = (
     .where(Field.of("author").exists())
     .select("title", "author")
     .execute()
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">snapshot := client.Pipeline().
 	Collection("books").
 	Where(firestore.FieldOf("category").Like("%fantasy%")).

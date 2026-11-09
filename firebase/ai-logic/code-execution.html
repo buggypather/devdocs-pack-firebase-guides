@@ -1,7 +1,7 @@
 <h1>Code execution</h1> <p>Code execution is a tool that enables the model to generate and run Python code. The model can learn iteratively from the code execution results until it arrives at a final output.</p> <p>You can use code execution to build features that benefit from code-based reasoning and that generate text output. For example, you could use code execution to solve equations or process text. You can also use the <a href="#supported-libraries">libraries</a> included in the code execution environment to perform more specialized tasks.</p> <aside class="note"><strong>Note:</strong><span> <span class='\"notranslate\"'>Gemini</span> models can only execute code that it writes in <em>Python</em>. You can still request that the model generates code in another language, but the model can't use the code execution tool to run that code.<br><br> Also, note that code execution doesn't care which programming language your actual app is written in.</span></aside> <p>Just like with all tools that you provide to the model, the model decides when to use code execution.</p> <p><a href="#use-code-execution" class="button">Jump to code implementation</a> </p> <h4 id="comparison-code-execution-vs-function-calling">Comparison of code execution versus function calling</h4> <p>Code execution and <a href="function-calling">function calling</a> are similar features. In general, you should prefer to use code execution if the model can handle your use case. Code execution is also simpler to use because you just enable it.</p> <p>Here are some additional differences between code execution and function calling:</p> <table> <thead> <tr> <th width="50%">Code execution</th> <th>Function calling</th> </tr> </thead> <tbody> <tr> <td> Use code execution if you want the model to write and run Python code for you and return the result. </td> <td> Use function calling if you already have your own functions that you want to run locally. </td> </tr> <tr> <td> Code execution lets the model run code in the API backend in a fixed, isolated environment. </td> <td> Function calling lets you run the functions that the model requests, in whatever environment you want. </td> </tr> <tr> <td> Code execution resolves in a single request. Although you can optionally use code execution with the chat capability, there's no requirement. </td> <td>Function calling requires an additional request to send back the output from each function call. Thus, you're required to use the chat capability. </td> </tr> </tbody> </table> <h3 id="supported-models" class="hide-from-toc">Supported models</h3> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li><code translate="no" dir="ltr">gemini-3.8-flash</code></li> <li>
-<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> and <span class='\"notranslate\"'>Gemini 2.5</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <h2 id="use-code-execution">Use code execution</h2> <p>You can use code execution with both text-only and multimodal input, but the response will always be text or code only.</p> <h3 id="before-you-begin">Before you begin</h3> 
+<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <h2 id="use-code-execution">Use code execution</h2> <p>You can use code execution with both text-only and multimodal input, but the response will always be text or code only.</p> <h3 id="before-you-begin">Before you begin</h3> 
 <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>If you haven't already, complete the <a href="get-started">getting started guide</a>, which describes how to set up your Firebase project, connect your app to Firebase, add the SDK, initialize the backend service for your chosen <span class='\"notranslate\"'>Gemini API</span> provider, and create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> <p> <aside class="note">All our docs assume that you're using the <a href="https://firebase.google.com/support/releases">latest versions</a> of the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs. </aside> </p> For testing and iterating on your prompts, we recommend using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <h3 id="enable-code-execution">Enable code execution</h3> 
-<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>When you create the <code translate="no" dir="ltr">GenerativeModel</code> instance, provide <code translate="no" dir="ltr">CodeExecution</code> as a tool that the model can use to generate its response. This allows the model to generate and run Python code.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>When you create the <code translate="no" dir="ltr">GenerativeModel</code> instance, provide <code translate="no" dir="ltr">CodeExecution</code> as a tool that the model can use to generate its response. This allows the model to generate and run Python code.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">
 import FirebaseAILogic
@@ -37,7 +37,7 @@ for part in candidate.content.parts {
   }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">
 // Initialize the Gemini Developer API backend service.
@@ -65,7 +65,7 @@ response.candidates.first().content.parts.forEach {
     }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">
 // Initialize the Gemini Developer API backend service.
@@ -115,7 +115,7 @@ public void onSuccess(GenerateContentResponse response)   {
     }
 }, executor);
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">
 import { initializeApp } from "firebase/app";
@@ -167,7 +167,7 @@ if (parts) {
   });
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">
 import 'package:firebase_core/firebase_core.dart';
@@ -211,7 +211,7 @@ final buffer = StringBuffer();
       }
     }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">
 using Firebase;
@@ -290,7 +290,7 @@ The sum of the first 50 prime numbers is 5117.
 </pre> <p>This output combines several content parts that the model returns when using code execution:</p> <ul> <li>
 <code translate="no" dir="ltr">text</code>: Inline text generated by the model</li> <li>
 <code translate="no" dir="ltr">executableCode</code>: Code generated by the model that is meant to be executed</li> <li>
-<code translate="no" dir="ltr">codeExecutionResult</code>: Result of the executed code</li> </ul> <p>The naming conventions for these parts vary by programming language.</p>  <h3 id="code-execution-chat">Use code execution in chat</h3> <p>You can also use code execution as part of a chat:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<code translate="no" dir="ltr">codeExecutionResult</code>: Result of the executed code</li> </ul> <p>The naming conventions for these parts vary by programming language.</p>  <h3 id="code-execution-chat">Use code execution in chat</h3> <p>You can also use code execution as part of a chat:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">
 import FirebaseAILogic
@@ -327,7 +327,7 @@ for part in candidate.content.parts {
   }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">
 // Initialize the Gemini Developer API backend service.
@@ -355,7 +355,7 @@ response.candidates.first().content.parts.forEach {
     }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">
 // Initialize the Gemini Developer API backend service.
@@ -405,7 +405,7 @@ public void onSuccess(GenerateContentResponse response)   {
     }
 }, executor);
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">
 import { initializeApp } from "firebase/app";
@@ -456,7 +456,7 @@ if (parts) {
   });
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">
 import 'package:firebase_core/firebase_core.dart';
@@ -501,7 +501,7 @@ final buffer = StringBuffer();
       }
     }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">
 using Firebase;

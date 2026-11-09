@@ -1,4 +1,4 @@
-<h1>Aggregate</h1> <h2 id="description">Description</h2> <p>The <code translate="no" dir="ltr">aggregate(...)</code> stage computes aggregated results (e.g. count, sum) from the documents returned by the previous stage.</p> <p>Optionally, when a grouping expression is provided, it groups documents based on the provided expressions and then applies accumulator functions to each group.</p> <h2 id="examples">Examples</h2> <p>For aggregations without group-by, the <code translate="no" dir="ltr">aggregate(...)</code> stage takes one or more aliased aggregator expressions:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Aggregate</h1> <h2 id="description">Description</h2> <p>The <code translate="no" dir="ltr">aggregate(...)</code> stage computes aggregated results (e.g. count, sum) from the documents returned by the previous stage.</p> <p>Optionally, when a grouping expression is provided, it groups documents based on the provided expressions and then applies accumulator functions to each group.</p> <h2 id="examples">Examples</h2> <p>For aggregations without group-by, the <code translate="no" dir="ltr">aggregate(...)</code> stage takes one or more aliased aggregator expressions:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const cities = await db.pipeline()
   .collection("/cities")
@@ -7,7 +7,7 @@
       average("population").as("avg_population")
   )
   .execute();
-</pre></section> </div> <p>For aggregations with grouping, it takes additional groups besides the aggregators:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>For aggregations with grouping, it takes additional groups besides the aggregators:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const result = await db.pipeline()
   .collectionGroup('citites')
@@ -19,14 +19,14 @@
     groups: [field('location.state').as('state')]
   })
   .execute();
-</pre></section> </div> <h2 id="behavior">Behavior</h2> <h3 id="aggregations_without_grouping">Aggregations Without Grouping</h3> <p>Create a <var translate="no">cities</var> collection with the following documents:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="behavior">Behavior</h2> <h3 id="aggregations_without_grouping">Aggregations Without Grouping</h3> <p>Create a <var translate="no">cities</var> collection with the following documents:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">await db.collection('cities').doc('SF').set({name: 'San Francisco', state: 'CA', country: 'USA', population: 870000});
 await db.collection('cities').doc('LA').set({name: 'Los Angeles', state: 'CA', country: 'USA', population: 3970000});
 await db.collection('cities').doc('NY').set({name: 'New York', state: 'NY', country: 'USA', population: 8530000});
 await db.collection('cities').doc('TOR').set({name: 'Toronto', state: null, country: 'Canada', population: 2930000});
 await db.collection('cities').doc('MEX').set({name: 'Mexico City', state: null, country: 'Mexico', population: 9200000});
-</pre></section> </div> <p>To find out the total number of cities and the average population of them:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>To find out the total number of cities and the average population of them:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const cities = await db.pipeline()
   .collection("/cities")
@@ -37,7 +37,7 @@ await db.collection('cities').doc('MEX').set({name: 'Mexico City', state: null, 
   .execute();
 </pre></section> </div> <p>which produces:</p> 
 <pre>{avg_population: 5100000, total: 5}
-</pre> <h3 id="perform_aggregations_on_groups">Perform Aggregations on Groups</h3> <p>By supplying a <code translate="no" dir="ltr">groups</code> argument, you can perform aggregations on each distinct group.</p> <p>For example, to find the city with the largest population in each country and each state:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="perform_aggregations_on_groups">Perform Aggregations on Groups</h3> <p>By supplying a <code translate="no" dir="ltr">groups</code> argument, you can perform aggregations on each distinct group.</p> <p>For example, to find the city with the largest population in each country and each state:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const cities = await db.pipeline()
   .collection("/cities")
@@ -54,7 +54,7 @@ await db.collection('cities').doc('MEX').set({name: 'Mexico City', state: null, 
 {country: "USA", state: "NY", max_population: 8530000, number_of_cities: 1},
 {country: "Canada", state: null, max_population: 2930000, number_of_cities: 1},
 {country: "Mexico", state: null,  max_population: 9200000, number_of_cities: 1}
-</pre> <h3 id="complex_expressions_on_grouping">Complex Expressions on Grouping</h3> <p>Beyond grouping by only field values, the <code translate="no" dir="ltr">aggregate(...)</code> stage supports grouping by results of complex expressions. Any expression that is valid in a <a href="select"><code translate="no" dir="ltr">select(...)</code></a> stage can be used as a grouping key. This allows for flexible grouping based on calculated values or conditions.</p> <p>For example, to group by whether the state field is null, and find out the total population in each group:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h3 id="complex_expressions_on_grouping">Complex Expressions on Grouping</h3> <p>Beyond grouping by only field values, the <code translate="no" dir="ltr">aggregate(...)</code> stage supports grouping by results of complex expressions. Any expression that is valid in a <a href="select"><code translate="no" dir="ltr">select(...)</code></a> stage can be used as a grouping key. This allows for flexible grouping based on calculated values or conditions.</p> <p>For example, to group by whether the state field is null, and find out the total population in each group:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const cities = await db.pipeline()
   .collection("/cities")

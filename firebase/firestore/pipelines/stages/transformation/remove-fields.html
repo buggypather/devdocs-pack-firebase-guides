@@ -1,43 +1,43 @@
-<h1>Remove fields</h1> <h2 id="description">Description</h2> <p>Remove fields from the documents produced by the previous stage.</p> <p>The generated documents will contain all fields from the previous stage except for the fields specified to be removed.</p> <h2 id="examples">Examples</h2> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<h1>Remove fields</h1> <h2 id="description">Description</h2> <p>Remove fields from the documents produced by the previous stage.</p> <p>The generated documents will contain all fields from the previous stage except for the fields specified to be removed.</p> <h2 id="examples">Examples</h2> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">const results = await db.pipeline()
   .collection("cities")
   .removeFields("population", "location.state")
-  .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+  .execute();</pre> </section> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">const results = await execute(db.pipeline()
   .collection("cities")
-  .removeFields("population", "location.state"));</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  .removeFields("population", "location.state"));</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let results = try await db.pipeline()
   .collection("cities")
   .removeFields(["population", "location.state"])
-  .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+  .execute()</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val results = db.pipeline()
     .collection("cities")
     .removeFields("population", "location.state")
-    .execute()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .execute()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Task&lt;Pipeline.Snapshot&gt; results = db.pipeline()
         .collection("cities")
         .removeFields("population", "location.state")
-        .execute();</pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+        .execute();</pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">results = (
     client.pipeline()
     .collection("cities")
     .remove_fields("population", "location.state")
     .execute()
-)</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+)</pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">Pipeline.Snapshot results =
     firestore
         .pipeline()
         .collection("cities")
         .removeFields("population", "location.state")
         .execute()
-        .get();</pre> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> 
+        .get();</pre> </section> <section> <p class="_code-tab"><strong>Go</strong></p> 
 <pre data-language="go">snapshot := client.Pipeline().Collection("cities").
 	RemoveFields(firestore.Fields("population", "location.state")).
-	Execute(ctx)</pre> </section> </div> <h2 id="behavior">Behavior</h2> <h3 id="remove_nested_fields">Remove Nested Fields</h3> <p>The <code translate="no" dir="ltr">remove_fields(...)</code> stage respects nested field syntax, and will remove keys from a map.</p> <p>For example, to remove the nested state field from the dataset:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+	Execute(ctx)</pre> </section> </div> <h2 id="behavior">Behavior</h2> <h3 id="remove_nested_fields">Remove Nested Fields</h3> <p>The <code translate="no" dir="ltr">remove_fields(...)</code> stage respects nested field syntax, and will remove keys from a map.</p> <p>For example, to remove the nested state field from the dataset:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">await db.collection("cities").doc("SF").set({name: "San Francisco", location: {country: "USA", state: "California"}});
 await db.collection("cities").doc("TO").set({name: "Toronto", location: {country: "Canada", province: "Ontario"}});
-</pre></section> </div> <p>The following pipeline can be used:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>The following pipeline can be used:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const results = await db.pipeline()
   .collection("/cities")

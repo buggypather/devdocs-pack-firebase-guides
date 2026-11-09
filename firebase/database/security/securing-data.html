@@ -92,25 +92,25 @@
       }
     }
   }
-}</pre> <p>Without understanding that rules are evaluated atomically, it might seem like fetching the <code translate="no" dir="ltr">/records/</code> path would return <code translate="no" dir="ltr">rec1</code> but not <code translate="no" dir="ltr">rec2</code>. The actual result, however, is an error:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+}</pre> <p>Without understanding that rules are evaluated atomically, it might seem like fetching the <code translate="no" dir="ltr">/records/</code> path would return <code translate="no" dir="ltr">rec1</code> but not <code translate="no" dir="ltr">rec2</code>. The actual result, however, is an error:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_code-tab"><strong>JavaScript</strong></p> 
 <pre data-language="">var db = firebase.database();
 db.ref("records").once("value", function(snap) {
   // success method is not called
 }, function(err) {
   // error callback triggered with PERMISSION_DENIED
-});</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+});</pre> </section>  <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="objectivec">FIRDatabaseReference *ref = [[FIRDatabase database] reference];
 [[_ref child:@"records"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
   // success block is not called
 } withCancelBlock:^(NSError * _Nonnull error) {
   // cancel block triggered with PERMISSION_DENIED
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="swift">var ref = FIRDatabase.database().reference()
 ref.child("records").observeSingleEventOfType(.Value, withBlock: { snapshot in
     // success block is not called
 }, withCancelBlock: { error in
     // cancel block triggered with PERMISSION_DENIED
-})</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+})</pre> </section>  <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
 DatabaseReference ref = database.getReference("records");
 ref.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -123,25 +123,25 @@ ref.addListenerForSingleValueEvent(new ValueEventListener() {
   public void onCancelled(FirebaseError firebaseError) {
     // error callback triggered with PERMISSION_DENIED
   });
-});</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+});</pre> </section>  <section> <p class="_code-tab"><strong>REST</strong></p> 
 <pre data-language="">
 curl https://docs-examples.firebaseio.com/rest/records/
 # response returns a PERMISSION_DENIED error
-</pre> </section> </div> <p>Since the read operation at <code translate="no" dir="ltr">/records/</code> is atomic, and there's no read rule that grants access to all of the data under <code translate="no" dir="ltr">/records/</code>, this will throw a <code translate="no" dir="ltr">PERMISSION_DENIED</code> error. If we evaluate this rule in the security simulator in our <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, we can see that the read operation was denied because no read rule allowed access to the <code translate="no" dir="ltr">/records/</code> path. However, note that the rule for <code translate="no" dir="ltr">rec1</code> was never evaluated because it wasn't in the path we requested. To fetch <code translate="no" dir="ltr">rec1</code>, we would need to access it directly:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+</pre> </section> </div> <p>Since the read operation at <code translate="no" dir="ltr">/records/</code> is atomic, and there's no read rule that grants access to all of the data under <code translate="no" dir="ltr">/records/</code>, this will throw a <code translate="no" dir="ltr">PERMISSION_DENIED</code> error. If we evaluate this rule in the security simulator in our <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, we can see that the read operation was denied because no read rule allowed access to the <code translate="no" dir="ltr">/records/</code> path. However, note that the rule for <code translate="no" dir="ltr">rec1</code> was never evaluated because it wasn't in the path we requested. To fetch <code translate="no" dir="ltr">rec1</code>, we would need to access it directly:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_code-tab"><strong>JavaScript</strong></p> 
 <pre data-language="">var db = firebase.database();
 db.ref("records/rec1").once("value", function(snap) {
   // SUCCESS!
 }, function(err) {
   // error callback is not called
-});</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+});</pre> </section>  <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="objectivec">FIRDatabaseReference *ref = [[FIRDatabase database] reference];
 [[ref child:@"records/rec1"] observeSingleEventOfType:FEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
     // SUCCESS!
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="swift">var ref = FIRDatabase.database().reference()
 ref.child("records/rec1").observeSingleEventOfType(.Value, withBlock: { snapshot in
     // SUCCESS!
-})</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+})</pre> </section>  <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
 DatabaseReference ref = database.getReference("records/rec1");
 ref.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -154,7 +154,7 @@ ref.addListenerForSingleValueEvent(new ValueEventListener() {
   public void onCancelled(FirebaseError firebaseError) {
     // error callback is not called
   }
-});</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+});</pre> </section>  <section> <p class="_code-tab"><strong>REST</strong></p> 
 <pre data-language="">
 curl https://docs-examples.firebaseio.com/rest/records/rec1
 # SUCCESS!

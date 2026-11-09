@@ -1,5 +1,5 @@
 <h1>Use model configuration to control responses</h1> <p>In each call to a model, you can send along a model configuration to control how the model generates a response. Each model supports different configuration options, like setting <code translate="no" dir="ltr">maxOutputTokens</code> or specialized configs for thinking, response modalities, images, speech, or voice activity detection (VAD).</p> <p>For the majority of use cases when accessing a <span class='\"notranslate\"'>Gemini</span> model, you configure the model using <code translate="no" dir="ltr">GenerationConfig</code>. However, if you're configuring a Gemini Live API model, then you use <code translate="no" dir="ltr">LiveGenerationConfig</code>.</p> <p>This page shows how to set up the configuration for <span class='\"notranslate\"'>Gemini</span> models and provides a <a href="model-parameters#parameters-descriptions-gemini">table of available parameters</a>.</p> <p><a href="#config-gemini-general" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to <span class='\"notranslate\"'>Gemini</span> config</a> <a href="#config-gemini-live-api" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to Gemini Live API config</a> </p> <h2 id="config-gemini-general">
-<code translate="no" dir="ltr">GenerationConfig</code> for <span class='\"notranslate\"'>Gemini</span> models</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Set a <code translate="no" dir="ltr">GenerationConfig</code> for the majority of <span class='\"notranslate\"'>Gemini</span> models, including general-use models, image-generating (Nano Banana) models, and text-to-speech (TTS) models.</p> <p>The configuration is maintained for the lifetime of the <code translate="no" dir="ltr">GenerativeModel</code> instance. If you want to use a different config, create and use a new instance with a different config.</p> <p>The following example shows a very basic model configuration. For additional options (especially for specialized models), see the table of <a href="#parameters-descriptions-gemini">available parameters</a> later on this page.</p> <aside class="warning"> <p> For the latest general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models, the following parameters are now unsupported: temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count. Remove them from your app's code. </p> <ul> <li> <strong>Temperature, top-K, or top-P</strong>: All the general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models will ignore them. </li> <li> <strong>Frequency penalty, presence penalty, and candidate count</strong>: For <code translate="no" dir="ltr">gemini-4-argon</code>, <code translate="no" dir="ltr">gemini-3.8-flash</code>, and <code translate="no" dir="ltr">gemini-3.7-flash</code>, the request will <em>fail</em> with a 400 error. </li> </ul> </aside> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<code translate="no" dir="ltr">GenerationConfig</code> for <span class='\"notranslate\"'>Gemini</span> models</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Set a <code translate="no" dir="ltr">GenerationConfig</code> for the majority of <span class='\"notranslate\"'>Gemini</span> models, including general-use models, image-generating (Nano Banana) models, and text-to-speech (TTS) models.</p> <p>The configuration is maintained for the lifetime of the <code translate="no" dir="ltr">GenerativeModel</code> instance. If you want to use a different config, create and use a new instance with a different config.</p> <p>The following example shows a very basic model configuration. For additional options (especially for specialized models), see the table of <a href="#parameters-descriptions-gemini">available parameters</a> later on this page.</p> <aside class="warning"> <p> For the latest general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models, the following parameters are now unsupported: temperature, top-K, top-P, frequency penalty, presence penalty, and candidate count. Remove them from your app's code. </p> <ul> <li> <strong>Temperature, top-K, or top-P</strong>: All the general-use <span class='\"notranslate\"'>Gemini 4.x</span> and <span class='\"notranslate\"'>Gemini 3.x</span> models will ignore them. </li> <li> <strong>Frequency penalty, presence penalty, and candidate count</strong>: For <code translate="no" dir="ltr">gemini-4-argon</code>, <code translate="no" dir="ltr">gemini-3.8-flash</code>, and <code translate="no" dir="ltr">gemini-3.7-flash</code>, the request will <em>fail</em> with a 400 error. </li> </ul> </aside> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="swift">
 import FirebaseAILogic
@@ -22,7 +22,7 @@ let model = FirebaseAI.firebaseAI(backend: .googleAI()).generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="kotlin">
 // ...
@@ -45,7 +45,7 @@ val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/GenerationConfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="java">
 // ...
@@ -71,7 +71,7 @@ GenerativeModelFutures model = GenerativeModelFutures.from(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/js/ai.generationconfig"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="javascript">
 // ...
@@ -93,7 +93,7 @@ const model = getGenerativeModel(ai, { model: "GEMINI_MODEL_NAME",  generationCo
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 <p>Set the values of the parameters in a <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerationConfig-class.html" class="external"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="dart">
 // ...
@@ -116,7 +116,7 @@ final model = FirebaseAI.googleAI().generativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 <p>Set the values of the parameters in a <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/generation-config"><code translate="no" dir="ltr">GenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> 
 <pre data-language="csharp">
 // ...
@@ -139,7 +139,7 @@ var model = ai.GetGenerativeModel(
 );
 
 </pre></section> </div> You can experiment with prompts and model configurations using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <h2 id="config-gemini-live-api">
-<code translate="no" dir="ltr">LiveGenerationConfig</code> for Gemini Live API models</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Set a <code translate="no" dir="ltr">LiveGenerationConfig</code> only when using Gemini Live API models.</p> <p>The configuration is maintained for the lifetime of the <code translate="no" dir="ltr">LiveModel</code> instance. If you want to use a different config, create and use a new instance with a different config.</p> <p>The following example shows a very basic model configuration. For additional options (like configuring voice activity detection (VAD)), see the table of <a href="#parameters-descriptions-gemini">available parameters</a> later on this page.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<code translate="no" dir="ltr">LiveGenerationConfig</code> for Gemini Live API models</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>Set a <code translate="no" dir="ltr">LiveGenerationConfig</code> only when using Gemini Live API models.</p> <p>The configuration is maintained for the lifetime of the <code translate="no" dir="ltr">LiveModel</code> instance. If you want to use a different config, create and use a new instance with a different config.</p> <p>The following example shows a very basic model configuration. For additional options (like configuring voice activity detection (VAD)), see the table of <a href="#parameters-descriptions-gemini">available parameters</a> later on this page.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p>Set the values of parameters in the <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Structs/LiveGenerationConfig"><code translate="no" dir="ltr">liveGenerationConfig</code></a> during initialization of the <code translate="no" dir="ltr">LiveModel</code> instance:</p> 
 <pre data-language="swift">
 // ...
@@ -159,7 +159,7 @@ let liveModel = FirebaseAI.firebaseAI(backend: .googleAI()).liveModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <p>Set the values of parameters in a <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/LiveGenerationConfig"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
 <pre data-language="kotlin">
 // ...
@@ -179,7 +179,7 @@ val liveModel = Firebase.ai(backend = GenerativeBackend.googleAI()).liveModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <p>Set the values of parameters in a <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/LiveGenerationConfig"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
 <pre data-language="java">
 // ...
@@ -201,7 +201,7 @@ LiveGenerativeModel lm = FirebaseAI.getInstance(GenerativeBackend.googleAI()).li
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 <p>Set the values of parameters in the <a href="https://firebase.google.com/docs/reference/js/ai.livegenerationconfig"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> during initialization of the <code translate="no" dir="ltr">LiveGenerativeModel</code> instance:</p> 
 <pre data-language="javascript">
 // ...
@@ -228,7 +228,7 @@ const liveModel = getLiveGenerativeModel(ai, {
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 <p>Set the values of parameters in a <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/LiveGenerationConfig-class.html" class="external"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">LiveGenerativeModel</code> instance.</p> 
 <pre data-language="dart">
 // ...
@@ -248,7 +248,7 @@ final liveModel = FirebaseAI.googleAI().liveGenerativeModel(
 
 // ...
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 <p>Set the values of parameters in a <a href="https://firebase.google.com/docs/reference/unity/struct/firebase/a-i/live-generation-config"><code translate="no" dir="ltr">LiveGenerationConfig</code></a> as part of creating a <code translate="no" dir="ltr">LiveModel</code> instance.</p> 
 <pre data-language="csharp">
 // ...

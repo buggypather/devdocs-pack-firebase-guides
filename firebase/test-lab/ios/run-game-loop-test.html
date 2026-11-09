@@ -17,7 +17,7 @@
  &lt;/array&gt;
 </pre>
 </li> </ol> <p>Your app is now configured to run a test using Test Lab.</p> <h2 id="step_2_optionally_configure_your_app">
-<strong>Step 2</strong>: Optionally configure your app</h2> <h3 id="multi-loops"><strong>Run multiple loops</strong></h3> <p>If you plan to run multiple loops (aka scenarios) in your test, you must specify which loops you want to run in your app at launch time.</p> <p>In your app delegate, override the <code translate="no" dir="ltr">application(_:open:options:)</code> method:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<strong>Step 2</strong>: Optionally configure your app</h2> <h3 id="multi-loops"><strong>Run multiple loops</strong></h3> <p>If you plan to run multiple loops (aka scenarios) in your test, you must specify which loops you want to run in your app at launch time.</p> <p>In your app delegate, override the <code translate="no" dir="ltr">application(_:open:options:)</code> method:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">func application(_app: UIApplication,
                  open url: URL
@@ -28,7 +28,7 @@
     }
     return true
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">- (BOOL)application:(UIApplication *)app
             openURL:(NSURL *)url
@@ -37,14 +37,14 @@
       // ...Enter Game Loop Test logic to override application(_:open:options:).
   }
 }
-</pre></section> </div> <p>When you run multiple loops in your test, the current loop is passed as a parameter to the URL used to launch the app. You can also obtain the current loop number by parsing the <code translate="no" dir="ltr">URLComponents</code> object used to fetch the custom URL scheme:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> </div> <p>When you run multiple loops in your test, the current loop is passed as a parameter to the URL used to launch the app. You can also obtain the current loop number by parsing the <code translate="no" dir="ltr">URLComponents</code> object used to fetch the custom URL scheme:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">if components.scheme == "firebase-game-loop" {
     // Iterate over all parameters and find the one with the key "scenario".
     let scenarioNum = Int(components.queryItems!.first(where: { $0.name == "scenario" })!.value!)!
     // ...Write logic specific to the current loop (scenarioNum).
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">if ([url.scheme isEqualToString:(@"firebase-game-loop")]) {
     // Launch the app as part of a game loop.
@@ -57,14 +57,14 @@
         }
     }
 }
-</pre></section> </div> <h3 id="end-early"><strong>End a test early</strong></h3> <p>By default, a Game Loop test continues running until it reaches a timeout of five minutes, even when all the loops have been executed. When the timeout is reached, the test ends and cancels any pending loops. You can speed up your test or end it early by calling Test Lab’s custom URL scheme <code translate="no" dir="ltr">firebase-game-loop-complete</code> in your app’s AppDelegate. For example:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> </div> <h3 id="end-early"><strong>End a test early</strong></h3> <p>By default, a Game Loop test continues running until it reaches a timeout of five minutes, even when all the loops have been executed. When the timeout is reached, the test ends and cancels any pending loops. You can speed up your test or end it early by calling Test Lab’s custom URL scheme <code translate="no" dir="ltr">firebase-game-loop-complete</code> in your app’s AppDelegate. For example:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">/// End the loop by calling our custom url scheme.
 func finishLoop() {
     let url = URL(string: "firebase-game-loop-complete://")!
     UIApplication.shared.open(url)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">- (void)finishLoop {
   UIApplication *app = [UIApplication sharedApplication];
@@ -73,7 +73,7 @@ func finishLoop() {
 completionHandler:^(BOOL success) {}];
 }
 </pre></section> </div> <p>Your Game Loop test terminates the current loop and executes the next loop. When there are no more loops to run, the test ends.</p> <h3 id="write-results"><strong>Write custom test results</strong></h3> <p>You can configure your Game Loop test to write custom test results to your device’s file system. This way, when the test starts running, Test Lab stores the result files in a <code translate="no" dir="ltr">GameLoopsResults</code> directory on your testing device (which you must create yourself). When the test ends, Test Lab moves all files from the <code translate="no" dir="ltr">GameLoopResults</code> directory to your project's bucket. Keep the following in mind when setting up your test:</p> <ul> <li><p>All result files are uploaded regardless of file type, size, or quantity.</p></li> <li><p>Test Lab doesn’t process your test results until all the loops in your test have finished running, so if your test includes multiple loops that write output, make sure you append them to a unique result file or create a result file for each loop. This way, you can avoid overwriting results from a previous loop.</p></li> </ul> <p>To set up your test to write custom test results:</p> <ol> <li><p>In your app's <code translate="no" dir="ltr">Documents</code> directory, create a directory named <code translate="no" dir="ltr">GameLoopResults</code>.</p></li> <li>
-<p>From anywhere in your app’s code (e.g., your app delegate), add the following:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>From anywhere in your app’s code (e.g., your app delegate), add the following:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">/// Write to a results file.
 func writeResults() {
@@ -97,7 +97,7 @@ func writeResults() {
     // ...Handle error writing to file.
   }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">/// Write to a results file.
 - (void)writeResults:(NSString *)message {

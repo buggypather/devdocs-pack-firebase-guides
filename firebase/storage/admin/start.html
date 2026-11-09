@@ -1,4 +1,4 @@
-<h1>Introduction to the Admin Cloud Storage API</h1> <p>Cloud Storage for Firebase stores your data in a <a href="https://cloud.google.com/storage" class="external">Google Cloud Storage</a> bucket — an exabyte scale object storage solution with high availability and global redundancy. The Firebase Admin SDK allows you to directly access your Cloud Storage buckets from privileged environments. Then you can use <a href="https://cloud.google.com/storage/docs/reference/libraries" class="external">Google Cloud Storage APIs</a> to manipulate the objects stored in the buckets.</p> <p>The Admin SDK also lets you to create shareable URLs so users can download objects in your buckets.</p> <p>Make sure your Firebase project is on the <a href="https://firebase.google.com/pricing">pay-as-you-go Blaze pricing plan</a>, which is a requirement to use Cloud Storage for Firebase. If you're new to Firebase and Google Cloud, check if you're eligible for a <a href="https://firebase.google.com/support/faq#pricing-free-trial">$300 Free Trial credit</a>.</p> <h2 id="use_a_default_bucket">Use a default bucket</h2> <p>You can specify a default bucket name when initializing the Admin SDK. Then you can retrieve an authenticated reference to this bucket.</p> <p>The bucket name must <em>not</em> contain <code translate="no" dir="ltr">gs://</code> or any other protocol prefixes. For example, if the bucket URL displayed in the <a href="https://console.firebase.google.com/project/_/storage" class="external">Firebase console</a> is <code translate="no" dir="ltr">gs://<var translate="no">PROJECT_ID</var>.firebasestorage.app</code>, pass the string <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebasestorage.app</code> to the Admin SDK.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Introduction to the Admin Cloud Storage API</h1> <p>Cloud Storage for Firebase stores your data in a <a href="https://cloud.google.com/storage" class="external">Google Cloud Storage</a> bucket — an exabyte scale object storage solution with high availability and global redundancy. The Firebase Admin SDK allows you to directly access your Cloud Storage buckets from privileged environments. Then you can use <a href="https://cloud.google.com/storage/docs/reference/libraries" class="external">Google Cloud Storage APIs</a> to manipulate the objects stored in the buckets.</p> <p>The Admin SDK also lets you to create shareable URLs so users can download objects in your buckets.</p> <p>Make sure your Firebase project is on the <a href="https://firebase.google.com/pricing">pay-as-you-go Blaze pricing plan</a>, which is a requirement to use Cloud Storage for Firebase. If you're new to Firebase and Google Cloud, check if you're eligible for a <a href="https://firebase.google.com/support/faq#pricing-free-trial">$300 Free Trial credit</a>.</p> <h2 id="use_a_default_bucket">Use a default bucket</h2> <p>You can specify a default bucket name when initializing the Admin SDK. Then you can retrieve an authenticated reference to this bucket.</p> <p>The bucket name must <em>not</em> contain <code translate="no" dir="ltr">gs://</code> or any other protocol prefixes. For example, if the bucket URL displayed in the <a href="https://console.firebase.google.com/project/_/storage" class="external">Firebase console</a> is <code translate="no" dir="ltr">gs://<var translate="no">PROJECT_ID</var>.firebasestorage.app</code>, pass the string <code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebasestorage.app</code> to the Admin SDK.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { initializeApp, cert } = require('firebase-admin/app');
 const { getStorage } = require('firebase-admin/storage');
@@ -15,7 +15,7 @@ const bucket = getStorage().bucket();
 // 'bucket' is an object defined in the @google-cloud/storage library.
 // See https://googlecloudplatform.github.io/google-cloud-node/#/docs/storage/latest/storage/bucket
 // for more details.
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">FileInputStream serviceAccount = new FileInputStream("path/to/serviceAccountKey.json");
 
@@ -30,7 +30,7 @@ Bucket bucket = StorageClient.getInstance().bucket();
 // 'bucket' is an object defined in the google-cloud-storage Java library.
 // See https://cloud.google.com/java/docs/reference/google-cloud-storage/latest/com.google.cloud.storage.Bucket
 // for more details.
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">import firebase_admin
 from firebase_admin import credentials
@@ -46,7 +46,7 @@ bucket = storage.bucket()
 # 'bucket' is an object defined in the google-cloud-storage Python library.
 # See https://googlecloudplatform.github.io/google-cloud-python/latest/storage/buckets.html
 # for more details.
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">import (
 	"context"
@@ -78,32 +78,32 @@ if err != nil {
 // 'bucket' is an object defined in the cloud.google.com/go/storage package.
 // See https://godoc.org/cloud.google.com/go/storage#BucketHandle
 // for more details.
-</pre></section> </div> <p>You can use the bucket references returned by the Admin SDK in conjunction with the official <a href="https://cloud.google.com/storage/docs/reference/libraries" class="external">Google Cloud Storage client libraries</a> to upload, download, and modify content in the buckets associated with your Firebase projects. Note that you do not have to authenticate Google Cloud Storage libraries when using the Firebase Admin SDK. The bucket references returned by the Admin SDK are already authenticated with the credentials used to initialize your Firebase app.</p> <h2 id="use_custom_buckets">Use custom buckets</h2> <p>If you want to use a Cloud Storage bucket other than the default bucket described earlier in this guide, or use multiple Cloud Storage buckets in a single app, you can retrieve a reference to a custom bucket:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>You can use the bucket references returned by the Admin SDK in conjunction with the official <a href="https://cloud.google.com/storage/docs/reference/libraries" class="external">Google Cloud Storage client libraries</a> to upload, download, and modify content in the buckets associated with your Firebase projects. Note that you do not have to authenticate Google Cloud Storage libraries when using the Firebase Admin SDK. The bucket references returned by the Admin SDK are already authenticated with the credentials used to initialize your Firebase app.</p> <h2 id="use_custom_buckets">Use custom buckets</h2> <p>If you want to use a Cloud Storage bucket other than the default bucket described earlier in this guide, or use multiple Cloud Storage buckets in a single app, you can retrieve a reference to a custom bucket:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const bucket = getStorage().bucket('my-custom-bucket');
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">Bucket bucket = StorageClient.getInstance().bucket("my-custom-bucket");
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">bucket = storage.bucket('my-custom-bucket')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go"> bucket, err := client.Bucket("my-custom-bucket")
-</pre></section> </div> <h2 id="use_a_custom_firebase_app">Use a custom Firebase app</h2> <p>If you are building a more complicated application that interacts with <a href="../../admin/setup#initialize-multiple-apps">multiple Firebase apps</a>, you can access the Cloud Storage buckets associated with a specific Firebase app as follows:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="use_a_custom_firebase_app">Use a custom Firebase app</h2> <p>If you are building a more complicated application that interacts with <a href="../../admin/setup#initialize-multiple-apps">multiple Firebase apps</a>, you can access the Cloud Storage buckets associated with a specific Firebase app as follows:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const bucket = getStorage(customApp).bucket();
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">Bucket bucket = StorageClient.getInstance(customApp).bucket();
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">bucket = storage.bucket(app=custom_app)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">otherClient, err := otherApp.Storage(context.Background())
 bucket, err := otherClient.Bucket("other-app-bucket")
-</pre></section> </div> <h2 id="shareable_urls">Get a shareable download URL</h2> <p>You can use the Admin SDK to generate a non-expiring download URL for files stored in your buckets. Anyone with this URL can permanently access the file.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="shareable_urls">Get a shareable download URL</h2> <p>You can use the Admin SDK to generate a non-expiring download URL for files stored in your buckets. Anyone with this URL can permanently access the file.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { getStorage, getDownloadURL } = require('firebase-admin/storage');
 

@@ -2,7 +2,7 @@
 <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>If you haven't already, complete the <a href="get-started">getting started guide</a>, which describes how to set up your Firebase project, connect your app to Firebase, add the SDK, initialize the backend service for your chosen <span class='\"notranslate\"'>Gemini API</span> provider, and create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> <p> <aside class="note">All our docs assume that you're using the <a href="https://firebase.google.com/support/releases">latest versions</a> of the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs. </aside> </p> For testing and iterating on your prompts, we recommend using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <h4 id="supported-models">Models that support this capability</h4> <ul> <li><code translate="no" dir="ltr">gemini-3.1-flash-tts-preview</code></li> </ul> <aside class="note"><strong>Note:</strong><span> <span class='\"notranslate\"'>Firebase AI Logic</span> supports the Gemini 2.x TTS models that are offered in various versions from the two <span class='\"notranslate\"'>Gemini API</span> providers. Note, though, that this <span class='\"notranslate\"'>Firebase AI Logic</span> documentation for TTS models is focused on using the <span class='\"notranslate\"'>Gemini 3.x TTS</span> models.</span></aside> <h2 id="generate-speech-from-text">Generate speech from text</h2> <p>You can generate speech from provided text using a <span class='\"notranslate\"'>Gemini</span> TTS model.</p> <h3 id="single-speaker">Generate speech with a single speaker</h3> 
 <table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can configure the model to output audio using a single voice.</p> <p>In your <code translate="no" dir="ltr">GenerationConfig</code>, include the following:</p> <ul> <li><p>Set <code translate="no" dir="ltr">responseModalities</code> to include <code translate="no" dir="ltr">AUDIO</code>.</p></li> <li>
 <p>Configure a <code translate="no" dir="ltr">SpeechConfig</code> with the following:</p> <ul> <li><p><em>(Required)</em> <a href="#response-voices">Response voice name</a> (for example, <code translate="no" dir="ltr">Kore</code>)</p></li> <li><p><em>(Optional)</em> <a href="#explicit-language-codes">Language code</a>.<br> If you don't specify a language, the <span class='\"notranslate\"'>Gemini</span> TTS models can <a href="#languages">automatically detect the language</a> in the prompt.</p></li> </ul>
-</li> </ul> <p>Call <code translate="no" dir="ltr">generateContent</code> with your text prompt. The model returns raw PCM audio data in the response parts.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</li> </ul> <p>Call <code translate="no" dir="ltr">generateContent</code> with your text prompt. The model returns raw PCM audio data in the response parts.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">
 import FirebaseAILogic
@@ -39,7 +39,7 @@ for part in response.inlineDataParts {
   playRawPcm(data: data)
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
 <pre data-language="kotlin">
 // Set `responseModalities` to include `AUDIO`.
@@ -75,7 +75,7 @@ if (part is InlineDataPart) {
     playAudio(pcmData)
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <sup><em>For Java, the streaming methods in this SDK return a <code translate="no" dir="ltr">Publisher</code> type from the <a href="https://www.reactive-streams.org/" class="external">Reactive Streams library</a>.</em></sup> 
 <pre data-language="java">
 // Set `responseModalities` to include `AUDIO`.
@@ -120,7 +120,7 @@ Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;(
     }
 }, executor);
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">
 import { initializeApp } from "firebase/app";
@@ -166,7 +166,7 @@ if (inlineDataParts?.[0]) {
   playAudio(pcmBuffer);
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -200,7 +200,7 @@ if (part is InlineDataPart &amp;&amp; part.mimeType.startsWith('audio/')) {
   await playAudio(pcmData);
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">
 using Firebase.AI;
@@ -246,7 +246,7 @@ if (response.Candidates.Count &gt; 0) {
 <p>In your <code translate="no" dir="ltr">GenerationConfig</code>, include the following:</p> <ul> <li><p>Set <code translate="no" dir="ltr">responseModalities</code> to include <code translate="no" dir="ltr">AUDIO</code>.</p></li> <li>
 <p>Configure a <code translate="no" dir="ltr">SpeechConfig</code> with the following:</p> <ul> <li><p><em>(Required)</em> Pass in your <code translate="no" dir="ltr">MultiSpeakerVoiceConfig</code>.</p></li> <li><p><em>(Optional)</em> <a href="#explicit-language-codes">Language code</a>.<br> If you don't specify a language, the <span class='\"notranslate\"'>Gemini</span> TTS models can <a href="#languages">automatically detect the language</a> in the prompt.</p></li> </ul>
 </li> </ul>
-</li> <li><p>In your prompt, indicate who is speaking by using the speaker names as prefixes (for example, <code translate="no" dir="ltr">Joe: Hello. Jane: Hi.</code>).</p></li> </ol> <p>Call <code translate="no" dir="ltr">generateContent</code> with your text prompt. The model returns raw PCM audio data in the response parts.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</li> <li><p>In your prompt, indicate who is speaking by using the speaker names as prefixes (for example, <code translate="no" dir="ltr">Joe: Hello. Jane: Hi.</code>).</p></li> </ol> <p>Call <code translate="no" dir="ltr">generateContent</code> with your text prompt. The model returns raw PCM audio data in the response parts.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">
 import FirebaseAILogic
@@ -296,7 +296,7 @@ for part in response.inlineDataParts {
   playRawPcm(data: data)
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
 <pre data-language="kotlin">
 // Configure a `SpeechConfig` for multiple speakers, assigning a voice to each speaker.
@@ -343,7 +343,7 @@ if (part is InlineDataPart) {
     playAudio(pcmData)
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <sup><em>For Java, the streaming methods in this SDK return a <code translate="no" dir="ltr">Publisher</code> type from the <a href="https://www.reactive-streams.org/" class="external">Reactive Streams library</a>.</em></sup> 
 <pre data-language="java">
 // Configure a `SpeechConfig` for multiple speakers, assigning a voice to each speaker.
@@ -396,7 +396,7 @@ Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;(
     }
 }, executor);
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">
 import { initializeApp } from "firebase/app";
@@ -449,7 +449,7 @@ if (inlineDataParts?.[0]) {
   playAudio(pcmBuffer);
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -496,7 +496,7 @@ if (part is InlineDataPart &amp;&amp; part.mimeType.startsWith('audio/')) {
   await playAudio(pcmData);
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">
 using Firebase.AI;
@@ -545,7 +545,7 @@ if (response.Candidates.Count &gt; 0) {
 }
 
 </pre></section> </div> <h3 id="streaming">Stream the response</h3> 
-<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can achieve faster interactions and lower latency by streaming the audio response as it is generated, instead of waiting for the entire audio file to complete.</p> <p>Streaming of generated speech is supported for both <a href="#single-speaker">single-speaker</a> and <a href="#multi-speaker">multi-speaker</a> configurations. It's only supported when using the <span class='\"notranslate\"'>Gemini 3.x TTS</span> models.</p> <p>To stream the speech response, call <code translate="no" dir="ltr">generateContentStream</code> instead of <code translate="no" dir="ltr">generateContent</code> and handle the chunks as they arrive. The following examples show how to stream a single-speaker response:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can achieve faster interactions and lower latency by streaming the audio response as it is generated, instead of waiting for the entire audio file to complete.</p> <p>Streaming of generated speech is supported for both <a href="#single-speaker">single-speaker</a> and <a href="#multi-speaker">multi-speaker</a> configurations. It's only supported when using the <span class='\"notranslate\"'>Gemini 3.x TTS</span> models.</p> <p>To stream the speech response, call <code translate="no" dir="ltr">generateContentStream</code> instead of <code translate="no" dir="ltr">generateContent</code> and handle the chunks as they arrive. The following examples show how to stream a single-speaker response:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">
 import FirebaseAILogic
@@ -583,7 +583,7 @@ for try await chunk in responseStream {
   }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
 <pre data-language="kotlin">
 // Set `responseModalities` to include `AUDIO`.
@@ -617,7 +617,7 @@ model.generateContentStream(prompt).collect { chunk -&gt;
     }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <sup><em>For Java, the streaming methods in this SDK return a <code translate="no" dir="ltr">Publisher</code> type from the <a href="https://www.reactive-streams.org/" class="external">Reactive Streams library</a>.</em></sup> 
 <pre data-language="java">
 // Set `responseModalities` to include `AUDIO`.
@@ -672,7 +672,7 @@ streamingResponse.subscribe(new Subscriber&lt;GenerateContentResponse&gt;() {
   }
 });
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 
 <pre data-language="javascript">
 import { initializeApp } from "firebase/app";
@@ -722,7 +722,7 @@ for await (const chunk of result.stream) {
 // To play back an array of PCM buffers in sequence, you'll need to write your own `processPlaybackQueue` function.
 processPlaybackQueue(playbackQueue);
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 
 <pre data-language="dart">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -758,7 +758,7 @@ await for (final chunk in responseStream) {
   }
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">
 using System.Collections.Generic;

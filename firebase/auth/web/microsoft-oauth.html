@@ -1,31 +1,31 @@
 <h1>Authenticate Using Microsoft with JavaScript</h1> <p>You can let your users authenticate with Firebase using OAuth providers like Microsoft Azure Active Directory by integrating generic OAuth Login into your app using the Firebase SDK to carry out the end to end sign-in flow.</p> <h2 id="before_you_begin">Before you begin</h2> <p>To sign in users using Microsoft accounts (Azure Active Directory and personal Microsoft accounts), you must first enable Microsoft as a sign-in provider for your Firebase project:</p> <ol> <li>
 <a href="../../web/setup">Add Firebase to your JavaScript project</a>. </li>
 <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Microsoft</b> sign-in provider. </li> <li> Add the <b>Client ID</b> and <b>Client Secret</b> from that provider's developer console to the provider configuration: <ol> <li> To register a Microsoft OAuth client, follow the instructions in <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-v2-register-an-app" class="external">Quickstart: Register an app with the Azure Active Directory v2.0 endpoint</a>. Note that this endpoint supports sign-in using Microsoft personal accounts as well as Azure Active Directory accounts. Learn more about <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-overview" class="external">Azure Active Directory v2.0</a>. </li> <li> When registering apps with these providers, be sure to register the <code translate="no" dir="ltr">*.firebaseapp.com</code> domain for your project as the redirect domain for your app. </li> </ol> </li> <li> Click <b>Save</b>. </li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building a web app, the easiest way to authenticate your users with Firebase using their Microsoft accounts is to handle the entire sign-in flow with the Firebase JavaScript SDK.</p> <p>To handle the sign-in flow with the Firebase JavaScript SDK, follow these steps:</p> <ol> <li>
-<p>Create an instance of an <strong>OAuthProvider</strong> using the provider ID <strong>microsoft.com</strong>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>Create an instance of an <strong>OAuthProvider</strong> using the provider ID <strong>microsoft.com</strong>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { OAuthProvider } from "firebase/auth";
 
-const provider = new OAuthProvider('microsoft.com');</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+const provider = new OAuthProvider('microsoft.com');</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">var provider = new firebase.auth.OAuthProvider('microsoft.com');</pre> </section> </div> </li> <li>
-<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   // Force re-consent.
   prompt: 'consent',
   // Target specific email with login hint.
   login_hint: 'user@firstadd.onmicrosoft.com'
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   // Force re-consent.
   prompt: 'consent',
   // Target specific email with login hint.
   login_hint: 'user@firstadd.onmicrosoft.com'
-});</pre> </section> </div> <p>For the parameters Microsoft supports, see the <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v1-protocols-oauth-code">Microsoft OAuth documentation</a>. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters()</code>. These parameters are <strong>client_id</strong>, <strong>response_type</strong>, <strong>redirect_uri</strong>, <strong>state</strong>, <strong>scope</strong> and <strong>response_mode</strong>.</p> <p>To allow only users from a particular Azure AD tenant to sign into the application, either the friendly domain name of the Azure AD tenant or the tenant's GUID identifier can be used. This can be done by specifying the "tenant" field in the custom parameters object.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+});</pre> </section> </div> <p>For the parameters Microsoft supports, see the <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v1-protocols-oauth-code">Microsoft OAuth documentation</a>. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters()</code>. These parameters are <strong>client_id</strong>, <strong>response_type</strong>, <strong>redirect_uri</strong>, <strong>state</strong>, <strong>scope</strong> and <strong>response_mode</strong>.</p> <p>To allow only users from a particular Azure AD tenant to sign into the application, either the friendly domain name of the Azure AD tenant or the tenant's GUID identifier can be used. This can be done by specifying the "tenant" field in the custom parameters object.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   // Optional "tenant" parameter in case you are using an Azure AD tenant.
   // eg. '8eaef023-2b34-4da1-9baa-8bc8c9d6a490' or 'contoso.onmicrosoft.com'
   // or "common" for tenant-independent tokens.
   // The default value is "common".
   tenant: 'TENANT_ID'
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   // Optional "tenant" parameter in case you are using an Azure AD tenant.
   // eg. '8eaef023-2b34-4da1-9baa-8bc8c9d6a490' or 'contoso.onmicrosoft.com'
@@ -37,7 +37,7 @@ const provider = new OAuthProvider('microsoft.com');</pre> </section> <section> 
 <pre>provider.addScope('mail.read');
 provider.addScope('calendars.read');</pre> <p>To learn more, refer to the <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-permissions-and-consent">Microsoft permissions and consent documentation</a>.</p>
 </li> <li>
-<p>Authenticate with Firebase using the OAuth provider object. You can prompt your users to sign in with their Microsoft Accounts either by opening a pop-up window or by redirecting to the sign-in page. The redirect method is preferred on mobile devices.</p> <ul> <li>To sign in with a pop-up window, call <code translate="no" dir="ltr">signInWithPopup</code>:</li> </ul> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>Authenticate with Firebase using the OAuth provider object. You can prompt your users to sign in with their Microsoft Accounts either by opening a pop-up window or by redirecting to the sign-in page. The redirect method is preferred on mobile devices.</p> <ul> <li>To sign in with a pop-up window, call <code translate="no" dir="ltr">signInWithPopup</code>:</li> </ul> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithPopup, OAuthProvider } from "firebase/auth";
 
 const auth = getAuth();
@@ -53,7 +53,7 @@ signInWithPopup(auth, provider)
   })
   .catch((error) =&gt; {
     // Handle error.
-  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+  });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().signInWithPopup(provider)
   .then((result) =&gt; {
     // IdP data available in result.additionalUserInfo.profile.
@@ -68,12 +68,12 @@ signInWithPopup(auth, provider)
   })
   .catch((error) =&gt; {
     // Handle error.
-  });</pre> </section> </div> <ul> <li>To sign in by redirecting to the sign-in page, call <code translate="no" dir="ltr">signInWithRedirect</code>:</li> </ul> <p> Follow the <a href="redirect-best-practices">best practices</a> when using <code translate="no" dir="ltr">signInWithRedirect</code>, <code translate="no" dir="ltr">linkWithRedirect</code>, or <code translate="no" dir="ltr">reauthenticateWithRedirect</code>. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+  });</pre> </section> </div> <ul> <li>To sign in by redirecting to the sign-in page, call <code translate="no" dir="ltr">signInWithRedirect</code>:</li> </ul> <p> Follow the <a href="redirect-best-practices">best practices</a> when using <code translate="no" dir="ltr">signInWithRedirect</code>, <code translate="no" dir="ltr">linkWithRedirect</code>, or <code translate="no" dir="ltr">reauthenticateWithRedirect</code>. </p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithRedirect } from "firebase/auth";
 
 const auth = getAuth();
-signInWithRedirect(auth, provider);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
-<pre data-language="javascript">firebase.auth().signInWithRedirect(provider);</pre> </section> </div> <p>After the user completes sign-in and returns to the page, you can obtain the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult</code>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+signInWithRedirect(auth, provider);</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
+<pre data-language="javascript">firebase.auth().signInWithRedirect(provider);</pre> </section> </div> <p>After the user completes sign-in and returns to the page, you can obtain the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult</code>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, getRedirectResult, OAuthProvider } from "firebase/auth";
 
 const auth = getAuth();
@@ -89,7 +89,7 @@ getRedirectResult(auth)
   })
   .catch((error) =&gt; {
     // Handle error.
-  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+  });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().getRedirectResult()
   .then((result) =&gt; {
     // IdP data available in result.additionalUserInfo.profile.
@@ -107,7 +107,7 @@ getRedirectResult(auth)
   });</pre> </section> </div> <p>On successful completion, the OAuth access token associated with the provider can be retrieved from the <code translate="no" dir="ltr">firebase.auth.UserCredential</code> object returned.</p> <p>Using the OAuth access token, you can call the <a href="https://docs.microsoft.com/en-us/graph/overview">Microsoft Graph API</a>.</p> <p>For example, to get the basic profile information, the following REST API can be called:</p> 
 <pre>curl -i -H "Authorization: Bearer ACCESS_TOKEN" https://graph.microsoft.com/v1.0/me</pre> <p>Unlike other providers supported by Firebase Auth, Microsoft does not provide a photo URL and instead, the binary data for a profile photo has to be requested via <a href="https://docs.microsoft.com/en-us/graph/api/profilephoto-get">Microsoft Graph API</a>.</p> <p>In addition to the OAuth access token, the user's OAuth <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/id-tokens">ID token</a> can also be retrieved from the <code translate="no" dir="ltr">firebase.auth.UserCredential</code> object. The <code translate="no" dir="ltr">sub</code> claim in the ID token is app-specific and will not match the federated user identifier used by Firebase Auth and accessible via <code translate="no" dir="ltr">user.providerData[0].uid</code>. The <code translate="no" dir="ltr">oid</code> claim field should be used instead. When using a Azure AD tenant to sign-in, the <code translate="no" dir="ltr">oid</code> claim will be an exact match. However for the non-tenant case, the <code translate="no" dir="ltr">oid</code> field is padded. For a federated ID <code translate="no" dir="ltr">4b2eabcdefghijkl</code>, the <code translate="no" dir="ltr">oid</code> will have have a form <code translate="no" dir="ltr">00000000-0000-0000-4b2e-abcdefghijkl</code>.</p>
 </li> <li>
-<p>While the above examples focus on sign-in flows, you also have the ability to link a Microsoft provider to an existing user using <code translate="no" dir="ltr">linkWithPopup</code>/<code translate="no" dir="ltr">linkWithRedirect</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>While the above examples focus on sign-in flows, you also have the ability to link a Microsoft provider to an existing user using <code translate="no" dir="ltr">linkWithPopup</code>/<code translate="no" dir="ltr">linkWithRedirect</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, linkWithPopup, OAuthProvider } from "firebase/auth";
 
 const provider = new OAuthProvider('microsoft.com');
@@ -125,7 +125,7 @@ linkWithPopup(auth.currentUser, provider)
     })
     .catch((error) =&gt; {
       // Handle error.
-    });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+    });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">var provider = new firebase.auth.OAuthProvider('microsoft.com');
 firebase.auth().currentUser.linkWithPopup(provider)
     .then((result) =&gt; {
@@ -139,7 +139,7 @@ firebase.auth().currentUser.linkWithPopup(provider)
     .catch((error) =&gt; {
       // Handle error.
     });</pre> </section> </div> </li> <li>
-<p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithPopup</code>/<code translate="no" dir="ltr">reauthenticateWithRedirect</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithPopup</code>/<code translate="no" dir="ltr">reauthenticateWithRedirect</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, reauthenticateWithPopup, OAuthProvider } from "firebase/auth";
 
 const provider = new OAuthProvider('microsoft.com');
@@ -158,7 +158,7 @@ reauthenticateWithPopup(auth.currentUser, provider)
     })
     .catch((error) =&gt; {
       // Handle error.
-    });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+    });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">var provider = new firebase.auth.OAuthProvider('microsoft.com');
 firebase.auth().currentUser.reauthenticateWithPopup(provider)
     .then((result) =&gt; {
@@ -227,7 +227,7 @@ try {
   storageBucket: 'PROJECT_ID.firebasestorage.app',
   messagingSenderId: 'SENDER_ID'
 };
-firebase.initializeApp(config);</pre> </li> </ol> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+firebase.initializeApp(config);</pre> </li> </ol> </section> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signOut } from "firebase/auth";
 
 const auth = getAuth();
@@ -235,7 +235,7 @@ signOut(auth).then(() =&gt; {
   // Sign-out successful.
 }).catch((error) =&gt; {
   // An error happened.
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().signOut().then(() =&gt; {
   // Sign-out successful.
 }).catch((error) =&gt; {

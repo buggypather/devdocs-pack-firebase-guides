@@ -1,4 +1,4 @@
-<h1>Remote Config triggers</h1> <p>You can trigger a function in response to <a href="../remote-config">Firebase Remote Config</a> events, including the publication of a new config version or the rollback to an older version. This guide describes how to create a Remote Config background function that performs a diff of two template versions.</p> <h2 id="trigger">Trigger a Remote Config function</h2> <p>To trigger a Remote Config function, first import the required modules:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Remote Config triggers</h1> <p>You can trigger a function in response to <a href="../remote-config">Firebase Remote Config</a> events, including the publication of a new config version or the rollback to an older version. This guide describes how to create a Remote Config background function that performs a diff of two template versions.</p> <h2 id="trigger">Trigger a Remote Config function</h2> <p>To trigger a Remote Config function, first import the required modules:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript"> const {URL, URLSearchParams} = require("node:url");
 // The Cloud Functions for Firebase SDK to set up triggers and logging.
@@ -9,7 +9,7 @@ const logger = require("firebase-functions/logger");
 const {initializeApp, applicationDefault} = require("firebase-admin/app");
 initializeApp();
 const jsonDiff = require("json-diff");
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"> # The Cloud Functions for Firebase SDK to set up triggers and logging.
 from firebase_functions import remote_config_fn
@@ -21,7 +21,7 @@ app = firebase_admin.initialize_app()
 
 import deepdiff
 import requests
-</pre></section> </div> <p>Then define a handler for the update event. The event object passed to this function contains metadata about a template update, such as the new version number and time of the update. You can also retrieve the email for the user who made the update, with name and an image if available.</p> <p>Here's an example of a Remote Config function that logs a diff of each updated version and the version it replaced. The function examines the version number field of the template object and retrieves the current (newly updated) version together with the version one number lower:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>Then define a handler for the update event. The event object passed to this function contains metadata about a template update, such as the new version number and time of the update. You can also retrieve the email for the user who made the update, with name and an image if available.</p> <p>Here's an example of a Remote Config function that logs a diff of each updated version and the version it replaced. The function examines the version number field of the template object and retrieves the current (newly updated) version together with the version one number lower:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript"> exports.showconfigdiff = onConfigUpdated(async (event) =&gt; {
   try {
@@ -67,7 +67,7 @@ import requests
     logger.error(error);
   }
 });
-</pre> <p>This sample uses the <a href="https://www.npmjs.com/package/json-diff"><code translate="no" dir="ltr">json-diff</code></a> and <a href="https://www.npmjs.com/package/request-promise"><code translate="no" dir="ltr">request-promise</code></a> modules to create the diff and build the request to get the template object.</p></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre> <p>This sample uses the <a href="https://www.npmjs.com/package/json-diff"><code translate="no" dir="ltr">json-diff</code></a> and <a href="https://www.npmjs.com/package/request-promise"><code translate="no" dir="ltr">request-promise</code></a> modules to create the diff and build the request to get the template object.</p></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"> @remote_config_fn.on_config_updated()
 def showconfigdiff(event: remote_config_fn.CloudEvent[remote_config_fn.ConfigUpdateData]) -&gt; None:

@@ -1,4 +1,4 @@
-<h1>Subcollection</h1> <h2 id="description">Description</h2> <p>The <code translate="no" dir="ltr">subcollection(...)</code> input stage makes it easy to perform parent-child joins using the built-in <code translate="no" dir="ltr">__name__</code> field.</p> <p>Additional stages can be chained onto the <code translate="no" dir="ltr">subcollection(...)</code> stage to perform filtering or aggregation over the nested documents. Note that any field references used in subsequent stages refer to the documents from the nested collection, not the parent document. To refer to fields in the parent scope, first use the <a href="../transformation/let"><code translate="no" dir="ltr">let(...)</code></a> stage to define variables, then reference those variables in the local scope.</p> <h2 id="examples">Examples</h2> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Subcollection</h1> <h2 id="description">Description</h2> <p>The <code translate="no" dir="ltr">subcollection(...)</code> input stage makes it easy to perform parent-child joins using the built-in <code translate="no" dir="ltr">__name__</code> field.</p> <p>Additional stages can be chained onto the <code translate="no" dir="ltr">subcollection(...)</code> stage to perform filtering or aggregation over the nested documents. Note that any field references used in subsequent stages refer to the documents from the nested collection, not the parent document. To refer to fields in the parent scope, first use the <a href="../transformation/let"><code translate="no" dir="ltr">let(...)</code></a> stage to define variables, then reference those variables in the local scope.</p> <h2 id="examples">Examples</h2> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">db.pipeline()
   .collection("/restaurants")
@@ -6,7 +6,7 @@
     .aggregate(average("rating").as("avg_rating"))
     .toScalarExpression()
     .as("avg_rating"))
-</pre></section> </div> <h2 id="behavior">Behavior</h2> <p>The <code translate="no" dir="ltr">subcollection(...)</code> stage must be used within the context of a subquery. It uses the <code translate="no" dir="ltr">__name__</code> (the document reference) of the current document in the parent scope to determine which sub-collection to fetch. For example, if the parent document is <code translate="no" dir="ltr">/restaurants/pizza-place</code>, then <code translate="no" dir="ltr">subcollection("reviews")</code> returns all documents from the <code translate="no" dir="ltr">/restaurants/pizza-place/reviews</code> collection.</p> <p>If the document reference has been renamed, or it is not possible to define a field with <code translate="no" dir="ltr">__name__</code> then manually writing the join like:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="behavior">Behavior</h2> <p>The <code translate="no" dir="ltr">subcollection(...)</code> stage must be used within the context of a subquery. It uses the <code translate="no" dir="ltr">__name__</code> (the document reference) of the current document in the parent scope to determine which sub-collection to fetch. For example, if the parent document is <code translate="no" dir="ltr">/restaurants/pizza-place</code>, then <code translate="no" dir="ltr">subcollection("reviews")</code> returns all documents from the <code translate="no" dir="ltr">/restaurants/pizza-place/reviews</code> collection.</p> <p>If the document reference has been renamed, or it is not possible to define a field with <code translate="no" dir="ltr">__name__</code> then manually writing the join like:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">db.pipeline()
   .collection("/restaurants")
@@ -17,7 +17,7 @@
     .aggregate(average("rating").as("avg_rating"))
     .toScalarExpression()
     .as("avg_rating"))
-</pre></section> </div> <p>is still possible as fundamentally this stage is just syntactic sugar over this more complex join format.</p> <p>For the following documents:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>is still possible as fundamentally this stage is just syntactic sugar over this more complex join format.</p> <p>For the following documents:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const restaurant1 = db.collection("restaurants").document("pizza-place");
 const restaurant2 = db.collection("restaurants").document("urban-bite");
@@ -33,7 +33,7 @@ await restaurant1.collection("reviews").doc("1").create({ rating: 2 });
 await restaurant2.collection("reviews").doc("1").create({ rating: 3 });
 await restaurant2.collection("reviews").doc("1").create({ rating: 4 });
 await restaurant2.collection("reviews").doc("1").create({ rating: 5 });
-</pre></section> </div> <p>The following query retrieves each restaurant and summarizes its reviews in a new <code translate="no" dir="ltr">review_summary</code> field:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>The following query retrieves each restaurant and summarizes its reviews in a new <code translate="no" dir="ltr">review_summary</code> field:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const results = await db.pipeline()
   .collectionGroup("restaurants")

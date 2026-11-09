@@ -1,4 +1,4 @@
-<h1>Schedule functions</h1> <p>If you want to schedule functions to run at specified times, use the <code translate="no" dir="ltr">onSchedule</code> handler provided by <code translate="no" dir="ltr">firebase-functions/v2/scheduler</code>. These functions use <a href="https://cloud.google.com/scheduler/">Cloud Scheduler</a> to invoke function logic at the times or intervals that you define.</p> <h2 id="before_you_begin">Before you begin</h2> <p>Though scheduled functions are billed, you can expect the overall cost to be manageable, as each Cloud Scheduler job costs $0.10 (USD) per month, and there is an allowance of three jobs per Google account, at no charge. Use the Blaze <a href="https://firebase.google.com/pricing#blaze-calculator">pricing calculator</a> to generate a cost estimate based on your projected usage.</p> <p>The Cloud Scheduler API must be enabled for your project. It should already be enabled for most Firebase projects; you can verify in the <a href="https://console.cloud.google.com/">Google Cloud console</a>.</p> <h2 id="write_a_scheduled_function">Write a scheduled function</h2> <p>In Cloud Functions for Firebase, scheduling logic resides in your functions code, with no special deploy-time requirements. For example, to clean up inactive user accounts once daily, you could write a function starting with the following import statements:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Schedule functions</h1> <p>If you want to schedule functions to run at specified times, use the <code translate="no" dir="ltr">onSchedule</code> handler provided by <code translate="no" dir="ltr">firebase-functions/v2/scheduler</code>. These functions use <a href="https://cloud.google.com/scheduler/">Cloud Scheduler</a> to invoke function logic at the times or intervals that you define.</p> <h2 id="before_you_begin">Before you begin</h2> <p>Though scheduled functions are billed, you can expect the overall cost to be manageable, as each Cloud Scheduler job costs $0.10 (USD) per month, and there is an allowance of three jobs per Google account, at no charge. Use the Blaze <a href="https://firebase.google.com/pricing#blaze-calculator">pricing calculator</a> to generate a cost estimate based on your projected usage.</p> <p>The Cloud Scheduler API must be enabled for your project. It should already be enabled for most Firebase projects; you can verify in the <a href="https://console.cloud.google.com/">Google Cloud console</a>.</p> <h2 id="write_a_scheduled_function">Write a scheduled function</h2> <p>In Cloud Functions for Firebase, scheduling logic resides in your functions code, with no special deploy-time requirements. For example, to clean up inactive user accounts once daily, you could write a function starting with the following import statements:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">// The Cloud Functions for Firebase SDK to set up triggers and logging.
 const {onSchedule} = require("firebase-functions/scheduler");
@@ -15,7 +15,7 @@ const PromisePool = /** @type {PromisePoolConstructor} */ (
 );
 // Maximum concurrent account deletions.
 const MAX_CONCURRENT = 3;
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"># The Cloud Functions for Firebase SDK to set up triggers and logging.
 from firebase_functions import scheduler_fn
@@ -25,7 +25,7 @@ import firebase_admin
 from firebase_admin import auth
 
 firebase_admin.initialize_app()
-</pre></section> </div> <p>Then, you could use <code translate="no" dir="ltr">onSchedule</code> to start a Cloud Scheduler task:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>Then, you could use <code translate="no" dir="ltr">onSchedule</code> to start a Cloud Scheduler task:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">// Run once a day at midnight, to clean up the users
 // Manually run the task here https://console.cloud.google.com/cloudscheduler
@@ -42,7 +42,7 @@ exports.accountcleanup = onSchedule("every day 00:00", async (event) =&gt; {
 
   logger.log("User cleanup finished");
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"># Run once a day at midnight, to clean up inactive users.
 # Manually run the task here https://console.cloud.google.com/cloudscheduler
@@ -56,12 +56,12 @@ def accountcleanup(event: scheduler_fn.ScheduledEvent) -&gt; None:
         ]
         auth.delete_users(inactive_uids)
         user_page = user_page.get_next_page()
-</pre></section> </div> <p>Both Unix Crontab and App Engine syntax are supported by Cloud Scheduler. For example, to use Crontab, do something like this:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>Both Unix Crontab and App Engine syntax are supported by Cloud Scheduler. For example, to use Crontab, do something like this:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">exports.scheduledFunctionCrontab = onSchedule("5 11 * * *", async (event) =&gt; {
   // ...
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@scheduler_fn.on_schedule(schedule="5 11 * * *")
 </pre></section> </div>

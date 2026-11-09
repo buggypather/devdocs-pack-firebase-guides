@@ -1,4 +1,4 @@
-<h1>Manage Users</h1> <p>The Firebase Admin SDK provides an API for managing your Firebase Authentication users with elevated privileges. The admin user management API gives you the ability to programmatically complete the following tasks from a secure server environment:</p> <ul> <li>Create new users without any throttling or rate limiting.</li> <li>Look up users by different criteria such as uid, email or phone number.</li> <li>List all the users of a specified project in batches.</li> <li>Access user metadata including account creation date and last sign-in date.</li> <li>Delete users without requiring their existing password.</li> <li>Update user properties - including their password - without having to sign in as the user.</li> <li>Verify emails without having to go through the out-of-band action flows for verifying emails.</li> <li>Change a user's email without sending email links to revoke these changes.</li> <li>Create a new user with a phone number without having to go through the SMS verification flow.</li> <li>Change a user's phone number without having to go through the SMS verification flow.</li> <li>Offline provision users in a disabled state and then later control when to enable them.</li> <li>Build custom user consoles that are tailored to a specific application's user management system.</li> </ul> <h2 id="before_you_begin">Before you begin</h2> <p>To use the user management API provided by the Firebase Admin SDK, you must have a service account. Follow the <a href="../../admin/setup">setup instructions</a> for more information on how to initialize the Admin SDK.</p> <h2 id="retrieve_user_data">Retrieve user data</h2> <p>The primary way to identify a user is by their <code translate="no" dir="ltr">uid</code>, a unique identifier for that user. The Admin SDK provides a method that allows fetching the profile information of users by their <code translate="no" dir="ltr">uid</code>:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Manage Users</h1> <p>The Firebase Admin SDK provides an API for managing your Firebase Authentication users with elevated privileges. The admin user management API gives you the ability to programmatically complete the following tasks from a secure server environment:</p> <ul> <li>Create new users without any throttling or rate limiting.</li> <li>Look up users by different criteria such as uid, email or phone number.</li> <li>List all the users of a specified project in batches.</li> <li>Access user metadata including account creation date and last sign-in date.</li> <li>Delete users without requiring their existing password.</li> <li>Update user properties - including their password - without having to sign in as the user.</li> <li>Verify emails without having to go through the out-of-band action flows for verifying emails.</li> <li>Change a user's email without sending email links to revoke these changes.</li> <li>Create a new user with a phone number without having to go through the SMS verification flow.</li> <li>Change a user's phone number without having to go through the SMS verification flow.</li> <li>Offline provision users in a disabled state and then later control when to enable them.</li> <li>Build custom user consoles that are tailored to a specific application's user management system.</li> </ul> <h2 id="before_you_begin">Before you begin</h2> <p>To use the user management API provided by the Firebase Admin SDK, you must have a service account. Follow the <a href="../../admin/setup">setup instructions</a> for more information on how to initialize the Admin SDK.</p> <h2 id="retrieve_user_data">Retrieve user data</h2> <p>The primary way to identify a user is by their <code translate="no" dir="ltr">uid</code>, a unique identifier for that user. The Admin SDK provides a method that allows fetching the profile information of users by their <code translate="no" dir="ltr">uid</code>:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .getUser(uid)
@@ -9,18 +9,18 @@
   .catch((error) =&gt; {
     console.log('Error fetching user data:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">UserRecord userRecord = FirebaseAuth.getInstance().getUser(uid);
 // See the UserRecord reference doc for the contents of userRecord.
 System.out.println("Successfully fetched user data: " + userRecord.getUid());
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_admin import auth
 
 user = auth.get_user(uid)
 print(f'Successfully fetched user data: {user.uid}')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">// Get an auth client from the firebase.App
 client, err := app.Auth(ctx)
@@ -33,12 +33,12 @@ if err != nil {
 	log.Fatalf("error getting user %s: %v\n", uid, err)
 }
 log.Printf("Successfully fetched user data: %v\n", u)
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">UserRecord userRecord = await FirebaseAuth.DefaultInstance.GetUserAsync(uid);
 // See the UserRecord reference doc for the contents of userRecord.
 Console.WriteLine($"Successfully fetched user data: {userRecord.Uid}");
-</pre></section> </div> <p>This method returns a <code translate="no" dir="ltr">UserRecord</code> object for the user corresponding to the <code translate="no" dir="ltr">uid</code> provided to the method.</p> <p>If the provided <code translate="no" dir="ltr">uid</code> does not belong to an existing user or the user cannot be fetched for any other reason, the above method throws an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Auth API Errors</a>.</p> <p>In some cases you will have a user's email instead of their <code translate="no" dir="ltr">uid</code>. The Firebase Admin SDK supports looking up user information with an email:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>This method returns a <code translate="no" dir="ltr">UserRecord</code> object for the user corresponding to the <code translate="no" dir="ltr">uid</code> provided to the method.</p> <p>If the provided <code translate="no" dir="ltr">uid</code> does not belong to an existing user or the user cannot be fetched for any other reason, the above method throws an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Auth API Errors</a>.</p> <p>In some cases you will have a user's email instead of their <code translate="no" dir="ltr">uid</code>. The Firebase Admin SDK supports looking up user information with an email:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .getUserByEmail(email)
@@ -49,30 +49,30 @@ Console.WriteLine($"Successfully fetched user data: {userRecord.Uid}");
   .catch((error) =&gt; {
     console.log('Error fetching user data:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">UserRecord userRecord = FirebaseAuth.getInstance().getUserByEmail(email);
 // See the UserRecord reference doc for the contents of userRecord.
 System.out.println("Successfully fetched user data: " + userRecord.getEmail());
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_admin import auth
 
 user = auth.get_user_by_email(email)
 print(f'Successfully fetched user data: {user.uid}')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">u, err := client.GetUserByEmail(ctx, email)
 if err != nil {
 	log.Fatalf("error getting user by email %s: %v\n", email, err)
 }
 log.Printf("Successfully fetched user data: %v\n", u)
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">UserRecord userRecord = await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(email);
 // See the UserRecord reference doc for the contents of userRecord.
 Console.WriteLine($"Successfully fetched user data: {userRecord.Uid}");
-</pre></section> </div> <p>This method returns a <code translate="no" dir="ltr">UserRecord</code> object for the user corresponding to the email provided.</p> <p>If the provided email does not belong to an existing user or the user cannot be fetched for any other reason, the Admin SDK throws an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <aside class="warning"><strong>Warning:</strong><span> For email lookup, you can only search the main (top level) email and not provider specific emails. For example, if a Facebook account with a different email <code translate="no" dir="ltr">facebookUser@example.com</code> is linked to an existing user with email <code translate="no" dir="ltr">user@example.com</code>, calling <code translate="no" dir="ltr">getUserByEmail("facebookUser@example.com")</code> will yield no results whereas <code translate="no" dir="ltr">getUserByEmail("user@example.com")</code> will return the expected user. In the case of the default "single account per email" setting, the first email used to sign in with will be used as the top level email unless modified afterwards. When "multiple accounts per email" is set, the main email is only set when a password user is created unless manually updated.</span></aside> <p>In other cases, you will have a user's phone number instead of their <code translate="no" dir="ltr">uid</code>. The Firebase Admin SDK supports looking up user information with a phone number:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>This method returns a <code translate="no" dir="ltr">UserRecord</code> object for the user corresponding to the email provided.</p> <p>If the provided email does not belong to an existing user or the user cannot be fetched for any other reason, the Admin SDK throws an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <aside class="warning"><strong>Warning:</strong><span> For email lookup, you can only search the main (top level) email and not provider specific emails. For example, if a Facebook account with a different email <code translate="no" dir="ltr">facebookUser@example.com</code> is linked to an existing user with email <code translate="no" dir="ltr">user@example.com</code>, calling <code translate="no" dir="ltr">getUserByEmail("facebookUser@example.com")</code> will yield no results whereas <code translate="no" dir="ltr">getUserByEmail("user@example.com")</code> will return the expected user. In the case of the default "single account per email" setting, the first email used to sign in with will be used as the top level email unless modified afterwards. When "multiple accounts per email" is set, the main email is only set when a password user is created unless manually updated.</span></aside> <p>In other cases, you will have a user's phone number instead of their <code translate="no" dir="ltr">uid</code>. The Firebase Admin SDK supports looking up user information with a phone number:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .getUserByPhoneNumber(phoneNumber)
@@ -83,30 +83,30 @@ Console.WriteLine($"Successfully fetched user data: {userRecord.Uid}");
   .catch((error) =&gt; {
     console.log('Error fetching user data:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">UserRecord userRecord = FirebaseAuth.getInstance().getUserByPhoneNumber(phoneNumber);
 // See the UserRecord reference doc for the contents of userRecord.
 System.out.println("Successfully fetched user data: " + userRecord.getPhoneNumber());
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_admin import auth
 
 user = auth.get_user_by_phone_number(phone)
 print(f'Successfully fetched user data: {user.uid}')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">u, err := client.GetUserByPhoneNumber(ctx, phone)
 if err != nil {
 	log.Fatalf("error getting user by phone %s: %v\n", phone, err)
 }
 log.Printf("Successfully fetched user data: %v\n", u)
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">UserRecord userRecord = await FirebaseAuth.DefaultInstance.GetUserByPhoneNumberAsync(phoneNumber);
 // See the UserRecord reference doc for the contents of userRecord.
 Console.WriteLine($"Successfully fetched user data: {userRecord.Uid}");
-</pre></section> </div> <p>This method returns a <code translate="no" dir="ltr">UserRecord</code> object for the user corresponding to the phone number provided.</p> <p>If the provided phone number does not belong to an existing user or the user cannot be fetched for any other reason, the Admin SDK throws an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h3 id="bulk_retrieve_user_data">Bulk retrieve user data</h3> <p>The Firebase Admin SDK also allows retrieving a list of users based on identifiers that you provide. You can identify users by their user ID, email, or phone number. A maximum of 100 identifiers can be supplied in a single call. Identifiers can contain a mix of types:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>This method returns a <code translate="no" dir="ltr">UserRecord</code> object for the user corresponding to the phone number provided.</p> <p>If the provided phone number does not belong to an existing user or the user cannot be fetched for any other reason, the Admin SDK throws an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h3 id="bulk_retrieve_user_data">Bulk retrieve user data</h3> <p>The Firebase Admin SDK also allows retrieving a list of users based on identifiers that you provide. You can identify users by their user ID, email, or phone number. A maximum of 100 identifiers can be supplied in a single call. Identifiers can contain a mix of types:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .getUsers([
@@ -129,7 +129,7 @@ Console.WriteLine($"Successfully fetched user data: {userRecord.Uid}");
   .catch((error) =&gt; {
     console.log('Error fetching user data:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">GetUsersResult result = FirebaseAuth.getInstance().getUsersAsync(Arrays.asList(
     new UidIdentifier("uid1"),
@@ -146,7 +146,7 @@ System.out.println("Unable to find users corresponding to these identifiers:");
 for (UserIdentifier uid : result.getNotFound()) {
   System.out.println(uid);
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_admin import auth
 
@@ -164,7 +164,7 @@ for user in result.users:
 print('Unable to find users corresponding to these identifiers:')
 for uid in result.not_found:
     print(uid)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">getUsersResult, err := client.GetUsers(ctx, []auth.UserIdentifier{
 	auth.UIDIdentifier{UID: "uid1"},
@@ -185,7 +185,7 @@ log.Printf("Unable to find users corresponding to these identifiers:")
 for _, id := range getUsersResult.NotFound {
 	log.Printf("%v", id)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">GetUsersResult result = await FirebaseAuth.DefaultInstance.GetUsersAsync(
     new List&lt;UserIdentifier&gt;
@@ -208,7 +208,7 @@ foreach (UserIdentifier uid in result.NotFound)
     Console.WriteLine($"{uid}");
 }
 
-</pre></section> </div> <p>This method returns a list the same size as the input list, with each entry containing either the corresponding <code translate="no" dir="ltr">UserRecord</code> or an error indicating why that identifier was not able to be looked up. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h2 id="create_a_user">Create a user</h2> <p>The Admin SDK provides a method that allows you to create a new Firebase Authentication user. This method accepts an object containing the profile information to include in the newly created user account:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>This method returns a list the same size as the input list, with each entry containing either the corresponding <code translate="no" dir="ltr">UserRecord</code> or an error indicating why that identifier was not able to be looked up. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h2 id="create_a_user">Create a user</h2> <p>The Admin SDK provides a method that allows you to create a new Firebase Authentication user. This method accepts an object containing the profile information to include in the newly created user account:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .createUser({
@@ -227,7 +227,7 @@ foreach (UserIdentifier uid in result.NotFound)
   .catch((error) =&gt; {
     console.log('Error creating new user:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">CreateRequest request = new CreateRequest()
     .setEmail("user@example.com")
@@ -240,7 +240,7 @@ foreach (UserIdentifier uid in result.NotFound)
 
 UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
 System.out.println("Successfully created new user: " + userRecord.getUid());
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">user = auth.create_user(
     email='user@example.com',
@@ -251,7 +251,7 @@ System.out.println("Successfully created new user: " + userRecord.getUid());
     photo_url='http://www.example.com/12345678/photo.png',
     disabled=False)
 print(f'Sucessfully created new user: {user.uid}')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">params := (&amp;auth.UserToCreate{}).
 	Email("user@example.com").
@@ -266,7 +266,7 @@ if err != nil {
 	log.Fatalf("error creating user: %v\n", err)
 }
 log.Printf("Successfully created user: %v\n", u)
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">UserRecordArgs args = new UserRecordArgs()
 {
@@ -281,7 +281,7 @@ log.Printf("Successfully created user: %v\n", u)
 UserRecord userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(args);
 // See the UserRecord reference doc for the contents of userRecord.
 Console.WriteLine($"Successfully created new user: {userRecord.Uid}");
-</pre></section> </div> <p>By default, Firebase Authentication will generate a random <code translate="no" dir="ltr">uid</code> for the new user. If you instead want to specify your own <code translate="no" dir="ltr">uid</code> for the new user, you can include it as an argument passed to the user creation method:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>By default, Firebase Authentication will generate a random <code translate="no" dir="ltr">uid</code> for the new user. If you instead want to specify your own <code translate="no" dir="ltr">uid</code> for the new user, you can include it as an argument passed to the user creation method:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .createUser({
@@ -296,7 +296,7 @@ Console.WriteLine($"Successfully created new user: {userRecord.Uid}");
   .catch((error) =&gt; {
     console.log('Error creating new user:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">CreateRequest request = new CreateRequest()
     .setUid("some-uid")
@@ -305,12 +305,12 @@ Console.WriteLine($"Successfully created new user: {userRecord.Uid}");
 
 UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
 System.out.println("Successfully created new user: " + userRecord.getUid());
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">user = auth.create_user(
     uid='some-uid', email='user@example.com', phone_number='+15555550100')
 print(f'Sucessfully created new user: {user.uid}')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">params := (&amp;auth.UserToCreate{}).
 	UID(uid).
@@ -321,7 +321,7 @@ if err != nil {
 	log.Fatalf("error creating user: %v\n", err)
 }
 log.Printf("Successfully created user: %v\n", u)
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">UserRecordArgs args = new UserRecordArgs()
 {
@@ -332,7 +332,7 @@ log.Printf("Successfully created user: %v\n", u)
 UserRecord userRecord = await FirebaseAuth.DefaultInstance.CreateUserAsync(args);
 // See the UserRecord reference doc for the contents of userRecord.
 Console.WriteLine($"Successfully created new user: {userRecord.Uid}");
-</pre></section> </div> <p>Any combination of the following properties can be provided:</p> <p><strong>Table 1. Properties supported by the create user operation</strong></p> <table> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">uid</code></td> <td>string</td> <td> The <code translate="no" dir="ltr">uid</code> to assign to the newly created user. Must be a string between 1-128 characters long, inclusive. If not provided, a random <code translate="no" dir="ltr">uid</code> will be automatically generated. Shorter <code translate="no" dir="ltr">uid</code>s offer better performance. </td> </tr> <tr> <td><code translate="no" dir="ltr">email</code></td> <td>string</td> <td> The user's primary email. Must be a valid email address. </td> </tr> <tr> <td><code translate="no" dir="ltr">emailVerified</code></td> <td>boolean</td> <td> Whether or not the user's primary email is verified. If not provided, the default is <code translate="no" dir="ltr">false</code>. </td> </tr> <tr> <td><code translate="no" dir="ltr">phoneNumber</code></td> <td>string</td> <td> The user's primary phone number. Must be a valid E.164 spec compliant phone number. </td> </tr> <tr> <td><code translate="no" dir="ltr">password</code></td> <td>string</td> <td> The user's raw, unhashed password. Must be at least six characters long. </td> </tr> <tr> <td><code translate="no" dir="ltr">displayName</code></td> <td>string</td> <td> The users' display name. </td> </tr> <tr> <td><code translate="no" dir="ltr">photoURL</code></td> <td>string</td> <td> The user's photo URL. </td> </tr> <tr> <td><code translate="no" dir="ltr">disabled</code></td> <td>boolean</td> <td> Whether or not the user is disabled. <code translate="no" dir="ltr">true</code> for disabled; <code translate="no" dir="ltr">false</code> for enabled. If not provided, the default is <code translate="no" dir="ltr">false</code>. </td> </tr> </table> <aside class="note"><strong>Note:</strong><span> All of the above properties are optional. If a certain property is not specified, the value for that property will be empty unless a default is mentioned in the above table.</span></aside> <p>The user creation method returns a <code translate="no" dir="ltr">UserRecord</code> object for the newly created user.</p> <p>If the provided <code translate="no" dir="ltr">uid</code>, email or phone number is already in use by an existing user or the user cannot be created for any other reason, the above method fails with an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h2 id="update_a_user">Update a user</h2> <p>The Firebase Admin SDK facilitates modifying an existing user's data. You need to specify a <code translate="no" dir="ltr">uid</code> along with the properties to update for that user:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>Any combination of the following properties can be provided:</p> <p><strong>Table 1. Properties supported by the create user operation</strong></p> <table> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">uid</code></td> <td>string</td> <td> The <code translate="no" dir="ltr">uid</code> to assign to the newly created user. Must be a string between 1-128 characters long, inclusive. If not provided, a random <code translate="no" dir="ltr">uid</code> will be automatically generated. Shorter <code translate="no" dir="ltr">uid</code>s offer better performance. </td> </tr> <tr> <td><code translate="no" dir="ltr">email</code></td> <td>string</td> <td> The user's primary email. Must be a valid email address. </td> </tr> <tr> <td><code translate="no" dir="ltr">emailVerified</code></td> <td>boolean</td> <td> Whether or not the user's primary email is verified. If not provided, the default is <code translate="no" dir="ltr">false</code>. </td> </tr> <tr> <td><code translate="no" dir="ltr">phoneNumber</code></td> <td>string</td> <td> The user's primary phone number. Must be a valid E.164 spec compliant phone number. </td> </tr> <tr> <td><code translate="no" dir="ltr">password</code></td> <td>string</td> <td> The user's raw, unhashed password. Must be at least six characters long. </td> </tr> <tr> <td><code translate="no" dir="ltr">displayName</code></td> <td>string</td> <td> The users' display name. </td> </tr> <tr> <td><code translate="no" dir="ltr">photoURL</code></td> <td>string</td> <td> The user's photo URL. </td> </tr> <tr> <td><code translate="no" dir="ltr">disabled</code></td> <td>boolean</td> <td> Whether or not the user is disabled. <code translate="no" dir="ltr">true</code> for disabled; <code translate="no" dir="ltr">false</code> for enabled. If not provided, the default is <code translate="no" dir="ltr">false</code>. </td> </tr> </table> <aside class="note"><strong>Note:</strong><span> All of the above properties are optional. If a certain property is not specified, the value for that property will be empty unless a default is mentioned in the above table.</span></aside> <p>The user creation method returns a <code translate="no" dir="ltr">UserRecord</code> object for the newly created user.</p> <p>If the provided <code translate="no" dir="ltr">uid</code>, email or phone number is already in use by an existing user or the user cannot be created for any other reason, the above method fails with an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h2 id="update_a_user">Update a user</h2> <p>The Firebase Admin SDK facilitates modifying an existing user's data. You need to specify a <code translate="no" dir="ltr">uid</code> along with the properties to update for that user:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .updateUser(uid, {
@@ -351,7 +351,7 @@ Console.WriteLine($"Successfully created new user: {userRecord.Uid}");
   .catch((error) =&gt; {
     console.log('Error updating user:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">UpdateRequest request = new UpdateRequest(uid)
     .setEmail("user@example.com")
@@ -364,7 +364,7 @@ Console.WriteLine($"Successfully created new user: {userRecord.Uid}");
 
 UserRecord userRecord = FirebaseAuth.getInstance().updateUser(request);
 System.out.println("Successfully updated user: " + userRecord.getUid());
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">user = auth.update_user(
     uid,
@@ -376,7 +376,7 @@ System.out.println("Successfully updated user: " + userRecord.getUid());
     photo_url='http://www.example.com/12345678/photo.png',
     disabled=True)
 print(f'Sucessfully updated user: {user.uid}')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">params := (&amp;auth.UserToUpdate{}).
 	Email("user@example.com").
@@ -391,7 +391,7 @@ if err != nil {
 	log.Fatalf("error updating user: %v\n", err)
 }
 log.Printf("Successfully updated user: %v\n", u)
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">UserRecordArgs args = new UserRecordArgs()
 {
@@ -410,7 +410,7 @@ Console.WriteLine($"Successfully updated user: {userRecord.Uid}");
 </pre></section> </div> <p>Any combination of the following properties can be provided:</p> <p><strong>Table 2. Properties supported by the update user operation</strong></p> <table> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">email</code></td> <td>string</td> <td> The user's new primary email. Must be a valid email address. </td> </tr> <tr> <td><code translate="no" dir="ltr">emailVerified</code></td> <td>boolean</td> <td> Whether or not the user's primary email is verified. If not provided, the default is <code translate="no" dir="ltr">false</code>. </td> </tr> <tr> <td><code translate="no" dir="ltr">phoneNumber</code></td> <td>string | <code translate="no" dir="ltr">null</code>
 </td> <td> The user's new primary phone number. Must be a valid E.164 spec compliant phone number. Set to <code translate="no" dir="ltr">null</code> to clear the user's existing phone number. </td> </tr> <tr> <td><code translate="no" dir="ltr">password</code></td> <td>string</td> <td> The user's new raw, unhashed password. Must be at least six characters long. </td> </tr> <tr> <td><code translate="no" dir="ltr">displayName</code></td> <td>string | <code translate="no" dir="ltr">null</code>
 </td> <td> The users' new display name. Set to <code translate="no" dir="ltr">null</code> to clear the user's existing display name. </td> </tr> <tr> <td><code translate="no" dir="ltr">photoURL</code></td> <td>string | <code translate="no" dir="ltr">null</code>
-</td> <td> The users' new photo URL. Set to <code translate="no" dir="ltr">null</code> to clear the user's existing photo URL. If non-<code translate="no" dir="ltr">null</code>, must be a valid URL. </td> </tr> <tr> <td><code translate="no" dir="ltr">disabled</code></td> <td>boolean</td> <td> Whether or not the user is disabled. <code translate="no" dir="ltr">true</code> for disabled; <code translate="no" dir="ltr">false</code> for enabled. </td> </tr> </table> <aside class="note"><strong>Note:</strong><span> All of the above properties are optional. If a certain property is not specified, the existing value for that property remains unchanged.</span></aside> <p>The update user method returns an updated <code translate="no" dir="ltr">UserRecord</code> object when the update successfully completes.</p> <p>If the provided <code translate="no" dir="ltr">uid</code> does not correspond to an existing user, the provided email or phone number is already in use by an existing user, or the user cannot be updated for any other reason, the above method fails with an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h2 id="delete_a_user">Delete a user</h2> <p>The Firebase Admin SDK allows deleting existing users by their <code translate="no" dir="ltr">uid</code>:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</td> <td> The users' new photo URL. Set to <code translate="no" dir="ltr">null</code> to clear the user's existing photo URL. If non-<code translate="no" dir="ltr">null</code>, must be a valid URL. </td> </tr> <tr> <td><code translate="no" dir="ltr">disabled</code></td> <td>boolean</td> <td> Whether or not the user is disabled. <code translate="no" dir="ltr">true</code> for disabled; <code translate="no" dir="ltr">false</code> for enabled. </td> </tr> </table> <aside class="note"><strong>Note:</strong><span> All of the above properties are optional. If a certain property is not specified, the existing value for that property remains unchanged.</span></aside> <p>The update user method returns an updated <code translate="no" dir="ltr">UserRecord</code> object when the update successfully completes.</p> <p>If the provided <code translate="no" dir="ltr">uid</code> does not correspond to an existing user, the provided email or phone number is already in use by an existing user, or the user cannot be updated for any other reason, the above method fails with an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h2 id="delete_a_user">Delete a user</h2> <p>The Firebase Admin SDK allows deleting existing users by their <code translate="no" dir="ltr">uid</code>:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .deleteUser(uid)
@@ -420,26 +420,26 @@ Console.WriteLine($"Successfully updated user: {userRecord.Uid}");
   .catch((error) =&gt; {
     console.log('Error deleting user:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">FirebaseAuth.getInstance().deleteUser(uid);
 System.out.println("Successfully deleted user.");
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">auth.delete_user(uid)
 print('Successfully deleted user')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">err := client.DeleteUser(ctx, uid)
 if err != nil {
 	log.Fatalf("error deleting user: %v\n", err)
 }
 log.Printf("Successfully deleted user: %s\n", uid)
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">await FirebaseAuth.DefaultInstance.DeleteUserAsync(uid);
 Console.WriteLine("Successfully deleted user.");
-</pre></section> </div> <p>The delete user method returns an empty result when the deletion completes successfully.</p> <p>If the provided <code translate="no" dir="ltr">uid</code> does not correspond to an existing user or the user cannot be deleted for any other reason, the delete user method throws an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h3 id="delete_multiple_users">Delete Multiple Users</h3> <p>The Firebase Admin SDK can also delete multiple users at once. However, note that using methods like <code translate="no" dir="ltr">deleteUsers(uids)</code> to delete multiple users at once will not trigger <code translate="no" dir="ltr">onDelete()</code> event handlers for Cloud Functions for Firebase. This is because batch delete does not trigger a user deletion event on each user. Delete users one at a time if you want user deletion events to fire for each deleted user.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>The delete user method returns an empty result when the deletion completes successfully.</p> <p>If the provided <code translate="no" dir="ltr">uid</code> does not correspond to an existing user or the user cannot be deleted for any other reason, the delete user method throws an error. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h3 id="delete_multiple_users">Delete Multiple Users</h3> <p>The Firebase Admin SDK can also delete multiple users at once. However, note that using methods like <code translate="no" dir="ltr">deleteUsers(uids)</code> to delete multiple users at once will not trigger <code translate="no" dir="ltr">onDelete()</code> event handlers for Cloud Functions for Firebase. This is because batch delete does not trigger a user deletion event on each user. Delete users one at a time if you want user deletion events to fire for each deleted user.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">getAuth()
   .deleteUsers([uid1, uid2, uid3])
@@ -453,7 +453,7 @@ Console.WriteLine("Successfully deleted user.");
   .catch((error) =&gt; {
     console.log('Error deleting users:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">DeleteUsersResult result = FirebaseAuth.getInstance().deleteUsersAsync(
     Arrays.asList("uid1", "uid2", "uid3")).get();
@@ -463,7 +463,7 @@ System.out.println("Failed to delete " + result.getFailureCount() + " users");
 for (ErrorInfo error : result.getErrors()) {
   System.out.println("error #" + error.getIndex() + ", reason: " + error.getReason());
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_admin import auth
 
@@ -473,7 +473,7 @@ print(f'Successfully deleted {result.success_count} users')
 print(f'Failed to delete {result.failure_count} users')
 for err in result.errors:
     print(f'error #{result.index}, reason: {result.reason}')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">deleteUsersResult, err := client.DeleteUsers(ctx, []string{"uid1", "uid2", "uid3"})
 if err != nil {
@@ -485,7 +485,7 @@ log.Printf("Failed to delete %d users", deleteUsersResult.FailureCount)
 for _, err := range deleteUsersResult.Errors {
 	log.Printf("%v", err)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">DeleteUsersResult result = await FirebaseAuth.DefaultInstance.DeleteUsersAsync(new List&lt;string&gt;
     {
@@ -502,7 +502,7 @@ foreach (ErrorInfo err in result.Errors)
     Console.WriteLine($"Error #{err.Index}, reason: {err.Reason}");
 }
 
-</pre></section> </div> <p>The delete users method returns a list of failures for the users that were unable to be deleted. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h2 id="list_all_users">List all users</h2> <p>The Firebase Admin SDK allows retrieving the entire list of users in batches:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>The delete users method returns a list of failures for the users that were unable to be deleted. For a full list of error codes, including descriptions and resolution steps, see <a href="errors">Admin Authentication API Errors</a>.</p> <h2 id="list_all_users">List all users</h2> <p>The Firebase Admin SDK allows retrieving the entire list of users in batches:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const listAllUsers = (nextPageToken) =&gt; {
   // List batch of users, 1000 at a time.
@@ -523,7 +523,7 @@ foreach (ErrorInfo err in result.Errors)
 };
 // Start listing users from the beginning, 1000 at a time.
 listAllUsers();
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">// Start listing users from the beginning, 1000 at a time.
 ListUsersPage page = FirebaseAuth.getInstance().listUsers(null);
@@ -540,7 +540,7 @@ page = FirebaseAuth.getInstance().listUsers(null);
 for (ExportedUserRecord user : page.iterateAll()) {
   System.out.println("User: " + user.getUid());
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"># Start listing users from the beginning, 1000 at a time.
 page = auth.list_users()
@@ -554,7 +554,7 @@ while page:
 # buffering no more than 1000 users in memory at a time.
 for user in auth.list_users().iterate_all():
     print('User: ' + user.uid)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">// Note, behind the scenes, the Users() iterator will retrive 1000 Users at a time through the API
 iter := client.Users(ctx, "")
@@ -586,7 +586,7 @@ for {
 		break
 	}
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">// Start listing users from the beginning, 1000 at a time.
 var pagedEnumerable = FirebaseAuth.DefaultInstance.ListUsersAsync(null);

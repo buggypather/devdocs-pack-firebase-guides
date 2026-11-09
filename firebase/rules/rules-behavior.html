@@ -1,5 +1,5 @@
 <h1>How Security Rules work</h1> <p>Security can be one of the most complex pieces of the app development puzzle. In most applications, developers must build and run a server that handles authentication (who a user is) and authorization (what a user can do).</p> <p>Firebase Security Rules remove the middle (server) layer and allow you to specify path-based permissions for clients that connect to your data directly. Use this guide to learn more about how rules are applied to incoming requests.</p> <p>Select a product to learn more about its rules.</p> 
-<div class="ds-selector-tabs"> <section><p class="_firebase-tab"><strong>Cloud Firestore</strong></p> <h2 id="basic_structure" class="hide-from-toc">Basic structure</h2> <p>Firebase Security Rules in Cloud Firestore and Cloud Storage use the following structure and syntax:</p> 
+<div class="ds-selector-tabs"> <section><p class="_code-tab"><strong>Cloud Firestore</strong></p> <h2 id="basic_structure" class="hide-from-toc">Basic structure</h2> <p>Firebase Security Rules in Cloud Firestore and Cloud Storage use the following structure and syntax:</p> 
 <pre data-language="">service &lt;&lt;name&gt;&gt; {
   // Match the resource path.
   match &lt;&lt;path&gt;&gt; {
@@ -70,8 +70,8 @@ service cloud.firestore {
     }
   }
 }
-</pre> <p>When using the recursive wildcard syntax, the wildcard variable will contain the entire matching path segment, even if the document is located in a deeply nested subcollection. For example, the rules listed would match a document located at <code translate="no" dir="ltr">/cities/SF/landmarks/coit_tower</code>, and the value of the <code translate="no" dir="ltr">document</code> variable would be <code translate="no" dir="ltr">SF/landmarks/coit_tower</code>.</p> <p>Note, however, that the behavior of recursive wildcards depends on the rules version.</p> <div> <section><p class="_firebase-tab"><strong>Version 1</strong></p>
-<p>Security rules use version 1 by default. In version 1, recursive wildcards match one or more path items. They don't match an empty path, so <code translate="no" dir="ltr">match /cities/{city}/{document=**}</code> matches documents in subcollections but not in the <code translate="no" dir="ltr">cities</code> collection, whereas <code translate="no" dir="ltr">match /cities/{document=**}</code> matches both documents in the <code translate="no" dir="ltr">cities</code> collection and subcollections.</p> <p>Recursive wildcards must come at the end of a match statement.</p></section> <section><p class="_firebase-tab"><strong>Version 2</strong></p>
+</pre> <p>When using the recursive wildcard syntax, the wildcard variable will contain the entire matching path segment, even if the document is located in a deeply nested subcollection. For example, the rules listed would match a document located at <code translate="no" dir="ltr">/cities/SF/landmarks/coit_tower</code>, and the value of the <code translate="no" dir="ltr">document</code> variable would be <code translate="no" dir="ltr">SF/landmarks/coit_tower</code>.</p> <p>Note, however, that the behavior of recursive wildcards depends on the rules version.</p> <div> <section><p class="_code-tab"><strong>Version 1</strong></p>
+<p>Security rules use version 1 by default. In version 1, recursive wildcards match one or more path items. They don't match an empty path, so <code translate="no" dir="ltr">match /cities/{city}/{document=**}</code> matches documents in subcollections but not in the <code translate="no" dir="ltr">cities</code> collection, whereas <code translate="no" dir="ltr">match /cities/{document=**}</code> matches both documents in the <code translate="no" dir="ltr">cities</code> collection and subcollections.</p> <p>Recursive wildcards must come at the end of a match statement.</p></section> <section><p class="_code-tab"><strong>Version 2</strong></p>
 <p>In version 2 of the security rules, recursive wildcards match zero or more path items. <code translate="no" dir="ltr">match/cities/{city}/{document=**}</code> matches documents in any subcollections as well as documents in the <code translate="no" dir="ltr">cities</code> collection.</p> <p>You must opt-in to version 2 by adding <code translate="no" dir="ltr">rules_version = '2';</code> at the top of your security rules:</p> 
 <pre data-language="">rules_version = '2';
 service cloud.firestore {
@@ -93,7 +93,7 @@ service cloud.firestore {
     }
   }
 }
-</pre></section> </div> <p>If you use <a href="../firestore/query-data/queries#collection-group-query">collection group queries</a>, you must use version 2, see <a href="../firestore/security/rules-query">securing collection group queries</a>.</p> <h2 id="security_rule_limits" class="hide-from-toc">Security rule limits</h2> <p>As you work with security rules, note the following limits:</p> <table> <thead> <tr> <th width="40%">Limit</th> <th>Details</th> </tr> </thead> <tbody> <tr> <td>Maximum number of <code translate="no" dir="ltr">exists()</code>, <code translate="no" dir="ltr">get()</code>, and <code translate="no" dir="ltr">getAfter()</code> calls per request</td> <td> <ul> <li>10 for single-document requests and query requests.</li> <li> <p>20 for multi-document reads, transactions, and batched writes. The previous limit of 10 also applies to each operation. </p> <p>For example, imagine you create a batched write request with 3 write operations and that your security rules use 2 document access calls to validate each write. In this case, each write uses 2 of its 10 access calls and the batched write request uses 6 of its 20 access calls. </p> </li> </ul> <p>Exceeding either limit results in a permission denied error.</p> <p>Some document access calls may be cached, and cached calls do not count towards the limits.</p> </td> </tr> <tr> <td>Maximum nested <code translate="no" dir="ltr">match</code> statement depth</td> <td>10</td> </tr> <tr> <td>Maximum path length, in path segments, allowed within a set of nested <code translate="no" dir="ltr">match</code> statements</td> <td>100</td> </tr> <tr> <td>Maximum number of path capture variables allowed within a set of nested <code translate="no" dir="ltr">match</code> statements</td> <td>20</td> </tr> <tr> <td>Maximum function call depth</td> <td>20</td> </tr> <tr> <td>Maximum number of function arguments</td> <td>7</td> </tr> <tr> <td>Maximum number of <code translate="no" dir="ltr">let</code> variable bindings per function</td> <td>10</td> </tr> <tr> <td>Maximum number of recursive or cyclical function calls</td> <td>0 &amp;lpar;not permitted&amp;rpar;</td> </tr> <tr> <td>Maximum number of expressions evaluated per request</td> <td>1,000</td> </tr> <tr> <td>Maximum size of a ruleset</td> <td>Rulesets must obey two size limits: <ul> <li>a 256 KB limit on the size of the ruleset text source published from the Firebase console or from the CLI using <code translate="no" dir="ltr">firebase deploy</code>. </li> <li>a 250 KB limit on the size of the compiled ruleset that results when Firebase processes the source and makes it active on the back-end. </li> </ul> </td> </tr> </tbody> </table> </section><section><p class="_firebase-tab"><strong>Cloud Storage</strong></p> <h2 id="basic_structure_2" class="hide-from-toc">Basic structure</h2> <p>Firebase Security Rules in Cloud Firestore and Cloud Storage use the following structure and syntax:</p> 
+</pre></section> </div> <p>If you use <a href="../firestore/query-data/queries#collection-group-query">collection group queries</a>, you must use version 2, see <a href="../firestore/security/rules-query">securing collection group queries</a>.</p> <h2 id="security_rule_limits" class="hide-from-toc">Security rule limits</h2> <p>As you work with security rules, note the following limits:</p> <table> <thead> <tr> <th width="40%">Limit</th> <th>Details</th> </tr> </thead> <tbody> <tr> <td>Maximum number of <code translate="no" dir="ltr">exists()</code>, <code translate="no" dir="ltr">get()</code>, and <code translate="no" dir="ltr">getAfter()</code> calls per request</td> <td> <ul> <li>10 for single-document requests and query requests.</li> <li> <p>20 for multi-document reads, transactions, and batched writes. The previous limit of 10 also applies to each operation. </p> <p>For example, imagine you create a batched write request with 3 write operations and that your security rules use 2 document access calls to validate each write. In this case, each write uses 2 of its 10 access calls and the batched write request uses 6 of its 20 access calls. </p> </li> </ul> <p>Exceeding either limit results in a permission denied error.</p> <p>Some document access calls may be cached, and cached calls do not count towards the limits.</p> </td> </tr> <tr> <td>Maximum nested <code translate="no" dir="ltr">match</code> statement depth</td> <td>10</td> </tr> <tr> <td>Maximum path length, in path segments, allowed within a set of nested <code translate="no" dir="ltr">match</code> statements</td> <td>100</td> </tr> <tr> <td>Maximum number of path capture variables allowed within a set of nested <code translate="no" dir="ltr">match</code> statements</td> <td>20</td> </tr> <tr> <td>Maximum function call depth</td> <td>20</td> </tr> <tr> <td>Maximum number of function arguments</td> <td>7</td> </tr> <tr> <td>Maximum number of <code translate="no" dir="ltr">let</code> variable bindings per function</td> <td>10</td> </tr> <tr> <td>Maximum number of recursive or cyclical function calls</td> <td>0 &amp;lpar;not permitted&amp;rpar;</td> </tr> <tr> <td>Maximum number of expressions evaluated per request</td> <td>1,000</td> </tr> <tr> <td>Maximum size of a ruleset</td> <td>Rulesets must obey two size limits: <ul> <li>a 256 KB limit on the size of the ruleset text source published from the Firebase console or from the CLI using <code translate="no" dir="ltr">firebase deploy</code>. </li> <li>a 250 KB limit on the size of the compiled ruleset that results when Firebase processes the source and makes it active on the back-end. </li> </ul> </td> </tr> </tbody> </table> </section><section><p class="_code-tab"><strong>Cloud Storage</strong></p> <h2 id="basic_structure_2" class="hide-from-toc">Basic structure</h2> <p>Firebase Security Rules in Cloud Firestore and Cloud Storage use the following structure and syntax:</p> 
 <pre data-language="">service &lt;&lt;name&gt;&gt; {
   // Match the resource path.
   match &lt;&lt;path&gt;&gt; {
@@ -166,7 +166,7 @@ match /images/{imageId} {
      }
    }
  }
-}</pre> </section><section><p class="_firebase-tab"><strong>Realtime Database</strong></p> <h2 id="basic_structure_3" class="hide-from-toc">Basic structure</h2> <p>In Realtime Database, Firebase Security Rules consist of JavaScript-like expressions contained in a JSON document.</p> <p>They use the following syntax:</p> 
+}</pre> </section><section><p class="_code-tab"><strong>Realtime Database</strong></p> <h2 id="basic_structure_3" class="hide-from-toc">Basic structure</h2> <p>In Realtime Database, Firebase Security Rules consist of JavaScript-like expressions contained in a JSON document.</p> <p>They use the following syntax:</p> 
 <pre data-language="">{
   "rules": {
     "&lt;&lt;path&gt;&gt;": {
@@ -204,25 +204,25 @@ match /images/{imageId} {
       }
     }
   }
-}</pre> <p>Without understanding that rules are evaluated atomically, it might seem like fetching the <code translate="no" dir="ltr">/records/</code> path would return <code translate="no" dir="ltr">rec1</code> but not <code translate="no" dir="ltr">rec2</code>. The actual result, however, is an error:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+}</pre> <p>Without understanding that rules are evaluated atomically, it might seem like fetching the <code translate="no" dir="ltr">/records/</code> path would return <code translate="no" dir="ltr">rec1</code> but not <code translate="no" dir="ltr">rec2</code>. The actual result, however, is an error:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_code-tab"><strong>JavaScript</strong></p> 
 <pre data-language="">var db = firebase.database();
 db.ref("records").once("value", function(snap) {
   // success method is not called
 }, function(err) {
   // error callback triggered with PERMISSION_DENIED
-});</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+});</pre> </section>  <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="objectivec">FIRDatabaseReference *ref = [[FIRDatabase database] reference];
 [[_ref child:@"records"] observeSingleEventOfType:FIRDataEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
   // success block is not called
 } withCancelBlock:^(NSError * _Nonnull error) {
   // cancel block triggered with PERMISSION_DENIED
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="swift">var ref = FIRDatabase.database().reference()
 ref.child("records").observeSingleEventOfType(.Value, withBlock: { snapshot in
     // success block is not called
 }, withCancelBlock: { error in
     // cancel block triggered with PERMISSION_DENIED
-})</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+})</pre> </section>  <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
 DatabaseReference ref = database.getReference("records");
 ref.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -235,7 +235,7 @@ ref.addListenerForSingleValueEvent(new ValueEventListener() {
   public void onCancelled(FirebaseError firebaseError) {
     // error callback triggered with PERMISSION_DENIED
   });
-});</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+});</pre> </section>  <section> <p class="_code-tab"><strong>REST</strong></p> 
 <pre data-language="">
 curl https://docs-examples.firebaseio.com/rest/records/
 # response returns a PERMISSION_DENIED error
@@ -247,21 +247,21 @@ Attempt to read /records with auth=Success(null)
 
 No .read rule allowed the operation.
 Read was denied.
-</pre> <p>The operation was denied because no read rule allowed access to the <code translate="no" dir="ltr">/records/</code> path, but note that the rule for <code translate="no" dir="ltr">rec1</code> was never evaluated because it wasn't in the path we requested. To fetch <code translate="no" dir="ltr">rec1</code>, we would need to access it directly:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_firebase-tab"><strong>JavaScript</strong></p> 
+</pre> <p>The operation was denied because no read rule allowed access to the <code translate="no" dir="ltr">/records/</code> path, but note that the rule for <code translate="no" dir="ltr">rec1</code> was never evaluated because it wasn't in the path we requested. To fetch <code translate="no" dir="ltr">rec1</code>, we would need to access it directly:</p> <div class="ds-selector-tabs" data-ds-scope="lang">  <section> <p class="_code-tab"><strong>JavaScript</strong></p> 
 <pre data-language="">var db = firebase.database();
 db.ref("records/rec1").once("value", function(snap) {
   // SUCCESS!
 }, function(err) {
   // error callback is not called
-});</pre> </section>  <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+});</pre> </section>  <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="objectivec">FIRDatabaseReference *ref = [[FIRDatabase database] reference];
 [[ref child:@"records/rec1"] observeSingleEventOfType:FEventTypeValue withBlock:^(FIRDataSnapshot *snapshot) {
     // SUCCESS!
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This Firebase product is not available on the App Clip target. </div> 
 <pre data-language="swift">var ref = FIRDatabase.database().reference()
 ref.child("records/rec1").observeSingleEventOfType(.Value, withBlock: { snapshot in
     // SUCCESS!
-})</pre> </section>  <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+})</pre> </section>  <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">FirebaseDatabase database = FirebaseDatabase.getInstance();
 DatabaseReference ref = database.getReference("records/rec1");
 ref.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -274,7 +274,7 @@ ref.addListenerForSingleValueEvent(new ValueEventListener() {
   public void onCancelled(FirebaseError firebaseError) {
     // error callback is not called
   }
-});</pre> </section>  <section> <p class="_firebase-tab"><strong>REST</strong></p> 
+});</pre> </section>  <section> <p class="_code-tab"><strong>REST</strong></p> 
 <pre data-language="">
 curl https://docs-examples.firebaseio.com/rest/records/rec1
 # SUCCESS!

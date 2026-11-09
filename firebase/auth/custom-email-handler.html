@@ -2,7 +2,7 @@
 <p>Firebase adds several query parameters to your action handler URL when it generates user management emails. For example: </p>
 
 <pre>https://example.com/usermgmt?mode=resetPassword&amp;oobCode=ABC123&amp;apiKey=AIzaSy...&amp;lang=fr</pre> <p>These parameters specify the user management task that the user is completing. Your email action handler page must handle the following query parameters:</p> <table class="responsive"> <tr><th colspan="2">Parameters</th></tr> <tr> <td>mode</td> <td>
-<p>The user management action to be completed. Can be one of the following values:</p> <ul> <li><code translate="no" dir="ltr">resetPassword</code></li> <li><code translate="no" dir="ltr">recoverEmail</code></li> <li><code translate="no" dir="ltr">verifyEmail</code></li> </ul> </td> </tr> <tr> <td>oobCode</td> <td>A one-time code, used to identify and verify a request</td> </tr> <tr> <td>apiKey</td> <td>Your Firebase project's API key, provided for convenience</td> </tr> <tr> <td>continueUrl</td> <td>This is an optional URL that provides a way to pass state back to the app via a URL. This is relevant to password reset and email verification modes. When sending a password reset email or verification email, an <code translate="no" dir="ltr">ActionCodeSettings</code> object needs to be specified with a continue URL for this to be available. This makes it possible for a user to continue right where they left off after an email action.</td> </tr> <tr> <td>lang</td> <td> <p> This is the optional <a href="https://tools.ietf.org/html/bcp47" class="external"> BCP47 </a> language tag representing the user's locale (for example, <code translate="no" dir="ltr">fr</code>). You can use this value to provide localized email action handler pages to your users.</p> <p> Localization can be set via the Firebase Console or dynamically by calling the corresponding client API before triggering the email action. For example, using JavaScript: <code translate="no" dir="ltr">firebase.auth().languageCode = 'fr';</code>.</p> <p> For consistent user experience, make sure the email action handler localization matches the email template's.</p> </td> </tr> </table> <p>The following example shows how you might handle the query parameters in a browser based handler. (You could also implement the handler as a Node.js application using similar logic.)</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>The user management action to be completed. Can be one of the following values:</p> <ul> <li><code translate="no" dir="ltr">resetPassword</code></li> <li><code translate="no" dir="ltr">recoverEmail</code></li> <li><code translate="no" dir="ltr">verifyEmail</code></li> </ul> </td> </tr> <tr> <td>oobCode</td> <td>A one-time code, used to identify and verify a request</td> </tr> <tr> <td>apiKey</td> <td>Your Firebase project's API key, provided for convenience</td> </tr> <tr> <td>continueUrl</td> <td>This is an optional URL that provides a way to pass state back to the app via a URL. This is relevant to password reset and email verification modes. When sending a password reset email or verification email, an <code translate="no" dir="ltr">ActionCodeSettings</code> object needs to be specified with a continue URL for this to be available. This makes it possible for a user to continue right where they left off after an email action.</td> </tr> <tr> <td>lang</td> <td> <p> This is the optional <a href="https://tools.ietf.org/html/bcp47" class="external"> BCP47 </a> language tag representing the user's locale (for example, <code translate="no" dir="ltr">fr</code>). You can use this value to provide localized email action handler pages to your users.</p> <p> Localization can be set via the Firebase Console or dynamically by calling the corresponding client API before triggering the email action. For example, using JavaScript: <code translate="no" dir="ltr">firebase.auth().languageCode = 'fr';</code>.</p> <p> For consistent user experience, make sure the email action handler localization matches the email template's.</p> </td> </tr> </table> <p>The following example shows how you might handle the query parameters in a browser based handler. (You could also implement the handler as a Node.js application using similar logic.)</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () =&gt; {
     default:
       // Error: invalid mode.
   }
-}, false);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+}, false);</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">document.addEventListener('DOMContentLoaded', () =&gt; {
   // TODO: Implement getParameterByName()
 
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () =&gt; {
       // Error: invalid mode.
   }
 }, false);</pre> </section> </div> </li> <li>
-<p>Handle password reset requests by first verifying the action code with <code translate="no" dir="ltr">verifyPasswordResetCode</code>; then get a new password from the user and pass it to <code translate="no" dir="ltr">confirmPasswordReset</code>. For example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>Handle password reset requests by first verifying the action code with <code translate="no" dir="ltr">verifyPasswordResetCode</code>; then get a new password from the user and pass it to <code translate="no" dir="ltr">confirmPasswordReset</code>. For example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { verifyPasswordResetCode, confirmPasswordReset } from "firebase/auth";
 
 function handleResetPassword(auth, actionCode, continueUrl, lang) {
@@ -118,7 +118,7 @@ function handleResetPassword(auth, actionCode, continueUrl, lang) {
     // Invalid or expired action code. Ask user to try to reset the password
     // again.
   });
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">function handleResetPassword(auth, actionCode, continueUrl, lang) {
   // Localize the UI to the selected language as determined by the lang
   // parameter.
@@ -151,7 +151,7 @@ function handleResetPassword(auth, actionCode, continueUrl, lang) {
     // again.
   });
 }</pre> </section> </div> </li> <li>
-<p>Handle email address change revocations by first verifying the action code with <code translate="no" dir="ltr">checkActionCode</code>; then restore the user's email address with <code translate="no" dir="ltr">applyActionCode</code>. For example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>Handle email address change revocations by first verifying the action code with <code translate="no" dir="ltr">checkActionCode</code>; then restore the user's email address with <code translate="no" dir="ltr">applyActionCode</code>. For example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { checkActionCode, applyActionCode, sendPasswordResetEmail } from "firebase/auth";
 
 function handleRecoverEmail(auth, actionCode, lang) {
@@ -180,7 +180,7 @@ function handleRecoverEmail(auth, actionCode, lang) {
   }).catch((error) =&gt; {
     // Invalid code.
   });
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">function handleRecoverEmail(auth, actionCode, lang) {
   // Localize the UI to the selected language as determined by the lang
   // parameter.
@@ -208,7 +208,7 @@ function handleRecoverEmail(auth, actionCode, lang) {
     // Invalid code.
   });
 }</pre> </section> </div> </li> <li>
-<p>Handle email address verification by calling <code translate="no" dir="ltr">applyActionCode</code>. For example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>Handle email address verification by calling <code translate="no" dir="ltr">applyActionCode</code>. For example:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">function handleVerifyEmail(auth, actionCode, continueUrl, lang) {
   // Localize the UI to the selected language as determined by the lang
   // parameter.
@@ -226,7 +226,7 @@ function handleRecoverEmail(auth, actionCode, lang) {
     // Code is invalid or expired. Ask the user to verify their email address
     // again.
   });
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">function handleVerifyEmail(auth, actionCode, continueUrl, lang) {
   // Localize the UI to the selected language as determined by the lang
   // parameter.

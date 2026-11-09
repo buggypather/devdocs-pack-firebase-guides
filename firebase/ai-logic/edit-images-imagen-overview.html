@@ -1,7 +1,7 @@
-<h1>Migrate from Imagen to a Gemini Nano Banana model</h1> <aside class="warning"> <strong>All <span class='\"notranslate\"'>Imagen</span> models shut down on August 17, 2026.</strong> As a replacement, you can follow this guide to migrate your apps to use Gemini Nano Banana models. </aside> <p><br></p> <p>All <span class='\"notranslate\"'>Imagen</span> models are deprecated and will <strong>shut down as early as August 17, 2026</strong>. This deprecation and shutdown is applicable across Google and for both the <span class='\"notranslate\"'>Gemini Developer API</span> and <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>.</p> <p>Before this shutdown date, to avoid service disruption, you should migrate your apps from using <span class='\"notranslate\"'>Imagen</span> models to using <a href="generate-images-gemini">Gemini Nano Banana models</a>, as described in this guide.</p> <p>If you have an urgent issue involving this deprecation and shutdown, <a href="https://firebase.google.com/support/troubleshooter/contact">reach out to Firebase Support</a>.</p> <h2 id="replacement-gemini-models">Replacement Nano Banana models</h2> <p>The following table can help you choose a replacement Nano Banana model for your app.</p> <table> <thead> <tr> <th>
+<h1>Migrate from Imagen to a Gemini Nano Banana model</h1> <aside class="warning"> <strong>All <span class='\"notranslate\"'>Imagen</span> models shut down on August 17, 2026.</strong> As a replacement, you can follow this guide to migrate your apps to use Gemini Nano Banana models. </aside> <p><br></p> <p>All <span class='\"notranslate\"'>Imagen</span> models <strong>shut down on August 17, 2026</strong>. This shutdown is applicable across Google and for both the <span class='\"notranslate\"'>Gemini Developer API</span> and <span class='\"notranslate\"'><span class='\"notranslate\"'>Agent Platform</span> Gemini API (formerly Vertex AI)</span>.</p> <p>To continue generating or editing images in your apps, migrate from using <span class='\"notranslate\"'>Imagen</span> models to using <a href="generate-images-gemini">Gemini Nano Banana models</a>, as described in this guide.</p> <p>If you have an urgent issue involving this deprecation and shutdown, <a href="https://firebase.google.com/support/troubleshooter/contact">reach out to Firebase Support</a>.</p> <h2 id="replacement-gemini-models">Replacement Nano Banana models</h2> <p>The following table can help you choose a replacement Nano Banana model for your app.</p> <table> <thead> <tr> <th>
 <span class='\"notranslate\"'>Imagen</span> model</th> <th>Gemini Nano Banana models</th> </tr> </thead> <tbody> <tr> <td><code translate="no" dir="ltr">imagen-4.0-fast-generate-001</code></td> <td> <code translate="no" dir="ltr">gemini-nano-banana-2.1</code> (with thinking level <code translate="no" dir="ltr">MINIMAL</code>) </td> </tr> <tr> <td><code translate="no" dir="ltr">imagen-4.0-generate-001</code></td> <td> <code translate="no" dir="ltr">gemini-nano-banana-2.1</code> (with thinking level <code translate="no" dir="ltr">HIGH</code>) </td> </tr> <tr> <td><code translate="no" dir="ltr">imagen-4.0-ultra-generate-001</code></td> <td> <code translate="no" dir="ltr">gemini-3-pro-image</code> </td> </tr> <tr> <td><code translate="no" dir="ltr">imagen-3.0-capability-001</code></td> <td> <code translate="no" dir="ltr">gemini-nano-banana-2.1</code> </td> </tr> </tbody> </table> <h2 id="migrate-app">Migrate your app</h2> <p>This section shows before and after examples for migrating from an <span class='\"notranslate\"'>Imagen</span> model to a Gemini Nano Banana model.</p> <h3 id="migrate-app-text-to-image">Generate an image from text</h3> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>To generate an image from text, migrate your app by making the following changes:</p> <ul> <li><p>Use an appropriate <a href="#replacement-gemini-models">replacement Nano Banana model</a> (such as <code translate="no" dir="ltr">gemini-nano-banana-2.1</code>).</p></li> <li><p>Create a <code translate="no" dir="ltr">GenerativeModel</code> instance (instead of an <code translate="no" dir="ltr">ImagenModel</code> instance).</p></li> <li>
 <p>Update the <a href="#replacement-config">model configuration options</a> to accommodate Nano Banana models.</p> <ul> <li>As part of this configuration, set a response modality of <code translate="no" dir="ltr">IMAGE</code>.<br> Note that Nano Banana models can be configured to return both images <em>and</em> text.</li> </ul>
-</li> </ul> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</li> </ul> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 <p><strong>Before</strong></p> 
 <pre data-language="swift">
 import FirebaseAILogic
@@ -56,7 +56,7 @@ guard let uiImage = UIImage(data: inlineDataPart.data) else {
   fatalError("Failed to convert data to UIImage.")
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 <p><strong>Before</strong></p> 
 <pre data-language="kotlin">
 // Initialize the Gemini Developer API backend service.
@@ -105,7 +105,7 @@ if (imageResponse.finishReason == FinishReason.NO_IMAGE) {
   val bitmapImage = imageResponse.candidates.first().content.parts.filterIsInstance().firstOrNull()?.image
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 <p><strong>Before</strong></p> 
 <pre data-language="java">
 // Initialize the Gemini Developer API backend service.
@@ -182,7 +182,7 @@ Futures.addCallback(response, new FutureCallback() {
     }
 }, executor);
 
-</pre></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
 <p><strong>Before</strong></p> 
 <pre data-language="javascript">
 import { initializeApp } from "firebase/app";
@@ -276,7 +276,7 @@ try {
   console.error('Prompt or candidate was blocked:', err);
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
 <p><strong>Before</strong></p> 
 <pre data-language="dart">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -344,7 +344,7 @@ if (response.inlineDataParts.isNotEmpty) {
   print('Error: No images were generated.');
 }
 
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 <p><strong>Before</strong></p> 
 <pre data-language="csharp">
 using Firebase.AI;

@@ -17,29 +17,29 @@
 </pre>
 </li> <li>
 <p>Run <code translate="no" dir="ltr">pod install</code>, then open the created <code translate="no" dir="ltr">.xcworkspace</code> file.</p> </li>
-<li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+<li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>SwiftUI</strong></p> 
 <pre data-language="">import SwiftUI
 import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 // ...
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 // ...
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">@import FirebaseCore;
 @import FirebaseFirestore;
 @import FirebaseAuth;
 // ...
-      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>SwiftUI</strong></p> 
 <pre data-language="">// Use Firebase library to configure APIs
-FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+FirebaseApp.configure()</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Use Firebase library to configure APIs
-FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+FirebaseApp.configure()</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Use Firebase library to configure APIs
-[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>SwiftUI</strong></p> 
 <pre data-language="">@main
 struct YourApp: App {
   // register app delegate for Firebase setup
@@ -56,7 +56,7 @@ struct YourApp: App {
       </pre> </section> </div> </li> </ol> <aside class="caution"><p>If you're tracking in-app purchases, you must initialize your transaction observer in <code translate="no" dir="ltr">application:didFinishLaunchingWithOptions:</code> before initializing Firebase, or your observer may not receive all purchase notifications. See Apple's <a href="https://developer.apple.com/library/content/technotes/tn2387/_index.html" class="external">In-App Purchase Best Practices</a> for more information.</p> </aside> <h2 id="implement-custom-event-logging">Implement custom event logging</h2> <p>This section shows an example of how to <a href="../analytics/events">implement custom event logging</a> in your app. This specific example is for the custom event <code translate="no" dir="ltr">ecommerce_purchase</code> which is a helpful event to log for AdMob-linked apps, especially for calculating <abbr data-title="average revenue per user">ARPU</abbr> and <abbr data-title="average revenue per paying user">ARPPU</abbr>.</p> <p><section class="expandable" id="arpu-and-arppu"> <p class="showalways">Why is <code translate="no" dir="ltr">ecommerce_purchase</code> important for ARPU and ARPPU?</p></section></p> <p>A key metric for your app is <a href="https://support.google.com/firebase/answer/6317517#revenue" class="external">revenue by user</a>, which can be further segmented into <abbr data-title="average revenue per user">ARPU</abbr> and <abbr data-title="average revenue per paying user">ARPPU</abbr>. These two metrics display in the <em>User metrics</em> card of your AdMob account and in the <em>Analytics</em> dashboard of the Firebase console. Revenue, though, isn't directly measured; instead, it's the sum of your <a href="https://support.google.com/admob/answer/6147072">estimated AdMob earnings</a> and the following two analytics event values:</p> <ul> <li>
 <a href="https://support.google.com/firebase/answer/6317485" class="external"><strong><code translate="no" dir="ltr">in_app_purchase</code></strong></a>: when a user completes an in-app purchase that is processed by the App Store on iTunes, like an initial subscription, unlocking premium services, or buying in-game items</li> </ul> <ul> <li>
 <a href="https://support.google.com/firebase/answer/6317499" class="external"><strong><code translate="no" dir="ltr">ecommerce_purchase</code></strong></a>: when a user completes a purchase, like online shopping, buying coupons or discount items, or buying movie tickets</li> </ul> <p>Without any additional code in your app, the Mobile Ads SDK automatically collects analytics data for <code translate="no" dir="ltr">in_app_purchase</code> events. However, if you want to <em>also</em> include <code translate="no" dir="ltr">ecommerce_purchase</code> event data in the revenue calculation, you'll need to implement custom logging via the Firebase SDK for Google Analytics.</p>  <p>Here's how to implement custom event logging in your app:</p> <ol> <li><p>Make sure that you've completed the <a href="analytics-and-firebase#get-started-analytics">Get started with Google Analytics</a> section of this page, which includes configuring your app to use Firebase, adding the Firebase SDK for Google Analytics, and initializing the SDK.</p></li> <li>
-<p>Log an <code translate="no" dir="ltr">ecommerce_purchase</code> event (<a href="https://firebase.google.com/docs/reference/swift/firebaseanalytics/api/reference/Constants#analyticseventecommercepurchase">Swift</a> | <a href="https://firebase.google.com/docs/reference/ios/firebaseanalytics/api/reference/Constants#/c:FIREventNames.h@kFIREventEcommercePurchase">Obj-C</a>). Here's an example:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Log an <code translate="no" dir="ltr">ecommerce_purchase</code> event (<a href="https://firebase.google.com/docs/reference/swift/firebaseanalytics/api/reference/Constants#analyticseventecommercepurchase">Swift</a> | <a href="https://firebase.google.com/docs/reference/ios/firebaseanalytics/api/reference/Constants#/c:FIREventNames.h@kFIREventEcommercePurchase">Obj-C</a>). Here's an example:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">Analytics.logEvent(AnalyticsEventPurchase, parameters: [
   AnalyticsParameterCoupon: "SummerPromo",
@@ -64,7 +64,7 @@ struct YourApp: App {
   AnalyticsParameterValue: 10000,
   AnalyticsParameterShipping: 500,
   AnalyticsParameterTransactionID: "192803301",
-])</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+])</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">[FIRAnalytics logEventWithName:kFIREventPurchase
                     parameters:@{

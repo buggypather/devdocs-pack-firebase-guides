@@ -7,20 +7,20 @@
 </li> <li><p>Configure the Firebase Security Rules for your default bucket. During development, consider <a href="#set_up_public_access">setting up your rules for public access</a>.</p></li> <li><p>Click <strong>Done</strong>.</p></li> </ol> <p>You can now view the bucket in the Firebase console (navigate to the <strong>Databases &amp; Storage</strong> &gt; <strong>Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/storage/" class="external"><strong>Files</strong> tab</a>). Your default bucket name format is <nobr><code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebasestorage.app</code></nobr>.</p> <aside class="note"><strong>Note:</strong><span> All new default Cloud Storage buckets have the name format <nobr><code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.firebasestorage.app</code></nobr>. Legacy default buckets (created <em>before</em> <nobr>September 2024</nobr>) have the name format <nobr><code translate="no" dir="ltr"><var translate="no">PROJECT_ID</var>.appspot.com</code></nobr>. Learn more in the <a href="../faqs-storage-changes-announced-sept-2024#all-changes-default-storage-bucket">FAQs</a>.</span></aside> <h2 id="set_up_public_access">Set up public access</h2> <p>Cloud Storage for Firebase provides a declarative rules language that lets you define how your data should be structured, how it should be indexed, and when your data can be read from and written to. By default, read and write access to Cloud Storage is restricted so only authenticated users can read or write data. To get started without setting up <a href="../../auth">Authentication</a>, you can <a href="../security/rules-conditions#public">configure your rules for public access</a>.</p> <p>This does make Cloud Storage open to anyone, even people not using your app, so be sure to restrict your Cloud Storage again when you set up authentication.</p> <h2 id="add-sdk">Add Cloud Storage to your app</h2> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
 <pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Cloud Storage library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> <h2 id="set-up-cloud-storage">Set up Cloud Storage in your app</h2> <ol> <li>
 <p>Initialize Firebase before any Firebase reference is created or used.</p> <p>You may have already done this if you've already set up another Firebase product, but you need to make sure to add the <code translate="no" dir="ltr">FirebaseStorage</code> library to your list of imports.</p> <ol> <li>
-<p>Import the <code translate="no" dir="ltr">FirebaseCore</code> module and the <code translate="no" dir="ltr">FirebaseStorage</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>. We also recommend adding <code translate="no" dir="ltr">FirebaseAuth</code>.</p> <div> <section><p class="_firebase-tab"><strong>SwiftUI</strong></p>
+<p>Import the <code translate="no" dir="ltr">FirebaseCore</code> module and the <code translate="no" dir="ltr">FirebaseStorage</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>. We also recommend adding <code translate="no" dir="ltr">FirebaseAuth</code>.</p> <div> <section><p class="_code-tab"><strong>SwiftUI</strong></p>
 
 <pre data-language="">import SwiftUI
 import FirebaseCore
 import FirebaseStorage
 import FirebaseAuth
 // ...
-</pre></section> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">import FirebaseCore
 import FirebaseStorage
 import FirebaseAuth
 // ...
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">@import FirebaseCore;
 @import FirebaseStorage;
@@ -28,21 +28,21 @@ import FirebaseAuth
 // ...
 </pre></section> </div>
 </li> <li>
-<p>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method:</p> <div> <section><p class="_firebase-tab"><strong>SwiftUI</strong></p>
+<p>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method:</p> <div> <section><p class="_code-tab"><strong>SwiftUI</strong></p>
 
 <pre data-language="">// Use Firebase library to configure APIs
 FirebaseApp.configure()
-</pre></section> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Use Firebase library to configure APIs
 FirebaseApp.configure()
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">// Use Firebase library to configure APIs
 [FIRApp configure];
 </pre></section> </div>
 </li> <li>
-<p><em>(SwiftUI only)</em> Create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct using <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../../ios/learn-more#swiftui">SwiftUI instructions</a>.</p> <div> <section><p class="_firebase-tab"><strong>SwiftUI</strong></p>
+<p><em>(SwiftUI only)</em> Create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct using <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../../ios/learn-more#swiftui">SwiftUI instructions</a>.</p> <div> <section><p class="_code-tab"><strong>SwiftUI</strong></p>
 
 <pre data-language="">@main
 struct YourApp: App {
@@ -65,34 +65,34 @@ struct YourApp: App {
 <p>Use this downloaded config file to <em>replace</em> the existing <code translate="no" dir="ltr">GoogleService-Info.plist</code> file in the root of your Xcode project. If prompted, select to add the config file to all targets.</p> <p>Make sure that you only have this most recent downloaded config file in your app and that its filename isn't appended with additional characters, like <code translate="no" dir="ltr">(2)</code>.</p>
 </li> </ol> <aside class="note"><strong>Note:</strong><span> Alternatively to replacing your config file, you can explicitly specify the bucket name when you create a reference to the Cloud Storage service (see next step). You can find the bucket name in the <strong>Databases &amp; Storage</strong> &gt; <strong>Storage</strong> &gt; <a href="https://console.firebase.google.com/project/_/storage/" class="external"><strong>Files</strong> tab</a> in the Firebase console.</span></aside>
 </li> <li>
-<p>Get a reference to the Cloud Storage service, using the default Firebase App:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Get a reference to the Cloud Storage service, using the default Firebase App:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 
 <pre data-language="swift">let storage = Storage.storage()</pre> 
 <pre data-language="swift">// Alternatively, explicitly specify the bucket name URL.
-storage = Storage.storage(url:"gs://BUCKET_NAME")</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+storage = Storage.storage(url:"gs://BUCKET_NAME")</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 
 <pre data-language="objectivec">FIRStorage *storage = [FIRStorage storage];</pre> 
 <pre data-language="objectivec">// Alternatively, explicitly specify the bucket name URL.
 // FIRStorage storage = [FIRStorage storageWithURL:@"gs://BUCKET_NAME"];</pre></section> </div>
 </li> </ol>
-</li> </ol> <p>You're ready to start using Cloud Storage!</p> <p>Next step? Learn how to <a href="create-reference">create a Cloud Storage reference</a>.</p> <h2 id="advanced_setup">Advanced setup</h2> <p>There are a few use cases that require additional setup:</p> <ul> <li>Using Cloud Storage buckets in <a href="https://cloud.google.com/storage/docs/bucket-locations" class="external">multiple geographic regions</a> </li> <li>Using Cloud Storage buckets in <a href="https://cloud.google.com/storage/docs/storage-classes" class="external">different storage classes</a> </li> <li>Using Cloud Storage buckets with multiple authenticated users in the same app</li> </ul> <p>The first use case is perfect if you have users across the world, and want to store their data near them. For instance, you can create buckets in the US, Europe, and Asia to store data for users in those regions to reduce latency.</p> <p>The second use case is helpful if you have data with different access patterns. For instance: you can set up a multi-regional or regional bucket that stores pictures or other frequently accessed content, and a nearline or coldline bucket that stores user backups or other infrequently accessed content.</p> <p>In either of these use cases, you'll want to <a href="start#use_multiple_storage_buckets">use multiple Cloud Storage buckets</a>.</p> <p>The third use case is useful if you're building an app, like Google Drive, which lets users have multiple logged in accounts (for instance, a personal account and a work account). You can <a href="start#use_a_custom_firebase_app">use a custom Firebase App</a> instance to authenticate each additional account.</p> <h3 id="use_multiple_storage_buckets">Use multiple Cloud Storage buckets</h3> <p>If you want to use a Cloud Storage bucket other than the default provided above, or use multiple Cloud Storage buckets in a single app, you can create an instance of <code translate="no" dir="ltr">FIRStorage</code> that references your custom bucket:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+</li> </ol> <p>You're ready to start using Cloud Storage!</p> <p>Next step? Learn how to <a href="create-reference">create a Cloud Storage reference</a>.</p> <h2 id="advanced_setup">Advanced setup</h2> <p>There are a few use cases that require additional setup:</p> <ul> <li>Using Cloud Storage buckets in <a href="https://cloud.google.com/storage/docs/bucket-locations" class="external">multiple geographic regions</a> </li> <li>Using Cloud Storage buckets in <a href="https://cloud.google.com/storage/docs/storage-classes" class="external">different storage classes</a> </li> <li>Using Cloud Storage buckets with multiple authenticated users in the same app</li> </ul> <p>The first use case is perfect if you have users across the world, and want to store their data near them. For instance, you can create buckets in the US, Europe, and Asia to store data for users in those regions to reduce latency.</p> <p>The second use case is helpful if you have data with different access patterns. For instance: you can set up a multi-regional or regional bucket that stores pictures or other frequently accessed content, and a nearline or coldline bucket that stores user backups or other infrequently accessed content.</p> <p>In either of these use cases, you'll want to <a href="start#use_multiple_storage_buckets">use multiple Cloud Storage buckets</a>.</p> <p>The third use case is useful if you're building an app, like Google Drive, which lets users have multiple logged in accounts (for instance, a personal account and a work account). You can <a href="start#use_a_custom_firebase_app">use a custom Firebase App</a> instance to authenticate each additional account.</p> <h3 id="use_multiple_storage_buckets">Use multiple Cloud Storage buckets</h3> <p>If you want to use a Cloud Storage bucket other than the default provided above, or use multiple Cloud Storage buckets in a single app, you can create an instance of <code translate="no" dir="ltr">FIRStorage</code> that references your custom bucket:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Get a non-default Cloud Storage bucket
 storage = Storage.storage(url:"gs://my-custom-bucket")
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Get a non-default Cloud Storage bucket
 FIRStorage storage = [FIRStorage storageWithURL:@"gs://my-custom-bucket"];
     </pre> </section> </div> <h3 id="working_with_imported_buckets">Working with imported buckets</h3> <p>When importing an existing Cloud Storage bucket into Firebase, you'll have to grant Firebase the ability to access these files using the <code translate="no" dir="ltr">gsutil</code> tool, included in the <a href="https://cloud.google.com/sdk/docs/" class="external">Google Cloud SDK</a>:</p> 
 <pre>
 gsutil -m acl ch -r -u service-PROJECT_NUMBER@gcp-sa-firebasestorage.iam.gserviceaccount.com gs://BUCKET_NAME
-</pre> <p>You can find your project number as described in the <a href="../../projects/learn-more#project-number">introduction to Firebase projects</a>.</p> <p>This does not affect newly created buckets, as those have the default access control set to allow Firebase. This is a temporary measure, and will be performed automatically in the future.</p> <h3 id="use_a_custom_firebase_app">Use a custom Firebase App</h3> <p>If you're building a more complicated app using a custom <code translate="no" dir="ltr">FirebaseApp</code>, you can create an instance of <code translate="no" dir="ltr">Storage</code> initialized with that app:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+</pre> <p>You can find your project number as described in the <a href="../../projects/learn-more#project-number">introduction to Firebase projects</a>.</p> <p>This does not affect newly created buckets, as those have the default access control set to allow Firebase. This is a temporary measure, and will be performed automatically in the future.</p> <h3 id="use_a_custom_firebase_app">Use a custom Firebase App</h3> <p>If you're building a more complicated app using a custom <code translate="no" dir="ltr">FirebaseApp</code>, you can create an instance of <code translate="no" dir="ltr">Storage</code> initialized with that app:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Get the default bucket from a custom FirebaseApp
 storage = Storage.storage(app:customApp)
 
 // Get a non-default bucket from a custom FirebaseApp
 storage = Storage.storage(app:customApp, url:"gs://my-custom-bucket")
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Get the default bucket from a custom FIRApp
 FIRStorage storage = [FIRStorage storageForApp:customApp];
 

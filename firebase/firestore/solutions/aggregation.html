@@ -1,11 +1,11 @@
 <h1>Write-time aggregations</h1> <p>Queries in Cloud Firestore let you find documents in large collections. To gain insight into properties of the collection as a whole, you can aggregate data over a collection.</p> <p>You can aggregate data either at read-time or at write time:</p> <ul> <li><p><strong>Read-time aggregations</strong> calculate a result at the time of the request. Cloud Firestore supports the <code translate="no" dir="ltr">count()</code>, <code translate="no" dir="ltr">sum()</code>, and <code translate="no" dir="ltr">average()</code> aggregation queries at read-time. Read-time aggregation queries are are easier to add to your app than write-time aggregations. For more on aggregation queries, see <a href="../query-data/aggregation-queries">Summarize data with aggregation queries</a>.</p></li> <li>
 <p><strong>Write-time aggregations</strong> calculate a result each time the app performs a relevant write operation. Write-time aggregations are more work to implement, but you might use them instead of read-time aggregations for one of the following reasons:</p> <ul> <li>You want to listen to the aggregation result for real-time updates. The <code translate="no" dir="ltr">count()</code>, <code translate="no" dir="ltr">sum()</code>, and <code translate="no" dir="ltr">average()</code> aggregation queries do not support real-time updates.</li> <li>You want to store the aggregation result in a client-side cache. The <code translate="no" dir="ltr">count()</code>, <code translate="no" dir="ltr">sum()</code>, and <code translate="no" dir="ltr">average()</code> aggregation queries do not support caching.</li> <li>You are aggregating data from tens of thousands of documents for each of your users and consider costs. At a lower number of documents, read-time aggregations cost less. For a large number of documents in an aggregations, write-time aggregations might cost less.</li> </ul>
-</li> </ul> <p>You can implement a write-time aggregation using either a client-side transaction or with Cloud Functions. The following sections describe how to implement write-time aggregations.</p> <h2 id="solution_write-time_aggregation_with_a_client-side_transaction">Solution: Write-time aggregation with a client-side transaction</h2> <p>Consider a local recommendations app that helps users find great restaurants. The following query retrieves all the ratings for a given restaurant:</p> <div> <section><p class="_firebase-tab"><strong>Web</strong></p>
+</li> </ul> <p>You can implement a write-time aggregation using either a client-side transaction or with Cloud Functions. The following sections describe how to implement write-time aggregations.</p> <h2 id="solution_write-time_aggregation_with_a_client-side_transaction">Solution: Write-time aggregation with a client-side transaction</h2> <p>Consider a local recommendations app that helps users find great restaurants. The following query retrieves all the ratings for a given restaurant:</p> <div> <section><p class="_code-tab"><strong>Web</strong></p>
 
 <pre data-language="javascript">db.collection("restaurants")
   .doc("arinell-pizza")
   .collection("ratings")
-  .get();</pre></section> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+  .get();</pre></section> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">do {
@@ -16,7 +16,7 @@
   print(snapshot)
 } catch {
   print(error)
-}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRQuery *query = [[[self.db collectionWithPath:@"restaurants"]
@@ -24,23 +24,23 @@
 [query getDocumentsWithCompletion:^(FIRQuerySnapshot * _Nullable snapshot,
                                     NSError * _Nullable error) {
   // ...
-}];</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+}];</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">db.collection("restaurants")
     .document("arinell-pizza")
     .collection("ratings")
-    .get()</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    .get()</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">db.collection("restaurants")
         .document("arinell-pizza")
         .collection("ratings")
-        .get();</pre></section> </div> <p>Rather than fetching all ratings and then computing aggregate information, we can store this information on the restaurant document itself:</p> <div> <section><p class="_firebase-tab"><strong>Web</strong></p>
+        .get();</pre></section> </div> <p>Rather than fetching all ratings and then computing aggregate information, we can store this information on the restaurant document itself:</p> <div> <section><p class="_code-tab"><strong>Web</strong></p>
 
 <pre data-language="javascript">var arinellDoc = {
   name: 'Arinell Pizza',
   avgRating: 4.65,
   numRatings: 683
-};</pre></section> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+};</pre></section> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">struct Restaurant {
@@ -51,7 +51,7 @@
 
 }
 
-let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683)</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683)</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">@interface FIRRestaurant : NSObject
@@ -80,7 +80,7 @@ let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683
   return self;
 }
 
-@end</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+@end</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">data class Restaurant(
@@ -89,7 +89,7 @@ let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683
     internal var avgRating: Double = 0.0,
     internal var numRatings: Int = 0,
 )</pre> 
-<pre data-language="kotlin">val arinell = Restaurant("Arinell Pizza", 4.65, 683)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<pre data-language="kotlin">val arinell = Restaurant("Arinell Pizza", 4.65, 683)</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">public class Restaurant {
@@ -103,7 +103,7 @@ let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683
         this.numRatings = numRatings;
     }
 }</pre> 
-<pre data-language="java">Restaurant arinell = new Restaurant("Arinell Pizza", 4.65, 683);</pre></section> </div> <p>In order to keep these aggregations consistent, they must be updated each time a new rating is added to the subcollection. One way to achieve consistency is to perform the add and the update in a single transaction:</p> <div> <section><p class="_firebase-tab"><strong>Web</strong></p>
+<pre data-language="java">Restaurant arinell = new Restaurant("Arinell Pizza", 4.65, 683);</pre></section> </div> <p>In order to keep these aggregations consistent, they must be updated each time a new rating is added to the subcollection. One way to achieve consistency is to perform the add and the update in a single transaction:</p> <div> <section><p class="_code-tab"><strong>Web</strong></p>
 
 <pre data-language="javascript">function addRating(restaurantRef, rating) {
     // Create a reference for a new rating, for use inside the transaction
@@ -131,7 +131,7 @@ let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683
             transaction.set(ratingRef, { rating: rating });
         });
     });
-}</pre></section> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">func addRatingTransaction(restaurantRef: DocumentReference, rating: Float) async {
@@ -169,7 +169,7 @@ let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683
   } catch {
     // ...
   }
-}</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">- (void)addRatingTransactionWithRestaurantReference:(FIRDocumentReference *)restaurant
@@ -211,7 +211,7 @@ let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683
   } completion:^(id  _Nullable result, NSError * _Nullable error) {
     // ...
   }];
-}</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">private fun addRating(restaurantRef: DocumentReference, rating: Float): Task&lt;Void&gt; {
     // Create reference for new rating, for use inside the transaction
@@ -243,7 +243,7 @@ let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683
 
         null
     }
-}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">private Task&lt;Void&gt; addRating(final DocumentReference restaurantRef, final float rating) {
     // Create reference for new rating, for use inside the transaction
@@ -281,7 +281,7 @@ let arinell = Restaurant(name: "Arinell Pizza", avgRating: 4.65, numRatings: 683
 <strong>Security</strong> - Client-side transactions require giving clients permission to update the aggregate data in your database. While you can reduce the risks of this approach by writing advanced security rules, this may not be appropriate in all situations.</li> <li>
 <strong>Offline support</strong> - Client-side transactions will fail when the user's device is offline, which means you need to handle this case in your app and retry at the appropriate time.</li> <li>
 <strong>Performance</strong> - If your transaction contains multiple read, write, and update operations, it could require multiple requests to the Cloud Firestore backend. On a mobile device, this could take significant time.</li> <li>
-<strong>Write rates</strong> - this solution may not work for frequently updated aggregations because Cloud Firestore documents can only be updated at most once per second. Additionally, If a transaction reads a document that was modified outside of the transaction, it <a href="../manage-data/transactions#transactions">retries a finite number of times</a> and then fails. Check out <a href="counters">distributed counters</a> for a relevant workaround for aggregations which need more frequent updates.</li> </ul> <h2 id="solution_write-time_aggregation_with_cloud_functions">Solution: Write-time aggregation with Cloud Functions</h2> <p>If client-side transactions are not suitable for your application, you can use a <a href="../extend-with-functions">Cloud Function</a> to update the aggregate information each time a new rating is added to a restaurant:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<strong>Write rates</strong> - this solution may not work for frequently updated aggregations because Cloud Firestore documents can only be updated at most once per second. Additionally, If a transaction reads a document that was modified outside of the transaction, it <a href="../manage-data/transactions#transactions">retries a finite number of times</a> and then fails. Check out <a href="counters">distributed counters</a> for a relevant workaround for aggregations which need more frequent updates.</li> </ul> <h2 id="solution_write-time_aggregation_with_cloud_functions">Solution: Write-time aggregation with Cloud Functions</h2> <p>If client-side transactions are not suitable for your application, you can use a <a href="../extend-with-functions">Cloud Function</a> to update the aggregate information each time a new rating is added to a restaurant:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">exports.aggregateRatings = functions.firestore
     .document('restaurants/{restId}/ratings/{ratingId}')

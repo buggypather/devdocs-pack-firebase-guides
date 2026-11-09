@@ -1,16 +1,16 @@
-<h1>Firebase Test Lab triggers</h1> <h2 id="import-required">Import the required modules</h2> <p>To get started, import the modules required for handling Firebase Test Lab events:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Firebase Test Lab triggers</h1> <h2 id="import-required">Import the required modules</h2> <p>To get started, import the modules required for handling Firebase Test Lab events:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript"> // The Cloud Functions for Firebase SDK to set up triggers and logging.
 const {onTestMatrixCompleted} = require("firebase-functions/testLab");
 const {logger} = require("firebase-functions");
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"> # The Cloud Functions for Firebase SDK to set up triggers and logging.
 from firebase_functions import test_lab_fn, params
 
 # The requests library to send web requests to Slack.
 import requests
-</pre></section> </div> <h2 id="trigger-function">Trigger a function on TestMatrix completion</h2> <p>To trigger a Firebase Test Lab function, define a handler for the test matrix completion event. In this example, the function triggers on test completion, retrieves the test matrix data from the CloudEvent object, and sends the corresponding test results to a Slack channel:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="trigger-function">Trigger a function on TestMatrix completion</h2> <p>To trigger a Firebase Test Lab function, define a handler for the test matrix completion event. In this example, the function triggers on test completion, retrieves the test matrix data from the CloudEvent object, and sends the corresponding test results to a Slack channel:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">exports.posttestresultstoslack = onTestMatrixCompleted(
     {secrets: ["SLACK_WEBHOOK_URL"]},
@@ -35,7 +35,7 @@ import requests
       // Log the response
       logger.log(slackResponse);
     });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@test_lab_fn.on_test_matrix_completed(secrets=["SLACK_WEBHOOK_URL"])
 def posttestresultstoslack(
@@ -66,11 +66,11 @@ def posttestresultstoslack(
 <pre>gcloud beta firebase test android run \
     --app=path/to/app.apk \
     --client-details testType=pr,link=&lt;path/to/pull-request&gt;
-</pre> <p>And then to access the information in your function:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <p>And then to access the information in your function:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const testType = event.data.clientInfo.details.testType;
 const link = event.data.clientInfo.details.link;
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">test_type: str | None = event.data.client_info.details.get("testType")
 link: str | None = event.data.client_info.details.get("link")

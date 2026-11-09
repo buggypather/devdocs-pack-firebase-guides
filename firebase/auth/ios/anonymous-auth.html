@@ -1,28 +1,28 @@
 <h1>Authenticate with Firebase Anonymously on Apple Platforms</h1>  <p>You can use Firebase Authentication to create and use temporary anonymous accounts to authenticate with Firebase. These temporary anonymous accounts can be used to allow users who haven't yet signed up to your app to work with data protected by security rules. If an anonymous user decides to sign up to your app, you can <a href="account-linking">link their sign-in credentials to the anonymous account</a> so that they can continue to work with their protected data in future sessions.</p> <h2 id="before-you-begin">Before you begin</h2> <ol> <li> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Add Packages</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
 <pre>  https://github.com/firebase/firebase-ios-sdk.git</pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Firebase Authentication library.</li> <li>Add the <code translate="no" dir="ltr">-ObjC</code> flag to the <i>Other Linker Flags</i> section of your target's build settings.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol>
-</li> <li> If you haven't yet connected your app to your Firebase project, do so from the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. </li> <li> Enable anonymous authentication: <ol> <li> In the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Anonymous</b> sign-in provider. </li> <li> <b>Optional</b>: If you've upgraded your project to <a href="../../auth#identity-platform">Firebase Authentication with Identity Platform</a>, you can enable automatic clean-up. When you enable this setting, anonymous accounts older than 30 days will be automatically deleted. In projects with automatic clean-up enabled, anonymous authentication will no longer count toward usage limits or billing quotas. See <a href="#auto-cleanup">Automatic clean-up</a>. </li> </ol> </li> </ol> <h2 id="authenticate-with-firebase-anonymously">Authenticate with Firebase anonymously</h2> <p>When a signed-out user uses an app feature that requires authentication with Firebase, sign in the user anonymously by completing the following steps:</p> <ol> <li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+</li> <li> If you haven't yet connected your app to your Firebase project, do so from the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. </li> <li> Enable anonymous authentication: <ol> <li> In the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Anonymous</b> sign-in provider. </li> <li> <b>Optional</b>: If you've upgraded your project to <a href="../../auth#identity-platform">Firebase Authentication with Identity Platform</a>, you can enable automatic clean-up. When you enable this setting, anonymous accounts older than 30 days will be automatically deleted. In projects with automatic clean-up enabled, anonymous authentication will no longer count toward usage limits or billing quotas. See <a href="#auto-cleanup">Automatic clean-up</a>. </li> </ol> </li> </ol> <h2 id="authenticate-with-firebase-anonymously">Authenticate with Firebase anonymously</h2> <p>When a signed-out user uses an app feature that requires authentication with Firebase, sign in the user anonymously by completing the following steps:</p> <ol> <li>Import the <code translate="no" dir="ltr">FirebaseCore</code> module in your <code translate="no" dir="ltr">UIApplicationDelegate</code>, as well as any other <a href="../../ios/setup#available-pods">Firebase modules</a> your app delegate uses. For example, to use Cloud Firestore and Authentication: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>SwiftUI</strong></p> 
 <pre data-language="">import SwiftUI
 import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 // ...
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">import FirebaseCore
 import FirebaseFirestore
 import FirebaseAuth
 // ...
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">@import FirebaseCore;
 @import FirebaseFirestore;
 @import FirebaseAuth;
 // ...
-      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+      </pre> </section> </div> </li> <li>Configure a <a href="https://firebase.google.com/docs/reference/swift/firebasecore/api/reference/Classes/FirebaseApp"><code translate="no" dir="ltr">FirebaseApp</code></a> shared instance in your app delegate's <code translate="no" dir="ltr">application(_:didFinishLaunchingWithOptions:)</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>SwiftUI</strong></p> 
 <pre data-language="">// Use Firebase library to configure APIs
-FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+FirebaseApp.configure()</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Use Firebase library to configure APIs
-FirebaseApp.configure()</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+FirebaseApp.configure()</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Use Firebase library to configure APIs
-[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>SwiftUI</strong></p> 
+[FIRApp configure];</pre> </section> </div> </li> <li>If you're using SwiftUI, you must create an application delegate and attach it to your <code translate="no" dir="ltr">App</code> struct via <code translate="no" dir="ltr">UIApplicationDelegateAdaptor</code> or <code translate="no" dir="ltr">NSApplicationDelegateAdaptor</code>. You must also disable app delegate swizzling. For more information, see the <a href="../../ios/learn-more#swiftui">SwiftUI instructions</a>. <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>SwiftUI</strong></p> 
 <pre data-language="">@main
 struct YourApp: App {
   // register app delegate for Firebase setup
@@ -36,21 +36,21 @@ struct YourApp: App {
     }
   }
 }
-      </pre> </section> </div> </li> <li>Call the <code translate="no" dir="ltr">signInAnonymouslyWithCompletion:</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+      </pre> </section> </div> </li> <li>Call the <code translate="no" dir="ltr">signInAnonymouslyWithCompletion:</code> method: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">Auth.auth().signInAnonymously { authResult, error in
   // ...
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">[[FIRAuth auth] signInAnonymouslyWithCompletion:^(FIRAuthDataResult * _Nullable authResult,
                                                   NSError * _Nullable error) {
    // ...
- }];</pre> </section> </div> </li> <li>If the <code translate="no" dir="ltr">signInAnonymouslyWithCompletion:</code> method completes without error, you can get the anonymous user's account data from the <code translate="no" dir="ltr">FIRAuthDataResult</code> object: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+ }];</pre> </section> </div> </li> <li>If the <code translate="no" dir="ltr">signInAnonymouslyWithCompletion:</code> method completes without error, you can get the anonymous user's account data from the <code translate="no" dir="ltr">FIRAuthDataResult</code> object: <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">guard let user = authResult?.user else { return }
 let isAnonymous = user.isAnonymous  // true
-let uid = user.uid</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+let uid = user.uid</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">FIRUser *user = authResult.user;
 BOOL isAnonymous = user.anonymous;  // YES
 NSString *uid = user.uid;</pre> </section> </div> </li> </ol> <aside>To protect your project from abuse, Firebase limits the number of new email/password and anonymous sign-ups that your application can have from the same IP address in a short period of time. You can request and schedule temporary changes to this quota from the Firebase console (go to the <b>Security</b> &gt; <b>Authentication</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><b>Sign-in method</b> tab</a>). </aside> <h2 id="convert-an-anonymous-account-to-a-permanent-account">Convert an anonymous account to a permanent account</h2> <p>When an anonymous user signs up to your app, you might want to allow them to continue their work with their new account—for example, you might want to make the items the user added to their shopping cart before they signed up available in their new account's shopping cart. To do so, complete the following steps:</p> <ol> <li>When the user signs up, complete the sign-in flow for the user's authentication provider up to, but not including, calling one of the <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_auth"><code translate="no" dir="ltr">FIRAuth.signInWith</code></a> methods. For example, get the user's Google ID token, Facebook access token, or email address and password. </li> <li>
-<p>Get an <code translate="no" dir="ltr">FIRAuthCredential</code> for the new authentication provider:</p> <h5 id="google-sign-in">Google Sign-In</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p>Get an <code translate="no" dir="ltr">FIRAuthCredential</code> for the new authentication provider:</p> <h5 id="google-sign-in">Google Sign-In</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">guard
   let authentication = user?.authentication,
   let idToken = authentication.idToken
@@ -59,23 +59,23 @@ else {
 }
 
 let credential = GoogleAuthProvider.credential(withIDToken: idToken,
-                                               accessToken: authentication.accessToken)</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+                                               accessToken: authentication.accessToken)</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">FIRAuthCredential *credential =
 [FIRGoogleAuthProvider credentialWithIDToken:result.user.idToken.tokenString
-                                 accessToken:result.user.accessToken.tokenString];</pre> </section> </div> <h5 id="facebook-login">Facebook Login</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+                                 accessToken:result.user.accessToken.tokenString];</pre> </section> </div> <h5 id="facebook-login">Facebook Login</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let credential = FacebookAuthProvider
-  .credential(withAccessToken: AccessToken.current!.tokenString)</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+  .credential(withAccessToken: AccessToken.current!.tokenString)</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">FIRAuthCredential *credential = [FIRFacebookAuthProvider
-    credentialWithAccessToken:[FBSDKAccessToken currentAccessToken].tokenString];</pre> </section> </div> <h5 id="email-password-sign-in">Email-password sign-in</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
-<pre data-language="swift">let credential = EmailAuthProvider.credential(withEmail: email, password: password)</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    credentialWithAccessToken:[FBSDKAccessToken currentAccessToken].tokenString];</pre> </section> </div> <h5 id="email-password-sign-in">Email-password sign-in</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">let credential = EmailAuthProvider.credential(withEmail: email, password: password)</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">FIRAuthCredential *credential =
     [FIREmailAuthProvider credentialWithEmail:email
                                              password:password];</pre> </section> </div> </li> <li>
-<p>Pass the <code translate="no" dir="ltr">FIRAuthCredential</code> object to the sign-in user's <code translate="no" dir="ltr">linkWithCredential:completion:</code> method:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p>Pass the <code translate="no" dir="ltr">FIRAuthCredential</code> object to the sign-in user's <code translate="no" dir="ltr">linkWithCredential:completion:</code> method:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">    user.link(with: credential) { authResult, error in
   // ...
 }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">    [[FIRAuth auth].currentUser linkWithCredential:credential
     completion:^(FIRAuthDataResult *result, NSError *_Nullable error) {
   // ...

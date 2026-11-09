@@ -1,4 +1,4 @@
-<h1>Download files with Cloud Storage on Apple platforms</h1> <p>Cloud Storage for Firebase allows you to quickly and easily download files from a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket provided and managed by Firebase.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside> <h2 id="create_a_reference">Create a Reference</h2> <p>To download a file, first <a href="create-reference">create a Cloud Storage reference</a> to the file you want to download.</p> <p>You can create a reference by appending child paths to the root of your Cloud Storage bucket, or you can create a reference from an existing <code translate="no" dir="ltr">gs://</code> or <code translate="no" dir="ltr">https://</code> URL referencing an object in Cloud Storage.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<h1>Download files with Cloud Storage on Apple platforms</h1> <p>Cloud Storage for Firebase allows you to quickly and easily download files from a <a href="https://cloud.google.com/storage" class="external">Cloud Storage</a> bucket provided and managed by Firebase.</p> <aside class="note"><strong>Note:</strong><span> By default, a Cloud Storage for Firebase bucket requires Firebase Authentication to perform any action on the bucket's data or files. You can change your Firebase Security Rules for Cloud Storage to <a href="../security/rules-conditions#public">allow unauthenticated access for specific situations</a>. However, for most situations, we strongly recommend <a href="../security/get-started">restricting access and setting up robust security rules</a> (especially for production apps). Note that if you use Google App Engine and have a default Cloud Storage bucket with a name format of <nobr><code translate="no" dir="ltr">*.appspot.com</code></nobr>, you may need to consider <a href="../gcp-integration#security-rules-and-app-engine-files">how your security rules impact access to App Engine files</a>.</span></aside> <h2 id="create_a_reference">Create a Reference</h2> <p>To download a file, first <a href="create-reference">create a Cloud Storage reference</a> to the file you want to download.</p> <p>You can create a reference by appending child paths to the root of your Cloud Storage bucket, or you can create a reference from an existing <code translate="no" dir="ltr">gs://</code> or <code translate="no" dir="ltr">https://</code> URL referencing an object in Cloud Storage.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create a reference with an initial file path and name
 let pathReference = storage.reference(withPath: "images/stars.jpg")
 
@@ -7,7 +7,7 @@ let gsReference = storage.reference(forURL: "gs://&lt;your-firebase-storage-buck
 
 // Create a reference from an HTTPS URL
 // Note that in the URL, characters are URL escaped!
-let httpsReference = storage.reference(forURL: "https://firebasestorage.googleapis.com/b/bucket/o/images%20stars.jpg")</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+let httpsReference = storage.reference(forURL: "https://firebasestorage.googleapis.com/b/bucket/o/images%20stars.jpg")</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create a reference with an initial file path and name
 FIRStorageReference *pathReference = [storage referenceWithPath:@"images/stars.jpg"];
 
@@ -17,7 +17,7 @@ FIRStorageReference *gsReference = [storage referenceForURL:@"gs://&lt;your-fire
 // Create a reference from an HTTPS URL
 // Note that in the URL, characters are URL escaped!
 FIRStorageReference *httpsReference = [storage referenceForURL:@"https://firebasestorage.googleapis.com/b/bucket/o/images%20stars.jpg"];
-  </pre> </section> </div> <h2 id="download_files">Download Files</h2> <p>Once you have a reference, you can download files from Cloud Storage in three ways:</p> <ol> <li>Download to <code translate="no" dir="ltr">NSData</code> in memory</li> <li>Download to an <code translate="no" dir="ltr">NSURL</code> representing a file on device</li> <li>Generate an <code translate="no" dir="ltr">NSURL</code> representing the file online</li> </ol> <h3 id="download_in_memory">Download in memory</h3> <p>Download the file to an <code translate="no" dir="ltr">NSData</code> object in memory using the <code translate="no" dir="ltr">dataWithMaxSize:completion:</code> method. This is the easiest way to quickly download a file, but it must load entire contents of your file into memory. If you request a file larger than your app's available memory, your app will crash. To protect against memory issues, make sure to set the max size to something you know your app can handle, or use another download method.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+  </pre> </section> </div> <h2 id="download_files">Download Files</h2> <p>Once you have a reference, you can download files from Cloud Storage in three ways:</p> <ol> <li>Download to <code translate="no" dir="ltr">NSData</code> in memory</li> <li>Download to an <code translate="no" dir="ltr">NSURL</code> representing a file on device</li> <li>Generate an <code translate="no" dir="ltr">NSURL</code> representing the file online</li> </ol> <h3 id="download_in_memory">Download in memory</h3> <p>Download the file to an <code translate="no" dir="ltr">NSData</code> object in memory using the <code translate="no" dir="ltr">dataWithMaxSize:completion:</code> method. This is the easiest way to quickly download a file, but it must load entire contents of your file into memory. If you request a file larger than your app's available memory, your app will crash. To protect against memory issues, make sure to set the max size to something you know your app can handle, or use another download method.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create a reference to the file you want to download
 let islandRef = storageRef.child("images/island.jpg")
 
@@ -30,7 +30,7 @@ islandRef.getData(maxSize: 1 * 1024 * 1024) { data, error in
     let image = UIImage(data: data!)
   }
 }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create a reference to the file you want to download
 FIRStorageReference *islandRef = [storageRef child:@"images/island.jpg"];
 
@@ -43,7 +43,7 @@ FIRStorageReference *islandRef = [storageRef child:@"images/island.jpg"];
     UIImage *islandImage = [UIImage imageWithData:data];
   }
 }];
-    </pre> </section> </div> <h3 id="download_to_a_local_file">Download to a local file</h3> <p>The <code translate="no" dir="ltr">writeToFile:completion:</code> method downloads a file directly to a local device. Use this if your users want to have access to the file while offline or to share in a different app. <code translate="no" dir="ltr">writeToFile:completion:</code> returns an <code translate="no" dir="ltr">FIRStorageDownloadTask</code> which you can use to manage your download and monitor the status of the upload.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <h3 id="download_to_a_local_file">Download to a local file</h3> <p>The <code translate="no" dir="ltr">writeToFile:completion:</code> method downloads a file directly to a local device. Use this if your users want to have access to the file while offline or to share in a different app. <code translate="no" dir="ltr">writeToFile:completion:</code> returns an <code translate="no" dir="ltr">FIRStorageDownloadTask</code> which you can use to manage your download and monitor the status of the upload.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create a reference to the file you want to download
 let islandRef = storageRef.child("images/island.jpg")
 
@@ -58,7 +58,7 @@ let downloadTask = islandRef.write(toFile: localURL) { url, error in
     // Local file URL for "images/island.jpg" is returned
   }
 }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create a reference to the file you want to download
 FIRStorageReference *islandRef = [storageRef child:@"images/island.jpg"];
 
@@ -73,7 +73,7 @@ FIRStorageDownloadTask *downloadTask = [islandRef writeToFile:localURL completio
     // Local file URL for "images/island.jpg" is returned
   }
 }];
-    </pre> </section> </div> <p>If you want to actively manage your download, you can use the <code translate="no" dir="ltr">writeToFile:</code> method and observe the download task, rather than use the completion handler. See <a href="#manage_downloads">Manage Downloads</a> for more information.</p> <h3 id="generate_a_download_url">Generate a download URL</h3> <p>If you already have download infrastructure based around URLs, or just want a URL to share, you can get the download URL for a file by calling the <code translate="no" dir="ltr">downloadURLWithCompletion:</code> method on a Cloud Storage reference.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <p>If you want to actively manage your download, you can use the <code translate="no" dir="ltr">writeToFile:</code> method and observe the download task, rather than use the completion handler. See <a href="#manage_downloads">Manage Downloads</a> for more information.</p> <h3 id="generate_a_download_url">Generate a download URL</h3> <p>If you already have download infrastructure based around URLs, or just want a URL to share, you can get the download URL for a file by calling the <code translate="no" dir="ltr">downloadURLWithCompletion:</code> method on a Cloud Storage reference.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create a reference to the file you want to download
 let starsRef = storageRef.child("images/stars.jpg")
 
@@ -85,7 +85,7 @@ starsRef.downloadURL { url, error in
     // Get the download URL for 'images/stars.jpg'
   }
 }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create a reference to the file you want to download
 FIRStorageReference *starsRef = [storageRef child:@"images/stars.jpg"];
 
@@ -98,7 +98,7 @@ FIRStorageReference *starsRef = [storageRef child:@"images/stars.jpg"];
   }
 }];
     </pre> </section> </div> <h2 id="downloading_images_with_firebaseui">Downloading Images with FirebaseUI</h2> <p><a href="https://github.com/firebase/FirebaseUI-iOS">FirebaseUI</a> provides simple, customizable, and production-ready native mobile bindings to eliminate boilerplate code and promote Google best practices. Using FirebaseUI you can quickly and easily download, cache, and display images from Cloud Storage using our integration with <a href="https://github.com/rs/SDWebImage">SDWebImage</a>.</p> <p>First, add FirebaseUI to your <code translate="no" dir="ltr">Podfile</code>:</p> 
-<pre>pod 'FirebaseStorageUI'</pre> <p>Then you can load images directly from Cloud Storage into a <code translate="no" dir="ltr">UIImageView</code>:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<pre>pod 'FirebaseStorageUI'</pre> <p>Then you can load images directly from Cloud Storage into a <code translate="no" dir="ltr">UIImageView</code>:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Reference to an image file in Firebase Storage
 let reference = storageRef.child("images/stars.jpg")
 
@@ -110,7 +110,7 @@ let placeholderImage = UIImage(named: "placeholder.jpg")
 
 // Load the image using SDWebImage
 imageView.sd_setImage(with: reference, placeholderImage: placeholderImage)
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Reference to an image file in Firebase Storage
 FIRStorageReference *reference = [storageRef child:@"images/stars.jpg"];
 
@@ -122,7 +122,7 @@ UIImage *placeholderImage;
 
 // Load the image using SDWebImage
 [imageView sd_setImageWithStorageReference:reference placeholderImage:placeholderImage];
-    </pre> </section> </div> <h2 id="manage_downloads">Manage Downloads</h2> <p>In addition to starting downloads, you can pause, resume, and cancel downloads using the <code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, and <code translate="no" dir="ltr">cancel</code> methods. These methods raise <code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, and <code translate="no" dir="ltr">cancel</code> events that you can observe.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <h2 id="manage_downloads">Manage Downloads</h2> <p>In addition to starting downloads, you can pause, resume, and cancel downloads using the <code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, and <code translate="no" dir="ltr">cancel</code> methods. These methods raise <code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, and <code translate="no" dir="ltr">cancel</code> events that you can observe.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Start downloading a file
 let downloadTask = storageRef.child("images/mountains.jpg").write(toFile: localFile)
 
@@ -134,7 +134,7 @@ downloadTask.resume()
 
 // Cancel the download
 downloadTask.cancel()
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Start downloading a file
 FIRStorageDownloadTask *downloadTask = [[storageRef child:@"images/mountains.jpg"] writeToFile:localFile];
 
@@ -146,19 +146,19 @@ FIRStorageDownloadTask *downloadTask = [[storageRef child:@"images/mountains.jpg
 
 // Cancel the download
 [downloadTask cancel];
-    </pre> </section> </div> <h2 id="monitor_download_progress">Monitor Download Progress</h2> <p>You can attach observers to <code translate="no" dir="ltr">FIRStorageDownloadTask</code>s in order to monitor the progress of the download. Adding an observer returns a <code translate="no" dir="ltr">FIRStorageHandle</code> that can be used to remove the observer.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <h2 id="monitor_download_progress">Monitor Download Progress</h2> <p>You can attach observers to <code translate="no" dir="ltr">FIRStorageDownloadTask</code>s in order to monitor the progress of the download. Adding an observer returns a <code translate="no" dir="ltr">FIRStorageHandle</code> that can be used to remove the observer.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Add a progress observer to a download task
 let observer = downloadTask.observe(.progress) { snapshot in
   // A progress event occurred
 }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Add a progress observer to a download task
 NSString *observer = [downloadTask observeStatus:FIRStorageTaskStatusProgress
                                          handler:^(FIRStorageTaskSnapshot *snapshot) {
   // A progress event occurred
 }];
     </pre> </section> </div> <p>These observers can be registered to an <code translate="no" dir="ltr">FIRStorageTaskStatus</code> event:</p> <table> <tr> <th>`FIRStorageTaskStatus` Event</th> <th>Typical Usage</th> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusResume</code></td> <td>This event fires when the task starts or resumes downloading, and is often used in conjunction with the <code translate="no" dir="ltr">FIRStorageTaskStatusPause</code> event.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusProgress</code></td> <td>This event fires any time data is downloaded from Cloud Storage, and can be used to populate a download progress indicator.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusPause</code></td> <td>This event fires any time the download is paused, and is often used in conjunction with the <code translate="no" dir="ltr">FIRStorageTaskStatusResume</code> event.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusSuccess</code></td> <td>This event fires when a download has completed successfully.</td> </tr> <tr> <td><code translate="no" dir="ltr">FIRStorageTaskStatusFailure</code></td> <td>This event fires when a download has failed. Inspect the error to determine the failure reason.</td> </tr> </table> <p>When an event occurs, an <code translate="no" dir="ltr">FIRStorageTaskSnapshot</code> object is passed back. This snapshot is an immutable view of the task, at the time the event occurred. This object contains the following properties:</p> <table> <tr> <th>Property</th> <th>Type</th> <th>Description</th> </tr> <tr> <td><code translate="no" dir="ltr">progress</code></td> <td><code translate="no" dir="ltr">NSProgress</code></td> <td>An <code translate="no" dir="ltr">NSProgress</code> object containing the progress of the download.</td> </tr> <tr> <td><code translate="no" dir="ltr">error</code></td> <td><code translate="no" dir="ltr">NSError</code></td> <td>An error that occurred during download, if any.</td> </tr> <tr> <td><code translate="no" dir="ltr">metadata</code></td> <td><code translate="no" dir="ltr">FIRStorageMetadata</code></td> <td>
-<code translate="no" dir="ltr">nil</code> on downloads.</td> </tr> <tr> <td><code translate="no" dir="ltr">task</code></td> <td><code translate="no" dir="ltr">FIRStorageDownloadTask</code></td> <td>The task this is a snapshot of, which can be used to manage (<code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, <code translate="no" dir="ltr">cancel</code>) the task.</td> </tr> <tr> <td><code translate="no" dir="ltr">reference</code></td> <td><code translate="no" dir="ltr">FIRStorageReference</code></td> <td>The reference this task came from.</td> </tr> </table> <p>You can also remove observers, either individually, by status, or by removing all of them.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<code translate="no" dir="ltr">nil</code> on downloads.</td> </tr> <tr> <td><code translate="no" dir="ltr">task</code></td> <td><code translate="no" dir="ltr">FIRStorageDownloadTask</code></td> <td>The task this is a snapshot of, which can be used to manage (<code translate="no" dir="ltr">pause</code>, <code translate="no" dir="ltr">resume</code>, <code translate="no" dir="ltr">cancel</code>) the task.</td> </tr> <tr> <td><code translate="no" dir="ltr">reference</code></td> <td><code translate="no" dir="ltr">FIRStorageReference</code></td> <td>The reference this task came from.</td> </tr> </table> <p>You can also remove observers, either individually, by status, or by removing all of them.</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create a task listener handle
 let observer = downloadTask.observe(.progress) { snapshot in
 // A progress event occurred
@@ -172,7 +172,7 @@ downloadTask.removeAllObservers(for: .progress)
 
 // Remove all observers
 downloadTask.removeAllObservers()
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create a task listener handle
 NSString *observer = [downloadTask observeStatus:FIRStorageTaskStatusProgress
                                          handler:^(FIRStorageTaskSnapshot *snapshot) {
@@ -187,7 +187,7 @@ NSString *observer = [downloadTask observeStatus:FIRStorageTaskStatusProgress
 
 // Remove all observers
 [downloadTask removeAllObservers];
-    </pre> </section> </div> <p>To prevent memory leaks, all observers are removed after an <code translate="no" dir="ltr">FIRStorageTaskStatusSuccess</code> or <code translate="no" dir="ltr">FIRStorageTaskStatusFailure</code> occurs.</p> <h2 id="handle_errors">Handle Errors</h2> <p>There are a number of reasons why errors may occur on download, including the file not existing, or the user not having permission to access the desired file. More information on errors can be found in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="full_example">Full Example</h2> <p>A full example of downloading to a local file with error handling is shown below:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+    </pre> </section> </div> <p>To prevent memory leaks, all observers are removed after an <code translate="no" dir="ltr">FIRStorageTaskStatusSuccess</code> or <code translate="no" dir="ltr">FIRStorageTaskStatusFailure</code> occurs.</p> <h2 id="handle_errors">Handle Errors</h2> <p>There are a number of reasons why errors may occur on download, including the file not existing, or the user not having permission to access the desired file. More information on errors can be found in the <a href="handle-errors">Handle Errors</a> section of the docs.</p> <h2 id="full_example">Full Example</h2> <p>A full example of downloading to a local file with error handling is shown below:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">// Create a reference to the file we want to download
 let starsRef = storageRef.child("images/stars.jpg")
 
@@ -242,7 +242,7 @@ downloadTask.observe(.failure) { snapshot in
     break
   }
 }
-    </pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    </pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">// Create a reference to the file we want to download
 FIRStorageReference *starsRef = [storageRef child:@"images/stars.jpg"];
 

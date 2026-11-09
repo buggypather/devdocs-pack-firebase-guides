@@ -2,12 +2,12 @@
 <p>Select <strong>Firestore in Native Mode</strong> for the operation mode, which supports Core and Pipeline operations.</p> <aside class="note"><strong>Note:</strong><span> You can create a database in either Native mode or MongoDB compatibility mode. For more information about MongoDB compatibility mode, see the <a href="create-and-query-database">quickstart for creating MongoDB compatible databases</a>.</span></aside>
 </li> <li><p>Select a <a href="../pipelines/locations#types">location</a> for your database.</p></li> <li>
 <p>Select a starting mode for your Cloud Firestore Security Rules:</p> <dl> <dt>Test mode</dt> <dd><p>Good for getting started with the mobile and web client libraries, but allows anyone to read and overwrite your data. After testing, <strong>make sure to review the <a href="#secure_your_data">Secure your data</a> section.</strong></p></dd> <dd><p>To get started with the web, Apple platforms, or Android SDK, select test mode.</p></dd> <dt>Production mode</dt> <dd><p>Denies all reads and writes from mobile and web clients. Your authenticated application servers (Python) can still access your database. </p></dd> </dl> <p>Your initial set of Cloud Firestore Security Rules will apply to your default Cloud Firestore database. If you create multiple databases for your project, you can deploy Cloud Firestore Security Rules for each database.</p>
-</li> <li><p>Click <strong>Create</strong>.</p></li> </ol> <aside class="note"> <strong>Cloud Firestore and App Engine:</strong> With support for multiple databases, you can use both Firestore Enterprise edition and Datastore in the same project. If you use App Engine, note that only the <code translate="no" dir="ltr">(default)</code> database in standard mode with Datastore or Firestore Native APIs can be used with App Engine. </aside> <p>When you enable Firestore Enterprise edition, it also enables the API in the <a href="https://console.cloud.google.com/projectselector/apis/api/firestore.googleapis.com/overview">Cloud API Manager</a>.</p> <h2 id="setup">Set up your development environment</h2> <p>Add the required dependencies and client libraries to your app.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> <ol> <li>Follow the instructions to <a href="../../web/setup">add Firebase to your web app</a>. </li> <li> The Cloud Firestore SDK is available as an npm package. 
-<pre data-language="javascript">npm install firebase@13.1.0 --save</pre> You'll need to import both Firebase and Cloud Firestore. 
+</li> <li><p>Click <strong>Create</strong>.</p></li> </ol> <aside class="note"> <strong>Cloud Firestore and App Engine:</strong> With support for multiple databases, you can use both Firestore Enterprise edition and Datastore in the same project. If you use App Engine, note that only the <code translate="no" dir="ltr">(default)</code> database in standard mode with Datastore or Firestore Native APIs can be used with App Engine. </aside> <p>When you enable Firestore Enterprise edition, it also enables the API in the <a href="https://console.cloud.google.com/projectselector/apis/api/firestore.googleapis.com/overview">Cloud API Manager</a>.</p> <h2 id="setup">Set up your development environment</h2> <p>Add the required dependencies and client libraries to your app.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> <ol> <li>Follow the instructions to <a href="../../web/setup">add Firebase to your web app</a>. </li> <li> The Cloud Firestore SDK is available as an npm package. 
+<pre data-language="javascript">npm install firebase@13.2.0 --save</pre> You'll need to import both Firebase and Cloud Firestore. 
 <pre data-language="javascript">import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";</pre> </li> </ol> <aside class="note"> Looking for a compact Firestore library, and only need simple REST/CRUD capabilities? Try the <a href="../solutions/firestore-lite"> Firestore Lite SDK</a>, available only via npm. </aside> </section> <section> <p class="_firebase-tab"><strong>iOS+</strong></p> <p> Follow the instructions to <a href="../../ios/setup">add Firebase to your Apple app</a>. </p> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project, including importing frameworks directly and using CocoaPods. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Swift Packages &gt; Add Package Dependency</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
+import { getFirestore } from "firebase/firestore";</pre> </li> </ol> <aside class="note"> Looking for a compact Firestore library, and only need simple REST/CRUD capabilities? Try the <a href="../solutions/firestore-lite"> Firestore Lite SDK</a>, available only via npm. </aside> </section> <section> <p class="_code-tab"><strong>iOS+</strong></p> <p> Follow the instructions to <a href="../../ios/setup">add Firebase to your Apple app</a>. </p> <p>Use Swift Package Manager to install and manage Firebase dependencies.</p> <aside class="note">Visit <a href="../../ios/installation-methods">our installation guide</a> to learn about the different ways you can add Firebase SDKs to your Apple project, including importing frameworks directly and using CocoaPods. </aside> <ol> <li>In Xcode, with your app project open, navigate to <b>File &gt; Swift Packages &gt; Add Package Dependency</b>.</li> <li>When prompted, add the Firebase Apple platforms SDK repository:</li> 
 <pre data-language="">  https://github.com/firebase/firebase-ios-sdk
-  </pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Firestore library.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> </section> <section> <p class="_firebase-tab"><strong>Android</strong></p> <ol> <li>Follow the instructions to <a href="../../android/setup">add Firebase to your Android app</a>.</li> <li>Using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, declare the dependency for the Cloud Firestore library for Android in your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">app/build.gradle.kts</code> or <code translate="no" dir="ltr">app/build.gradle</code>). 
+  </pre> <aside class="note"> <b>Note:</b> New projects should use the default (latest) SDK version, but you can choose an older version if needed. </aside> <li>Choose the Firestore library.</li> <li> When finished, Xcode will automatically begin resolving and downloading your dependencies in the background. </li> </ol> </section> <section> <p class="_code-tab"><strong>Android</strong></p> <ol> <li>Follow the instructions to <a href="../../android/setup">add Firebase to your Android app</a>.</li> <li>Using the <a href="../../android/learn-more#bom">Firebase Android BoM</a>, declare the dependency for the Cloud Firestore library for Android in your <b>module (app-level) Gradle file</b> (usually <code translate="no" dir="ltr">app/build.gradle.kts</code> or <code translate="no" dir="ltr">app/build.gradle</code>). 
 <pre data-language="java">dependencies {
     // Import the BoM for the Firebase platform
     implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
@@ -20,7 +20,7 @@ import { getFirestore } from "firebase/firestore";</pre> </li> </ol> <aside clas
     // Declare the dependency for the Cloud Firestore library
     // When NOT using the BoM, you must specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-firestore:27.1.0")
-}</pre>  </div> <p><b>Looking for a Kotlin-specific library module?</b> Starting with the <a href="https://firebase.google.com/support/release-notes/android#2023-10-10">October 2023 release</a>, both Kotlin and Java developers can depend on the main library module (for details, see the <a href="../../android/kotlin-migration">FAQ about this initiative</a>). </p> </li> </ol> </section> </div> <h2 id="initialize">Initialize Cloud Firestore</h2> <p>Initialize an instance of Cloud Firestore:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+}</pre>  </div> <p><b>Looking for a Kotlin-specific library module?</b> Starting with the <a href="https://firebase.google.com/support/release-notes/android#2023-10-10">October 2023 release</a>, both Kotlin and Java developers can depend on the main library module (for details, see the <a href="../../android/kotlin-migration">FAQ about this initiative</a>). </p> </li> </ol> </section> </div> <h2 id="initialize">Initialize Cloud Firestore</h2> <p>Initialize an instance of Cloud Firestore:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
@@ -36,20 +36,20 @@ const app = initializeApp(firebaseConfig);
 
 // When initializing Firestore, remember to use the name of the database you created earlier:
 const db = initializeFirestore(app, {}, 'your-new-enterprise-database');
-</pre> <p> Replace <var translate="no">FIREBASE_CONFIGURATION</var> with your web app's <a href="https://support.google.com/firebase/answer/7015592"><code translate="no" dir="ltr">firebaseConfig</code></a>. </p> <p> To persist data when the device loses its connection, see the <a href="enable-offline">Enable Offline Data</a> documentation. </p> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+</pre> <p> Replace <var translate="no">FIREBASE_CONFIGURATION</var> with your web app's <a href="https://support.google.com/firebase/answer/7015592"><code translate="no" dir="ltr">firebaseConfig</code></a>. </p> <p> To persist data when the device loses its connection, see the <a href="enable-offline">Enable Offline Data</a> documentation. </p> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">import FirebaseCore
 import FirebaseFirestore
 
 FirebaseApp.configure()
 
 // When initializing Firestore, remember to use the name of the database you created earlier:
-let db = Firestore.firestore(database: "your-new-enterprise-database")</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+let db = Firestore.firestore(database: "your-new-enterprise-database")</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Access a Cloud Firestore instance from your Activity
 // When initializing Firestore, remember to use the name of the database you created earlier:
-val firestore = FirebaseFirestore.getInstance("your-new-enterprise-database")</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+val firestore = FirebaseFirestore.getInstance("your-new-enterprise-database")</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Access a Cloud Firestore instance from your Activity
 // When initializing Firestore, remember to use the name of the database you created earlier:
-FirebaseFirestore firestore = FirebaseFirestore.getInstance("your-new-enterprise-database");</pre> </section> </div> <h2 id="add-core">Add data using Core operations</h2> <p>In order to explore Core operations and Pipeline operations for querying data, add data to your database using Core operations.</p> <p>Cloud Firestore stores data in Documents, which are stored in Collections. Cloud Firestore creates collections and documents implicitly the first time you add data to the document. You don't need to explicitly create collections or documents.</p> <p>Create a new collection and a document using the following example code.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+FirebaseFirestore firestore = FirebaseFirestore.getInstance("your-new-enterprise-database");</pre> </section> </div> <h2 id="add-core">Add data using Core operations</h2> <p>In order to explore Core operations and Pipeline operations for querying data, add data to your database using Core operations.</p> <p>Cloud Firestore stores data in Documents, which are stored in Collections. Cloud Firestore creates collections and documents implicitly the first time you add data to the document. You don't need to explicitly create collections or documents.</p> <p>Create a new collection and a document using the following example code.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { collection, addDoc } from "firebase/firestore"; 
 
 try {
@@ -61,7 +61,7 @@ try {
   console.log("Document written with ID: ", docRef.id);
 } catch (e) {
   console.error("Error adding document: ", e);
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
 <pre data-language="javascript">db.collection("users").add({
     first: "Ada",
     last: "Lovelace",
@@ -72,7 +72,7 @@ try {
 })
 .catch((error) =&gt; {
     console.error("Error adding document: ", error);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">// Add a new document with a generated ID
 do {
   let ref = try await db.collection("users").addDocument(data: [
@@ -83,7 +83,7 @@ do {
   print("Document added with ID: \(ref.documentID)")
 } catch {
   print("Error adding document: \(error)")
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Create a new user with a first and last name
 val user = hashMapOf(
     "first" to "Ada",
@@ -99,7 +99,7 @@ db.collection("users")
     }
     .addOnFailureListener { e -&gt;
         Log.w(TAG, "Error adding document", e)
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Create a new user with a first and last name
 Map&lt;String, Object&gt; user = new HashMap&lt;&gt;();
 user.put("first", "Ada");
@@ -120,7 +120,7 @@ db.collection("users")
             public void onFailure(@NonNull Exception e) {
                 Log.w(TAG, "Error adding document", e);
             }
-        });</pre> </section> </div> <p>Now add another document to the <code translate="no" dir="ltr">users</code> collection. Notice that this document includes a key-value pair (middle name) that does not appear in the first document. Documents in a collection can contain different sets of information.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+        });</pre> </section> </div> <p>Now add another document to the <code translate="no" dir="ltr">users</code> collection. Notice that this document includes a key-value pair (middle name) that does not appear in the first document. Documents in a collection can contain different sets of information.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">// Add a second document with a generated ID.
 import { addDoc, collection } from "firebase/firestore"; 
 
@@ -135,7 +135,7 @@ try {
   console.log("Document written with ID: ", docRef.id);
 } catch (e) {
   console.error("Error adding document: ", e);
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
 <pre data-language="javascript">// Add a second document with a generated ID.
 db.collection("users").add({
     first: "Alan",
@@ -148,7 +148,7 @@ db.collection("users").add({
 })
 .catch((error) =&gt; {
     console.error("Error adding document: ", error);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">// Add a second document with a generated ID.
 do {
   let ref = try await db.collection("users").addDocument(data: [
@@ -160,7 +160,7 @@ do {
   print("Document added with ID: \(ref.documentID)")
 } catch {
   print("Error adding document: \(error)")
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// Create a new user with a first, middle, and last name
 val user = hashMapOf(
     "first" to "Alan",
@@ -177,7 +177,7 @@ db.collection("users")
     }
     .addOnFailureListener { e -&gt;
         Log.w(TAG, "Error adding document", e)
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Create a new user with a first, middle, and last name
 Map&lt;String, Object&gt; user = new HashMap&lt;&gt;();
 user.put("first", "Alan");
@@ -199,18 +199,18 @@ db.collection("users")
             public void onFailure(@NonNull Exception e) {
                 Log.w(TAG, "Error adding document", e);
             }
-        });</pre> </section> </div> <h2 id="read-core">Read data using Core operations</h2> <p>Use the data viewer in the <a href="https://console.firebase.google.com/project/_/firestore/data">Firebase console</a> to quickly verify that you've added data to Cloud Firestore.</p> <p>You can also use the "get" method to retrieve the entire collection.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+        });</pre> </section> </div> <h2 id="read-core">Read data using Core operations</h2> <p>Use the data viewer in the <a href="https://console.firebase.google.com/project/_/firestore/data">Firebase console</a> to quickly verify that you've added data to Cloud Firestore.</p> <p>You can also use the "get" method to retrieve the entire collection.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { collection, getDocs } from "firebase/firestore"; 
 
 const querySnapshot = await getDocs(collection(db, "users"));
 querySnapshot.forEach((doc) =&gt; {
   console.log(doc.id, "=&gt;", doc.data());
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
 <pre data-language="javascript">db.collection("users").get().then((querySnapshot) =&gt; {
     querySnapshot.forEach((doc) =&gt; {
         console.log(doc.id, "=&gt;", doc.data());
     });
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">do {
   let snapshot = try await db.collection("users").getDocuments()
   for document in snapshot.documents {
@@ -218,7 +218,7 @@ querySnapshot.forEach((doc) =&gt; {
   }
 } catch {
   print("Error getting documents: \(error)")
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">db.collection("users")
     .get()
     .addOnSuccessListener { result -&gt;
@@ -228,7 +228,7 @@ querySnapshot.forEach((doc) =&gt; {
     }
     .addOnFailureListener { exception -&gt;
         Log.w(TAG, "Error getting documents.", exception)
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">db.collection("users")
         .get()
         .addOnCompleteListener(new OnCompleteListener&lt;QuerySnapshot&gt;() {
@@ -242,7 +242,7 @@ querySnapshot.forEach((doc) =&gt; {
                     Log.w(TAG, "Error getting documents.", task.getException());
                 }
             }
-        });</pre> </section> </div> <h2 id="read-pipelines">Read data using Pipeline operations</h2> <p>Now you can compare the Pipeline query experience with the Core query experience.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+        });</pre> </section> </div> <h2 id="read-pipelines">Read data using Pipeline operations</h2> <p>Now you can compare the Pipeline query experience with the Core query experience.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">// The import/require of "firebase/firestore/pipelines" has a side-effect
 // of extending the Firestore class with the `.pipeline()` method.
 // Without this import/require, you will not be able to create a Pipeline.
@@ -258,7 +258,7 @@ try {
   });
 } catch (error) {
     console.error("Error getting documents: ", error);
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">do {
   // Initialize a Firestore Pipeline instance and specify the "users" collection as the
   // input stage.
@@ -273,7 +273,7 @@ try {
   }
 } catch {
   print("Error getting documents with pipeline: \(error)")
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val readDataPipeline = db.pipeline()
     .collection("users")
 
@@ -286,7 +286,7 @@ readDataPipeline.execute()
     }
     .addOnFailureListener { exception -&gt;
         println("Error getting documents: $exception")
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">Pipeline readDataPipeline = db.pipeline()
 .collection("users");
 
@@ -304,7 +304,7 @@ readDataPipeline.execute()
     public void onFailure(@NonNull Exception e) {
         System.out.println("Error getting documents: " + e);
     }
-});</pre> </section> </div> <h2 id="secure_your_data">Secure your data for mobile and web SDKs</h2> <p>If you're using the web, Android, or Apple platforms SDK, use <a href="../../auth/index">Firebase Authentication</a> and <a href="../security/get-started">Cloud Firestore Security Rules</a> to secure your data in Cloud Firestore.</p> <p>Here are some basic rule sets you can use to get started. You can modify your security rules from the Firebase console in the <strong>Databases &amp; Storage</strong> &gt; <strong>Firestore</strong> &gt; <a href="https://console.firebase.google.com/project/_/firestore/rules"><strong>Rules</strong> tab</a>.</p> <div> <section><p class="_firebase-tab"><strong>Auth required</strong></p>
+});</pre> </section> </div> <h2 id="secure_your_data">Secure your data for mobile and web SDKs</h2> <p>If you're using the web, Android, or Apple platforms SDK, use <a href="../../auth/index">Firebase Authentication</a> and <a href="../security/get-started">Cloud Firestore Security Rules</a> to secure your data in Cloud Firestore.</p> <p>Here are some basic rule sets you can use to get started. You can modify your security rules from the Firebase console in the <strong>Databases &amp; Storage</strong> &gt; <strong>Firestore</strong> &gt; <a href="https://console.firebase.google.com/project/_/firestore/rules"><strong>Rules</strong> tab</a>.</p> <div> <section><p class="_code-tab"><strong>Auth required</strong></p>
 
 <pre data-language="">// Allow read/write access to a document keyed by the user's UID
 service cloud.firestore {
@@ -314,7 +314,7 @@ service cloud.firestore {
     }
   }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Production mode</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Production mode</strong></p>
 
 <pre data-language="">// Deny read/write access to all users under any conditions
 service cloud.firestore {

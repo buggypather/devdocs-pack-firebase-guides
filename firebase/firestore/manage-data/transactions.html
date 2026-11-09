@@ -1,6 +1,6 @@
 <h1>Transactions and batched writes</h1>  <p>Cloud Firestore supports atomic operations for reading and writing data. In a set of atomic operations, either all of the operations succeed, or none of them are applied. There are two types of atomic operations in Cloud Firestore:</p> <ul> <li>
 <strong>Transactions</strong>: a <a href="#transactions">transaction</a> is a set of read and write operations on one or more documents.</li> <li>
-<strong>Batched Writes</strong>: a <a href="#batched-writes">batched write</a> is a set of write operations on one or more documents.</li> </ul> <h2 id="transactions">Updating data with transactions</h2> <p>Using the Cloud Firestore client libraries, you can group multiple operations into a single transaction. Transactions are useful when you want to update a field's value based on its current value, or the value of some other field.</p> <p>A transaction consists of any number of <code translate="no" dir="ltr">get()</code> operations followed by any number of write operations such as <code translate="no" dir="ltr">set()</code>, <code translate="no" dir="ltr">update()</code>, or <code translate="no" dir="ltr">delete()</code>. In the case of a concurrent edit, Cloud Firestore runs the entire transaction again. For example, if a transaction reads documents and another client modifies any of those documents, Cloud Firestore retries the transaction. This feature ensures that the transaction runs on up-to-date and consistent data.</p> <p>Transactions never partially apply writes. All writes execute at the end of a successful transaction.</p> <p>When using transactions, note that:</p> <ul> <li>Read operations must be executed before write operations.</li> <li>A function calling a transaction (transaction function) might run more than once if a concurrent edit affects a document that the transaction reads.</li> <li>Transaction functions should not directly modify application state.</li> <li>Transactions will fail when the client is offline.</li> </ul> <p>The following example shows how to create and run a transaction:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<strong>Batched Writes</strong>: a <a href="#batched-writes">batched write</a> is a set of write operations on one or more documents.</li> </ul> <h2 id="transactions">Updating data with transactions</h2> <p>Using the Cloud Firestore client libraries, you can group multiple operations into a single transaction. Transactions are useful when you want to update a field's value based on its current value, or the value of some other field.</p> <p>A transaction consists of any number of <code translate="no" dir="ltr">get()</code> operations followed by any number of write operations such as <code translate="no" dir="ltr">set()</code>, <code translate="no" dir="ltr">update()</code>, or <code translate="no" dir="ltr">delete()</code>. In the case of a concurrent edit, Cloud Firestore runs the entire transaction again. For example, if a transaction reads documents and another client modifies any of those documents, Cloud Firestore retries the transaction. This feature ensures that the transaction runs on up-to-date and consistent data.</p> <p>Transactions never partially apply writes. All writes execute at the end of a successful transaction.</p> <p>When using transactions, note that:</p> <ul> <li>Read operations must be executed before write operations.</li> <li>A function calling a transaction (transaction function) might run more than once if a concurrent edit affects a document that the transaction reads.</li> <li>Transaction functions should not directly modify application state.</li> <li>Transactions will fail when the client is offline.</li> </ul> <p>The following example shows how to create and run a transaction:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { runTransaction } from "firebase/firestore";
 
 try {
@@ -16,7 +16,7 @@ try {
   console.log("Transaction successfully committed!");
 } catch (e) {
   console.log("Transaction failed: ", e);
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
 <pre data-language="javascript">// Create a reference to the SF doc.
 var sfDocRef = db.collection("cities").doc("SF");
 
@@ -40,7 +40,7 @@ return db.runTransaction((transaction) =&gt; {
     console.log("Transaction successfully committed!");
 }).catch((error) =&gt; {
     console.log("Transaction failed: ", error);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">let sfReference = db.collection("cities").document("SF")
 
 do {
@@ -73,7 +73,7 @@ do {
   print("Transaction successfully committed!")
 } catch {
   print("Transaction failed: \(error)")
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRDocumentReference *sfReference =
     [[self.db collectionWithPath:@"cities"] documentWithPath:@"SF"];
 [self.db runTransactionWithBlock:^id (FIRTransaction *transaction, NSError **errorPointer) {
@@ -99,7 +99,7 @@ do {
   } else {
     NSLog(@"Transaction successfully committed!");
   }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val sfDocRef = db.collection("cities").document("SF")
 
 db.runTransaction { transaction -&gt;
@@ -113,7 +113,7 @@ db.runTransaction { transaction -&gt;
     // Success
     null
 }.addOnSuccessListener { Log.d(TAG, "Transaction success!") }
-    .addOnFailureListener { e -&gt; Log.w(TAG, "Transaction failure.", e) }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    .addOnFailureListener { e -&gt; Log.w(TAG, "Transaction failure.", e) }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">final DocumentReference sfDocRef = db.collection("cities").document("SF");
 
 db.runTransaction(new Transaction.Function&lt;Void&gt;() {
@@ -140,7 +140,7 @@ db.runTransaction(new Transaction.Function&lt;Void&gt;() {
     public void onFailure(@NonNull Exception e) {
         Log.w(TAG, "Transaction failure.", e);
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">final sfDocRef = db.collection("cities").doc("SF");
 db.runTransaction((transaction) async {
   final snapshot = await transaction.get(sfDocRef);
@@ -151,7 +151,7 @@ db.runTransaction((transaction) async {
 }).then(
   (value) =&gt; print("DocumentSnapshot successfully updated!"),
   onError: (e) =&gt; print("Error updating document $e"),
-);</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> <div class="github-docwidget-gitinclude-code"> 
+);</pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="java">// Initialize doc
 final DocumentReference docRef = db.collection("cities").document("SF");
 City city = new City("SF");
@@ -169,7 +169,7 @@ ApiFuture&lt;Void&gt; futureTransaction =
           transaction.update(docRef, "population", oldPopulation + 1);
           return null;
         });
-// block on transaction operation using transaction.get()</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
+// block on transaction operation using transaction.get()</pre> </div> </section> <section> <p class="_code-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="python">transaction = db.transaction()
 city_ref = db.collection("cities").document("SF")
 
@@ -178,7 +178,7 @@ def update_in_transaction(transaction, city_ref):
     snapshot = city_ref.get(transaction=transaction)
     transaction.update(city_ref, {"population": snapshot.get("population") + 1})
 
-update_in_transaction(transaction, city_ref)</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Python ((Async))</strong></p> <div class="github-docwidget-gitinclude-code"> 
+update_in_transaction(transaction, city_ref)</pre> </div> </section> <section> <p class="_code-tab"><strong>Python ((Async))</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="python">transaction = db.transaction()
 city_ref = db.collection("cities").document("SF")
 
@@ -187,7 +187,7 @@ async def update_in_transaction(transaction, city_ref):
     snapshot = await city_ref.get(transaction=transaction)
     transaction.update(city_ref, {"population": snapshot.get("population") + 1})
 
-await update_in_transaction(transaction, city_ref)</pre> </div> </section> <section> <p class="_firebase-tab"><strong>C++</strong></p> 
+await update_in_transaction(transaction, city_ref)</pre> </div> </section> <section> <p class="_code-tab"><strong>C++</strong></p> 
 <pre data-language="cpp">DocumentReference sf_doc_ref = db-&gt;Collection("cities").Document("SF");
 db-&gt;RunTransaction([sf_doc_ref](Transaction&amp; transaction,
                                 std::string&amp; out_error_message) -&gt; Error {
@@ -211,7 +211,7 @@ db-&gt;RunTransaction([sf_doc_ref](Transaction&amp; transaction,
   } else {
     std::cout &lt;&lt; "Transaction failure: " &lt;&lt; future.error_message() &lt;&lt; std::endl;
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> <div class="github-docwidget-gitinclude-code"> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="javascript">// Initialize document
 const cityRef = db.collection('cities').doc('SF');
 await cityRef.set({
@@ -236,7 +236,7 @@ try {
   console.log('Transaction success!');
 } catch (e) {
   console.log('Transaction failure:', e);
-}</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
+}</pre> </div> </section> <section> <p class="_code-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="go">
 import (
 	"context"
@@ -269,7 +269,7 @@ func runSimpleTransaction(ctx context.Context, client *firestore.Client) error {
 
 	return err
 }
-</pre> </div> </section> <section> <p class="_firebase-tab"><strong>PHP</strong></p> <div class="github-docwidget-gitinclude-code"> 
+</pre> </div> </section> <section> <p class="_code-tab"><strong>PHP</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="php">$cityRef = $db-&gt;collection('samples/php/cities')-&gt;document('SF');
 $db-&gt;runTransaction(function (Transaction $transaction) use ($cityRef) {
     $snapshot = $transaction-&gt;snapshot($cityRef);
@@ -277,7 +277,7 @@ $db-&gt;runTransaction(function (Transaction $transaction) use ($cityRef) {
     $transaction-&gt;update($cityRef, [
         ['path' =&gt; 'population', 'value' =&gt; $newPopulation]
     ]);
-});</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Unity</strong></p> 
+});</pre> </div> </section> <section> <p class="_code-tab"><strong>Unity</strong></p> 
 <pre data-language="csharp">DocumentReference cityRef = db.Collection("cities").Document("SF");
 db.RunTransactionAsync(transaction =&gt;
     {
@@ -291,7 +291,7 @@ db.RunTransactionAsync(transaction =&gt;
             };
             transaction.Update(cityRef, updates);
         });
-    });</pre> </section> <section> <p class="_firebase-tab"><strong>C#</strong></p> <div class="github-docwidget-gitinclude-code"> 
+    });</pre> </section> <section> <p class="_code-tab"><strong>C#</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="csharp">DocumentReference cityRef = db.Collection("cities").Document("SF");
 await db.RunTransactionAsync(async transaction =&gt;
 {
@@ -302,14 +302,14 @@ await db.RunTransactionAsync(async transaction =&gt;
         { "Population", newPopulation}
     };
     transaction.Update(cityRef, updates);
-});</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Ruby</strong></p> <div class="github-docwidget-gitinclude-code"> 
+});</pre> </div> </section> <section> <p class="_code-tab"><strong>Ruby</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="ruby">city_ref = firestore.doc "#{collection_path}/SF"
 
 firestore.transaction do |tx|
   new_population = tx.get(city_ref).data[:population] + 1
   puts "New population is #{new_population}."
   tx.update city_ref, { population: new_population }
-end</pre> </div> </section> </div> <h3 id="passing_information_out_of_transactions">Passing information out of transactions</h3> <p>Do not modify application state inside of your transaction functions. Doing so will introduce concurrency issues, because transaction functions can run multiple times and are not guaranteed to run on the UI thread. Instead, pass information you need out of your transaction functions. The following example builds on the previous example to show how to pass information out of a transaction:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+end</pre> </div> </section> </div> <h3 id="passing_information_out_of_transactions">Passing information out of transactions</h3> <p>Do not modify application state inside of your transaction functions. Doing so will introduce concurrency issues, because transaction functions can run multiple times and are not guaranteed to run on the UI thread. Instead, pass information you need out of your transaction functions. The following example builds on the previous example to show how to pass information out of a transaction:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { doc, runTransaction } from "firebase/firestore";
 
 // Create a reference to the SF doc.
@@ -335,7 +335,7 @@ try {
 } catch (e) {
   // This will be a "population is too big" error.
   console.error(e);
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
 <pre data-language="javascript">// Create a reference to the SF doc.
 var sfDocRef = db.collection("cities").doc("SF");
 
@@ -358,7 +358,7 @@ db.runTransaction((transaction) =&gt; {
 }).catch((err) =&gt; {
     // This will be an "population is too big" error.
     console.error(err);
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">let sfReference = db.collection("cities").document("SF")
 
 do {
@@ -402,7 +402,7 @@ do {
   print("Population increased to \(object!)")
 } catch {
   print("Error updating population: \(error)")
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">FIRDocumentReference *sfReference =
 [[self.db collectionWithPath:@"cities"] documentWithPath:@"SF"];
 [self.db runTransactionWithBlock:^id (FIRTransaction *transaction, NSError **errorPointer) {
@@ -434,7 +434,7 @@ do {
   } else {
     NSLog(@"Population increased to %@", result);
   }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val sfDocRef = db.collection("cities").document("SF")
 
 db.runTransaction { transaction -&gt;
@@ -453,7 +453,7 @@ db.runTransaction { transaction -&gt;
     Log.d(TAG, "Transaction success: $result")
 }.addOnFailureListener { e -&gt;
     Log.w(TAG, "Transaction failure.", e)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">final DocumentReference sfDocRef = db.collection("cities").document("SF");
 
 db.runTransaction(new Transaction.Function&lt;Double&gt;() {
@@ -480,7 +480,7 @@ db.runTransaction(new Transaction.Function&lt;Double&gt;() {
     public void onFailure(@NonNull Exception e) {
         Log.w(TAG, "Transaction failure.", e);
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">final sfDocRef = db.collection("cities").doc("SF");
 db.runTransaction((transaction) {
   return transaction.get(sfDocRef).then((sfDoc) {
@@ -491,7 +491,7 @@ db.runTransaction((transaction) {
 }).then(
   (newPopulation) =&gt; print("Population increased to $newPopulation"),
   onError: (e) =&gt; print("Error updating document $e"),
-);</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> <div class="github-docwidget-gitinclude-code"> 
+);</pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="java">final DocumentReference docRef = db.collection("cities").document("SF");
 ApiFuture&lt;String&gt; futureTransaction =
     db.runTransaction(
@@ -507,7 +507,7 @@ ApiFuture&lt;String&gt; futureTransaction =
           }
         });
 // Print information retrieved from transaction
-System.out.println(futureTransaction.get());</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
+System.out.println(futureTransaction.get());</pre> </div> </section> <section> <p class="_code-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="python">transaction = db.transaction()
 city_ref = db.collection("cities").document("SF")
 
@@ -526,7 +526,7 @@ result = update_in_transaction(transaction, city_ref)
 if result:
     print("Population updated")
 else:
-    print("Sorry! Population is too big.")</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Python ((Async))</strong></p> <div class="github-docwidget-gitinclude-code"> 
+    print("Sorry! Population is too big.")</pre> </div> </section> <section> <p class="_code-tab"><strong>Python ((Async))</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="python">transaction = db.transaction()
 city_ref = db.collection("cities").document("SF")
 
@@ -545,8 +545,8 @@ result = await update_in_transaction(transaction, city_ref)
 if result:
     print("Population updated")
 else:
-    print("Sorry! Population is too big.")</pre> </div> </section> <section> <p class="_firebase-tab"><strong>C++</strong></p> 
-<pre data-language="cpp">// This is not yet supported.</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> <div class="github-docwidget-gitinclude-code"> 
+    print("Sorry! Population is too big.")</pre> </div> </section> <section> <p class="_code-tab"><strong>C++</strong></p> 
+<pre data-language="cpp">// This is not yet supported.</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="javascript">const cityRef = db.collection('cities').doc('SF');
 try {
   const res = await db.runTransaction(async t =&gt; {
@@ -562,7 +562,7 @@ try {
   console.log('Transaction success', res);
 } catch (e) {
   console.log('Transaction failure:', e);
-}</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
+}</pre> </div> </section> <section> <p class="_code-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="go">
 import (
 	"context"
@@ -602,7 +602,7 @@ func infoTransaction(ctx context.Context, client *firestore.Client) (int64, erro
 	}
 	return updatedPop, err
 }
-</pre> </div> </section> <section> <p class="_firebase-tab"><strong>PHP</strong></p> <div class="github-docwidget-gitinclude-code"> 
+</pre> </div> </section> <section> <p class="_code-tab"><strong>PHP</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="php">$cityRef = $db-&gt;collection('samples/php/cities')-&gt;document('SF');
 $transactionResult = $db-&gt;runTransaction(function (Transaction $transaction) use ($cityRef) {
     $snapshot = $transaction-&gt;snapshot($cityRef);
@@ -621,7 +621,7 @@ if ($transactionResult) {
     printf('Population updated successfully.' . PHP_EOL);
 } else {
     printf('Sorry! Population is too big.' . PHP_EOL);
-}</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Unity</strong></p> 
+}</pre> </div> </section> <section> <p class="_code-tab"><strong>Unity</strong></p> 
 <pre data-language="csharp">DocumentReference cityRef = db.Collection("cities").Document("SF");
 db.RunTransactionAsync(transaction =&gt;
 {
@@ -652,7 +652,7 @@ db.RunTransactionAsync(transaction =&gt;
     {
         Console.WriteLine("Sorry! Population is too big.");
     } 
-});</pre> </section> <section> <p class="_firebase-tab"><strong>C#</strong></p> <div class="github-docwidget-gitinclude-code"> 
+});</pre> </section> <section> <p class="_code-tab"><strong>C#</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="csharp">DocumentReference cityRef = db.Collection("cities").Document("SF");
 bool transactionResult = await db.RunTransactionAsync(async transaction =&gt;
 {
@@ -680,7 +680,7 @@ if (transactionResult)
 else
 {
     Console.WriteLine("Sorry! Population is too big.");
-}</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Ruby</strong></p> <div class="github-docwidget-gitinclude-code"> 
+}</pre> </div> </section> <section> <p class="_code-tab"><strong>Ruby</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="ruby">city_ref = firestore.doc "#{collection_path}/SF"
 
 updated = firestore.transaction do |tx|
@@ -697,7 +697,7 @@ else
   puts "Sorry! Population is too big."
 end</pre> </div> </section> </div> <h3 id="transaction_failure">Transaction failure</h3> <p>A transaction can fail for the following reasons:</p> <ul> <li>The transaction contains read operations after write operations. Read operations must always be executed before any write operations.</li> <li>The transaction read a document that was modified outside of the transaction. In this case, the transaction automatically runs again. The transaction is retried a finite number of times.</li> <li>
 <p>The transaction exceeded the maximum request size of 10 MiB.</p> <p>Transaction size depends on the sizes of documents and index entries modified by the transaction. For a delete operation, this includes the size of the target document and the sizes of the index entries deleted in response to the operation.</p>
-</li> <li><p>The transaction exceeded the lock deadline (20 seconds). Cloud Firestore automatically releases locks if a transaction cannot complete in time.</p></li> <li><p>The transaction exceeds the 270-second time <a href="../quotas#writes_and_transactions">limit</a> or the 60-second idle expiration time. If no activity (reads or writes) occurs within the transaction, it will time out and fail.</p></li> </ul> <p>A failed transaction returns an error and does not write anything to the database. You do not need to roll back the transaction; Cloud Firestore does this automatically.</p> <h2 id="batched-writes">Batched writes</h2> <p>If you do not need to read any documents in your operation set, you can execute multiple write operations as a single batch that contains any combination of <code translate="no" dir="ltr">set()</code>, <code translate="no" dir="ltr">update()</code>, or <code translate="no" dir="ltr">delete()</code> operations. Each operation in the batch counts separately towards your Cloud Firestore usage. A batch of writes completes atomically and can write to multiple documents. The following example shows how to build and commit a write batch:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+</li> <li><p>The transaction exceeded the lock deadline (20 seconds). Cloud Firestore automatically releases locks if a transaction cannot complete in time.</p></li> <li><p>The transaction exceeds the 270-second time <a href="../quotas#writes_and_transactions">limit</a> or the 60-second idle expiration time. If no activity (reads or writes) occurs within the transaction, it will time out and fail.</p></li> </ul> <p>A failed transaction returns an error and does not write anything to the database. You do not need to roll back the transaction; Cloud Firestore does this automatically.</p> <h2 id="batched-writes">Batched writes</h2> <p>If you do not need to read any documents in your operation set, you can execute multiple write operations as a single batch that contains any combination of <code translate="no" dir="ltr">set()</code>, <code translate="no" dir="ltr">update()</code>, or <code translate="no" dir="ltr">delete()</code> operations. Each operation in the batch counts separately towards your Cloud Firestore usage. A batch of writes completes atomically and can write to multiple documents. The following example shows how to build and commit a write batch:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { writeBatch, doc } from "firebase/firestore"; 
 
 // Get a new write batch
@@ -716,7 +716,7 @@ const laRef = doc(db, "cities", "LA");
 batch.delete(laRef);
 
 // Commit the batch
-await batch.commit();</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
+await batch.commit();</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
 <pre data-language="javascript">// Get a new write batch
 var batch = db.batch();
 
@@ -735,7 +735,7 @@ batch.delete(laRef);
 // Commit the batch
 batch.commit().then(() =&gt; {
     // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">// Get new write batch
 let batch = db.batch()
 
@@ -757,7 +757,7 @@ do {
   print("Batch write succeeded.")
 } catch {
   print("Error writing batch: \(error)")
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">// Get new write batch
 FIRWriteBatch *batch = [self.db batch];
 
@@ -783,7 +783,7 @@ FIRDocumentReference *laRef =
   } else {
     NSLog(@"Batch write succeeded.");
   }
-}];</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}];</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">val nycRef = db.collection("cities").document("NYC")
 val sfRef = db.collection("cities").document("SF")
 val laRef = db.collection("cities").document("LA")
@@ -800,7 +800,7 @@ db.runBatch { batch -&gt;
     batch.delete(laRef)
 }.addOnCompleteListener {
     // ...
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// Get a new write batch
 WriteBatch batch = db.batch();
 
@@ -822,7 +822,7 @@ batch.commit().addOnCompleteListener(new OnCompleteListener&lt;Void&gt;() {
     public void onComplete(@NonNull Task&lt;Void&gt; task) {
         // ...
     }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">// Get a new write batch
 final batch = db.batch();
 
@@ -841,7 +841,7 @@ batch.delete(laRef);
 // Commit the batch
 batch.commit().then((_) {
   // ...
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> <div class="github-docwidget-gitinclude-code"> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="java">// Get a new write batch
 WriteBatch batch = db.batch();
 
@@ -863,7 +863,7 @@ ApiFuture&lt;List&lt;WriteResult&gt;&gt; future = batch.commit();
 // future.get() blocks on batch commit operation
 for (WriteResult result : future.get()) {
   System.out.println("Update time : " + result.getUpdateTime());
-}</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
+}</pre> </div> </section> <section> <p class="_code-tab"><strong>Python</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="python">batch = db.batch()
 
 # Set the data for NYC
@@ -879,7 +879,7 @@ den_ref = db.collection("cities").document("DEN")
 batch.delete(den_ref)
 
 # Commit the batch
-batch.commit()</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Python ((Async))</strong></p> <div class="github-docwidget-gitinclude-code"> 
+batch.commit()</pre> </div> </section> <section> <p class="_code-tab"><strong>Python ((Async))</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="python">batch = db.batch()
 
 # Set the data for NYC
@@ -895,7 +895,7 @@ den_ref = db.collection("cities").document("DEN")
 batch.delete(den_ref)
 
 # Commit the batch
-await batch.commit()</pre> </div> </section> <section> <p class="_firebase-tab"><strong>C++</strong></p> 
+await batch.commit()</pre> </div> </section> <section> <p class="_code-tab"><strong>C++</strong></p> 
 <pre data-language="cpp">// Get a new write batch
 WriteBatch batch = db-&gt;batch();
 
@@ -918,7 +918,7 @@ batch.Commit().OnCompletion([](const Future&lt;void&gt;&amp; future) {
   } else {
     std::cout &lt;&lt; "Write batch failure: " &lt;&lt; future.error_message() &lt;&lt; std::endl;
   }
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> <div class="github-docwidget-gitinclude-code"> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Node.js</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="javascript">// Get a new write batch
 const batch = db.batch();
 
@@ -935,7 +935,7 @@ const laRef = db.collection('cities').doc('LA');
 batch.delete(laRef);
 
 // Commit the batch
-await batch.commit();</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
+await batch.commit();</pre> </div> </section> <section> <p class="_code-tab"><strong>Go</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="go">
 import (
 	"context"
@@ -973,7 +973,7 @@ func batchWrite(ctx context.Context, client *firestore.Client) error {
 
 	return err
 }
-</pre> </div> </section> <section> <p class="_firebase-tab"><strong>PHP</strong></p> <div class="github-docwidget-gitinclude-code"> 
+</pre> </div> </section> <section> <p class="_code-tab"><strong>PHP</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="php">$batch = $db-&gt;bulkWriter();
 
 # Set the data for NYC
@@ -993,7 +993,7 @@ $laRef = $db-&gt;collection('samples/php/cities')-&gt;document('LA');
 $batch-&gt;delete($laRef);
 
 # Commit the batch
-$batch-&gt;commit();</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Unity</strong></p> 
+$batch-&gt;commit();</pre> </div> </section> <section> <p class="_code-tab"><strong>Unity</strong></p> 
 <pre data-language="csharp">WriteBatch batch = db.StartBatch();
 
 // Set the data for NYC
@@ -1017,7 +1017,7 @@ DocumentReference laRef = db.Collection("cities").Document("LA");
 batch.Delete(laRef);
 
 // Commit the batch
-batch.CommitAsync();</pre> </section> <section> <p class="_firebase-tab"><strong>C#</strong></p> <div class="github-docwidget-gitinclude-code"> 
+batch.CommitAsync();</pre> </section> <section> <p class="_code-tab"><strong>C#</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="csharp">WriteBatch batch = db.StartBatch();
 
 // Set the data for NYC
@@ -1041,7 +1041,7 @@ DocumentReference laRef = db.Collection("cities").Document("LA");
 batch.Delete(laRef);
 
 // Commit the batch
-await batch.CommitAsync();</pre> </div> </section> <section> <p class="_firebase-tab"><strong>Ruby</strong></p> <div class="github-docwidget-gitinclude-code"> 
+await batch.CommitAsync();</pre> </div> </section> <section> <p class="_code-tab"><strong>Ruby</strong></p> <div class="github-docwidget-gitinclude-code"> 
 <pre data-language="ruby">firestore.batch do |b|
   # Set the data for NYC
   b.set "#{collection_path}/NYC", { name: "New York City" }

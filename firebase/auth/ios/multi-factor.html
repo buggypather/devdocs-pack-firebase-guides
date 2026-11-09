@@ -7,12 +7,12 @@
 </li> </ol> <p>If you already have an APNs certificate, you can upload the certificate instead.</p> <h3 id="using_recaptcha_verification">Using reCAPTCHA verification</h3> <p>To enable the client SDK to use reCAPTCHA:</p> <ol> <li><p>Open your project configuration in Xcode.</p></li> <li><p>Double-click the project name in the left tree view.</p></li> <li><p>Select your app from the <strong>Targets</strong> section.</p></li> <li><p>Select the <strong>Info</strong> tab.</p></li> <li><p>Expand the <strong>URL Types</strong> section.</p></li> <li><p>Click the <strong>+</strong> button.</p></li> <li><p>Enter your reversed client ID in the <strong>URL Schemes</strong> field. You can find this value listed in the <code translate="no" dir="ltr">GoogleService-Info.plist</code> configuration file as <code translate="no" dir="ltr">REVERSED_CLIENT_ID</code>.</p></li> </ol> <p>When complete, your configuration should look similar to the following:</p> <p><img src="https://firebase.google.com/static/docs/auth/images/xcode_infotab_url_type_values.png" alt="Custom schemes"></p> <p>Optionally, you can customize the way your app presents the <code translate="no" dir="ltr">SFSafariViewController</code> or <code translate="no" dir="ltr">UIWebView</code> when displaying the reCAPTCHA. To do this, create a custom class that conforms to the <code translate="no" dir="ltr">FIRAuthUIDelegate</code> protocol, and pass it to <code translate="no" dir="ltr">verifyPhoneNumber:UIDelegate:completion:</code>.</p> <h2 id="choosing_an_enrollment_pattern">Choosing an enrollment pattern</h2> <p>You can choose whether your app requires multi-factor authentication, and how and when to enroll your users. Some common patterns include:</p> <ul> <li><p>Enroll the user's second factor as part of registration. Use this method if your app requires multi-factor authentication for all users. Note that an account must have a verified email address to enroll a second factor, so your registration flow will have to accommodate this.</p></li> <li><p>Offer a skippable option to enroll a second factor during registration. Apps that want to encourage, but not require, multi-factor authentication may prefer this approach.</p></li> <li><p>Provide the ability to add a second factor from the user's account or profile management page, instead of the sign up screen. This minimizes friction during the registration process, while still making multi-factor authentication available for security-sensitive users.</p></li> <li><p>Require adding a second factor incrementally when the user wants to access features with increased security requirements.</p></li> </ul> <h2 id="enrolling_a_second_factor">Enrolling a second factor</h2> <p>To enroll a new secondary factor for a user:</p> <ol> <li><p>Re-authenticate the user.</p></li> <li>
 <p>Ask the user enter their phone number.</p> <aside class="note"><strong>Note:</strong><span> Google stores and uses phone numbers to improve spam and abuse prevention across all Google services. Ensure you obtain appropriate consent from your users before sending their phone numbers to Authentication.</span></aside>
 </li> <li>
-<p>Get a multi-factor session for the user:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Get a multi-factor session for the user:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">authResult.user.multiFactor.getSessionWithCompletion() { (session, error) in
   // ...
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">[authResult.user.multiFactor
   getSessionWithCompletion:^(FIRMultiFactorSession * _Nullable session,
@@ -21,7 +21,7 @@
 }];
 </pre></section> </div>
 </li> <li>
-<p>Send a verification message to the user's phone. Ensure the phone number is formatted with a leading <code translate="no" dir="ltr">+</code> and no other punctuation or whitespace (for example: <code translate="no" dir="ltr">+15105551234</code>)</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Send a verification message to the user's phone. Ensure the phone number is formatted with a leading <code translate="no" dir="ltr">+</code> and no other punctuation or whitespace (for example: <code translate="no" dir="ltr">+15105551234</code>)</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Send SMS verification code.
 PhoneAuthProvider.provider().verifyPhoneNumber(
@@ -30,7 +30,7 @@ PhoneAuthProvider.provider().verifyPhoneNumber(
   multiFactorSession: session) { (verificationId, error) in
     // verificationId will be needed for enrollment completion.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">// Send SMS verification code.
 [FIRPhoneAuthProvider.provider verifyPhoneNumber:phoneNumber
@@ -42,13 +42,13 @@ PhoneAuthProvider.provider().verifyPhoneNumber(
 }];
 </pre></section> </div> <p>While not required, it's a best practice to inform users beforehand that they will receive an SMS message, and that standard rates apply.</p> <p>The <code translate="no" dir="ltr">verifyPhoneNumber()</code> method starts app verification process in the background using silent push notification. If silent push notification is not available,a reCAPTCHA challenge is issued instead.</p>
 </li> <li>
-<p>Once the SMS code is sent, ask the user to verify the code. Then, use their response to build a <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Once the SMS code is sent, ask the user to verify the code. Then, use their response to build a <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Ask user for the verification code. Then:
 let credential = PhoneAuthProvider.provider().credential(
   withVerificationID: verificationId,
   verificationCode: verificationCode)
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">// Ask user for the SMS verification code. Then:
 FIRPhoneAuthCredential *credential = [FIRPhoneAuthProvider.provider
@@ -56,22 +56,22 @@ FIRPhoneAuthCredential *credential = [FIRPhoneAuthProvider.provider
                                        verificationCode:kPhoneSecondFactorVerificationCode];
 </pre></section> </div>
 </li> <li>
-<p>Initialize an assertion object:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Initialize an assertion object:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">let assertion = PhoneMultiFactorGenerator.assertion(with: credential)
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">FIRMultiFactorAssertion *assertion = [FIRPhoneMultiFactorGenerator assertionWithCredential:credential];
 </pre></section> </div>
 </li> <li>
-<p>Complete the enrollment. Optionally, you can specify a display name for the second factor. This is useful for users with multiple second factors, since the phone number is masked during the authentication flow (for example, +1******1234).</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Complete the enrollment. Optionally, you can specify a display name for the second factor. This is useful for users with multiple second factors, since the phone number is masked during the authentication flow (for example, +1******1234).</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Complete enrollment. This will update the underlying tokens
 // and trigger ID token change listener.
 user.multiFactor.enroll(with: assertion, displayName: displayName) { (error) in
   // ...
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">// Complete enrollment. This will update the underlying tokens
 // and trigger ID token change listener.
@@ -81,7 +81,7 @@ user.multiFactor.enroll(with: assertion, displayName: displayName) { (error) in
     // ...
 }];
 </pre></section> </div>
-</li> </ol> <p>The code below shows a complete example of enrolling a second factor:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</li> </ol> <p>The code below shows a complete example of enrolling a second factor:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">let user = Auth.auth().currentUser
 user?.multiFactor.getSessionWithCompletion({ (session, error) in
@@ -104,7 +104,7 @@ user?.multiFactor.getSessionWithCompletion({ (session, error) in
     }
   }
 })
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">FIRUser *user = FIRAuth.auth.currentUser;
 [user.multiFactor getSessionWithCompletion:^(FIRMultiFactorSession * _Nullable session,
@@ -137,7 +137,7 @@ user?.multiFactor.getSessionWithCompletion({ (session, error) in
     }];
 }];
 </pre></section> </div> <p>Congratulations! You successfully registered a second authentication factor for a user.</p> <aside class="special"><strong>Important:</strong><span> You should strongly encourage your users to register more than one second factor for account recovery purposes. If a user only registers a single second factor and later loses access to it, they will be locked out of their account.</span></aside> <h2 id="signing_users_in_with_a_second_factor">Signing users in with a second factor</h2> <p>To sign in a user with two-factor SMS verification:</p> <ol> <li>
-<p>Sign the user in with their first factor, then catch an error indicating multi-factor authentication is required. This error contains a resolver, hints on the enrolled second factors, and an underlying session proving the user successfully authenticated with the first factor.</p> <p>For example, if the user's first factor was an email and password:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Sign the user in with their first factor, then catch an error indicating multi-factor authentication is required. This error contains a resolver, hints on the enrolled second factors, and an underlying session proving the user successfully authenticated with the first factor.</p> <p>For example, if the user's first factor was an email and password:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">Auth.auth().signIn(
   withEmail: email,
@@ -153,7 +153,7 @@ user?.multiFactor.getSessionWithCompletion({ (session, error) in
     // Handle other errors such as wrong password.
   }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">[FIRAuth.auth signInWithEmail:email
                      password:password
@@ -168,7 +168,7 @@ user?.multiFactor.getSessionWithCompletion({ (session, error) in
 }];
 </pre></section> </div> <p>If the user's first factor is a federated provider, such as OAuth, catch the error after calling <code translate="no" dir="ltr">getCredentialWith()</code>.</p>
 </li> <li>
-<p>If the user has multiple secondary factors enrolled, ask them which one to use. You can get the masked phone number with <code translate="no" dir="ltr">resolver.hints[selectedIndex].phoneNumber</code> and the display name with <code translate="no" dir="ltr">resolver.hints[selectedIndex].displayName</code>.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>If the user has multiple secondary factors enrolled, ask them which one to use. You can get the masked phone number with <code translate="no" dir="ltr">resolver.hints[selectedIndex].phoneNumber</code> and the display name with <code translate="no" dir="ltr">resolver.hints[selectedIndex].displayName</code>.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Ask user which second factor to use. Then:
 if resolver.hints[selectedIndex].factorID == PhoneMultiFactorID {
@@ -180,7 +180,7 @@ if resolver.hints[selectedIndex].factorID == PhoneMultiFactorID {
 } else {
   // Unsupported second factor.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">FIRMultiFactorResolver *resolver =
     (FIRMultiFactorResolver *) error.userInfo[FIRAuthErrorUserInfoMultiFactorResolverKey];
@@ -198,7 +198,7 @@ if (hint.factorID == FIRPhoneMultiFactorID) {
 }
 </pre></section> </div>
 </li> <li>
-<p>Send a verification message to the user's phone:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Send a verification message to the user's phone:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Send SMS verification code.
 let hint = resolver.hints[selectedIndex] as! PhoneMultiFactorInfo
@@ -209,7 +209,7 @@ PhoneAuthProvider.provider().verifyPhoneNumber(
 ) { (verificationId, error) in
   // verificationId will be needed for sign-in completion.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">// Send SMS verification code
 [FIRPhoneAuthProvider.provider
@@ -223,13 +223,13 @@ PhoneAuthProvider.provider().verifyPhoneNumber(
 }];
 </pre></section> </div>
 </li> <li>
-<p>Once the SMS code is sent, ask the user to verify the code and use it to build a <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Once the SMS code is sent, ask the user to verify the code and use it to build a <code translate="no" dir="ltr">PhoneAuthCredential</code>:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Ask user for the verification code. Then:
 let credential = PhoneAuthProvider.provider().credential(
   withVerificationID: verificationId!,
   verificationCode: verificationCodeFromUser)
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">// Ask user for the SMS verification code. Then:
 FIRPhoneAuthCredential *credential =
@@ -238,16 +238,16 @@ FIRPhoneAuthCredential *credential =
                   verificationCode:verificationCodeFromUser];
 </pre></section> </div>
 </li> <li>
-<p>Initialize an assertion object with the credential:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Initialize an assertion object with the credential:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">let assertion = PhoneMultiFactorGenerator.assertion(with: credential)
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">FIRMultiFactorAssertion *assertion =
     [FIRPhoneMultiFactorGenerator assertionWithCredential:credential];
 </pre></section> </div>
 </li> <li>
-<p>Resolve the sign-in. You can then access the original sign-in result, which includes the standard provider-specific data and authentication credentials:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Resolve the sign-in. You can then access the original sign-in result, which includes the standard provider-specific data and authentication credentials:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">// Complete sign-in. This will also trigger the Auth state listeners.
 resolver.resolveSignIn(with: assertion) { (authResult, error) in
@@ -262,7 +262,7 @@ resolver.resolveSignIn(with: assertion) { (authResult, error) in
   // user.credential.accessToken contains the Google OAuth access token.
   // user.credential.idToken contains the Google OAuth ID token.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">// Complete sign-in.
 [resolver resolveSignInWithAssertion:assertion
@@ -273,7 +273,7 @@ resolver.resolveSignIn(with: assertion) { (authResult, error) in
     }
 }];
 </pre></section> </div>
-</li> </ol> <p>The code below shows a complete example of signing in a multi-factor user:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</li> </ol> <p>The code below shows a complete example of signing in a multi-factor user:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">Auth.auth().signIn(
   withEmail: email,
@@ -317,7 +317,7 @@ resolver.resolveSignIn(with: assertion) { (authResult, error) in
     }
   }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">[FIRAuth.auth signInWithEmail:email
                      password:password

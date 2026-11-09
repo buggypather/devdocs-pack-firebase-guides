@@ -1,0 +1,49 @@
+<h1>Optimize image loading on Next.js</h1> <p>By default, built-in <a href="https://nextjs.org/docs/app/building-your-application/optimizing/images">Next.js image optimization</a> is disabled on App Hosting unless you explicitly set <a href="https://nextjs.org/docs/pages/api-reference/components/image#unoptimized"><code translate="no" dir="ltr">images.unoptimized</code></a> to false or use a custom <a href="https://nextjs.org/docs/app/api-reference/config/next-config-js/images#example-loader-configuration">Image Loader.</a></p> <p>You can configure a Next.js global image loader with the Image Processing Firebase Extension to enable on-demand optimization and delivery of images in your Next.js app on App Hosting.</p> <h2 id="prerequisites">Prerequisites</h2> <ul> <li>You have a Firebase project and an App Hosting backend.</li> <li>Cloud Storage is enabled in your project.</li> <li>Cloud Functions for Firebase is enabled in your project.</li> </ul> <h2 id="install-extension">Install the extension</h2> <p>Navigate to the <a href="https://extensions.dev/extensions/invertase/image-processing-api">Image Processing Extension</a> in the Firebase Extensions Hub and select <strong>Install in Firebase Console</strong>. Follow the on-screen instructions.</p> <h3 id="configure-local-images">Configure <a href="https://nextjs.org/docs/pages/building-your-application/optimizing/images#local-images">local image</a> optimization (optional)</h3> <p>If your application uses local images that you want to optimize using this extension, you need to configure the "Hostname" parameter during the extension installation process.</p> <ol> <li><p><strong>During Extension Configuration:</strong> When you reach the "Configure extension" step, locate the "Hostname" parameter.</p></li> <li><p><strong>Set the Hostname:</strong> Enter the default domain for your Firebase App Hosting backend. This domain typically ends with <code translate="no" dir="ltr">.hosted.app</code>.</p></li> </ol> <p>Once installation is complete, the Image Processing API should be deployed as a function in Cloud Functions. Navigate to the <a href="https://console.firebase.google.com/project/_/functions">Functions dashboard</a> in the Firebase console and copy the Image Processing API trigger URL.</p> <h2 id="set-custom-loader">Set up a custom image loader</h2> <p>Create an <a href="https://nextjs.org/docs/app/api-reference/components/image#loaderfile">image loader</a> that uses the deployed Image Processing API for every optimized <a href="https://nextjs.org/docs/pages/api-reference/components/image">image component</a>. As an optimization, <a href="https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites">rewrite</a> to it so that it's served under the same Firebase App Hosting domain and cached behind the same global CDN as your Next.js application.</p> <p>First, add the following fields to your <a href="https://nextjs.org/docs/app/api-reference/config/next-config-js"><code translate="no" dir="ltr">next.config.js</code></a> file:</p> 
+<pre>// @ts-check
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  images: {
+    loader: "custom",
+    loaderFile: "./loader.js",
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/_fah/image/:path*",
+        destination:
+          "&lt;CLOUD_FUNCTIONS_URL&gt;/:path*",
+      },
+    ];
+  },
+}
+
+module.exports = nextConfig;
+</pre>  <p>Then create a <code translate="no" dir="ltr">loader.js</code> file in your root directory with the following contents:</p> 
+<pre>"use client"
+
+export default function myImageLoader({ src, width, quality }) {
+  if (process.env.NODE_ENV === "development") {
+    return src;
+  }
+
+  const operations = [
+    {
+      operation: "input",
+      type: "url",
+      url: src,
+    },
+    { operation: "resize", width: width },
+    { operation: "output", format: "webp", quality: quality || 75 },
+  ];
+
+  const encodedOperations = encodeURIComponent(JSON.stringify(operations));
+
+  return `/_fah/image/process?operations=${encodedOperations}`;
+}
+</pre> <p>Create a commit that includes these changes and push it to your live branch. Then, wait for the App Hosting rollout to complete.</p><div class="_attribution">
+  <p class="_attribution-p">
+    &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>
+    <a href="https://firebase.google.com/docs/app-hosting/optimize-image-loading" class="_attribution-link">https://firebase.google.com/docs/app-hosting/optimize-image-loading</a>
+  </p>
+</div>

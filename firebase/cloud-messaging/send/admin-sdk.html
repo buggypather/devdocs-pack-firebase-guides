@@ -1,5 +1,5 @@
 <h1>Send a message using Firebase Admin SDK</h1>     <p>If you haven't set up Firebase Admin SDK already, follow the <a href="../../admin/setup">guide</a> to set up Firebase Admin SDK on your server.</p> <h2 id="enable-fcm-v1">Enable the FCM HTTP v1 API</h2> <ol> <li><p>In the Firebase console, go to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <strong>General</strong>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><strong>Cloud Messaging</strong> tab</a>.</p></li> <li><p>Enable the Cloud Messaging API.</p></li> </ol> <h2 id="authorize-cross-project">Authorize a service account from a different project</h2> <p>You can send messages for one project, the "target project", while using a service account in a different project, the "sender project". This lets you centralize service account management in one project while sending messages on behalf of others. To learn how to do this, use the following steps:</p> <ol> <li><p>In the sender project, make sure the Firebase Cloud Messaging API is enabled. Check for its enablement in the Firebase console by going to <nobr><span class="material-icons" aria-hidden="true" translate="no">settings</span> <strong>Settings</strong></nobr> &gt; <strong>General</strong>. Then, click the <a href="https://console.firebase.google.com/project/_/settings/cloudmessaging" class="external"><strong>Cloud Messaging</strong> tab</a>.</p></li> <li><p>In the sender project, create a <a href="https://cloud.google.com/iam/docs/service-accounts-create" class="external">service account</a>.</p></li> <li><p>In the target project, assign the <a href="https://cloud.google.com/iam/docs/roles-permissions/firebasecloudmessaging#firebasecloudmessaging.admin" class="external"><em>Firebase Cloud Messaging API Admin</em> role</a> to the email address for the service account. You do this in the <strong>IAM &amp; Admin</strong> &gt; <a href="https://console.cloud.google.com/iam-admin/iam" class="external"><strong>IAM</strong> page</a> of the Google Cloud console. This role allows the service account from the sender project to send messages to the target project.</p></li> <li>
-<p>Initialize your SDK with the sender project's <a href="v1-api#provide-credentials-manually">service account key file</a> and the target project's project ID.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<p>Initialize your SDK with the sender project's <a href="v1-api#provide-credentials-manually">service account key file</a> and the target project's project ID.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">import { initializeApp, applicationDefault } from 'firebase-admin/app';
 
@@ -9,7 +9,7 @@ initializeApp({
   credential: applicationDefault(),
   projectId: '&lt;TARGET_PROJECT_ID&gt;',
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">FirebaseOptions options = FirebaseOptions.builder()
     // The credential is configured to be the sender project's service
@@ -19,7 +19,7 @@ initializeApp({
     .build();
 
 FirebaseApp.initializeApp(options);
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">import firebase_admin
 
@@ -27,7 +27,7 @@ app_options = {'projectId': '&lt;TARGET_PROJECT_ID&gt;'}
 # Initialize with the default credential, i.e. the sender project's service
 # account key, stored in GOOGLE_APPLICATION_CREDENTIALS
 default_app = firebase_admin.initialize_app(options=app_options)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 
 <pre data-language="go">config := &amp;firebase.Config{ProjectID: "&lt;TARGET_PROJECT_ID&gt;"}
 // Initialize with the default credential, i.e. the sender project's service
@@ -36,7 +36,7 @@ app, err := firebase.NewApp(context.Background(), config)
 if err != nil {
         log.Fatalf("error initializing app: %v\n", err)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 
 <pre data-language="csharp">FirebaseApp.Create(new AppOptions()
 {
@@ -46,7 +46,7 @@ if err != nil {
     ProjectId = "&lt;TARGET_PROJECT_ID&gt;",
 });
 </pre></section> </div>
-</li> </ol> <h2 id="send-messages-to-specific-devices">Send messages to specific devices</h2> <p>To send to a single, specific device, you can target either its <a href="../android/get-started#access-firebase-installation-id">Firebase Installation ID (FID)</a> or its registration token.</p> <aside class="note"><strong>Note:</strong><span> During the migration period, the <code translate="no" dir="ltr">token</code> field also accepts FIDs. However, since the <code translate="no" dir="ltr">token</code> field is deprecated and will be removed, we recommend using the <code translate="no" dir="ltr">fid</code> field once your clients are registered using Firebase Installation IDs.</span></aside><div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</li> </ol> <h2 id="send-messages-to-specific-devices">Send messages to specific devices</h2> <p>To send to a single, specific device, you can target either its <a href="../android/get-started#access-firebase-installation-id">Firebase Installation ID (FID)</a> or its registration token.</p> <aside class="note"><strong>Note:</strong><span> During the migration period, the <code translate="no" dir="ltr">token</code> field also accepts FIDs. However, since the <code translate="no" dir="ltr">token</code> field is deprecated and will be removed, we recommend using the <code translate="no" dir="ltr">fid</code> field once your clients are registered using Firebase Installation IDs.</span></aside><div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 <p><strong>Using FID (Recommended)</strong>:</p> 
 <pre data-language="javascript">// This installation ID comes from the client FCM SDKs.
 const fid = 'YOUR_REGISTERED_FID';
@@ -90,7 +90,7 @@ getMessaging().send(message)
   .catch((error) =&gt; {
     console.log('Error sending message:', error);
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 <p><strong>Using FID (Recommended)</strong>:</p> 
 <pre data-language="java">// This installation ID comes from the client FCM SDKs.
 String fid = "YOUR_REGISTERED_FID";
@@ -122,7 +122,7 @@ Message message = Message.builder()
 String response = FirebaseMessaging.getInstance().sendAsync(message).get();
 // Response is a message ID string.
 System.out.println("Successfully sent message: " + response);
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 <p><strong>Using FID (Recommended)</strong>:</p> 
 <pre data-language="python"># This installation ID comes from the client FCM SDKs.
 fid = 'YOUR_REGISTERED_FID'
@@ -158,7 +158,7 @@ message = messaging.Message(
 response = messaging.send(message)
 # Response is a message ID string.
 print('Successfully sent message:', response)
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 <p><strong>Using FID (Recommended)</strong>:</p> 
 <pre data-language="go">// Obtain a messaging.Client from the App.
 ctx := context.Background()
@@ -214,7 +214,7 @@ if err != nil {
 }
 // Response is a message ID string.
 fmt.Println("Successfully sent message:", response)
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 <p><strong>Using FID (Recommended)</strong>:</p> 
 <pre data-language="csharp">// This installation ID comes from the client FCM SDKs.
 var fid = "YOUR_REGISTERED_FID";
@@ -255,7 +255,7 @@ Console.WriteLine("Successfully sent message: " + response);
             string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
             // Response is a message ID string.
             Console.WriteLine("Successfully sent message: " + response);
-</pre></section> </div> <p>On success, each send method returns a message ID. The Firebase Admin SDK returns the ID string in the format <code translate="no" dir="ltr">projects/{project_id}/messages/{message_id}</code>.</p> <h2 id="send-messages-to-multiple-devices">Send one message to multiple devices</h2> <p>The Admin FCM SDKs allow you to multicast a message to a list of <a href="../android/get-started#access-firebase-installation-id">Firebase Installation IDs (FIDs)</a> or device registration tokens. You can use this feature when you need to send the same message to a large number of devices. You can specify up to 500 FIDs and/or tokens per invocation.</p> <aside class="note"><strong>Note:</strong><span> During the migration period, the <code translate="no" dir="ltr">tokens</code> field also accepts FIDs. However, since the <code translate="no" dir="ltr">token</code> field is deprecated and will be removed, we recommend using the <code translate="no" dir="ltr">fid</code> field once your clients are registered using Firebase Installation IDs.</span></aside> <p>The return value includes a list of responses that corresponds to the order of the input targets, FIDs and/or tokens. This is useful when you want to check which targets resulted in <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode">errors</a>. If both tokens and FIDs are provided, tokens are processed first, followed by FIDs.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>On success, each send method returns a message ID. The Firebase Admin SDK returns the ID string in the format <code translate="no" dir="ltr">projects/{project_id}/messages/{message_id}</code>.</p> <h2 id="send-messages-to-multiple-devices">Send one message to multiple devices</h2> <p>The Admin FCM SDKs allow you to multicast a message to a list of <a href="../android/get-started#access-firebase-installation-id">Firebase Installation IDs (FIDs)</a> or device registration tokens. You can use this feature when you need to send the same message to a large number of devices. You can specify up to 500 FIDs and/or tokens per invocation.</p> <aside class="note"><strong>Note:</strong><span> During the migration period, the <code translate="no" dir="ltr">tokens</code> field also accepts FIDs. However, since the <code translate="no" dir="ltr">token</code> field is deprecated and will be removed, we recommend using the <code translate="no" dir="ltr">fid</code> field once your clients are registered using Firebase Installation IDs.</span></aside> <p>The return value includes a list of responses that corresponds to the order of the input targets, FIDs and/or tokens. This is useful when you want to check which targets resulted in <a href="https://firebase.google.com/docs/reference/fcm/rest/v1/ErrorCode">errors</a>. If both tokens and FIDs are provided, tokens are processed first, followed by FIDs.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 <p><strong>Using FIDs (Recommended)</strong>:</p> 
 <pre data-language="javascript">// These Firebase Installation IDs (FIDs) come from the client FCM SDKs.
 const fids = [
@@ -307,7 +307,7 @@ getMessaging().sendEachForMulticast(message)
       console.log('List of tokens that caused failures: ' + failedTokens);
     }
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 <p><strong>Using FIDs (Recommended)</strong>:</p> 
 <pre data-language="java">// These Firebase Installation IDs (FIDs) come from the client FCM SDKs.
 List&lt;String&gt; fids = Arrays.asList(
@@ -360,7 +360,7 @@ if (response.getFailureCount() &gt; 0) {
 
   System.out.println("List of tokens that caused failures: " + failedTokens);
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 <p><strong>Using FIDs (Recommended)</strong>:</p> 
 <pre data-language="python"># These Firebase Installation IDs (FIDs) come from the client FCM SDKs.
 fids = [
@@ -403,7 +403,7 @@ if response.failure_count &gt; 0:
             # The order of responses corresponds to the order of the registration tokens.
             failed_tokens.append(registration_tokens[idx])
     print(f'List of tokens that caused failures: {failed_tokens}')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 <p><strong>Using FIDs (Recommended)</strong>:</p> 
 <pre data-language="go">// Create a list containing up to 500 Firebase Installation IDs (FIDs).
 // These Firebase Installation IDs (FIDs) come from the client FCM SDKs.
@@ -468,7 +468,7 @@ if br.FailureCount &gt; 0 {
 
 	fmt.Printf("List of tokens that caused failures: %v\n", failedTokens)
 }
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 <p><strong>Using FIDs (Recommended)</strong>:</p> 
 <pre data-language="csharp">// These Firebase Installation IDs (FIDs) come from the client FCM SDKs.
 var fids = new List&lt;string&gt;()
@@ -539,7 +539,7 @@ if (response.FailureCount &gt; 0)
                 Console.WriteLine($"List of tokens that caused failures: {failedTokens}");
             }
 
-</pre></section> </div> <h2 id="send-a-batch-of-messages">Send a list of messages</h2> <p>The Admin SDKs support sending a list of up to 500 messages. This feature can be used to build a customized set of messages and send them to different recipients, including topics, <a href="../android/get-started#access-firebase-installation-id">Firebase Installation IDs (FIDs)</a> or device registration tokens. For example, you can use this feature when you need to send varying messages to different audiences.</p> <aside class="note"><strong>Note:</strong><span> During the migration period, the <code translate="no" dir="ltr">token</code> field also accepts FIDs. However, since the <code translate="no" dir="ltr">token</code> field is deprecated and will be removed, we recommend using the <code translate="no" dir="ltr">fid</code> field once your clients are registered using Firebase Installation IDs.</span></aside><div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h2 id="send-a-batch-of-messages">Send a list of messages</h2> <p>The Admin SDKs support sending a list of up to 500 messages. This feature can be used to build a customized set of messages and send them to different recipients, including topics, <a href="../android/get-started#access-firebase-installation-id">Firebase Installation IDs (FIDs)</a> or device registration tokens. For example, you can use this feature when you need to send varying messages to different audiences.</p> <aside class="note"><strong>Note:</strong><span> During the migration period, the <code translate="no" dir="ltr">token</code> field also accepts FIDs. However, since the <code translate="no" dir="ltr">token</code> field is deprecated and will be removed, we recommend using the <code translate="no" dir="ltr">fid</code> field once your clients are registered using Firebase Installation IDs.</span></aside><div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 <p><strong>Using mixed targets (Recommended)</strong>:</p> 
 <pre data-language="javascript">// Create a list containing up to 500 messages.
 const messages = [
@@ -577,7 +577,7 @@ getMessaging().sendEach(messages)
   .then((response) =&gt; {
     console.log(response.successCount + ' messages were sent successfully');
   });
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 <p><strong>Using mixed targets (Recommended)</strong>:</p> 
 <pre data-language="java">// Create a list containing up to 500 messages.
 List&lt;Message&gt; messages = new ArrayList&lt;&gt;();
@@ -631,7 +631,7 @@ BatchResponse response = FirebaseMessaging.getInstance().sendEach(messages);
 // See the BatchResponse reference documentation
 // for the contents of response.
 System.out.println(response.getSuccessCount() + " messages were sent successfully");
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 <p><strong>Using mixed targets (Recommended)</strong>:</p> 
 <pre data-language="python"># Create a list containing up to 500 messages.
 messages = [
@@ -671,7 +671,7 @@ response = messaging.send_each(messages)
 # See the BatchResponse reference documentation
 # for the contents of response.
 print(f'{response.success_count} messages were sent successfully')
-</pre></section> <section><p class="_firebase-tab"><strong>Go</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Go</strong></p>
 <p><strong>Using mixed targets (Recommended)</strong>:</p> 
 <pre data-language="go">// Create a list containing up to 500 messages.
 messages := []*messaging.Message{
@@ -732,7 +732,7 @@ if err != nil {
 // See the BatchResponse reference documentation
 // for the contents of response.
 fmt.Printf("%d messages were sent successfully\n", br.SuccessCount)
-</pre></section> <section><p class="_firebase-tab"><strong>C#</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>C#</strong></p>
 <p><strong>Using mixed targets (Recommended)</strong>:</p> 
 <pre data-language="csharp">// Create a list containing up to 500 messages.
 var messages = new List&lt;Message&gt;()

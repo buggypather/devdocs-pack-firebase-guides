@@ -1,5 +1,5 @@
 <h1>Extend Firebase Authentication with blocking functions</h1> <p><br></p> <p>Blocking functions let you execute custom code that modifies the result of a user registering or signing in to your app. For example, you can prevent a user from authenticating if they don't meet certain criteria, or update a user's information before returning it to your client app.</p> <h2 id="before_you_begin">Before you begin</h2> <p>To use blocking functions you must upgrade your Firebase project to <a href="../auth#identity-platform">Firebase Authentication with Identity Platform</a>. If you haven't already upgraded, do so first.</p> <h2 id="understanding_blocking_functions">Understanding blocking functions</h2> <p>You can register blocking functions for these events:</p> <ul> <li><p><strong>Before the user is created</strong>: Triggers before a new user is saved to the Firebase Authentication database, and before a token is returned to your client app.</p></li> <li><p><strong>Before the user is signed in</strong>: Triggers after a user's credentials are verified, but before Firebase Authentication returns an ID token to your client app. If your app uses multi-factor authentication, the function triggers after the user verifies their second factor. Note that creating a new user also triggers both these events.</p></li> <li><p><strong>Before sending an email (Node.js only)</strong>: Triggers before an email (for example, a sign-in or password reset email) is sent to a user.</p></li> <li><p><strong>Before sending an SMS message (Node.js only)</strong>: Triggers before an SMS Message is sent to a user, for cases such as multifactor authentication.</p></li> </ul> <p>Keep the following in mind when using blocking functions:</p> <ul> <li><p>Your function must respond within 7 seconds. After 7 seconds, Firebase Authentication returns an error, and the client operation fails.</p></li> <li><p>HTTP response codes other than <code translate="no" dir="ltr">200</code> are passed to your client apps. Ensure your client code handles any errors your function can return.</p></li> <li><p>Functions apply to all users in your project, including any contained in a <a href="https://cloud.google.com/identity-platform/docs/multi-tenancy">tenant</a>. Firebase Authentication provides information about users to your function, including any tenants they belong to, so you can respond accordingly.</p></li> <li><p>Linking another identity provider to an account re-triggers any registered <code translate="no" dir="ltr">beforeUserSignedIn</code> functions.</p></li> <li><p>Anonymous and custom authentication do not trigger blocking functions.</p></li> </ul> <aside class="warning"><strong>Warning:</strong><span> If you delete a function, you must also unregister the triggers with Firebase Authentication. Failure to do so will prevent all users from authenticating with your app.</span></aside> <h2 id="deploy_a_blocking_function">Deploy a blocking function</h2> <p>To insert your custom code into the user authentication flows, deploy blocking functions. Once your blocking functions are deployed, your custom code must complete successfully for authentication and user creation to succeed.</p> <p>You deploy a blocking function the same way as you deploy any function. (see the Cloud Functions <a href="../functions/get-started">Getting started</a> page for details). In summary:</p> <ol> <li>
-<p>Write a function that handles the targeted event.</p> <p>For example, to get started, you can add a no-op function like the following to your source:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<p>Write a function that handles the targeted event.</p> <p>For example, to get started, you can add a no-op function like the following to your source:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">import {
   beforeUserCreated,
@@ -9,7 +9,7 @@ export const beforecreated = beforeUserCreated((event) =&gt; {
   // TODO
   return;
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@identity_fn.before_user_created()
 def created_noop(
@@ -44,25 +44,25 @@ def created_noop(
 <code translate="no" dir="ltr">additionalUserInfo</code> </td>
 <td>An object containing information about the user.</td> <td> <a href="https://cloud.google.com/identity-platform/docs/reference/gcip-cloud-functions#additional-user-info"> <code translate="no" dir="ltr">AdditionalUserInfo</code> </a> </td> </tr> <tr> <td>
 <code translate="no" dir="ltr">credential</code> </td>
-<td>An object containing information about the user's credential.</td> <td> <a href="https://cloud.google.com/identity-platform/docs/reference/gcip-cloud-functions#auth-credential"> <code translate="no" dir="ltr">AuthCredential</code> </a> </td> </tr> </table> <h2 id="blocking_registration_or_sign-in">Blocking registration or sign-in</h2> <p>To block a registration or sign-in attempt, throw an <code translate="no" dir="ltr">HttpsError</code> in your function. For example:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<td>An object containing information about the user's credential.</td> <td> <a href="https://cloud.google.com/identity-platform/docs/reference/gcip-cloud-functions#auth-credential"> <code translate="no" dir="ltr">AuthCredential</code> </a> </td> </tr> </table> <h2 id="blocking_registration_or_sign-in">Blocking registration or sign-in</h2> <p>To block a registration or sign-in attempt, throw an <code translate="no" dir="ltr">HttpsError</code> in your function. For example:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">import { HttpsError } from "firebase-functions/v2/identity";
 
 throw new HttpsError('invalid-argument');
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">raise https_fn.HttpsError(
     code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT)
-</pre></section> </div> <p>You can also specify a custom error message:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>You can also specify a custom error message:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">throw new HttpsError('permission-denied', 'Unauthorized request origin!');
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">raise https_fn.HttpsError(
     code=https_fn.FunctionsErrorCode.PERMISSION_DENIED,
     message="Unauthorized request origin!"
 )
-</pre></section> </div> <p>The following example shows how to block users who are not within a specific domain from registering for your app:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>The following example shows how to block users who are not within a specific domain from registering for your app:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">export const beforecreated = beforeUserCreated((event) =&gt; {
   const user = event.data;
@@ -74,7 +74,7 @@ throw new HttpsError('invalid-argument');
     throw new HttpsError('invalid-argument', "Unauthorized email");
   }
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"># Block account creation with any non-acme email address.
 @identity_fn.before_user_created()
@@ -91,10 +91,10 @@ def validatenewuser(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             message="Unauthorized email",
         )
-</pre></section> </div> <p>Regardless of whether you use a default or custom message, Cloud Functions wraps the error and returns it to the client as an internal error. For example:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>Regardless of whether you use a default or custom message, Cloud Functions wraps the error and returns it to the client as an internal error. For example:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">throw new HttpsError('invalid-argument', "Unauthorized email");
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"># Only users of a specific domain can sign up.
 if user.email is None or "@acme.com" not in user.email:
@@ -103,7 +103,7 @@ if user.email is None or "@acme.com" not in user.email:
         code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
         message="Unauthorized email",
     )
-</pre></section> </div> <p>Your app should catch the error, and handle it accordingly. For example:</p> <div> <section><p class="_firebase-tab"><strong>JavaScript</strong></p>
+</pre></section> </div> <p>Your app should catch the error, and handle it accordingly. For example:</p> <div> <section><p class="_code-tab"><strong>JavaScript</strong></p>
 
 <pre data-language="">import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 
@@ -122,7 +122,7 @@ try {
     }
 }
 </pre></section> </div> <h2 id="modifying_a_user">Modifying a user</h2> <p>Instead of blocking a registration or sign-in attempt, you can allow the operation to continue, but modify the <code translate="no" dir="ltr">User</code> object that is saved to Firebase Authentication's database and returned to the client.</p> <p>To modify a user, return an object from your event handler containing the fields to modify. You can modify the following fields:</p> <ul> <li><code translate="no" dir="ltr">displayName</code></li> <li><code translate="no" dir="ltr">disabled</code></li> <li><code translate="no" dir="ltr">emailVerified</code></li> <li><code translate="no" dir="ltr">photoURL</code></li> <li><code translate="no" dir="ltr">customClaims</code></li> <li>
-<code translate="no" dir="ltr">sessionClaims</code> (<code translate="no" dir="ltr">beforeUserSignedIn</code> only)</li> </ul> <p>With the exception of <code translate="no" dir="ltr">sessionClaims</code>, all modified fields are saved to Firebase Authentication's database, which means they are included on the response token and persist between user sessions.</p> <p>The following example shows how to set a default display name:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<code translate="no" dir="ltr">sessionClaims</code> (<code translate="no" dir="ltr">beforeUserSignedIn</code> only)</li> </ul> <p>With the exception of <code translate="no" dir="ltr">sessionClaims</code>, all modified fields are saved to Firebase Authentication's database, which means they are included on the response token and persist between user sessions.</p> <p>The following example shows how to set a default display name:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">export const beforecreated = beforeUserCreated((event) =&gt; {
   return {
@@ -130,7 +130,7 @@ try {
     displayName: event.data.displayName || 'Guest'
   };
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@identity_fn.before_user_created()
 def setdefaultname(
@@ -170,7 +170,7 @@ const auth = getAuth();
 const provider = new OAuthProvider('microsoft.com');
 provider.addScope('offline_access');
 signInWithPopup(auth, provider);
-</pre> <h4 id="yahoo">Yahoo</h4> <p>When a user signs in with Yahoo, the following credentials will be passed without any custom parameters or scopes:</p> <ul> <li><strong>ID token</strong></li> <li><strong>Access token</strong></li> <li><strong>Refresh token</strong></li> </ul> <h4 id="linkedin">LinkedIn</h4> <p>When a user signs in with LinkedIn, the following credential will be passed:</p> <ul> <li><strong>Access token</strong></li> </ul> <h4 id="apple">Apple</h4> <p>When a user signs in with Apple, the following credentials will be passed without any custom parameters or scopes:</p> <ul> <li><strong>ID token</strong></li> <li><strong>Access token</strong></li> <li><strong>Refresh token</strong></li> </ul> <h2 id="common-scenarios">Common scenarios</h2> <p>The following examples demonstrate some common use cases for blocking functions:</p> <h3 id="only_allowing_registration_from_a_specific_domain">Only allowing registration from a specific domain</h3> <p>The following example shows how to prevent users who aren't part of the <code translate="no" dir="ltr">example.com</code> domain from registering with your app:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <h4 id="yahoo">Yahoo</h4> <p>When a user signs in with Yahoo, the following credentials will be passed without any custom parameters or scopes:</p> <ul> <li><strong>ID token</strong></li> <li><strong>Access token</strong></li> <li><strong>Refresh token</strong></li> </ul> <h4 id="linkedin">LinkedIn</h4> <p>When a user signs in with LinkedIn, the following credential will be passed:</p> <ul> <li><strong>Access token</strong></li> </ul> <h4 id="apple">Apple</h4> <p>When a user signs in with Apple, the following credentials will be passed without any custom parameters or scopes:</p> <ul> <li><strong>ID token</strong></li> <li><strong>Access token</strong></li> <li><strong>Refresh token</strong></li> </ul> <h2 id="common-scenarios">Common scenarios</h2> <p>The following examples demonstrate some common use cases for blocking functions:</p> <h3 id="only_allowing_registration_from_a_specific_domain">Only allowing registration from a specific domain</h3> <p>The following example shows how to prevent users who aren't part of the <code translate="no" dir="ltr">example.com</code> domain from registering with your app:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">export const beforecreated = beforeUserCreated((event) =&gt; {
   const user = event.data;
@@ -179,7 +179,7 @@ signInWithPopup(auth, provider);
       'invalid-argument', 'Unauthorized email');
   }
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python"> @identity_fn.before_user_created()
    def validatenewuser(
@@ -195,7 +195,7 @@ signInWithPopup(auth, provider);
                code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
                message="Unauthorized email",
            )
-</pre></section> </div> <h3 id="blocking_users_with_unverified_emails_from_registering">Blocking users with unverified emails from registering</h3> <p>The following example shows how to prevent users with unverified emails from registering with your app:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h3 id="blocking_users_with_unverified_emails_from_registering">Blocking users with unverified emails from registering</h3> <p>The following example shows how to prevent users with unverified emails from registering with your app:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">export const beforecreated = beforeUserCreated((event) =&gt; {
   const user = event.data;
@@ -204,7 +204,7 @@ signInWithPopup(auth, provider);
       'invalid-argument', 'Unverified email');
   }
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@identity_fn.before_user_created()
 def requireverified(
@@ -215,7 +215,7 @@ def requireverified(
             code=https_fn.FunctionsErrorCode.INVALID_ARGUMENT,
             message="You must register using a trusted provider.",
         )
-</pre></section> </div> <h3 id="treating_certain_identity_provider_emails_as_verified">Treating certain identity provider emails as verified</h3> <p>The following example shows how to treat user emails from certain identity providers as verified:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h3 id="treating_certain_identity_provider_emails_as_verified">Treating certain identity provider emails as verified</h3> <p>The following example shows how to treat user emails from certain identity providers as verified:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">export const beforecreated = beforeUserCreated((event) =&gt; {
   const user = event.data;
@@ -225,7 +225,7 @@ def requireverified(
     };
   }
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@identity_fn.before_user_created()
 def markverified(
@@ -233,7 +233,7 @@ def markverified(
 ) -&gt; identity_fn.BeforeCreateResponse | None:
     if event.data.email is not None and "@facebook.com" in event.data.email:
         return identity_fn.BeforeSignInResponse(email_verified=True)
-</pre></section> </div> <h3 id="blocking_sign-in_from_certain_ip_addresses">Blocking sign-in from certain IP addresses</h3> <p>The following example shows how to block sign-in from certain IP address ranges:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h3 id="blocking_sign-in_from_certain_ip_addresses">Blocking sign-in from certain IP addresses</h3> <p>The following example shows how to block sign-in from certain IP address ranges:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">export const beforesignedin = beforeUserSignedIn((event) =&gt; {
   if (isSuspiciousIpAddress(event.ipAddress)) {
@@ -241,7 +241,7 @@ def markverified(
       'permission-denied', 'Unauthorized access!');
   }
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@identity_fn.before_user_signed_in()
 def ipban(
@@ -251,7 +251,7 @@ def ipban(
         raise https_fn.HttpsError(
             code=https_fn.FunctionsErrorCode.PERMISSION_DENIED, message="IP banned."
         )
-</pre></section> </div> <h3 id="setting_custom_and_session_claims">Setting custom and session claims</h3> <p>The following example shows how to set custom and session claims:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h3 id="setting_custom_and_session_claims">Setting custom and session claims</h3> <p>The following example shows how to set custom and session claims:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">export const beforecreated = beforeUserCreated((event) =&gt; {
     if (event.credential &amp;&amp;
@@ -280,7 +280,7 @@ export const beforesignin = beforeUserSignedIn((event) =&gt; {
         };
     }
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@identity_fn.before_user_created()
 def setemployeeid(
@@ -312,7 +312,7 @@ def copyclaimstosession(
             }
         )
 </pre></section> </div> <h3 id="tracking_ip_addresses_to_monitor_suspicious_activity">Tracking IP addresses to monitor suspicious activity</h3> <p>You can prevent token theft by tracking the IP address a user signs in from, and comparing it to the IP address on subsequent requests. If the request appears suspicious — for example, the IPs are from from different geographical regions — you can ask the user to sign in again.</p> <ol> <li>
-<p>Use session claims to track the IP address the user signs in with:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<p>Use session claims to track the IP address the user signs in with:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">export const beforesignedin = beforeUserSignedIn((event) =&gt; {
   return {
@@ -321,7 +321,7 @@ def copyclaimstosession(
     },
   };
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@identity_fn.before_user_signed_in()
 def logip(
@@ -330,7 +330,7 @@ def logip(
     return identity_fn.BeforeSignInResponse(session_claims={"signInIpAddress": event.ip_address})
 </pre></section> </div>
 </li> <li>
-<p>When a user attempts to access resources that require authentication with Firebase Authentication, compare the IP address in the request with the IP used to sign in:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<p>When a user attempts to access resources that require authentication with Firebase Authentication, compare the IP address in the request with the IP used to sign in:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">app.post('/getRestrictedData', (req, res) =&gt; {
   // Get the ID token passed.
@@ -362,7 +362,7 @@ def logip(
     }
   });
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_admin import auth, initialize_app
 import flask
@@ -403,7 +403,7 @@ def get_restricted_data(req: flask.Request):
         # Access is valid. Try to return data.
         return data_from_claims(claims)
 </pre></section> </div>
-</li> </ol> <h3 id="screening_user_photos">Screening user photos</h3> <p>The following example shows how to sanitize users' profile photos:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</li> </ol> <h3 id="screening_user_photos">Screening user photos</h3> <p>The following example shows how to sanitize users' profile photos:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">export const beforecreated = beforeUserCreated((event) =&gt; {
   const user = event.data;
@@ -419,7 +419,7 @@ def get_restricted_data(req: flask.Request):
         }
       });
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@identity_fn.before_user_created()
 def sanitizeprofilephoto(
@@ -429,7 +429,7 @@ def sanitizeprofilephoto(
         score = analyze_photo_with_ml(event.data.photo_url)
         if score &gt; THRESHOLD:
             return identity_fn.BeforeCreateResponse(photo_url=PLACEHOLDER_URL)
-</pre></section> </div> <p>To learn more about how to detect and sanitize images, see the <a href="https://cloud.google.com/vision">Cloud Vision</a> documentation.</p> <h3 id="accessing_a_users_identity_provider_oauth_credentials">Accessing a user's identity provider OAuth credentials</h3> <p>The following example demonstrates how to obtain a refresh token for a user that signed in with Google, and use it to call the Google Calendar APIs. The refresh token is stored for offline access.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>To learn more about how to detect and sanitize images, see the <a href="https://cloud.google.com/vision">Cloud Vision</a> documentation.</p> <h3 id="accessing_a_users_identity_provider_oauth_credentials">Accessing a user's identity provider OAuth credentials</h3> <p>The following example demonstrates how to obtain a refresh token for a user that signed in with Google, and use it to call the Google Calendar APIs. The refresh token is stored for offline access.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const {OAuth2Client} = require('google-auth-library');
 const {google} = require('googleapis');
@@ -483,7 +483,7 @@ export const beforecreated = beforeUserCreated((event) =&gt; {
     })
   }
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@identity_fn.before_user_created()
 def savegoogletoken(
@@ -519,7 +519,7 @@ def savegoogletoken(
             schedule_time=datetime.now() + timedelta(minutes=1),
         )
         tasks_client.create_task(parent=task_queue, task=calendar_task)
-</pre></section> </div> <h3 id="overriding_recaptcha_enterprise_verdict_for_user_operation">Overriding reCAPTCHA Enterprise verdict for user operation</h3> <p>The following example shows how to override a reCAPTCHA Enterprise verdict for supported user flows.</p> <p>Refer to <a href="https://cloud.google.com/identity-platform/docs/recaptcha-enterprise" class="external">Enable reCAPTCHA Enterprise</a> to learn more about integrating reCAPTCHA Enterprise with Firebase Authentication.</p> <p>Blocking functions can be used to allow or block flows based on custom factors, thereby overriding the result provided by reCAPTCHA Enterprise.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h3 id="overriding_recaptcha_enterprise_verdict_for_user_operation">Overriding reCAPTCHA Enterprise verdict for user operation</h3> <p>The following example shows how to override a reCAPTCHA Enterprise verdict for supported user flows.</p> <p>Refer to <a href="https://cloud.google.com/identity-platform/docs/recaptcha-enterprise" class="external">Enable reCAPTCHA Enterprise</a> to learn more about integrating reCAPTCHA Enterprise with Firebase Authentication.</p> <p>Blocking functions can be used to allow or block flows based on custom factors, thereby overriding the result provided by reCAPTCHA Enterprise.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { beforeSmsSent } = require("firebase-functions/v2/identity");
 exports.beforesmssentv2 = beforeSmsSent((event) =&gt; {

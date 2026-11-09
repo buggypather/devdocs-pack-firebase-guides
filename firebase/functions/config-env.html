@@ -1,5 +1,5 @@
 <h1>Configure your environment</h1> <p>Often you'll need additional configuration for your functions, such as third-party API keys or tuneable settings. The Firebase SDK for Cloud Functions offers built-in environment configuration to make it easy to store and retrieve this type of data for your project.</p> <p>You can choose between these options:</p> <ul> <li>
-<strong>Parameterized configuration</strong> (recommended for most scenarios). This provides strongly-typed environment configuration with parameters that are validated at deploy time, which prevents errors and simplifies debugging.</li> <li>File-based configuration of <strong>environment variables</strong>. With this approach, you manually create a <a href="https://www.npmjs.com/package/dotenv" class="external">dotenv</a> file for loading environment variables.</li> </ul> <p>For most use cases, parameterized configuration is recommended. This approach makes configuration values available both at runtime and deploy time, and deployment is blocked unless all parameters have a valid value. Conversely, configuration with environment variables is not available at deploy time.</p> <aside class="caution"><strong>Caution:</strong><span> Environment configuration with <code translate="no" dir="ltr">functions.config</code> was deprecated in version 6.0.0, and will be decommissioned in the next major release. <strong>After March 2027, new deployments with <code translate="no" dir="ltr">functions.config()</code> will fail.</strong> If you are using <code translate="no" dir="ltr">functions.config()</code>, <a href="#migrate-config">migrate your configuration</a> as soon as possible.</span></aside> <h2 id="params">Parameterized configuration</h2> <p>Cloud Functions for Firebase provides an interface for defining configuration parameters declaratively inside your codebase. The value of these parameters is available both during function deployment, when setting deployment and runtime options, and during execution. This means that the CLI will block deployment unless all parameters have a valid value.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<strong>Parameterized configuration</strong> (recommended for most scenarios). This provides strongly-typed environment configuration with parameters that are validated at deploy time, which prevents errors and simplifies debugging.</li> <li>File-based configuration of <strong>environment variables</strong>. With this approach, you manually create a <a href="https://www.npmjs.com/package/dotenv" class="external">dotenv</a> file for loading environment variables.</li> </ul> <p>For most use cases, parameterized configuration is recommended. This approach makes configuration values available both at runtime and deploy time, and deployment is blocked unless all parameters have a valid value. Conversely, configuration with environment variables is not available at deploy time.</p> <aside class="caution"><strong>Caution:</strong><span> Environment configuration with <code translate="no" dir="ltr">functions.config</code> was deprecated in version 6.0.0, and will be decommissioned in the next major release. <strong>After March 2027, new deployments with <code translate="no" dir="ltr">functions.config()</code> will fail.</strong> If you are using <code translate="no" dir="ltr">functions.config()</code>, <a href="#migrate-config">migrate your configuration</a> as soon as possible.</span></aside> <h2 id="params">Parameterized configuration</h2> <p>Cloud Functions for Firebase provides an interface for defining configuration parameters declaratively inside your codebase. The value of these parameters is available both during function deployment, when setting deployment and runtime options, and during execution. This means that the CLI will block deployment unless all parameters have a valid value.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { onRequest } = require('firebase-functions/v2/https');
 const { defineInt, defineString } = require('firebase-functions/params');
@@ -16,7 +16,7 @@ export const helloWorld = onRequest(
     res.send(`${welcomeMessage.value()}! I am a function.`);
   }
 );
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_functions import https_fn
 from firebase_functions.params import IntParam, StringParam
@@ -37,7 +37,7 @@ i  functions: Writing new parameter values to disk: .env.projectId
 …
 $ firebase deploy
 i  functions: Loaded environment variables from .env.projectId
-</pre> <p>Depending on your development workflow, it may be useful to add the generated <code translate="no" dir="ltr">.env.&lt;project_ID&gt;</code> file to version control.</p> <h3 id="init-fn">Using parameters in global scope</h3> <p>During deployment, your functions code is loaded and inspected before your parameters have actual values. This means that fetching parameter values during global scope results in deployment failure. For cases where you want to use a parameter to initialize a global value, use the initialization callback <code translate="no" dir="ltr">onInit()</code>. This callback runs before any functions run in production but is not be called during deploy time, so it is a safe place to access a parameter's value.</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre> <p>Depending on your development workflow, it may be useful to add the generated <code translate="no" dir="ltr">.env.&lt;project_ID&gt;</code> file to version control.</p> <h3 id="init-fn">Using parameters in global scope</h3> <p>During deployment, your functions code is loaded and inspected before your parameters have actual values. This means that fetching parameter values during global scope results in deployment failure. For cases where you want to use a parameter to initialize a global value, use the initialization callback <code translate="no" dir="ltr">onInit()</code>. This callback runs before any functions run in production but is not be called during deploy time, so it is a safe place to access a parameter's value.</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { defineSecret } = require('firebase-functions/params');
@@ -49,7 +49,7 @@ let genAI;
 onInit(() =&gt; {
   genAI = new GoogleGenerativeAI(apiKey.value());
 })
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_functions.core import init
 from firebase_functions.params import StringParam, PROJECT_ID
@@ -68,7 +68,7 @@ def initialize():
   x = "world"
   firebase_admin.initialize_app()
   vertexai.init(PROJECT_ID.value, location.value)
-</pre></section> </div> <p>If you use parameters of the type <code translate="no" dir="ltr">Secret</code>, note that they are available only in the process of functions that have bound the secret. If a secret is bound only in some functions, check whether <code translate="no" dir="ltr">secret.value()</code> is falsy before using it.</p> <h3 id="configure-cli">Configure CLI behavior</h3> <p>Parameters can be configured with an <code translate="no" dir="ltr">Options</code> object that controls how the CLI will prompt for values. The following example sets options to validate the format of a phone number, to provide a simple selection option, and to populate a selection option automatically from the Firebase project:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>If you use parameters of the type <code translate="no" dir="ltr">Secret</code>, note that they are available only in the process of functions that have bound the secret. If a secret is bound only in some functions, check whether <code translate="no" dir="ltr">secret.value()</code> is falsy before using it.</p> <h3 id="configure-cli">Configure CLI behavior</h3> <p>Parameters can be configured with an <code translate="no" dir="ltr">Options</code> object that controls how the CLI will prompt for values. The following example sets options to validate the format of a phone number, to provide a simple selection option, and to populate a selection option automatically from the Firebase project:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { defineString } = require('firebase-functions/params');
 
@@ -103,7 +103,7 @@ populate the selector field with the deploying Cloud Project’s
 storage buckets",
   input: params.PICK_STORAGE_BUCKET,
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_functions.params import (
     StringParam,
@@ -141,7 +141,7 @@ STORAGE_BUCKET = StringParam(
     input=ResourceInput(type=ResourceType.STORAGE_BUCKET),
     description="This will automatically populate the selector field with the deploying Cloud Project's storage buckets",
 )
-</pre></section> </div> <h3 id="parameter-types">Parameter types</h3> <p>Parameterized configuration provides strong typing for parameter values, and also support secrets from Cloud Secret Manager. Supported types are:</p> <ul> <li>Secret</li> <li>String</li> <li>Boolean</li> <li>Integer</li> <li>Float</li> <li>List (Node.js)</li> <li>JSON Secret (Node.js)</li> </ul> <p>See the <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.params"><code translate="no" dir="ltr">params</code> namespace reference</a> for information on the functions for defining parameters.</p> <h3 id="parameter-values">Parameter values and expressions</h3> <p>Firebase evaluates your parameters both at deploy time and while your function is executing. Due to these dual environments, some extra care must be taken when comparing parameter values, and when using them to set <a href="manage-functions#set-runtime-options">runtime options</a> for your functions.</p> <p>To pass a parameter to your function as a runtime option, pass it directly:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h3 id="parameter-types">Parameter types</h3> <p>Parameterized configuration provides strong typing for parameter values, and also support secrets from Cloud Secret Manager. Supported types are:</p> <ul> <li>Secret</li> <li>String</li> <li>Boolean</li> <li>Integer</li> <li>Float</li> <li>List (Node.js)</li> <li>JSON Secret (Node.js)</li> </ul> <p>See the <a href="https://firebase.google.com/docs/reference/functions/2nd-gen/node/firebase-functions.params"><code translate="no" dir="ltr">params</code> namespace reference</a> for information on the functions for defining parameters.</p> <h3 id="parameter-values">Parameter values and expressions</h3> <p>Firebase evaluates your parameters both at deploy time and while your function is executing. Due to these dual environments, some extra care must be taken when comparing parameter values, and when using them to set <a href="manage-functions#set-runtime-options">runtime options</a> for your functions.</p> <p>To pass a parameter to your function as a runtime option, pass it directly:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { onRequest } = require('firebase-functions/v2/https');
 const { defineInt } = require('firebase-functions/params');
@@ -151,7 +151,7 @@ export const helloWorld = onRequest(
   { minInstances: minInstancesConfig },
   (req, res) =&gt; {
     //…
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_functions import https_fn
 from firebase_functions.params import IntParam
@@ -161,7 +161,7 @@ MIN_INSTANCES = IntParam("HELLO_WORLD_MIN_INSTANCES")
 @https_fn.on_request(min_instances=MIN_INSTANCES)
 def hello_world(req):
     ...
-</pre></section> </div> <p>Additionally, if you need to compare against a parameter in order to know what option to pick, you'll need to use built-in comparators instead of checking the value:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>Additionally, if you need to compare against a parameter in order to know what option to pick, you'll need to use built-in comparators instead of checking the value:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { onRequest } = require('firebase-functions/v2/https');
 const environment = params.defineString(‘ENVIRONMENT’, {default: 'dev'});
@@ -172,7 +172,7 @@ export const helloWorld = onRequest(
   { minInstances: minInstancesConfig },
   (req, res) =&gt; {
     //…
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_functions import https_fn
 from firebase_functions.params import IntParam, StringParam
@@ -183,7 +183,7 @@ MIN_INSTANCES = ENVIRONMENT.equals("PRODUCTION").then(10, 0)
 @https_fn.on_request(min_instances=MIN_INSTANCES)
 def hello_world(req):
     ...
-</pre></section> </div> <p>Parameters and parameter expressions that are only used at runtime can be accessed with their <code translate="no" dir="ltr">value</code> function:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <p>Parameters and parameter expressions that are only used at runtime can be accessed with their <code translate="no" dir="ltr">value</code> function:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { onRequest } = require('firebase-functions/v2/https');
 const { defineString } = require('firebase-functions/params');
@@ -196,7 +196,7 @@ export const helloWorld = onRequest(
     res.send(`${welcomeMessage.value()}! I am a function.`);
   }
 );
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_functions import https_fn
 from firebase_functions.params import StringParam
@@ -206,15 +206,15 @@ WELCOME_MESSAGE = StringParam("WELCOME_MESSAGE")
 @https_fn.on_request()
 def hello_world(req):
     return https_fn.Response(f'{WELCOME_MESSAGE.value()}! I am a function!')
-</pre></section> </div> <h3 id="built-in-parameters">Built-in parameters</h3> <p>The Cloud Functions SDK offers three pre-defined parameters, available from the <code translate="no" dir="ltr">firebase-functions/params</code> subpackage:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</pre></section> </div> <h3 id="built-in-parameters">Built-in parameters</h3> <p>The Cloud Functions SDK offers three pre-defined parameters, available from the <code translate="no" dir="ltr">firebase-functions/params</code> subpackage:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 <ul> <li>
 <code translate="no" dir="ltr">projectID</code> — the Cloud project in which the function is running.</li> <li>
 <code translate="no" dir="ltr">databaseURL</code> — the URL of the Realtime Database instance associated with the function (if enabled on the Firebase project).</li> <li>
-<code translate="no" dir="ltr">storageBucket</code> — the Cloud Storage bucket associated with the function (if enabled on the Firebase project).</li> </ul></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+<code translate="no" dir="ltr">storageBucket</code> — the Cloud Storage bucket associated with the function (if enabled on the Firebase project).</li> </ul></section> <section><p class="_code-tab"><strong>Python</strong></p>
 <ul> <li>
 <code translate="no" dir="ltr">PROJECT_ID</code> — the Cloud project in which the function is running.</li> <li>
 <code translate="no" dir="ltr">DATABASE_URL</code> — the URL of the Realtime Database instance associated with the function (if enabled on the Firebase project).</li> <li>
-<code translate="no" dir="ltr">STORAGE_BUCKET</code> — the Cloud Storage bucket associated with the function (if enabled on the Firebase project).</li> </ul></section> </div> <p>These function like user-defined string parameters in all respects, except that, since their values are always known to the Firebase CLI, their values will never be prompted for on deployment nor saved to <code translate="no" dir="ltr">.env</code> files.</p> <h3 id="secret-parameters">Secret parameters</h3> <p>Parameters of type <code translate="no" dir="ltr">Secret</code>, defined using <code translate="no" dir="ltr">defineSecret()</code>, represent string parameters which have a value stored in Cloud Secret Manager. Instead of checking against a local <code translate="no" dir="ltr">.env</code> file and writing a new value to the file if missing, secret parameters check against existence in Cloud Secret Manager, and interactively prompt for the value of a new secret during deployment.</p> <p>Secret parameters must be bound to individual functions that should have access to them:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<code translate="no" dir="ltr">STORAGE_BUCKET</code> — the Cloud Storage bucket associated with the function (if enabled on the Firebase project).</li> </ul></section> </div> <p>These function like user-defined string parameters in all respects, except that, since their values are always known to the Firebase CLI, their values will never be prompted for on deployment nor saved to <code translate="no" dir="ltr">.env</code> files.</p> <h3 id="secret-parameters">Secret parameters</h3> <p>Parameters of type <code translate="no" dir="ltr">Secret</code>, defined using <code translate="no" dir="ltr">defineSecret()</code>, represent string parameters which have a value stored in Cloud Secret Manager. Instead of checking against a local <code translate="no" dir="ltr">.env</code> file and writing a new value to the file if missing, secret parameters check against existence in Cloud Secret Manager, and interactively prompt for the value of a new secret during deployment.</p> <p>Secret parameters must be bound to individual functions that should have access to them:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { onRequest } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
@@ -225,7 +225,7 @@ export const postToDiscord = onRequest(
   (req, res) =&gt; {
   const apiKey = discordApiKey.value();
     //…
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_functions import https_fn
 from firebase_functions.params import SecretParam
@@ -281,13 +281,13 @@ firebase deploy --only functions
 # i functions: Loaded environment variables from .env.
 # ...
 </pre>
-</li> </ol> <p>Once your your custom environment variables are deployed, your function code can access them:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+</li> </ol> <p>Once your your custom environment variables are deployed, your function code can access them:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">// Responds with "Hello Earth and Humans"
 exports.hello = onRequest((request, response) =&gt; {
   response.send(`Hello ${process.env.PLANET} and ${process.env.AUDIENCE}`);
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">import os
 
@@ -323,7 +323,7 @@ firebase functions:secrets:set SECRET_NAME</pre>
 </li> <li>
 <p>Enter a value for <var translate="no">SECRET_NAME</var>.</p> <p>The CLI echoes a success message and warns that you must deploy functions for the change to take effect.</p>
 </li> <li>
-<p>Before deploying, make sure your functions code allows the function to access the secret using the <code translate="no" dir="ltr">secrets</code> option:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<p>Before deploying, make sure your functions code allows the function to access the secret using the <code translate="no" dir="ltr">secrets</code> option:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const { onRequest } = require('firebase-functions/v2/https');
 
@@ -336,7 +336,7 @@ exports.processPayment = onRequest(
     );
     // Process the payment
   }
-);</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+);</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">import os
 from firebase_functions import https_fn
@@ -349,13 +349,13 @@ def process_payment(req):
 </pre></section> </div>
 </li> <li>
 <p>Deploy Cloud Functions:</p> 
-<pre>firebase deploy --only functions</pre> <p>Now you'll be able to access it like any other environment variable. Conversely, if another function that does not specify the secret tries to access the secret, it receives an undefined value:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<pre>firebase deploy --only functions</pre> <p>Now you'll be able to access it like any other environment variable. Conversely, if another function that does not specify the secret tries to access the secret, it receives an undefined value:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">exports.anotherEndpoint = onRequest((request, response) =&gt; {
   response.send(`The secret API key is ${process.env.SECRET_NAME}`);
   // responds with "The secret API key is undefined" because the `secrets` option is missing
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">@https_fn.on_request()
 def another_endpoint(req):

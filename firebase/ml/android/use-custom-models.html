@@ -18,7 +18,7 @@
     // Also add the dependency for the TensorFlow Lite library and specify its version
     implementation("org.tensorflow:tensorflow-lite:2.3.0")
 }</pre>  </li> <li>In your app's manifest, declare that INTERNET permission is required: 
-<pre>&lt;uses-permission android:name="android.permission.INTERNET" /&gt;</pre> </li> </ol> <h2 id="deploy">1. Deploy your model</h2> <p>Deploy your custom TensorFlow models using either the Firebase console or the Firebase Admin Python and Node.js SDKs. See <a href="../manage-hosted-models">Deploy and manage custom models</a>.</p> <p>After you add a custom model to your Firebase project, you can reference the model in your apps using the name you specified. At any time, you can deploy a new TensorFlow Lite model and download the new model onto users' devices by calling <code translate="no" dir="ltr">getModel()</code> (see below). </p> <h2 id="2.-download-the-model-to-the-device-and-initialize-a-tensorflow-lite-interpreter">2. Download the model to the device and initialize a TensorFlow Lite interpreter</h2> To use your TensorFlow Lite model in your app, first use the Firebase ML SDK to download the latest version of the model to the device. Then, instantiate a TensorFlow Lite interpreter with the model. <p>To start the model download, call the model downloader's <code translate="no" dir="ltr">getModel()</code> method, specifying the name you assigned the model when you uploaded it, whether you want to always download the latest model, and the conditions under which you want to allow downloading.</p> <p>You can choose from three download behaviors:</p> <table> <thead> <tr> <th>Download type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td>LOCAL_MODEL </td> <td>Get the local model from the device. If there is no local model available, this behaves like <code translate="no" dir="ltr">LATEST_MODEL</code>. Use this download type if you are not interested in checking for model updates. For example, you're using Remote Config to retrieve model names and you always upload models under new names (recommended).</td> </tr> <tr> <td>LOCAL_MODEL_UPDATE_IN_BACKGROUND </td> <td>Get the local model from the device and start updating the model in the background. If there is no local model available, this behaves like <code translate="no" dir="ltr">LATEST_MODEL</code>.</td> </tr> <tr> <td>LATEST_MODEL </td> <td>Get the latest model. If the local model is the latest version, returns the local model. Otherwise, download the latest model. This behavior will block until the latest version is downloaded (not recommended). Use this behavior only in cases where you explicitly need the latest version.</td> </tr> </tbody> </table> <p>You should disable model-related functionality—for example, grey-out or hide part of your UI—until you confirm the model has been downloaded.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<pre>&lt;uses-permission android:name="android.permission.INTERNET" /&gt;</pre> </li> </ol> <h2 id="deploy">1. Deploy your model</h2> <p>Deploy your custom TensorFlow models using either the Firebase console or the Firebase Admin Python and Node.js SDKs. See <a href="../manage-hosted-models">Deploy and manage custom models</a>.</p> <p>After you add a custom model to your Firebase project, you can reference the model in your apps using the name you specified. At any time, you can deploy a new TensorFlow Lite model and download the new model onto users' devices by calling <code translate="no" dir="ltr">getModel()</code> (see below). </p> <h2 id="2.-download-the-model-to-the-device-and-initialize-a-tensorflow-lite-interpreter">2. Download the model to the device and initialize a TensorFlow Lite interpreter</h2> To use your TensorFlow Lite model in your app, first use the Firebase ML SDK to download the latest version of the model to the device. Then, instantiate a TensorFlow Lite interpreter with the model. <p>To start the model download, call the model downloader's <code translate="no" dir="ltr">getModel()</code> method, specifying the name you assigned the model when you uploaded it, whether you want to always download the latest model, and the conditions under which you want to allow downloading.</p> <p>You can choose from three download behaviors:</p> <table> <thead> <tr> <th>Download type</th> <th>Description</th> </tr> </thead> <tbody> <tr> <td>LOCAL_MODEL </td> <td>Get the local model from the device. If there is no local model available, this behaves like <code translate="no" dir="ltr">LATEST_MODEL</code>. Use this download type if you are not interested in checking for model updates. For example, you're using Remote Config to retrieve model names and you always upload models under new names (recommended).</td> </tr> <tr> <td>LOCAL_MODEL_UPDATE_IN_BACKGROUND </td> <td>Get the local model from the device and start updating the model in the background. If there is no local model available, this behaves like <code translate="no" dir="ltr">LATEST_MODEL</code>.</td> </tr> <tr> <td>LATEST_MODEL </td> <td>Get the latest model. If the local model is the latest version, returns the local model. Otherwise, download the latest model. This behavior will block until the latest version is downloaded (not recommended). Use this behavior only in cases where you explicitly need the latest version.</td> </tr> </tbody> </table> <p>You should disable model-related functionality—for example, grey-out or hide part of your UI—until you confirm the model has been downloaded.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val conditions = CustomModelDownloadConditions.Builder()
         .requireWifi()  // Also possible: .requireCharging() and .requireDeviceIdle()
@@ -37,7 +37,7 @@ FirebaseModelDownloader.getInstance()
                 interpreter = Interpreter(modelFile)
             }
         }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">CustomModelDownloadConditions conditions = new CustomModelDownloadConditions.Builder()
     .requireWifi()  // Also possible: .requireCharging() and .requireDeviceIdle()
@@ -58,7 +58,7 @@ FirebaseModelDownloader.getInstance()
         }
       }
     });
-</pre></section> </div> <p>Many apps start the download task in their initialization code, but you can do so at any point before you need to use the model.</p> <h2 id="3.-perform-inference-on-input-data">3. Perform inference on input data</h2> <h3 id="model_shape">Get your model's input and output shapes</h3> <p>The TensorFlow Lite model interpreter takes as input and produces as output one or more multidimensional arrays. These arrays contain either <code translate="no" dir="ltr">byte</code>, <code translate="no" dir="ltr">int</code>, <code translate="no" dir="ltr">long</code>, or <code translate="no" dir="ltr">float</code> values. Before you can pass data to a model or use its result, you must know the number and dimensions ("shape") of the arrays your model uses.</p> <p>If you built the model yourself, or if the model's input and output format is documented, you might already have this information. If you don't know the shape and data type of your model's input and output, you can use the TensorFlow Lite interpreter to inspect your model. For example:</p>  <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+</pre></section> </div> <p>Many apps start the download task in their initialization code, but you can do so at any point before you need to use the model.</p> <h2 id="3.-perform-inference-on-input-data">3. Perform inference on input data</h2> <h3 id="model_shape">Get your model's input and output shapes</h3> <p>The TensorFlow Lite model interpreter takes as input and produces as output one or more multidimensional arrays. These arrays contain either <code translate="no" dir="ltr">byte</code>, <code translate="no" dir="ltr">int</code>, <code translate="no" dir="ltr">long</code>, or <code translate="no" dir="ltr">float</code> values. Before you can pass data to a model or use its result, you must know the number and dimensions ("shape") of the arrays your model uses.</p> <p>If you built the model yourself, or if the model's input and output format is documented, you might already have this information. If you don't know the shape and data type of your model's input and output, you can use the TensorFlow Lite interpreter to inspect your model. For example:</p>  <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">import tensorflow as tf
 
 interpreter = tf.lite.Interpreter(model_path="your_model.tflite")
@@ -81,7 +81,7 @@ for i in range(0, len(outputs)):
 
 1 output(s):
 [1 1000] &lt;class 'numpy.float32'&gt;
-</pre> </section>  <h3 id="run_the_interpreter">Run the interpreter</h3> After you have determined the format of your model's input and output, get your input data and perform any transformations on the data that are necessary to get an input of the right shape for your model. <p>For example, if you have an image classification model with an input shape of <code translate="no" dir="ltr">[1 224 224 3]</code> floating-point values, you could generate an input <code translate="no" dir="ltr">ByteBuffer</code> from a <code translate="no" dir="ltr">Bitmap</code> object as shown in the following example:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre> </section>  <h3 id="run_the_interpreter">Run the interpreter</h3> After you have determined the format of your model's input and output, get your input data and perform any transformations on the data that are necessary to get an input of the right shape for your model. <p>For example, if you have an image classification model with an input shape of <code translate="no" dir="ltr">[1 224 224 3]</code> floating-point values, you could generate an input <code translate="no" dir="ltr">ByteBuffer</code> from a <code translate="no" dir="ltr">Bitmap</code> object as shown in the following example:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val bitmap = Bitmap.createScaledBitmap(yourInputImage, 224, 224, true)
 val input = ByteBuffer.allocateDirect(224*224*3*4).order(ByteOrder.nativeOrder())
@@ -106,7 +106,7 @@ for (y in 0 until 224) {
         input.putFloat(bf)
     }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">Bitmap bitmap = Bitmap.createScaledBitmap(yourInputImage, 224, 224, true);
 ByteBuffer input = ByteBuffer.allocateDirect(224 * 224 * 3 * 4).order(ByteOrder.nativeOrder());
@@ -131,17 +131,17 @@ for (int y = 0; y &lt; 224; y++) {
         input.putFloat(bf);
     }
 }
-</pre></section> </div> <p>Then, allocate a <code translate="no" dir="ltr">ByteBuffer</code> large enough to contain the model's output and pass the input buffer and output buffer to the TensorFlow Lite interpreter's <code translate="no" dir="ltr">run()</code> method. For example, for an output shape of <code translate="no" dir="ltr">[1 1000]</code> floating-point values:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> </div> <p>Then, allocate a <code translate="no" dir="ltr">ByteBuffer</code> large enough to contain the model's output and pass the input buffer and output buffer to the TensorFlow Lite interpreter's <code translate="no" dir="ltr">run()</code> method. For example, for an output shape of <code translate="no" dir="ltr">[1 1000]</code> floating-point values:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val bufferSize = 1000 * java.lang.Float.SIZE / java.lang.Byte.SIZE
 val modelOutput = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder())
 interpreter?.run(input, modelOutput)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">int bufferSize = 1000 * java.lang.Float.SIZE / java.lang.Byte.SIZE;
 ByteBuffer modelOutput = ByteBuffer.allocateDirect(bufferSize).order(ByteOrder.nativeOrder());
 interpreter.run(input, modelOutput);
-</pre></section> </div> <p>How you use the output depends on the model you are using.</p> <p>For example, if you are performing classification, as a next step, you might map the indexes of the result to the labels they represent:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> </div> <p>How you use the output depends on the model you are using.</p> <p>For example, if you are performing classification, as a next step, you might map the indexes of the result to the labels they represent:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">modelOutput.rewind()
 val probabilities = modelOutput.asFloatBuffer()
@@ -156,7 +156,7 @@ try {
 } catch (e: IOException) {
     // File not found?
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">modelOutput.rewind();
 FloatBuffer probabilities = modelOutput.asFloatBuffer();

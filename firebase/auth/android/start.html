@@ -14,21 +14,21 @@
     // When NOT using the BoM, you must specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth:25.0.0")
 }</pre>  </li> <li><p>To use an authentication provider, you need to enable it in the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. Go to the Sign-in Method page in the Firebase Authentication section to enable Email/Password sign-in and any other identity providers you want for your app.</p></li> </ol> <h2 id="optional_prototype_and_test_with">(Optional) Prototype and test with Firebase Local Emulator Suite</h2> <p>Before talking about how your app authenticates users, let's introduce a set of tools you can use to prototype and test Authentication functionality: Firebase Local Emulator Suite. If you're deciding among authentication techniques and providers, trying out different data models with public and private data using Authentication and Firebase Security Rules, or prototyping sign-in UI designs, being able to work locally without deploying live services can be a great idea.</p> <p>An Authentication emulator is part of the Local Emulator Suite, which enables your app to interact with emulated database content and config, as well as optionally your emulated project resources (functions, other databases, and security rules).</p> <p>Using the Authentication emulator involves just a few steps:</p> <ol> <li>Adding a line of code to your app's test config to connect to the emulator.</li> <li>From the root of your local project directory, running <code translate="no" dir="ltr">firebase emulators:start</code>.</li> <li>Using the Local Emulator Suite UI for interactive prototyping, or the Authentication emulator REST API for non-interactive testing.</li> </ol> <p>A detailed guide is available at <a href="../../emulator-suite/connect_auth">Connect your app to the Authentication emulator</a>. For more information, see the <a href="../../emulator-suite">Local Emulator Suite introduction</a>.</p> <p>Now let's continue with how to authenticate users.</p> <h2 id="check_current_auth_state">Check current auth state</h2> <ol> <li>
-<p>Declare an instance of <code translate="no" dir="ltr">FirebaseAuth</code>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Declare an instance of <code translate="no" dir="ltr">FirebaseAuth</code>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
-<pre data-language="kotlin">private lateinit var auth: FirebaseAuth</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<pre data-language="kotlin">private lateinit var auth: FirebaseAuth</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">private FirebaseAuth mAuth;</pre></section> </div>
 </li> <li>
-<p>In the <code translate="no" dir="ltr">onCreate()</code> method, initialize the <code translate="no" dir="ltr">FirebaseAuth</code> instance.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>In the <code translate="no" dir="ltr">onCreate()</code> method, initialize the <code translate="no" dir="ltr">FirebaseAuth</code> instance.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// Initialize Firebase Auth
-auth = Firebase.auth</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+auth = Firebase.auth</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// Initialize Firebase Auth
 mAuth = FirebaseAuth.getInstance();</pre></section> </div>
 </li> <li>
-<p>When initializing your Activity, check to see if the user is currently signed in.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>When initializing your Activity, check to see if the user is currently signed in.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">public override fun onStart() {
     super.onStart()
@@ -37,7 +37,7 @@ mAuth = FirebaseAuth.getInstance();</pre></section> </div>
     if (currentUser != null) {
         reload()
     }
-}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">@Override
 public void onStart() {
@@ -48,7 +48,7 @@ public void onStart() {
         reload();
     }
 }</pre></section> </div>
-</li> </ol> <h2 id="sign_up_new_users">Sign up new users</h2> <p>Create a new <code translate="no" dir="ltr">createAccount</code> method that takes in an email address and password, validates them, and then creates a new user with the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#createUserWithEmailAndPassword(java.lang.String,%20java.lang.String)"><code translate="no" dir="ltr">createUserWithEmailAndPassword</code></a> method.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</li> </ol> <h2 id="sign_up_new_users">Sign up new users</h2> <p>Create a new <code translate="no" dir="ltr">createAccount</code> method that takes in an email address and password, validates them, and then creates a new user with the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#createUserWithEmailAndPassword(java.lang.String,%20java.lang.String)"><code translate="no" dir="ltr">createUserWithEmailAndPassword</code></a> method.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">auth.createUserWithEmailAndPassword(email, password)
     .addOnCompleteListener(this) { task -&gt;
@@ -67,7 +67,7 @@ public void onStart() {
             ).show()
             updateUI(null)
         }
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">mAuth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener(this, new OnCompleteListener&lt;AuthResult&gt;() {
@@ -86,7 +86,7 @@ public void onStart() {
                     updateUI(null);
                 }
             }
-        });</pre></section> </div> <p>Add a form to register new users with their email and password and call this new method when it is submitted. You can see an example in our <a href="https://github.com/firebase/quickstart-android/tree/master/auth/app/src/main">quickstart sample</a>.</p> <h2 id="sign_in_existing_users">Sign in existing users</h2> <p>Create a new <code translate="no" dir="ltr">signIn</code> method which takes in an email address and password, validates them, and then signs a user in with the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#signInWithEmailAndPassword(java.lang.String,%20java.lang.String)"><code translate="no" dir="ltr">signInWithEmailAndPassword</code></a> method.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+        });</pre></section> </div> <p>Add a form to register new users with their email and password and call this new method when it is submitted. You can see an example in our <a href="https://github.com/firebase/quickstart-android/tree/master/auth/app/src/main">quickstart sample</a>.</p> <h2 id="sign_in_existing_users">Sign in existing users</h2> <p>Create a new <code translate="no" dir="ltr">signIn</code> method which takes in an email address and password, validates them, and then signs a user in with the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#signInWithEmailAndPassword(java.lang.String,%20java.lang.String)"><code translate="no" dir="ltr">signInWithEmailAndPassword</code></a> method.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">auth.signInWithEmailAndPassword(email, password)
     .addOnCompleteListener(this) { task -&gt;
@@ -105,7 +105,7 @@ public void onStart() {
             ).show()
             updateUI(null)
         }
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">mAuth.signInWithEmailAndPassword(email, password)
         .addOnCompleteListener(this, new OnCompleteListener&lt;AuthResult&gt;() {
@@ -124,7 +124,7 @@ public void onStart() {
                     updateUI(null);
                 }
             }
-        });</pre></section> </div> <p>Add a form to sign in users with their email and password and call this new method when it is submitted. You can see an example in our <a href="https://github.com/firebase/quickstart-android/tree/master/auth/app/src/main">quickstart sample</a>.</p> <h2 id="access_user_information">Access user information</h2> <p>If a user has signed in successfully you can get their account data at any point with the <code translate="no" dir="ltr">getCurrentUser</code> method.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+        });</pre></section> </div> <p>Add a form to sign in users with their email and password and call this new method when it is submitted. You can see an example in our <a href="https://github.com/firebase/quickstart-android/tree/master/auth/app/src/main">quickstart sample</a>.</p> <h2 id="access_user_information">Access user information</h2> <p>If a user has signed in successfully you can get their account data at any point with the <code translate="no" dir="ltr">getCurrentUser</code> method.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val user = Firebase.auth.currentUser
 user?.let {
@@ -140,7 +140,7 @@ user?.let {
     // authenticate with your backend server, if you have one. Use
     // FirebaseUser.getIdToken() instead.
     val uid = it.uid
-}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 if (user != null) {

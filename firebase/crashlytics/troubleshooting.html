@@ -28,13 +28,13 @@ java.lang.IllegalArgumentException: Transport backend 'cct' is not registered
 </pre> <p>This exception does not crash your app but prevents it from sending crash reports. To fix this:</p> <ol> <li><p>Make sure you're using the latest DexGuard 8.x release. The latest version contains rules that are required by the Firebase Crashlytics SDK.</p></li> <li>
 <p>If you don't want to change your DexGuard version, try adding the following line to your obfuscation rules (in your DexGuard config file):</p> 
 <pre>-keepresourcexmlelements manifest/application/service/meta-data@value=cct</pre>
-</li> </ol>  <p><section class="expandable" id="android-upgrade-to-gradle-plugin-v3"> <h4 class="showalways" id="android-upgrade-to-gradle-plugin-v3">How to upgrade to Crashlytics Gradle plugin v3?</h4></section></p> <p>The latest release of the Crashlytics Gradle plugin is a major version (v3.0.0) and modernizes the SDK by dropping support for lower versions of Gradle and the Android Gradle plugin. Additionally, the changes in this release resolve issues with AGP v8.1+ and improve support for native apps and customized builds.</p> <h4 id="minimum-requirements">Minimum requirements</h4> <p>The Crashlytics Gradle plugin v3 has the following minimum requirements:</p> <ul> <li><p>Android Gradle plugin 8.1+<br> Upgrade this plugin using the <a href="https://developer.android.com/build/agp-upgrade-assistant" class="external">Android Gradle plugin Upgrade Assistant</a> on the latest version of Android Studio.</p></li> <li><p>Firebase's <code translate="no" dir="ltr">google-services</code> Gradle plugin 4.4.1+<br> Upgrade this plugin by specifying the latest version in your project's Gradle build file, like so:</p></li> </ul> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+</li> </ol>  <p><section class="expandable" id="android-upgrade-to-gradle-plugin-v3"> <h4 class="showalways" id="android-upgrade-to-gradle-plugin-v3">How to upgrade to Crashlytics Gradle plugin v3?</h4></section></p> <p>The latest release of the Crashlytics Gradle plugin is a major version (v3.0.0) and modernizes the SDK by dropping support for lower versions of Gradle and the Android Gradle plugin. Additionally, the changes in this release resolve issues with AGP v8.1+ and improve support for native apps and customized builds.</p> <h4 id="minimum-requirements">Minimum requirements</h4> <p>The Crashlytics Gradle plugin v3 has the following minimum requirements:</p> <ul> <li><p>Android Gradle plugin 8.1+<br> Upgrade this plugin using the <a href="https://developer.android.com/build/agp-upgrade-assistant" class="external">Android Gradle plugin Upgrade Assistant</a> on the latest version of Android Studio.</p></li> <li><p>Firebase's <code translate="no" dir="ltr">google-services</code> Gradle plugin 4.4.1+<br> Upgrade this plugin by specifying the latest version in your project's Gradle build file, like so:</p></li> </ul> <div> <section><p class="_code-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
 
 <pre data-language="kotlin">plugins {
   id("com.android.application") version "8.1.4" apply false
   id("com.google.gms.google-services") version "4.5.0" apply false
   ...
-}</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Groovy (build.gradle)</strong></p>
 
 <pre data-language="">plugins {
   id 'com.android.application' version '8.1.4' apply false
@@ -68,7 +68,7 @@ java.lang.IllegalArgumentException: Transport backend 'cct' is not registered
 <p>Replaced the closure field <code translate="no" dir="ltr">symbolGenerator</code> with two new top level fields:</p> <ul> <li>
 <code translate="no" dir="ltr">symbolGeneratorType</code>, a String of either <code translate="no" dir="ltr">"breakpad"</code> (default) or <code translate="no" dir="ltr">"csym"</code>.</li> <li>
 <code translate="no" dir="ltr">breakpadBinary</code>, a File of a local <code translate="no" dir="ltr">dump_syms</code> binary override.</li> </ul>
-</li> </ul> <h5 id="example-for-upgrading-extension">Example for how to upgrade the extension</h5> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+</li> </ul> <h5 id="example-for-upgrading-extension">Example for how to upgrade the extension</h5> <div> <section><p class="_code-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
 <table class="responsive fixed"> <colgroup> <col width="240px"> <col> </colgroup> <tbody> <tr> <td><b>Before</b></td> <td> 
 <pre data-language="kotlin">        buildTypes {
           release {
@@ -93,7 +93,7 @@ java.lang.IllegalArgumentException: Transport backend 'cct' is not registered
             }
           }
         }
-      </pre> </td> </tr> </tbody> </table></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+      </pre> </td> </tr> </tbody> </table></section> <section><p class="_code-tab"><strong>Groovy (build.gradle)</strong></p>
 <table class="responsive fixed"> <colgroup> <col width="240px"> <col> </colgroup> <tbody> <tr> <td><b>Before</b></td> <td> 
 <pre data-language="">        buildTypes {
           release {
@@ -125,7 +125,7 @@ java.lang.IllegalArgumentException: Transport backend 'cct' is not registered
 <pre>-Wl,--rosegment</pre>
 </li> </ul> <p>If you're still seeing stack trace inconsistencies (or if neither flag is pertinent to your toolchain), try adding the following to your build process instead:</p> 
 <pre>-fno-omit-frame-pointer</pre>  <p><section class="expandable" id="breakpad-symbol-file-generator-binary"> <h5 class="showalways" id="breakpad-symbol-file-generator-binary">How do I use my own Breakpad symbol file generator binary for NDK?</h5></section></p> <p>The Crashlytics plugin bundles a <a href="ndk-reports#breakpad-symbol-file">customized Breakpad symbol file generator</a>. If you prefer to use your own binary for generating Breakpad symbol files (for example, if you prefer to build all native executables in your build chain from source), use the optional <code translate="no" dir="ltr">symbolGeneratorBinary</code> extension property to specify the path to the executable.</p> <aside class="note"><strong>Note:</strong><span> The Linux version of the Breakpad symbol file generator is required for Android binaries.</span></aside> <p><strong>You can specify the path to the Breakpad symbol file generator binary in one of two ways:</strong></p> <ul> <li>
-<p><strong>Option 1</strong>: Specify the path via the <code translate="no" dir="ltr">firebaseCrashlytics</code> extension in your <code translate="no" dir="ltr">build.gradle</code> file</p> <p>Add the following to your app-level <code translate="no" dir="ltr">build.gradle.kts</code> file:</p> <div> <section><p class="_firebase-tab"><strong>Gradle plugin v3.0.0+</strong></p>
+<p><strong>Option 1</strong>: Specify the path via the <code translate="no" dir="ltr">firebaseCrashlytics</code> extension in your <code translate="no" dir="ltr">build.gradle</code> file</p> <p>Add the following to your app-level <code translate="no" dir="ltr">build.gradle.kts</code> file:</p> <div> <section><p class="_code-tab"><strong>Gradle plugin v3.0.0+</strong></p>
 
 <pre data-language="">android {
   buildTypes {
@@ -138,7 +138,7 @@ java.lang.IllegalArgumentException: Transport backend 'cct' is not registered
       }
     }
   }
-}</pre></section> <section><p class="_firebase-tab"><strong>lower plugin versions</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>lower plugin versions</strong></p>
 
 <pre data-language="">android {
   // ...

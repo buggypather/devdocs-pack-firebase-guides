@@ -13,35 +13,35 @@
     // Add the dependencies for the Remote Config and Analytics libraries
     // When NOT using the BoM, you must specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-config:24.0.1")    implementation("com.google.firebase:firebase-analytics:24.0.0")
-}</pre>  </li> </ol> <aside class="note"><strong>Note:</strong><span> Because the Android SDK has a dependency on the Remote Config REST API, make sure that you <strong>don't</strong> disable that API, which is enabled by default in a typical project.</span></aside> <h2 id="get-remote-config">Step 2: Get the Remote Config singleton object</h2> <p>Get a Remote Config object instance and set the minimum fetch interval to allow for frequent refreshes:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+}</pre>  </li> </ol> <aside class="note"><strong>Note:</strong><span> Because the Android SDK has a dependency on the Remote Config REST API, make sure that you <strong>don't</strong> disable that API, which is enabled by default in a typical project.</span></aside> <h2 id="get-remote-config">Step 2: Get the Remote Config singleton object</h2> <p>Get a Remote Config object instance and set the minimum fetch interval to allow for frequent refreshes:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val remoteConfig: FirebaseRemoteConfig = Firebase.remoteConfig
 val configSettings = remoteConfigSettings {
     minimumFetchIntervalInSeconds = 3600
 }
-remoteConfig.setConfigSettingsAsync(configSettings)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+remoteConfig.setConfigSettingsAsync(configSettings)</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">FirebaseRemoteConfig mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
 FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
         .setMinimumFetchIntervalInSeconds(3600)
         .build();
 mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);</pre></section> </div> <p>The singleton object is used to store in-app default parameter values, fetch updated parameter values from the backend, and control when fetched values are made available to your app.</p> <p>During development, it's recommended to set a relatively low minimum fetch interval. See <a href="android/get-started#throttling">Throttling</a> for more information.</p> <h2 id="in-app-parameter-values">Step 3: Set in-app default parameter values</h2> <p>You can set in-app default parameter values in the Remote Config object, so that your app behaves as intended before it connects to the Remote Config backend, and so that default values are available if none are set in the backend.</p> <aside class="special"><strong>Important:</strong><span> Don't store confidential data in Remote Config parameter keys or values. Remote Config data is encrypted in transit, but end users can access any default or fetched Remote Config parameter that is available to their client app instance.</span></aside><ol> <li>
-<p>Define a set of parameter names and default parameter values using a <a href="http://developer.android.com/reference/java/util/Map.html">Map</a> object or an <a href="https://developer.android.com/guide/topics/resources/providing-resources.html">XML resource file</a> stored in your app's <code translate="no" dir="ltr">res/xml</code> folder. The Remote Config quickstart sample app uses an <a href="https://github.com/firebase/quickstart-android/blob/master/config/app/src/main/res/xml/remote_config_defaults.xml">XML file</a> to define default parameter names and values.</p> <p>If you have already configured Remote Config backend parameter values, you can download a generated XML file that includes all default values and save it to your app's <code translate="no" dir="ltr">res/xml</code> directory:</p> <div> <section><p class="_firebase-tab"><strong>REST</strong></p>
+<p>Define a set of parameter names and default parameter values using a <a href="http://developer.android.com/reference/java/util/Map.html">Map</a> object or an <a href="https://developer.android.com/guide/topics/resources/providing-resources.html">XML resource file</a> stored in your app's <code translate="no" dir="ltr">res/xml</code> folder. The Remote Config quickstart sample app uses an <a href="https://github.com/firebase/quickstart-android/blob/master/config/app/src/main/res/xml/remote_config_defaults.xml">XML file</a> to define default parameter names and values.</p> <p>If you have already configured Remote Config backend parameter values, you can download a generated XML file that includes all default values and save it to your app's <code translate="no" dir="ltr">res/xml</code> directory:</p> <div> <section><p class="_code-tab"><strong>REST</strong></p>
 
 <pre data-language="">
 curl --compressed -D headers -H "Authorization: Bearer token" -X GET https://firebaseremoteconfig.googleapis.com/v1/projects/my-project-id/remoteConfig:downloadDefaults?format=XML -o remote_config_defaults.xml
 </pre> <p>You can generate a bearer token by running the following command using the <a href="https://cloud.google.com/sdk/docs/install">Google Cloud CLI</a> or <a href="https://cloud.google.com/shell/docs/run-gcloud-commands">Cloud Shell</a>:</p> 
 <pre data-language="">gcloud auth print-access-token
-</pre> <p>This token is short-lived, so you may need to regenerate it if you get an authentication error.</p></section> <section><p class="_firebase-tab"><strong>Firebase console</strong></p>
+</pre> <p>This token is short-lived, so you may need to regenerate it if you get an authentication error.</p></section> <section><p class="_code-tab"><strong>Firebase console</strong></p>
 <ol> <li><p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Remote Config</strong> &gt; <a href="https://console.firebase.google.com/project/_/config" class="external"><strong>Parameters</strong> page</a>.</p></li> <li><p>Open the <nobr><span class="material-icons" aria-hidden="true" translate="no">more_vert</span> <strong>Menu</strong> </nobr>, and select <strong>Download default values</strong>.</p></li> <li><p>When prompted, enable <strong>.xml for Android</strong>, then click <strong>Download file</strong>.</p></li> </ol></section> </div>
 </li> <li>
-<p>Add these values to the Remote Config object using <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)"><code translate="no" dir="ltr">setDefaultsAsync(int)</code></a>, as shown:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Add these values to the Remote Config object using <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)"><code translate="no" dir="ltr">setDefaultsAsync(int)</code></a>, as shown:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
-<pre data-language="kotlin">remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<pre data-language="kotlin">remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">mFirebaseRemoteConfig.setDefaultsAsync(R.xml.remote_config_defaults);</pre></section> </div>
 </li> </ol> <h2 id="get-parameter-values">Step 4: Get parameter values to use in your app</h2> <p>Now you can get parameter values from the Remote Config object. If you set values in the backend, fetch them, and then activate them, those values are available to your app. Otherwise, you get the in-app parameter values configured using <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#setDefaultsAsync(int)"><code translate="no" dir="ltr">setDefaultsAsync(int)</code></a>. To get these values, call the method listed in the following code that maps to the data type expected by your app, providing the parameter key as an argument:</p> <ul> <li><a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getBoolean(java.lang.String)"><code translate="no" dir="ltr">getBoolean()</code></a></li> <li><a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getDouble(java.lang.String)"><code translate="no" dir="ltr">getDouble()</code></a></li> <li><a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getLong(java.lang.String)"><code translate="no" dir="ltr">getLong()</code></a></li> <li><a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#getString(java.lang.String)"><code translate="no" dir="ltr">getString()</code></a></li> </ul> <h2 id="set-backend-par-values">Step 5: Set parameter values in the Remote Config backend</h2> <p>Using the Firebase console or the <a href="automate-rc">Remote Config backend APIs</a>, you can create new server-side default values that override the in-app values according to your desired conditional logic or user targeting. This section describes the Firebase console steps to create these values.</p> <ol> <li><p>In the Firebase console, go to the <strong>DevOps &amp; Engagement</strong> &gt; <strong>Remote Config</strong> &gt; <a href="https://console.firebase.google.com/project/_/config" class="external"><strong>Parameters</strong> page</a>.</p></li> <li><p>Define parameters with the same names as the parameters that you defined in your app. For each parameter, you can set a default value (which will eventually override the corresponding in-app default value), and you can also set conditional values. To learn more, see <a href="parameters">Remote Config Parameters and Conditions</a>.</p></li> <li>
-<p>If using <a href="parameters">custom signal conditions</a>, define the attributes and their values. The following examples show how to define a custom signal condition.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>If using <a href="parameters">custom signal conditions</a>, define the attributes and their values. The following examples show how to define a custom signal condition.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">        val customSignals = customSignals {
             put("city", "Tokyo")
@@ -49,7 +49,7 @@ curl --compressed -D headers -H "Authorization: Bearer token" -X GET https://fir
         }
 
         remoteConfig.setCustomSignals(customSignals)
-    </pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    </pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">        CustomSignals customSignals = new CustomSignals.Builder()
             .put("city", "Tokyo")
@@ -60,7 +60,7 @@ curl --compressed -D headers -H "Authorization: Bearer token" -X GET https://fir
 
     </pre></section> </div>
 </li> </ol> <h2 id="fetch-values">Step 6: Fetch and activate values</h2> <ol> <li>To fetch parameter values from the Remote Config backend, call the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#fetch()"><code translate="no" dir="ltr">fetch()</code></a> method. Any values that you set in the backend are fetched and stored in the Remote Config object.</li> <li>
-<p>To make fetched parameter values available to your app, call the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activate()"><code translate="no" dir="ltr">activate()</code></a> method.</p> <p>For cases where you want to fetch and activate values in one call, you can use a <code translate="no" dir="ltr">fetchAndActivate()</code> request to fetch values from the Remote Config backend and make them available to the app:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>To make fetched parameter values available to your app, call the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig#activate()"><code translate="no" dir="ltr">activate()</code></a> method.</p> <p>For cases where you want to fetch and activate values in one call, you can use a <code translate="no" dir="ltr">fetchAndActivate()</code> request to fetch values from the Remote Config backend and make them available to the app:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">remoteConfig.fetchAndActivate()
     .addOnCompleteListener(this) { task -&gt;
@@ -80,7 +80,7 @@ curl --compressed -D headers -H "Authorization: Bearer token" -X GET https://fir
             ).show()
         }
         displayWelcomeMessage()
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">mFirebaseRemoteConfig.fetchAndActivate()
         .addOnCompleteListener(this, new OnCompleteListener&lt;Boolean&gt;() {
@@ -100,7 +100,7 @@ curl --compressed -D headers -H "Authorization: Bearer token" -X GET https://fir
             }
         });</pre></section> </div>
 </li> </ol> <p>Because these updated parameter values affect the behavior and appearance of your app, you should activate the fetched values at a time that ensures a smooth experience for your user, such as the next time that the user opens your app. See <a href="loading">Remote Config loading strategies</a> for more information and examples.</p> <aside class="note"><strong>Note:</strong><span> If your app doesn't build with Gradle, you must manually add the correct <code translate="no" dir="ltr">google_app_id</code> string resource to your app so that Remote Config can initialize. The <code translate="no" dir="ltr"><nobr>google-services</nobr></code> Gradle plugin normally adds this automatically, but you can find the appropriate value in the <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file that you download from the Firebase console. For more information on getting the <code translate="no" dir="ltr">google_app_id</code> value from the <code translate="no" dir="ltr"><nobr>google-services.json</nobr></code> config file, see <a href="../android/google-services-plugin-and-file#processing-json-file">How the JSON config file is processed</a>.</span></aside> <h2 id="add-real-time-listener">Step 7: Listen for updates in real time</h2> <p>After you fetch parameter values, you can use real-time Remote Config to listen for updates from the Remote Config backend. Real-time Remote Config signals to connected devices when updates are available and automatically fetches the changes after you publish a new Remote Config version.</p> <p>Real-time updates are supported by the Firebase SDK for Android v21.3.0+ (Firebase BoM v31.2.4+).</p> <aside class="note"> <p><b>Important:</b> Real-time Remote Config also requires the Firebase Remote Config Realtime API, which should already be enabled for you. To verify, open the <a href="https://console.developers.google.com/apis/api/firebaseremoteconfigrealtime.googleapis.com/overview" class="external">Google Cloud console</a>, select your project, and open the <b>APIs and Services</b> page. The API should appear as enabled. If it's missing or not enabled, click <b>Enable APIs &amp; Services</b>, search for <b>Firebase Remote Config Realtime API</b>, and enable it.</p> </aside> <ol> <li>
-<p>In your app, use <code translate="no" dir="ltr">addOnConfigUpdateListener()</code> to start listening for updates and automatically fetch any new parameter values. Implement the <code translate="no" dir="ltr">onUpdate()</code> callback to activate the updated config.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>In your app, use <code translate="no" dir="ltr">addOnConfigUpdateListener()</code> to start listening for updates and automatically fetch any new parameter values. Implement the <code translate="no" dir="ltr">onUpdate()</code> callback to activate the updated config.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">remoteConfig.addOnConfigUpdateListener(object : ConfigUpdateListener {
         override fun onUpdate(configUpdate : ConfigUpdate) {
@@ -117,7 +117,7 @@ curl --compressed -D headers -H "Authorization: Bearer token" -X GET https://fir
             Log.w(TAG, "Config update error with code: " + error.code, error)
         }
     })
-    </pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    </pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">    mFirebaseRemoteConfig.addOnConfigUpdateListener(new ConfigUpdateListener() {
         @Override

@@ -72,13 +72,13 @@ GROUP BY
   device.model
 ORDER BY
   number_of_crashes DESC
-LIMIT 10;</pre> <h4 id="example-filter-by-custom-key">Example 5: Filter by custom key</h4> <p>You're a game developer who wants to know which level of your game experiences the most crashes.</p> <p>To help track that stat, you set a custom Crashlytics key (<a href="ios/customize-crash-reports#add-keys">iOS+</a> | <a href="android/customize-crash-reports#add-keys">Android</a> | <a href="flutter/customize-crash-reports#add-keys">Flutter</a> | <a href="unity/customize-crash-reports#add-keys">Unity</a> ) called <code translate="no" dir="ltr">current_level</code>, and update it every time the user reaches a new level.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+LIMIT 10;</pre> <h4 id="example-filter-by-custom-key">Example 5: Filter by custom key</h4> <p>You're a game developer who wants to know which level of your game experiences the most crashes.</p> <p>To help track that stat, you set a custom Crashlytics key (<a href="ios/customize-crash-reports#add-keys">iOS+</a> | <a href="android/customize-crash-reports#add-keys">Android</a> | <a href="flutter/customize-crash-reports#add-keys">Flutter</a> | <a href="unity/customize-crash-reports#add-keys">Unity</a> ) called <code translate="no" dir="ltr">current_level</code>, and update it every time the user reaches a new level.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">Crashlytics.sharedInstance().setIntValue(3, forKey: "current_level");
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">CrashlyticsKit setIntValue:3 forKey:@"current_level";
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">Crashlytics.setInt("current_level", 3);
 </pre></section> </div> <p>With that key in your export to BigQuery, you can then write a query to report the distribution of <code translate="no" dir="ltr">current_level</code> values associated with each crash event.</p> <p>Here's an example query for an Android app. For an iOS app, use its bundle ID and <code translate="no" dir="ltr">IOS</code> (instead of package name and <code translate="no" dir="ltr">ANDROID</code>).</p> 
@@ -112,15 +112,15 @@ WHERE
   AND user.id != ""
 ORDER BY
   user.id;</pre> <h4 id="example-number-users-impacted-by-country">Example 8: Number of users impacted by a crash issue, broken down by country</h4> <p>Your team has detected a critical bug during the rollout of a new release. You were able to use the query from the <a href="#example-find-most-pervasive-crashes">"Find most pervasive crashes" example</a> above to identify the specific crash issue ID. Your team would now like to see if this crash has spread to users in different countries around the world.</p> <p>To write this query, your team will need to do the following:</p> <ol> <li><p>Enable export of Google Analytics data to BigQuery. See <a href="../projects/bigquery-export">Export project data to BigQuery</a>.</p></li> <li>
-<p>Update your app to pass a user ID into both the Google Analytics SDK and the Crashlytics SDK.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<p>Update your app to pass a user ID into both the Google Analytics SDK and the Crashlytics SDK.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">Crashlytics.sharedInstance().setUserIdentifier("123456789");
 Analytics.setUserID("123456789");
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">CrashlyticsKit setUserIdentifier:@"123456789";
 FIRAnalytics setUserID:@"12345678 9";
-</pre></section> <section><p class="_firebase-tab"><strong>Java</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java</strong></p>
 
 <pre data-language="java">Crashlytics.setUserIdentifier("123456789");
 mFirebaseAnalytics.setUserId("123456789");

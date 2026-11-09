@@ -1,8 +1,8 @@
 <h1>Analyze image files using the Gemini API</h1> <p>You can ask a <span class='\"notranslate\"'>Gemini</span> model to analyze image files that you provide either inline (base64-encoded) or via URL. When you use <span class='\"notranslate\"'>Firebase AI Logic</span>, you can make this request directly from your app.</p>  <p>With this capability, you can do things like:</p> <ul> <li>Create captions or answer questions about images</li> <li>Write a short story or a poem about an image</li> <li>Detect objects in an image and return bounding box coordinates for them</li> <li>Label or categorize a set of images for sentiment, style, or other characteristic</li> </ul> <p>This guide is about generating <em>text</em> from image input, but you can also <a href="generate-images-gemini">generate <em>images</em> from images input</a>.</p> <p><a href="#base64" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code samples</a> <br><br> <a href="#streaming" class="button"><span class="material-icons" aria-hidden="true" translate="no">arrow_downward</span> Jump to code for streamed responses</a> </p> <p><br></p> <table> <tr> <td> <strong>See other guides for additional options for working with images</strong><br> <a class="button button-white" href="generate-structured-output">Generate structured output</a> <a class="button button-white button-unindented" href="chat">Multi-turn chat</a> <a class="button button-white" href="hybrid">Analyze images on-device</a> <a class="button button-white" href="generate-images-gemini">Generate images</a> </td> </tr> </table> <h2 id="before-you-begin">Before you begin</h2> 
 <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table>  <p>If you haven't already, complete the <a href="get-started">getting started guide</a>, which describes how to set up your Firebase project, connect your app to Firebase, add the SDK, initialize the backend service for your chosen <span class='\"notranslate\"'>Gemini API</span> provider, and create a <code translate="no" dir="ltr">GenerativeModel</code> instance.</p> <p> <aside class="note">All our docs assume that you're using the <a href="https://firebase.google.com/support/releases">latest versions</a> of the <span class='\"notranslate\"'>Firebase AI Logic</span> SDKs. </aside> </p> For testing and iterating on your prompts, we recommend using <a href="https://aistudio.google.com" class="external"><span class='\"notranslate\"'>Google AI Studio</span></a>. <p><section class="expandable" id="sample-files"> <p class="showalways" id="sample-files">Need a sample image file?</p></section></p> <blockquote> <p>You can use this publicly available file with a MIME type of <code translate="no" dir="ltr">image/jpeg</code> (<a href="https://storage.googleapis.com/cloud-samples-data/generative-ai/image/scones.jpg">view or download file</a>). <code translate="no" dir="ltr">https://storage.googleapis.com/cloud-samples-data/generative-ai/image/scones.jpg</code></p> </blockquote>  <h4 id="supported-models">Models that support this capability</h4> <p>This guide is about generating text from image input, and it's applicable to the following <span class='\"notranslate\"'>Gemini</span> models:</p> <ul> <li><code translate="no" dir="ltr">gemini-4-argon</code></li> <li><code translate="no" dir="ltr">gemini-3.8-flash</code></li> <li>
-<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> and <span class='\"notranslate\"'>Gemini 2.5</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <aside class="note"><strong>Note:</strong><span> <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not</em> yet support configuring the input media resolution, but that feature is coming soon!</span></aside> <h2 id="base64">Generate text from image files (base64-encoded)</h2> 
-<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can ask a <span class='\"notranslate\"'>Gemini</span> model to generate text by prompting with text and images—providing each input file's <code translate="no" dir="ltr">mimeType</code> and the file itself. Find <a href="#requirements-recommendations-for-input">requirements and recommendations for input files</a> later on this page.</p> <p> <aside class="note"><b>Important</b>: <strong>The total request size limit is 20 MB.</strong> To send large files, review the <a href="input-file-requirements">options for providing files in multimodal requests</a>. </aside> </p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/GenerativeModel#generatecontent_:"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+<code translate="no" dir="ltr">gemini-3.5-flash-lite</code> (and the older <code translate="no" dir="ltr">gemini-3.1-flash-lite</code>)</li> </ul> <p>Older general-use <span class='\"notranslate\"'>Gemini 3.x Flash</span> models support this capability, but they're no longer recommended for use due to upcoming shutdown dates and/or automatic routing to newer models.</p> <aside class="note"><strong>Note:</strong><span> <span class='\"notranslate\"'>Firebase AI Logic</span> does <em>not</em> yet support configuring the input media resolution, but that feature is coming soon!</span></aside> <h2 id="base64">Generate text from image files (base64-encoded)</h2> 
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can ask a <span class='\"notranslate\"'>Gemini</span> model to generate text by prompting with text and images—providing each input file's <code translate="no" dir="ltr">mimeType</code> and the file itself. Find <a href="#requirements-recommendations-for-input">requirements and recommendations for input files</a> later on this page.</p> <p> <aside class="note"><b>Important</b>: <strong>The total request size limit is 20 MB.</strong> To send large files, review the <a href="input-file-requirements">options for providing files in multimodal requests</a>. </aside> </p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/GenerativeModel#generatecontent_:"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 import FirebaseAILogic
@@ -22,7 +22,7 @@ let prompt = "What's in this picture?"
 // To generate text output, call generateContent and pass in the prompt
 let response = try await model.generateContent(image, prompt)
 print(response.text ?? "No text in response.")
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 import FirebaseAILogic
@@ -43,8 +43,8 @@ let prompt = "What's different between these pictures?"
 // To generate text output, call generateContent and pass in the prompt
 let response = try await model.generateContent(image1, image2, prompt)
 print(response.text ?? "No text in response.")
-</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#generateContent(kotlin.Array)"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#generateContent(kotlin.Array)"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 // Initialize the Gemini Developer API backend service.
@@ -65,7 +65,7 @@ val prompt = content {
 // To generate text output, call generateContent with the prompt
 val response = model.generateContent(prompt)
 print(response.text)
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> 
 <pre data-language="">
 // Initialize the Gemini Developer API backend service.
@@ -88,8 +88,8 @@ val prompt = content {
 // To generate text output, call generateContent with the prompt
 val response = model.generateContent(prompt)
 print(response.text)
-</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/GenerativeModel#generateContent(kotlin.Array)"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <sup><em>For Java, the methods in this SDK return a <a href="https://developer.android.com/guide/background/asynchronous/listenablefuture" class="external"><code translate="no" dir="ltr">ListenableFuture</code></a>.</em></sup> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/GenerativeModel#generateContent(kotlin.Array)"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <sup><em>For Java, the methods in this SDK return a <a href="https://developer.android.com/guide/background/asynchronous/listenablefuture" class="external"><code translate="no" dir="ltr">ListenableFuture</code></a>.</em></sup> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 // Initialize the Gemini Developer API backend service.
@@ -124,7 +124,7 @@ Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;(
         t.printStackTrace();
     }
 }, executor);
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 // Initialize the Gemini Developer API backend service.
@@ -161,8 +161,8 @@ Futures.addCallback(response, new FutureCallback&lt;GenerateContentResponse&gt;(
         t.printStackTrace();
     }
 }, executor);
-</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelgeneratecontent"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelgeneratecontent"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 import { initializeApp } from "firebase/app";
@@ -213,7 +213,7 @@ async function run() {
 }
 
 run();
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 import { initializeApp } from "firebase/app";
@@ -267,8 +267,8 @@ async function run() {
 }
 
 run();
-</pre></section> </div></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
-<p>You can call <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerativeModel/generateContent.html" class="external"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
+<p>You can call <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerativeModel/generateContent.html" class="external"><code translate="no" dir="ltr">generateContent()</code></a> to generate text from multimodal input of text and images.</p> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -297,7 +297,7 @@ final response = await model.generateContent([
   Content.multi([prompt,imagePart])
 ]);
 print(response.text);
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -332,8 +332,8 @@ final response = await model.generateContent([
   Content.multi([prompt, ...imageParts])
 ]);
 print(response.text);
-</pre></section> </div></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/generative-model#generatecontentasync"><code translate="no" dir="ltr">GenerateContentAsync()</code></a> to generate text from multimodal input of text and images.</p> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div></section> <section><p class="_code-tab"><strong>Unity</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/generative-model#generatecontentasync"><code translate="no" dir="ltr">GenerateContentAsync()</code></a> to generate text from multimodal input of text and images.</p> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 using Firebase;
@@ -356,7 +356,7 @@ var prompt = ModelContent.Text("What's in this picture?");
 // To generate text output, call GenerateContentAsync and pass in the prompt
 var response = await model.GenerateContentAsync(new [] { grayImage, prompt });
 UnityEngine.Debug.Log(response.Text ?? "No text in response.");
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 using Firebase;
@@ -382,8 +382,8 @@ var prompt = ModelContent.Text("What's different between these pictures?");
 var response = await model.GenerateContentAsync(new [] { blackImage, whiteImage, prompt });
 UnityEngine.Debug.Log(response.Text ?? "No text in response.");
 </pre></section> </div></section> </div> <p> Learn how to choose a <a href="models">model</a> appropriate for your use case and app. </p> <h2 id="streaming">Stream the response</h2> 
-<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can achieve faster interactions by not waiting for the entire result from the model generation, and instead use streaming to handle partial results. To stream the response, call <code translate="no" dir="ltr">generateContentStream</code>.</p> <p><section class="expandable" id="base64-streaming"> <h4 class="showalways" id="base64-streaming">View example: Stream generated text from image files</h4></section></p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/GenerativeModel#generatecontentstream_:"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+<table class="orange"> <tr class="alt"> <td> <em>Before trying this sample, complete the <a href="#before-you-begin">Before you begin</a> section of this guide to set up your project and app.<br> <strong>In that section, you'll also click a button for your chosen <span class='\"notranslate\"'>Gemini API</span> provider so that you see provider-specific content on this page</strong>.</em> </td> </tr> </table> <p>You can achieve faster interactions by not waiting for the entire result from the model generation, and instead use streaming to handle partial results. To stream the response, call <code translate="no" dir="ltr">generateContentStream</code>.</p> <p><section class="expandable" id="base64-streaming"> <h4 class="showalways" id="base64-streaming">View example: Stream generated text from image files</h4></section></p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/swift/firebaseailogic/api/reference/Classes/GenerativeModel#generatecontentstream_:"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 import FirebaseAILogic
@@ -407,7 +407,7 @@ for try await chunk in contentStream {
     print(text)
   }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 import FirebaseAILogic
@@ -432,8 +432,8 @@ for try await chunk in contentStream {
     print(text)
   }
 }
-</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#generateContentStream(kotlin.Array)"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/GenerativeModel#generateContentStream(kotlin.Array)"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <sup><em>For Kotlin, the methods in this SDK are suspend functions and need to be called from a <a href="https://developer.android.com/kotlin/coroutines" class="external">Coroutine scope</a>.</em></sup> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 // Initialize the Gemini Developer API backend service.
@@ -457,7 +457,7 @@ model.generateContentStream(prompt).collect { chunk -&gt;
   print(chunk.text)
   fullResponse += chunk.text
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 // Initialize the Gemini Developer API backend service.
@@ -483,8 +483,8 @@ model.generateContentStream(prompt).collect { chunk -&gt;
   print(chunk.text)
   fullResponse += chunk.text
 }
-</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/GenerativeModel#generateContentStream(kotlin.Array)"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <sup><em>For Java, the streaming methods in this SDK return a <code translate="no" dir="ltr">Publisher</code> type from the <a href="https://www.reactive-streams.org/" class="external">Reactive Streams library</a>.</em></sup> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/GenerativeModel#generateContentStream(kotlin.Array)"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <sup><em>For Java, the streaming methods in this SDK return a <code translate="no" dir="ltr">Publisher</code> type from the <a href="https://www.reactive-streams.org/" class="external">Reactive Streams library</a>.</em></sup> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 // Initialize the Gemini Developer API backend service.
@@ -531,7 +531,7 @@ streamingResponse.subscribe(new Subscriber&lt;GenerateContentResponse&gt;() {
     public void onSubscribe(Subscription s) {
     }
 });
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 // Initialize the Gemini Developer API backend service.
@@ -580,8 +580,8 @@ streamingResponse.subscribe(new Subscriber&lt;GenerateContentResponse&gt;() {
     public void onSubscribe(Subscription s) {
     }
 });
-</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_firebase-tab"><strong>Web (modular API)</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelgeneratecontentstream"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div> <aside class="note"><b>Note</b>: The example above takes advantage of a simplified way to handle platform-native image types provided as inline data, which means the MIME type doesn't need to be specified. <a href="faq-and-troubleshooting#inline-img-sdk-handling">Learn more</a> about this feature and options for providing images inline. </aside></section> <section><p class="_code-tab"><strong>Web (modular API)</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/js/ai.generativemodel#generativemodelgeneratecontentstream"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 import { initializeApp } from "firebase/app";
@@ -634,7 +634,7 @@ async function run() {
 }
 
 run();
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 import { initializeApp } from "firebase/app";
@@ -688,8 +688,8 @@ async function run() {
 }
 
 run();
-</pre></section> </div></section> <section><p class="_firebase-tab"><strong>Dart (Flutter)</strong></p>
-<p>You can call <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerativeModel/generateContentStream.html" class="external"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div></section> <section><p class="_code-tab"><strong>Dart (Flutter)</strong></p>
+<p>You can call <a href="https://pub.dev/documentation/firebase_ai/latest/firebase_ai/GenerativeModel/generateContentStream.html" class="external"><code translate="no" dir="ltr">generateContentStream()</code></a> to stream generated text from multimodal input of text and images.</p> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -720,7 +720,7 @@ final response = await model.generateContentStream([
 await for (final chunk in response) {
   print(chunk.text);
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 import 'package:firebase_ai/firebase_ai.dart';
@@ -757,8 +757,8 @@ final response = await model.generateContentStream([
 await for (final chunk in response) {
   print(chunk.text);
 }
-</pre></section> </div></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
-<p>You can call <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/generative-model#generatecontentstreamasync"><code translate="no" dir="ltr">GenerateContentStreamAsync()</code></a> to stream generated text from multimodal input of text and images.</p> <div> <section><p class="_firebase-tab"><strong>Single file input</strong></p>
+</pre></section> </div></section> <section><p class="_code-tab"><strong>Unity</strong></p>
+<p>You can call <a href="https://firebase.google.com/docs/reference/unity/class/firebase/a-i/generative-model#generatecontentstreamasync"><code translate="no" dir="ltr">GenerateContentStreamAsync()</code></a> to stream generated text from multimodal input of text and images.</p> <div> <section><p class="_code-tab"><strong>Single file input</strong></p>
 
 <pre data-language="">
 using Firebase;
@@ -785,7 +785,7 @@ await foreach (var response in responseStream) {
     UnityEngine.Debug.Log(response.Text);
   }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Multiple file input</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Multiple file input</strong></p>
 
 <pre data-language="">
 using Firebase;

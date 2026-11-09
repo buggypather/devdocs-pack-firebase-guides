@@ -1,47 +1,47 @@
 <h1>Configuration options for hybrid experiences in Android apps</h1> <aside class="experimental"><strong>Experimental:</strong><span> Using the <span class='\"notranslate\"'>Firebase AI Logic</span> SDK to build hybrid experiences is an Experimental feature (and the Prompt API from ML Kit is in beta), which means that this feature isn't subject to any SLA or deprecation policy and could change in backwards-incompatible ways.</span></aside> <p><br></p> <p>This page describes the following configuration options for hybrid experiences:</p> <ul> <li><p><a href="#inference-modes">Set an inference mode.</a></p></li> <li><p><a href="#determine-inference-mode">Determine whether on-device or in-cloud inference was used.</a></p></li> <li><p><a href="#specify-model">Specify a model to use.</a></p></li> <li><p><a href="#model-config">Use model configuration to control responses.</a></p></li> </ul> <p><strong>Make sure that you've completed the <a href="get-started#get-started">getting started guide for building hybrid experiences</a>.</strong></p> <h2 id="inference-modes">Set an inference mode</h2> <p>The examples in the getting started guide use the <code translate="no" dir="ltr">PREFER_ON_DEVICE</code> mode, but this is only one of the four available <a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/InferenceMode">inference modes</a>.</p> <aside class="note"><b>Note</b>: Keep the following in mind: <ul> <li> To use an on-device model, make sure to review the list of <a href="get-started#features-not-yet-available">not-yet-available features for on-device inference</a> on the get started page. </li> <li> To use a cloud-hosted model, the device must be online and you must explicitly <a href="configuration-options#specify-model">specify a cloud-hosted model to use</a>. </li> <li> As part of the response, the SDK tells you <a href="configuration-options#determine-inference-mode">whether on-device or in-cloud inference was used</a>. </li> </ul> </aside> <p>Here are the available inference modes:</p> <ul> <li>
-<p><strong><code translate="no" dir="ltr">PREFER_ON_DEVICE</code></strong>: Attempt to use the on-device model if it's available and supports the type of request. Otherwise, log an error on the device and then automatically <em>fall back to the cloud-hosted model</em>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><strong><code translate="no" dir="ltr">PREFER_ON_DEVICE</code></strong>: Attempt to use the on-device model if it's available and supports the type of request. Otherwise, log an error on the device and then automatically <em>fall back to the cloud-hosted model</em>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val config = OnDeviceConfig(mode = InferenceMode.PREFER_ON_DEVICE)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">InferenceMode mode = InferenceMode.PREFER_ON_DEVICE;
 OnDeviceConfig config = new OnDeviceConfig(mode);
 </pre></section> </div>
 </li> <li>
-<p><strong><code translate="no" dir="ltr">ONLY_ON_DEVICE</code></strong>: Attempt to use the on-device model if it's available and supports the type of request. Otherwise, <em>throw an exception</em>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><strong><code translate="no" dir="ltr">ONLY_ON_DEVICE</code></strong>: Attempt to use the on-device model if it's available and supports the type of request. Otherwise, <em>throw an exception</em>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val config = OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">InferenceMode mode = InferenceMode.ONLY_ON_DEVICE;
 OnDeviceConfig config = new OnDeviceConfig(mode);
 </pre></section> </div>
 </li> <li>
-<p><strong><code translate="no" dir="ltr">PREFER_IN_CLOUD</code></strong>: Attempt to use the cloud-hosted model if the device is online and if the model is available. If the device is offline, <em>fall back to the on-device model</em>. In all other failure cases, <em>throw an exception</em>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><strong><code translate="no" dir="ltr">PREFER_IN_CLOUD</code></strong>: Attempt to use the cloud-hosted model if the device is online and if the model is available. If the device is offline, <em>fall back to the on-device model</em>. In all other failure cases, <em>throw an exception</em>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val config = OnDeviceConfig(mode = InferenceMode.PREFER_IN_CLOUD)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">InferenceMode mode = InferenceMode.PREFER_IN_CLOUD;
 OnDeviceConfig config = new OnDeviceConfig(mode);
 </pre></section> </div>
 </li> <li>
-<p><strong><code translate="no" dir="ltr">ONLY_IN_CLOUD</code></strong>: Attempt to use the cloud-hosted model if the device is online and if the model is available. Otherwise, <em>throw an exception</em>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><strong><code translate="no" dir="ltr">ONLY_IN_CLOUD</code></strong>: Attempt to use the cloud-hosted model if the device is online and if the model is available. Otherwise, <em>throw an exception</em>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val config = OnDeviceConfig(mode = InferenceMode.ONLY_IN_CLOUD)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">InferenceMode mode = InferenceMode.ONLY_IN_CLOUD;
 OnDeviceConfig config = new OnDeviceConfig(mode);
 </pre></section> </div>
-</li> </ul> <h2 id="determine-inference-mode">Determine whether on-device or in-cloud inference was used</h2> <p>If your inference mode is <code translate="no" dir="ltr">PREFER_ON_DEVICE</code> or <code translate="no" dir="ltr">PREFER_IN_CLOUD</code>, then it might be helpful to know which mode was used for given requests. This information is provided by the <code translate="no" dir="ltr">inferenceSource</code> property of each response.</p> <p>When you access this property, the returned value will be either <code translate="no" dir="ltr">ON_DEVICE</code> or <code translate="no" dir="ltr">IN_CLOUD</code>.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</li> </ul> <h2 id="determine-inference-mode">Determine whether on-device or in-cloud inference was used</h2> <p>If your inference mode is <code translate="no" dir="ltr">PREFER_ON_DEVICE</code> or <code translate="no" dir="ltr">PREFER_IN_CLOUD</code>, then it might be helpful to know which mode was used for given requests. This information is provided by the <code translate="no" dir="ltr">inferenceSource</code> property of each response.</p> <p>When you access this property, the returned value will be either <code translate="no" dir="ltr">ON_DEVICE</code> or <code translate="no" dir="ltr">IN_CLOUD</code>.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// ...
 
 print("You used: ${result.response.inferenceSource}")
 
 print(result.response.text)
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// ...
 
@@ -60,7 +60,7 @@ System.out.println(result.getResponse().getText());
 <p><strong><code translate="no" dir="ltr">PREVIEW_FAST</code></strong>: The latest <em>preview</em> on-device model that's <em>fast</em>.</p> <ul> <li><p>Optimized for maximum speed and lower latency.</p></li> <li><p>For example, <em>Gemini Nano 4 Fast [Preview]</em> (<code translate="no" dir="ltr">nano-v4-fast</code>, which is based on Gemma 4 E2B).</p></li> </ul>
 </li> </ul> <aside class="special"><strong>Important:</strong><span> To use a <em>preview</em> on-device model, review the prerequisites and enrollment instructions for the developer preview in the <a href="https://developers.google.com/ml-kit/genai/aicore-dev-preview" class="external">AICore Developer Preview guide</a>.</span></aside>
 </li> </ul>
-</li> </ul> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</li> </ul> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val model = Firebase.ai(backend = GenerativeBackend.googleAI())
     .generativeModel(
@@ -74,7 +74,7 @@ System.out.println(result.getResponse().getText());
             // If not specified, AICore will auto-select the default stable on-device model.
             modelOption = OnDeviceModelOption.ON-DEVICE_MODEL_CATEGORY)
     )
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">GenerativeModel ai = FirebaseAI.getInstance(GenerativeBackend.googleAI())
     .generativeModel(
@@ -101,7 +101,7 @@ System.out.println(result.getResponse().getText());
     );
 
 GenerativeModelFutures model = GenerativeModelFutures.from(ai);
-</pre></section> </div> <h2 id="model-config">Use model configuration to control responses</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>In each request to a model, you can send along a model configuration to control how the model generates a response. Cloud-hosted models and on-device models are configured differently and offer different configuration options:</p> <ul> <li><p><strong>Cloud-hosted models</strong>: Set the configuration using <code translate="no" dir="ltr">generationConfig</code> (<a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/GenerationConfig">Kotlin</a> | <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/GenerationConfig">Java</a>). Learn about <a href="../../model-parameters#config-gemini-general">available parameters</a>.</p></li> <li><p><strong>On-device models</strong>: Set the configuration using <code translate="no" dir="ltr">onDeviceConfig</code> (<a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/OnDeviceConfig">Kotlin</a> | <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/OnDeviceConfig">Java</a>). Learn about available parameters (<a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/OnDeviceConfig">Kotlin</a> | <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/OnDeviceConfig">Java</a>).</p></li> </ul> <p>The configuration is maintained for the lifetime of the instance. If you want to use a different config, create a new <code translate="no" dir="ltr">GenerativeModel</code> instance with that config.</p> <p>Here's an example that sets the configurations for the cloud-hosted and on-device models that could be used if <code translate="no" dir="ltr">PREFER_ON_DEVICE</code> inference mode is set:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> </div> <h2 id="model-config">Use model configuration to control responses</h2> <table> <tr> <td> <p><i>Click your <span class='\"notranslate\"'>Gemini API</span> provider to view provider-specific content and code on this page.</i> </p>     </td> </tr> </table> <p>In each request to a model, you can send along a model configuration to control how the model generates a response. Cloud-hosted models and on-device models are configured differently and offer different configuration options:</p> <ul> <li><p><strong>Cloud-hosted models</strong>: Set the configuration using <code translate="no" dir="ltr">generationConfig</code> (<a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/type/GenerationConfig">Kotlin</a> | <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/type/GenerationConfig">Java</a>). Learn about <a href="../../model-parameters#config-gemini-general">available parameters</a>.</p></li> <li><p><strong>On-device models</strong>: Set the configuration using <code translate="no" dir="ltr">onDeviceConfig</code> (<a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/OnDeviceConfig">Kotlin</a> | <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/OnDeviceConfig">Java</a>). Learn about available parameters (<a href="https://firebase.google.com/docs/reference/kotlin/com/google/firebase/ai/OnDeviceConfig">Kotlin</a> | <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/ai/OnDeviceConfig">Java</a>).</p></li> </ul> <p>The configuration is maintained for the lifetime of the instance. If you want to use a different config, create a new <code translate="no" dir="ltr">GenerativeModel</code> instance with that config.</p> <p>Here's an example that sets the configurations for the cloud-hosted and on-device models that could be used if <code translate="no" dir="ltr">PREFER_ON_DEVICE</code> inference mode is set:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">// Config for cloud-hosted model
 val generationConfig = generationConfig {
@@ -121,7 +121,7 @@ val model = Firebase.ai(backend = GenerativeBackend.googleAI())
         generationConfig = generationConfig,
         onDeviceConfig = onDeviceConfig
     )
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">// Config for cloud-hosted model
 GenerationConfig generationConfig = new GenerationConfig.Builder()

@@ -1,4 +1,4 @@
-<h1>Optimizing networking</h1> <p>The simplicity of Cloud Functions lets you quickly develop code and run it in a serverless environment. At moderate scale, the cost of running functions is low, and optimizing your code might not seem like a high priority. As your deployment scales up, however, optimizing your code becomes increasingly important.</p> <p>This document describes how to optimize networking for your functions. Some of the benefits of optimizing networking are as follows:</p> <ul> <li>Reduce CPU time spent in establishing new outbound connections at each function call.</li> <li>Reduce the likelihood of running out of connection or DNS <a href="https://cloud.google.com/functions/quotas">quotas</a>.</li> </ul> <h2 id="maintaining-persistent">Maintaining Persistent Connections</h2> <p>This section gives examples of how to maintain persistent connections in a function. Failure to do so can result in quickly exhausting connection quotas.</p> <p>The following scenarios are covered in this section:</p> <ul> <li>HTTP/S</li> <li>Google APIs</li> </ul> <h3 id="https-requests">HTTP/S Requests</h3> <p>The optimized code snippet below shows how to maintain persistent connections instead of creating a new connection upon every function invocation:</p> <div> <section><p class="_firebase-tab"><strong>Node.js</strong></p>
+<h1>Optimizing networking</h1> <p>The simplicity of Cloud Functions lets you quickly develop code and run it in a serverless environment. At moderate scale, the cost of running functions is low, and optimizing your code might not seem like a high priority. As your deployment scales up, however, optimizing your code becomes increasingly important.</p> <p>This document describes how to optimize networking for your functions. Some of the benefits of optimizing networking are as follows:</p> <ul> <li>Reduce CPU time spent in establishing new outbound connections at each function call.</li> <li>Reduce the likelihood of running out of connection or DNS <a href="https://cloud.google.com/functions/quotas">quotas</a>.</li> </ul> <h2 id="maintaining-persistent">Maintaining Persistent Connections</h2> <p>This section gives examples of how to maintain persistent connections in a function. Failure to do so can result in quickly exhausting connection quotas.</p> <p>The following scenarios are covered in this section:</p> <ul> <li>HTTP/S</li> <li>Google APIs</li> </ul> <h3 id="https-requests">HTTP/S Requests</h3> <p>The optimized code snippet below shows how to maintain persistent connections instead of creating a new connection upon every function invocation:</p> <div> <section><p class="_code-tab"><strong>Node.js</strong></p>
 
 <pre data-language="javascript">const http = require('http');
 const functions = require('firebase-functions');
@@ -26,7 +26,7 @@ exports.function = functions.https.onRequest((request, response) =&gt; {
         response.status(500).send(`Error: ${e.message}`);
     });
     req.end();
-});</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+});</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">from firebase_functions import https_fn
 import requests
@@ -44,7 +44,7 @@ def connection_pooling(request):
     response = session.get(url)
     response.raise_for_status()
     return https_fn.Response("Success!")
-    </pre> <p>This HTTP function uses a connection pool to make HTTP requests. It takes a request object (<code translate="no" dir="ltr">flask.Request</code>) and returns the response text, or any set of values that can be turned into a <code translate="no" dir="ltr">Response</code> object using <a href="https://flask.palletsprojects.com/en/3.0.x/api/#flask.make_response"><code translate="no" dir="ltr">make_response</code></a>.</p></section> </div> <h3 id="accessing-google">Accessing Google APIs</h3> <p>The example below uses <a href="https://cloud.google.com/pubsub/docs/reference/libraries">Cloud Pub/Sub</a>, but this approach also works for other client libraries—for example, <a href="https://cloud.google.com/natural-language/docs/reference/libraries">Cloud Natural Language</a> or <a href="https://cloud.google.com/spanner/docs/reference/libraries">Cloud Spanner</a>. Note that performance improvements may depend on the current implementation of particular client libraries.</p> <p>Creating a Pub/Sub client object results in one connection and two DNS queries per invocation. To avoid unnecessary connections and DNS queries, create the Pub/Sub client object in global scope as shown in the sample below:</p> <div> <section><p class="_firebase-tab"><strong>node.js</strong></p>
+    </pre> <p>This HTTP function uses a connection pool to make HTTP requests. It takes a request object (<code translate="no" dir="ltr">flask.Request</code>) and returns the response text, or any set of values that can be turned into a <code translate="no" dir="ltr">Response</code> object using <a href="https://flask.palletsprojects.com/en/3.0.x/api/#flask.make_response"><code translate="no" dir="ltr">make_response</code></a>.</p></section> </div> <h3 id="accessing-google">Accessing Google APIs</h3> <p>The example below uses <a href="https://cloud.google.com/pubsub/docs/reference/libraries">Cloud Pub/Sub</a>, but this approach also works for other client libraries—for example, <a href="https://cloud.google.com/natural-language/docs/reference/libraries">Cloud Natural Language</a> or <a href="https://cloud.google.com/spanner/docs/reference/libraries">Cloud Spanner</a>. Note that performance improvements may depend on the current implementation of particular client libraries.</p> <p>Creating a Pub/Sub client object results in one connection and two DNS queries per invocation. To avoid unnecessary connections and DNS queries, create the Pub/Sub client object in global scope as shown in the sample below:</p> <div> <section><p class="_code-tab"><strong>node.js</strong></p>
 
 <pre data-language="javascript">const PubSub = require('@google-cloud/pubsub');
 const functions = require('firebase-functions');
@@ -60,7 +60,7 @@ exports.function = functions.https.onRequest((req, res) =&gt; {
             res.status(200).send('1 message published');
         }
     });
-});</pre></section> <section><p class="_firebase-tab"><strong>Python</strong></p>
+});</pre></section> <section><p class="_code-tab"><strong>Python</strong></p>
 
 <pre data-language="python">import os
 

@@ -95,7 +95,7 @@ cp -R build/m2repository /path/to/your/android-project/m2repository
 </pre>
 </li> </ol>
 </li> <li>
-<p>In your project-level <code translate="no" dir="ltr">settings.gradle.kts</code> (or <code translate="no" dir="ltr">settings.gradle</code>), add the local <code translate="no" dir="ltr">m2repository</code> directory to the top of your <code translate="no" dir="ltr">repositories</code> block, above <code translate="no" dir="ltr">google()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (settings.gradle.kts)</strong></p>
+<p>In your project-level <code translate="no" dir="ltr">settings.gradle.kts</code> (or <code translate="no" dir="ltr">settings.gradle</code>), add the local <code translate="no" dir="ltr">m2repository</code> directory to the top of your <code translate="no" dir="ltr">repositories</code> block, above <code translate="no" dir="ltr">google()</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (settings.gradle.kts)</strong></p>
 
 <pre data-language="kotlin">dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -105,7 +105,7 @@ cp -R build/m2repository /path/to/your/android-project/m2repository
         mavenCentral()
     }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Groovy (settings.gradle)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Groovy (settings.gradle)</strong></p>
 
 <pre data-language="">dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -117,12 +117,12 @@ cp -R build/m2repository /path/to/your/android-project/m2repository
 }
 </pre></section> </div>
 </li> <li>
-<p>In your module-level <code translate="no" dir="ltr">app/build.gradle.kts</code> (or <code translate="no" dir="ltr">app/build.gradle</code>), update your <code translate="no" dir="ltr">firebase-messaging</code> dependency to <code translate="no" dir="ltr">26.1.0-eap01</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+<p>In your module-level <code translate="no" dir="ltr">app/build.gradle.kts</code> (or <code translate="no" dir="ltr">app/build.gradle</code>), update your <code translate="no" dir="ltr">firebase-messaging</code> dependency to <code translate="no" dir="ltr">26.1.0-eap01</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
 
 <pre data-language="kotlin">dependencies {
     implementation("com.google.firebase:firebase-messaging:26.1.0-eap01")
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Groovy (build.gradle)</strong></p>
 
 <pre data-language="">dependencies {
     implementation 'com.google.firebase:firebase-messaging:26.1.0-eap01'
@@ -130,7 +130,7 @@ cp -R build/m2repository /path/to/your/android-project/m2repository
 </pre></section> </div>
 <aside class="note"><strong>Note:</strong><span> If your app uses the Firebase Android BoM (<code translate="no" dir="ltr">firebase-bom</code>), you must still specify the explicit <code translate="no" dir="ltr">26.1.0-eap01</code> version on <code translate="no" dir="ltr">firebase-messaging</code> so Gradle overrides the version managed by the BoM.</span></aside>
 </li> <li><p>Sync your project with Gradle files.</p></li> </ol> <h3 id="handling-remotenotifications">Handle RemoteNotifications with <code translate="no" dir="ltr">onNotificationReceived</code>
-</h3> <p>With <code translate="no" dir="ltr">AndroidConfigV2</code>, <code translate="no" dir="ltr">RemoteNotification</code> messages are displayed unless <code translate="no" dir="ltr">mutable_content</code> is set to true or they're explicitly silenced in <code translate="no" dir="ltr">onNotificationReceived()</code>.</p> <p>When a <code translate="no" dir="ltr">RemoteNotification</code> arrives with <code translate="no" dir="ltr">mutable_content: true</code>, GMS Core binds to your application and calls <code translate="no" dir="ltr">onNotificationReceived()</code>. Your method must return a <code translate="no" dir="ltr">NotificationResponse</code> within 20 seconds.</p> <h4 id="return-modified-notification">Return a modified notification</h4> <p>The <code translate="no" dir="ltr">Notification</code> object you pass to <code translate="no" dir="ltr">NotificationResponse.create</code> replaces the server's <code translate="no" dir="ltr">remote_notification.notification</code> fallback payload properties defined in the send request. To keep values from the send request, read them from <code translate="no" dir="ltr">message.notification</code> (<code translate="no" dir="ltr">message.getNotification()</code> in Java) while applying on-device modifications:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</h3> <p>With <code translate="no" dir="ltr">AndroidConfigV2</code>, <code translate="no" dir="ltr">RemoteNotification</code> messages are displayed unless <code translate="no" dir="ltr">mutable_content</code> is set to true or they're explicitly silenced in <code translate="no" dir="ltr">onNotificationReceived()</code>.</p> <p>When a <code translate="no" dir="ltr">RemoteNotification</code> arrives with <code translate="no" dir="ltr">mutable_content: true</code>, GMS Core binds to your application and calls <code translate="no" dir="ltr">onNotificationReceived()</code>. Your method must return a <code translate="no" dir="ltr">NotificationResponse</code> within 20 seconds.</p> <h4 id="return-modified-notification">Return a modified notification</h4> <p>The <code translate="no" dir="ltr">Notification</code> object you pass to <code translate="no" dir="ltr">NotificationResponse.create</code> replaces the server's <code translate="no" dir="ltr">remote_notification.notification</code> fallback payload properties defined in the send request. To keep values from the send request, read them from <code translate="no" dir="ltr">message.notification</code> (<code translate="no" dir="ltr">message.getNotification()</code> in Java) while applying on-device modifications:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -158,7 +158,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         return NotificationResponse.create("optional_tag", 100, builder.build())
     }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -191,7 +191,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         return NotificationResponse.create("optional_tag", 100, builder.build());
     }
 }
-</pre></section> </div> <h4 id="suppress-notifications">Suppress a notification</h4> <p>If the user has the relevant screen or chat active right now, you can suppress the notification by returning <code translate="no" dir="ltr">NotificationResponse.suppress()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> </div> <h4 id="suppress-notifications">Suppress a notification</h4> <p>If the user has the relevant screen or chat active right now, you can suppress the notification by returning <code translate="no" dir="ltr">NotificationResponse.suppress()</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -211,7 +211,7 @@ override fun onNotificationReceived(message: RemoteMessage): NotificationRespons
     val builder = buildNotificationForChat(message)
     return NotificationResponse.create("chat_tag", 101, builder.build())
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
@@ -232,7 +232,7 @@ public NotificationResponse onNotificationReceived(RemoteMessage message) {
     NotificationCompat.Builder builder = buildNotificationForChat(message);
     return NotificationResponse.create("chat_tag", 101, builder.build());
 }
-</pre></section> </div> <h4 id="stream_notifications_or_cancel_older_alerts_fcmnotificationmanager">Stream notifications or cancel older alerts (<code translate="no" dir="ltr">FcmNotificationManager</code>)</h4> <p>If you need to post multiple notifications for a single incoming push, or cancel a stale notification before displaying a new one, use <code translate="no" dir="ltr">FcmNotificationManager</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> </div> <h4 id="stream_notifications_or_cancel_older_alerts_fcmnotificationmanager">Stream notifications or cancel older alerts (<code translate="no" dir="ltr">FcmNotificationManager</code>)</h4> <p>If you need to post multiple notifications for a single incoming push, or cancel a stale notification before displaying a new one, use <code translate="no" dir="ltr">FcmNotificationManager</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">override fun onNotificationReceived(message: RemoteMessage): NotificationResponse {
     // Retrieve the scoped manager for this message execution
@@ -258,7 +258,7 @@ public NotificationResponse onNotificationReceived(RemoteMessage message) {
     // 4. Return finished() to complete the streaming workflow
     return manager.finished()
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">@Override
 public NotificationResponse onNotificationReceived(RemoteMessage message) {
@@ -287,7 +287,7 @@ public NotificationResponse onNotificationReceived(RemoteMessage message) {
 }
 </pre></section> </div>
 <aside class="caution"><strong>Caution:</strong><span> <code translate="no" dir="ltr">FcmNotificationManager</code> instances are valid only during the execution of <code translate="no" dir="ltr">onNotificationReceived()</code>. You must call <code translate="no" dir="ltr">finished()</code> at the end of the callback and must never invoke <code translate="no" dir="ltr">postNow()</code> or <code translate="no" dir="ltr">cancelNow()</code> from background threads after the method returns.</span></aside> <h3 id="handling-backgroundsync-messages">Handle BackgroundSync messages using <code translate="no" dir="ltr">onBackgroundSyncReceived</code>
-</h3> <p>To process <code translate="no" dir="ltr">BackgroundSync</code> messages on Android, use <code translate="no" dir="ltr">onBackgroundSyncReceived()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</h3> <p>To process <code translate="no" dir="ltr">BackgroundSync</code> messages on Android, use <code translate="no" dir="ltr">onBackgroundSyncReceived()</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">override fun onBackgroundSyncReceived(message: RemoteMessage) {
     val syncCommand = message.data["sync_action"]
@@ -300,7 +300,7 @@ public NotificationResponse onNotificationReceived(RemoteMessage message) {
     }
     // Execution completes -&gt; GMS Core marks the message as handled and unbinds.
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">@Override
 public void onBackgroundSyncReceived(RemoteMessage message) {
@@ -316,13 +316,13 @@ public void onBackgroundSyncReceived(RemoteMessage message) {
 }
 </pre></section> </div>
 <aside class="note"><strong>Note:</strong><span> <code translate="no" dir="ltr">BackgroundSync</code> messages are intended for silent background updates, such as syncing state, refreshing app badges and widgets. Don't use these messages to post user-visible notifications, as these can be delayed to optimize device battery life.</span></aside> <h3 id="pending-message-deletions">Handle pending message deletions using <code translate="no" dir="ltr">onDeletedMessages</code>
-</h3> <p>In some situations, such as when a device hasn't connected to FCM for an extended period or when the server queue is full, FCM may delete pending messages before delivery. In these cases, override <code translate="no" dir="ltr">onDeletedMessages()</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</h3> <p>In some situations, such as when a device hasn't connected to FCM for an extended period or when the server queue is full, FCM may delete pending messages before delivery. In these cases, override <code translate="no" dir="ltr">onDeletedMessages()</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">override fun onDeletedMessages() {
     // Perform a full state synchronization with your app server
     AppDataRepository.getInstance(applicationContext).scheduleFullSync()
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">@Override
 public void onDeletedMessages() {

@@ -15,7 +15,7 @@
       },
       ...
     }
-</pre> <h3 id="android_apple_platforms_and_web_sdks">Android, Apple platforms, and Web SDKs</h3> <p>Set up your in-app configuration or test classes to interact with Cloud Firestore as follows. Note that in the following samples, app code is connecting to the default project database. For examples involving additional Cloud Firestore databases beyond the default database, refer to the <a href="../firestore/manage-databases#access_a_named_database_with_a_client_library">guide for multiple databases</a>.</p> <aside class="note"><strong>Note:</strong><span> The Cloud Firestore emulator clears database contents when shut down. Since the offline cache of the Firestore SDK is not automatically cleared, you may want to disable local persistence in your emulator configuration to avoid discrepancies between the emulated database and local caches; in the Web SDK, persistence is disabled by default.</span></aside> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+</pre> <h3 id="android_apple_platforms_and_web_sdks">Android, Apple platforms, and Web SDKs</h3> <p>Set up your in-app configuration or test classes to interact with Cloud Firestore as follows. Note that in the following samples, app code is connecting to the default project database. For examples involving additional Cloud Firestore databases beyond the default database, refer to the <a href="../firestore/manage-databases#access_a_named_database_with_a_client_library">guide for multiple databases</a>.</p> <aside class="note"><strong>Note:</strong><span> The Cloud Firestore emulator clears database contents when shut down. Since the offline cache of the Firestore SDK is not automatically cleared, you may want to disable local persistence in your emulator configuration to avoid discrepancies between the emulated database and local caches; in the Web SDK, persistence is disabled by default.</span></aside> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">// 10.0.2.2 is the special IP address to connect to the 'localhost' of
 // the host computer from an Android emulator.
 val firestore = Firebase.firestore
@@ -23,7 +23,7 @@ firestore.useEmulator("10.0.2.2", 8080)
 
 firestore.firestoreSettings = firestoreSettings {
     isPersistenceEnabled = false
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">// 10.0.2.2 is the special IP address to connect to the 'localhost' of
 // the host computer from an Android emulator.
 FirebaseFirestore firestore = FirebaseFirestore.getInstance();
@@ -32,21 +32,21 @@ firestore.useEmulator("10.0.2.2", 8080);
 FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
         .setPersistenceEnabled(false)
         .build();
-firestore.setFirestoreSettings(settings);</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+firestore.setFirestoreSettings(settings);</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let settings = Firestore.firestore().settings
 settings.host = "127.0.0.1:8080"
 settings.cacheSettings = MemoryCacheSettings()
 settings.isSSLEnabled = false
-Firestore.firestore().settings = settings</pre> </section> <section> <p class="_firebase-tab"><strong>Unity</strong></p> <aside class="note">The default host is <code translate="no" dir="ltr">127.0.0.1</code>. If you are using an Android emulator, you need to use <code translate="no" dir="ltr">10.0.2.2</code>.</aside> 
+Firestore.firestore().settings = settings</pre> </section> <section> <p class="_code-tab"><strong>Unity</strong></p> <aside class="note">The default host is <code translate="no" dir="ltr">127.0.0.1</code>. If you are using an Android emulator, you need to use <code translate="no" dir="ltr">10.0.2.2</code>.</aside> 
 <pre data-language="csharp">FirebaseFirestore db = FirebaseFirestore.DefaultInstance;
 // Connects to the Firestore Emulator running on port 8080
 db.Settings.Host = "127.0.0.1:8080";
-db.Settings.SslEnabled = false;</pre> </section> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+db.Settings.SslEnabled = false;</pre> </section> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 
 // firebaseApps previously initialized using initializeApp()
 const db = getFirestore();
-connectFirestoreEmulator(db, '127.0.0.1', 8080);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
+connectFirestoreEmulator(db, '127.0.0.1', 8080);</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
 <pre data-language="javascript">// Firebase previously initialized using firebase.initializeApp().
 var db = firebase.firestore();
 if (location.hostname === "localhost") {
@@ -54,8 +54,8 @@ if (location.hostname === "localhost") {
 }</pre> </section> </div> <p>No additional setup is needed to test Cloud Functions <a href="../functions/firestore-events">triggered by Firestore events</a> using the emulator. When the Firestore and Cloud Functions emulators are both running, they automatically work together.</p> <h3 id="admin_sdks">Admin SDKs</h3> <p>The Firebase Admin SDKs automatically connect to the Cloud Firestore emulator when the <code translate="no" dir="ltr">FIRESTORE_EMULATOR_HOST</code> environment variable is set:</p> 
 <pre>export FIRESTORE_EMULATOR_HOST="127.0.0.1:8080"
 </pre>
-<aside class="note"><strong>Note:</strong><span> For emulators to work correctly the <code translate="no" dir="ltr">FIRESTORE_EMULATOR_HOST</code> environment variable must omit protocols such as <code translate="no" dir="ltr">http://</code>.</span></aside> <p>If your code is running inside the Cloud Functions emulator your project ID and other configuration are automatically set when calling <code translate="no" dir="ltr">initializeApp</code>.</p> <p>If you want your Admin SDK code to connect to a shared emulator running in another environment, you need to specify the <a href="#choose_a_firebase_project">the same project ID you set using the Firebase CLI</a>. You can pass a project ID to <code translate="no" dir="ltr">initializeApp</code> directly or set the <code translate="no" dir="ltr">GCLOUD_PROJECT</code> environment variable.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Node.js Admin SDK</strong></p> 
-<pre data-language="">admin.initializeApp({ projectId: "your-project-id" });</pre> </section> <section> <p class="_firebase-tab"><strong>Environment Variable</strong></p> 
+<aside class="note"><strong>Note:</strong><span> For emulators to work correctly the <code translate="no" dir="ltr">FIRESTORE_EMULATOR_HOST</code> environment variable must omit protocols such as <code translate="no" dir="ltr">http://</code>.</span></aside> <p>If your code is running inside the Cloud Functions emulator your project ID and other configuration are automatically set when calling <code translate="no" dir="ltr">initializeApp</code>.</p> <p>If you want your Admin SDK code to connect to a shared emulator running in another environment, you need to specify the <a href="#choose_a_firebase_project">the same project ID you set using the Firebase CLI</a>. You can pass a project ID to <code translate="no" dir="ltr">initializeApp</code> directly or set the <code translate="no" dir="ltr">GCLOUD_PROJECT</code> environment variable.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Node.js Admin SDK</strong></p> 
+<pre data-language="">admin.initializeApp({ projectId: "your-project-id" });</pre> </section> <section> <p class="_code-tab"><strong>Environment Variable</strong></p> 
 <pre data-language="">export GCLOUD_PROJECT="your-project-id"</pre> </section> </div> <h3 id="cloud_firestore_rest_api">Cloud Firestore REST API</h3> <p>The Cloud Firestore emulator provides a REST endpoint for interacting with your database. All REST API calls should be made to the <code translate="no" dir="ltr">http://localhost:8080/v1</code> endpoint.</p> <p>The full path for a REST call follows the pattern:</p> 
 <pre>http://localhost:8080/v1/projects/{project_id}/databases/{database_id}/documents/{document_path}
 </pre> <p>For example, to list all documents in the <code translate="no" dir="ltr">users</code> collection for the project <code translate="no" dir="ltr">my-project-id</code>, you can use <code translate="no" dir="ltr">curl</code>:</p> 

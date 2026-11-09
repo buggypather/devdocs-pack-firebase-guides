@@ -20,7 +20,7 @@
     implementation("com.google.firebase:firebase-analytics:24.0.0")
 }</pre>  <h2 id="add-plugin">
 <strong>Step 2</strong>: Add the Crashlytics Gradle plugin to your app</h2> <ol> <li>
-<p>In your <strong>root-level (project-level)</strong> Gradle file (<code translate="no" dir="ltr">&lt;project&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/build.gradle</code>), add the Crashlytics Gradle plugin to the <code translate="no" dir="ltr">plugins</code> block:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+<p>In your <strong>root-level (project-level)</strong> Gradle file (<code translate="no" dir="ltr">&lt;project&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/build.gradle</code>), add the Crashlytics Gradle plugin to the <code translate="no" dir="ltr">plugins</code> block:</p> <div> <section><p class="_code-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
 <aside class="note">Are you still using the <code translate="no" dir="ltr">buildscript</code> syntax? Learn how to <a href="../../android/troubleshooting-faq#add-plugins-using-buildscript-syntax">add Firebase plugins</a> using that syntax. </aside> 
 <pre data-language="kotlin">plugins {
     // Make sure that you have the AGP plugin 8.1+ dependency
@@ -32,7 +32,7 @@
 
     // Add the dependency for the Crashlytics Gradle plugin
     id("com.google.firebase.crashlytics") version "3.0.8" apply false
-}</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Groovy (build.gradle)</strong></p>
 <aside class="note">Are you still using the <code translate="no" dir="ltr">buildscript</code> syntax? Learn how to <a href="../../android/troubleshooting-faq#add-plugins-using-buildscript-syntax">add Firebase plugins</a> using that syntax. </aside> 
 <pre data-language="">plugins {
     // Make sure that you have the AGP plugin 8.1+ dependency
@@ -46,7 +46,7 @@
     id 'com.google.firebase.crashlytics' version '3.0.8' apply false
 }</pre></section> </div> <aside class="note">Is your app using a lower version of Gradle? Consider <a href="../troubleshooting#android-upgrade-to-gradle-plugin-v3">upgrading</a>; otherwise, you should use v2.9.9 of the Crashlytics Gradle plugin. </aside>
 </li> <li>
-<p>In your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the Crashlytics Gradle plugin:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+<p>In your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), add the Crashlytics Gradle plugin:</p> <div> <section><p class="_code-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
 
 <pre data-language="kotlin">plugins {
   id("com.android.application")
@@ -57,7 +57,7 @@
 
   // Add the Crashlytics Gradle plugin
   id("com.google.firebase.crashlytics")
-}</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Groovy (build.gradle)</strong></p>
 
 <pre data-language="">plugins {
   id 'com.android.application'
@@ -70,7 +70,7 @@
   id 'com.google.firebase.crashlytics'
 }</pre></section> </div>
 </li> </ol> <h2 id="add-extension">
-<strong>Step 3</strong>: Add the Crashlytics extension to your build</h2> <p>In your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), configure the Crashlytics extension.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+<strong>Step 3</strong>: Add the Crashlytics extension to your build</h2> <p>In your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>), configure the Crashlytics extension.</p> <div> <section><p class="_code-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
 
 <pre data-language="kotlin">import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 
@@ -90,7 +90,7 @@ android {
           }
       }
   }
-}</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Groovy (build.gradle)</strong></p>
 
 <pre data-language="">// ...
 
@@ -118,7 +118,7 @@ android {
 <p>Both the Crashlytics SDK for NDK and the Crashlytics Gradle plugin depend on the presence of the GNU build ID within the native shared objects.</p> <p>You can verify the presence of this ID by running <nobr><code translate="no" dir="ltr">readelf -n</code></nobr> on each binary. If the build ID is absent, add <nobr><code translate="no" dir="ltr">-Wl,--build-id</code></nobr> to your build system's flags to fix the problem.</p>
 </li> </ol> <h2 id="force-test-crash">
 <strong>Step 5</strong>: Force a test crash to finish setup</h2> <p>To finish setting up Crashlytics and see initial data in the Crashlytics dashboard of the Firebase console, you need to force a test crash.</p> <ol> <li>
-<p>Add code to your app that you can use to force a test crash.</p> <p>You can use the following code in your app's <code translate="no" dir="ltr">MainActivity</code> to add a button to your app that, when pressed, causes a crash. The button is labeled "Test Crash".</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Add code to your app that you can use to force a test crash.</p> <p>You can use the following code in your app's <code translate="no" dir="ltr">MainActivity</code> to add a button to your app that, when pressed, causes a crash. The button is labeled "Test Crash".</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">val crashButton = Button(this)
 crashButton.text = "Test Crash"
@@ -128,7 +128,7 @@ crashButton.setOnClickListener {
 
 addContentView(crashButton, ViewGroup.LayoutParams(
        ViewGroup.LayoutParams.MATCH_PARENT,
-       ViewGroup.LayoutParams.WRAP_CONTENT))</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+       ViewGroup.LayoutParams.WRAP_CONTENT))</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">Button crashButton = new Button(this);
 crashButton.setText("Test Crash");
@@ -149,7 +149,7 @@ addContentView(crashButton, new ViewGroup.LayoutParams(
 <strong>Option</strong>: Upload symbols for library modules and external dependencies</h3> <p>This option can be helpful in the following situations:</p> <ul> <li>If you use a customized NDK build process within Gradle</li> <li>If your native libraries are built in a library/feature module or provided by a third-party</li> <li>If the <a href="#set-up-automatic-native-symbols-upload">automatic symbol uploading task</a> is failing or you're seeing unsymbolicated crashes in the Crashlytics dashboard</li> </ul> <p><section class="expandable"> <p class="showalways">View instructions for this option</p></section></p> <p>The standard Crashlytics symbol upload task assumes that you're building your native libraries as part of your app module's Gradle build, using standard NDK build tools such as CMake.</p> <p>However, if you're using a customized NDK build process within Gradle, or your native libraries are built in a library/feature module or provided by a third-party, you may need to explicitly specify the path to your unstripped libraries. To accomplish this, you can add the <code translate="no" dir="ltr">unstrippedNativeLibsDir</code> property within the Crashlytics extension in your Gradle build file.</p> <ol> <li>
 <p>Make sure that you've completed the following initial tasks from the main workflow earlier on this page:</p> <ol> <li><p><a href="#enable-in-console">Enabled Crashlytics in the Firebase console.</a></p></li> <li><p>Added the <a href="#add-sdk">Crashlytics SDK for NDK</a> and the <a href="#add-plugin">Crashlytics Gradle plugin</a>.</p></li> <li><p><a href="#add-extension">Added the Crashlytics extension to your build.</a></p></li> <li><p><a href="#set-up-automatic-native-symbols-upload">Set up automatic uploading of native symbols.</a></p></li> </ol>
 </li> <li>
-<p>So that the automatic symbol uploading task can find your symbol information, add the following to your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>):</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
+<p>So that the automatic symbol uploading task can find your symbol information, add the following to your <strong>module (app-level)</strong> Gradle file (usually <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle.kts</code> or <code translate="no" dir="ltr">&lt;project&gt;/&lt;app-module&gt;/build.gradle</code>):</p> <div> <section><p class="_code-tab"><strong>Kotlin (build.gradle.kts)</strong></p>
 
 <pre data-language="kotlin">import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 
@@ -165,7 +165,7 @@ android {
             }
         }
     }
-}</pre></section> <section><p class="_firebase-tab"><strong>Groovy (build.gradle)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Groovy (build.gradle)</strong></p>
 
 <pre data-language="">// ...
 

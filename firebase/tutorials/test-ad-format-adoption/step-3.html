@@ -1,41 +1,41 @@
-<h1>Tutorial: Test adoption of new AdMob ad formats</h1> <h2 id="step_3_handle_parameter_values_in_your_apps_code" class="hide-from-toc">Step 3: Handle Remote Config parameter values in your app's code</h2> <p><br></p> <table class="orange"> <tr> <td> Introduction: <a href="../test-ad-format-adoption">Test new AdMob ad format adoption using Firebase</a> </td> </tr> <tr> <td> Step 1: <a href="step-1">Use AdMob to create a new ad unit variant for testing</a> </td> </tr> <tr> <td> Step 2: <a href="step-2">Set up an A/B test in the Firebase console</a> </td> </tr> <tr class="alt"> <td> <br> <b>Step 3: Handle Remote Config parameter values in your app's code</b> <br><br> </td> </tr> <tr> <td> Step 4: <a href="step-4">Start the A/B test and review the test results in the Firebase console</a> </td> </tr> <tr> <td> Step 5: <a href="step-5">Decide whether to roll out the new ad format</a> </td> </tr> </table> <p><br></p> <p>At the end of the last step, you created a Remote Config parameter (<code translate="no" dir="ltr">SHOW_NEW_AD_KEY</code>). In this step, you'll add the logic to your app's code for what your app should display based on the value of that parameter — <code translate="no" dir="ltr">true</code> (show the new ad) versus <code translate="no" dir="ltr">false</code> (do <em>not</em> show the new ad).</p> <h3 id="add-sdks"><strong>Add the required SDKs</strong></h3> <p>Before using Remote Config in your application code, add both the Remote Config SDK and the Firebase SDK for Google Analytics to your project build files.</p> <div> <section><p class="_firebase-tab"><strong>Apple platforms</strong></p>
+<h1>Tutorial: Test adoption of new AdMob ad formats</h1> <h2 id="step_3_handle_parameter_values_in_your_apps_code" class="hide-from-toc">Step 3: Handle Remote Config parameter values in your app's code</h2> <p><br></p> <table class="orange"> <tr> <td> Introduction: <a href="../test-ad-format-adoption">Test new AdMob ad format adoption using Firebase</a> </td> </tr> <tr> <td> Step 1: <a href="step-1">Use AdMob to create a new ad unit variant for testing</a> </td> </tr> <tr> <td> Step 2: <a href="step-2">Set up an A/B test in the Firebase console</a> </td> </tr> <tr class="alt"> <td> <br> <b>Step 3: Handle Remote Config parameter values in your app's code</b> <br><br> </td> </tr> <tr> <td> Step 4: <a href="step-4">Start the A/B test and review the test results in the Firebase console</a> </td> </tr> <tr> <td> Step 5: <a href="step-5">Decide whether to roll out the new ad format</a> </td> </tr> </table> <p><br></p> <p>At the end of the last step, you created a Remote Config parameter (<code translate="no" dir="ltr">SHOW_NEW_AD_KEY</code>). In this step, you'll add the logic to your app's code for what your app should display based on the value of that parameter — <code translate="no" dir="ltr">true</code> (show the new ad) versus <code translate="no" dir="ltr">false</code> (do <em>not</em> show the new ad).</p> <h3 id="add-sdks"><strong>Add the required SDKs</strong></h3> <p>Before using Remote Config in your application code, add both the Remote Config SDK and the Firebase SDK for Google Analytics to your project build files.</p> <div> <section><p class="_code-tab"><strong>Apple platforms</strong></p>
 <p>Add and install the following pods in your podfile:</p> 
 <pre data-language="">pod 'Google-Mobile-Ads-SDK'
 pod 'Firebase/Analytics'
 pod 'Firebase/RemoteConfig'
-</pre></section> <section><p class="_firebase-tab"><strong>Android</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Android</strong></p>
 <p>Add the following library dependencies to your <code translate="no" dir="ltr">build.gradle</code> file:</p> 
 <pre data-language="java">implementation 'com.google.android.gms:play-services-ads:25.5.0'
 implementation 'com.google.firebase:firebase-analytics:24.0.0'
 implementation 'com.google.firebase:firebase-config:24.0.1'
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
-<p>Download and install the Firebase Unity SDK, then add the following Unity packages to your project:</p> <ul> <li><code translate="no" dir="ltr">FirebaseAnalytics.unitypackage</code></li> <li><code translate="no" dir="ltr">FirebaseRemoteConfig.unitypackage</code></li> </ul></section> </div> <h3 id="configure-remote-config-instance"><strong>Configure Remote Config instance</strong></h3> <p>To use the Remote Config parameter values, configure the Remote Config instance so that it's set up to fetch new values for the client app instance.</p> <p>In this example, Remote Config is configured to check for new parameter values once every hour.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
+<p>Download and install the Firebase Unity SDK, then add the following Unity packages to your project:</p> <ul> <li><code translate="no" dir="ltr">FirebaseAnalytics.unitypackage</code></li> <li><code translate="no" dir="ltr">FirebaseRemoteConfig.unitypackage</code></li> </ul></section> </div> <h3 id="configure-remote-config-instance"><strong>Configure Remote Config instance</strong></h3> <p>To use the Remote Config parameter values, configure the Remote Config instance so that it's set up to fetch new values for the client app instance.</p> <p>In this example, Remote Config is configured to check for new parameter values once every hour.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">remoteConfig = RemoteConfig.remoteConfig()
 let settings = RemoteConfigSettings()
 settings.minimumFetchInterval = 3600
 remoteConfig.configSettings = settings
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">self.remoteConfig = [FIRRemoteConfig remoteConfig];
 FIRRemoteConfigSettings *remoteConfigSettings = [[FIRRemoteConfigSettings alloc] init];
 remoteConfigSettings.minimumFetchInterval = 3600;
 self.remoteConfig.configSettings = remoteConfigSettings;
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
 FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
         .setMinimumFetchIntervalInSeconds(3600)
         .build();
 mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">remoteConfig = Firebase.remoteConfig
 val configSettings = remoteConfigSettings {
     minimumFetchIntervalInSeconds = 3600
 }
 remoteConfig.setConfigSettingsAsync(configSettings)
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">var remoteConfig = FirebaseRemoteConfig.DefaultInstance;
 var configSettings = new ConfigSettings {
@@ -46,7 +46,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
         .ContinueWithOnMainThread(task =&gt; {
           Debug.Log("Config settings confirmed");
 }
-</pre></section> </div> <h3 id="fetch-activate-remote-config"><strong>Fetch and activate Remote Config</strong></h3> <p>Fetch and activate the Remote Config parameters so that it can start using the new parameter values.</p> <p>You'll want to make this call as early as possible in your app's loading phase because this call is asynchronous and you'll need the Remote Config value pre-fetched so that your app knows whether to show the ad.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> </div> <h3 id="fetch-activate-remote-config"><strong>Fetch and activate Remote Config</strong></h3> <p>Fetch and activate the Remote Config parameters so that it can start using the new parameter values.</p> <p>You'll want to make this call as early as possible in your app's loading phase because this call is asynchronous and you'll need the Remote Config value pre-fetched so that your app knows whether to show the ad.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">remoteConfig.fetch() { (status, error) -&gt; Void in
   if status == .success {
@@ -60,7 +60,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
   }
   self.loadAdUnit()
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">[self.remoteConfig fetchWithCompletionHandler:^(FIRRemoteConfigFetchStatus status, NSError *error) {
     if (status == FIRRemoteConfigFetchStatusSuccess) {
@@ -74,7 +74,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
     }
     [self loadAdUnit];
 }];
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">mFirebaseRemoteConfig.fetchAndActivate()
         .addOnCompleteListener(this, new OnCompleteListener&lt;Boolean&gt;() {
@@ -89,7 +89,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
                 loadAdUnit();
             }
         });
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">remoteConfig.fetchAndActivate()
         .addOnCompleteListener(this) { task -&gt;
@@ -101,7 +101,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
             }
             loadAdUnit()
         }
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">remoteConfig.FetchAndActivateAsync().ContinueWithOnMainThread(task =&gt; {
   if (task.IsFaulted) {
@@ -111,7 +111,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
   }
   LoadAdUnit();
 });
-</pre></section> </div> <p>Your app is now ready to handle the Remote Config parameter that you created during the A/B test set up earlier in this tutorial.</p> <h3 id="use-remote-config-parameter-value"><strong>Use the Remote Config parameter value</strong></h3> <p>Use the pre-fetched Remote Config value in the <code translate="no" dir="ltr">loadAdUnit()</code> function to determine whether the app instance should show (parameter value of <code translate="no" dir="ltr">true</code>) or <em>not</em> show (parameter value of <code translate="no" dir="ltr">false</code>) the new rewarded interstitial ad unit.</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+</pre></section> </div> <p>Your app is now ready to handle the Remote Config parameter that you created during the A/B test set up earlier in this tutorial.</p> <h3 id="use-remote-config-parameter-value"><strong>Use the Remote Config parameter value</strong></h3> <p>Use the pre-fetched Remote Config value in the <code translate="no" dir="ltr">loadAdUnit()</code> function to determine whether the app instance should show (parameter value of <code translate="no" dir="ltr">true</code>) or <em>not</em> show (parameter value of <code translate="no" dir="ltr">false</code>) the new rewarded interstitial ad unit.</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">private func loadAdUnit() {
   let showNewAdFormat = remoteConfig["users"].boolValue
@@ -123,7 +123,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
     // Show the existing ad unit.
   }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">- (void)loadAdUnit {
     BOOL showAds = self.remoteConfig[@"SHOW_NEW_AD_KEY"].boolValue;
@@ -135,7 +135,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
       // Show the existing ad unit.
     }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">private void loadAdUnit() {
     boolean showNewAdFormat =
@@ -149,7 +149,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
       // Show the existing ad unit.
     }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">private fun loadAdUnit() {
   var showNewAdFormat = remoteConfig.getBoolean(SHOW_NEW_AD_KEY)
@@ -162,7 +162,7 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
       // Show the existing ad unit.
     }
 }
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">void LoadAdUnit() {
   bool showNewAdFormat =
@@ -176,19 +176,19 @@ remoteConfig.SetConfigSettingsAsync(configSettings)
   }
 }
 </pre></section> </div>
-<aside class="note"><strong>Note:</strong><span> In production code, you should also add a type and null check on retrieved Remote Config parameter values.</span></aside> <h3 id="add-other-checks-for-parameter-value"><strong>Add other checks for the parameter value</strong></h3> <p>There are other areas in your application code where you'll need to check the value of this Remote Config parameter to dictate which ad experience will be loaded. For example, you can decide whether to reload an ad after the user has finished viewing the current one.</p> <p>The fetch and activate calls should be made first to get any parameter value changes — for example, if you decide to end or create a new experiment.</p> <p>From there, you can always check the value for the parameter using the following calls:</p> <div> <section><p class="_firebase-tab"><strong>Swift</strong></p>
+<aside class="note"><strong>Note:</strong><span> In production code, you should also add a type and null check on retrieved Remote Config parameter values.</span></aside> <h3 id="add-other-checks-for-parameter-value"><strong>Add other checks for the parameter value</strong></h3> <p>There are other areas in your application code where you'll need to check the value of this Remote Config parameter to dictate which ad experience will be loaded. For example, you can decide whether to reload an ad after the user has finished viewing the current one.</p> <p>The fetch and activate calls should be made first to get any parameter value changes — for example, if you decide to end or create a new experiment.</p> <p>From there, you can always check the value for the parameter using the following calls:</p> <div> <section><p class="_code-tab"><strong>Swift</strong></p>
 
 <pre data-language="swift">remoteConfig["showNewAdKey"].boolValue
-</pre></section> <section><p class="_firebase-tab"><strong>Objective-C</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Objective-C</strong></p>
 
 <pre data-language="objectivec">self.remoteConfig[@"SHOW_NEW_AD_KEY"].boolValue;
-</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 <pre data-language="java">mFirebaseRemoteConfig.getBoolean(SHOW_NEW_AD_KEY)
-</pre></section> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 <pre data-language="kotlin">remoteConfig.getBoolean(SHOW_NEW_AD_KEY)
-</pre></section> <section><p class="_firebase-tab"><strong>Unity</strong></p>
+</pre></section> <section><p class="_code-tab"><strong>Unity</strong></p>
 
 <pre data-language="csharp">remoteConfig.GetValue("SHOW_NEW_AD_KEY").BooleanValue
 </pre></section> </div> <p>These calls will always return the same value for an app instance depending on whether it was placed in the control group or the new ad variant group, unless any changes were made in the Firebase console that were fetched and activated in the previous calls.</p> <p><br></p> <hr> <p><br></p> <p><a class="button button-with-icon attempt-left" href="step-2"><span class="material-icons" aria-hidden="true" translate="no">arrow_back_ios</span><b>Step 2</b>: Set up an A/B test in the Firebase console</a> <a class="button button-with-icon button-primary attempt-right" href="step-4"><b>Step 4</b>: Start the A/B test &amp; review test results<span class="material-icons icon-after" aria-hidden="true" translate="no">arrow_forward_ios</span></a></p> <p><br></p> <hr><div class="_attribution">

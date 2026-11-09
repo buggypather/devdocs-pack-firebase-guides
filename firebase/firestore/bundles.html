@@ -1,4 +1,4 @@
-<h1>Cloud Firestore data bundles</h1> <p><meta name="hide_last_updated" value="true"> </p> <aside class="note"><strong>Note:</strong><span> Data bundles is an optional, advanced Cloud Firestore feature. We cover data bundles here along with basic concepts for understanding Cloud Firestore so you're aware of features that can help you manage query costs once your app has scaled up. Before you consider data bundles, in addition to reading the other overview and concept topics, be sure to read the guide for <a href="query-data/queries">performing Cloud Firestore queries</a>.</span></aside> <p>Cloud Firestore data bundles are static data files built by you from Cloud Firestore document and query snapshots, and published by you on a CDN, hosting service or other solution. Data bundles include both the documents you want to provide to your client apps and metadata about the queries that generated them. You use client SDKs to download bundles over the network or from local storage, after which you load bundle data to the Cloud Firestore local cache. Once a bundle is loaded, a client app can query documents from the local cache or the backend.</p> <p>With data bundles, your apps can load the results of common queries sooner, since documents are available at start-up without the need for calls to the Cloud Firestore backend. If results are loaded from local cache, you also benefit from reduced access costs. Instead of paying for a million app instances to query the same initial 100 documents, you pay only for the queries needed to bundle those 100 documents.</p> <p>Cloud Firestore data bundles are built to work well with other Firebase backend products. Take a look at an <a href="solutions/serve-bundles">integrated solution</a> in which bundles are built by Cloud Functions and served to users with Firebase Hosting.</p> <p>Using a bundle with your app involves three steps:</p> <ol> <li>Building the bundle with the Admin SDK</li> <li>Serving the bundle from local storage or from a CDN</li> <li>Loading bundles in the client</li> </ol> <h2 id="what_is_a_data_bundle">What is a data bundle?</h2> <p>A data bundle is a static binary file built by you to package one or more <em>document and/or query snapshots</em> and from which you can extract <em>named queries</em>. As we discuss below, the server-side SDKs let you build bundles and client SDKs provide methods to let you load bundles to the local cache.</p> <p>Named queries are an especially powerful feature of bundles. Named queries are <code translate="no" dir="ltr">Query</code> objects you can extract from a bundle, then use immediately to query data either from cache or from the backend, as you do normally in any part of your app that talks to Cloud Firestore.</p> <h2 id="building_data_bundles_on_the_server">Building data bundles on the server</h2> <p>Using the Node.js or Java <a href="../admin/setup">Admin SDK</a> gives you complete control over what to include in the bundles and how to serve them.</p> <aside class="note"><strong>Note:</strong><span> Make sure to bundle only publicly readable data. The Admin SDK acts as a privileged user and does not evaluate Security Rules; therefore, it will bundle any documents or queried data regardless of your security rules.</span></aside> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Node.js</strong></p> 
+<h1>Cloud Firestore data bundles</h1> <p><meta name="hide_last_updated" value="true"> </p> <aside class="note"><strong>Note:</strong><span> Data bundles is an optional, advanced Cloud Firestore feature. We cover data bundles here along with basic concepts for understanding Cloud Firestore so you're aware of features that can help you manage query costs once your app has scaled up. Before you consider data bundles, in addition to reading the other overview and concept topics, be sure to read the guide for <a href="query-data/queries">performing Cloud Firestore queries</a>.</span></aside> <p>Cloud Firestore data bundles are static data files built by you from Cloud Firestore document and query snapshots, and published by you on a CDN, hosting service or other solution. Data bundles include both the documents you want to provide to your client apps and metadata about the queries that generated them. You use client SDKs to download bundles over the network or from local storage, after which you load bundle data to the Cloud Firestore local cache. Once a bundle is loaded, a client app can query documents from the local cache or the backend.</p> <p>With data bundles, your apps can load the results of common queries sooner, since documents are available at start-up without the need for calls to the Cloud Firestore backend. If results are loaded from local cache, you also benefit from reduced access costs. Instead of paying for a million app instances to query the same initial 100 documents, you pay only for the queries needed to bundle those 100 documents.</p> <p>Cloud Firestore data bundles are built to work well with other Firebase backend products. Take a look at an <a href="solutions/serve-bundles">integrated solution</a> in which bundles are built by Cloud Functions and served to users with Firebase Hosting.</p> <p>Using a bundle with your app involves three steps:</p> <ol> <li>Building the bundle with the Admin SDK</li> <li>Serving the bundle from local storage or from a CDN</li> <li>Loading bundles in the client</li> </ol> <h2 id="what_is_a_data_bundle">What is a data bundle?</h2> <p>A data bundle is a static binary file built by you to package one or more <em>document and/or query snapshots</em> and from which you can extract <em>named queries</em>. As we discuss below, the server-side SDKs let you build bundles and client SDKs provide methods to let you load bundles to the local cache.</p> <p>Named queries are an especially powerful feature of bundles. Named queries are <code translate="no" dir="ltr">Query</code> objects you can extract from a bundle, then use immediately to query data either from cache or from the backend, as you do normally in any part of your app that talks to Cloud Firestore.</p> <h2 id="building_data_bundles_on_the_server">Building data bundles on the server</h2> <p>Using the Node.js or Java <a href="../admin/setup">Admin SDK</a> gives you complete control over what to include in the bundles and how to serve them.</p> <aside class="note"><strong>Note:</strong><span> Make sure to bundle only publicly readable data. The Admin SDK acts as a privileged user and does not evaluate Security Rules; therefore, it will bundle any documents or queried data regardless of your security rules.</span></aside> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Node.js</strong></p> 
 <pre data-language="javascript">var bundleId = "latest-stories";
 
 var bundle = firestore.bundle(bundleId);
@@ -11,7 +11,7 @@ var querySnapshot = await firestore.collection('stories').get();
 var bundleBuffer = bundle.add(docSnapshot); // Add a document
                    .add('latest-stories-query', querySnapshot) // Add a named query.
                    .build()
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Java</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Java</strong></p> 
 <pre data-language="java">Firestore db = FirestoreClient.getFirestore(app);
 
 // Query the 50 latest stories
@@ -25,7 +25,7 @@ QuerySnapshot latestStories = db.collection("stories")
 FirestoreBundle bundle = db.bundleBuilder("latest-stories")
     .add("latest-stories-query", latestStories)
     .build();
-      </pre> </section> <section> <p class="_firebase-tab"><strong>Python</strong></p> 
+      </pre> </section> <section> <p class="_code-tab"><strong>Python</strong></p> 
 <pre data-language="python">from google.cloud import firestore
 from google.cloud.firestore_bundle import FirestoreBundle
 
@@ -50,7 +50,7 @@ server.on('request', (req, res) =&gt; {
 });
 
 server.listen(8000);
-</pre> <h2 id="loading_data_bundles_in_the_client">Loading data bundles in the client</h2> <p>You load Firestore bundles by fetching them from a remote server, whether by making an HTTP request, calling a storage API or using any other technique for fetching binary files on a network.</p> <p>Once fetched, using the Cloud Firestore client SDK, your app calls the <code translate="no" dir="ltr">loadBundle</code> method, which returns a task tracking object, the completion of which you can monitor much as you monitor the status of a Promise. On successful bundle loading task completion, bundle contents are available in the local cache.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+</pre> <h2 id="loading_data_bundles_in_the_client">Loading data bundles in the client</h2> <p>You load Firestore bundles by fetching them from a remote server, whether by making an HTTP request, calling a storage API or using any other technique for fetching binary files on a network.</p> <p>Once fetched, using the Cloud Firestore client SDK, your app calls the <code translate="no" dir="ltr">loadBundle</code> method, which returns a task tracking object, the completion of which you can monitor much as you monitor the status of a Promise. On successful bundle loading task completion, bundle contents are available in the local cache.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { loadBundle, namedQuery, getDocsFromCache } from "firebase/firestore";
 
 async function fetchFromBundle() {
@@ -67,7 +67,7 @@ async function fetchFromBundle() {
 
   // Use the results
   // ...
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> <aside class="note" style="padding-top:8px; padding-bottom:8px;"> <a href="../web/learn-more#modular-version">Learn more</a> about the tree-shakeable modular Web API and its advantages over the namespaced API.</aside> 
 <pre data-language="javascript">// If you are using module bundlers.
 import firebase from "firebase/compat/app";
 import "firebase/compat/firestore";
@@ -89,7 +89,7 @@ async function fetchFromBundle() {
 
   // Use the results
   // ...
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Swift</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="swift">// Utility function for errors when loading bundles.
 func bundleLoadError(reason: String) -&gt; NSError {
   return NSError(domain: "FIRSampleErrorDomain",
@@ -135,7 +135,7 @@ func runStoriesQuery() async {
   } catch {
     print(error)
   }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> <div style="margin-top: 5px; margin-bottom: 5px;"> <b>Note:</b> This product is not available on watchOS and App Clip targets. </div> 
 <pre data-language="objectivec">// Utility function for errors when loading bundles.
 - (NSError *)bundleLoadErrorWithReason:(NSString *)reason {
   return [NSError errorWithDomain:@"FIRSampleErrorDomain"
@@ -216,7 +216,7 @@ func runStoriesQuery() async {
             completion:^(FIRQuery *query, NSError *error) {
     // Handle query results
   }];
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">@Throws(IOException::class)
 fun getBundleStream(urlString: String?): InputStream {
     val url = URL(urlString)
@@ -259,7 +259,7 @@ fun fetchFromBundle() {
         // Use the results
         // ...
     }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">public InputStream getBundleStream(String urlString) throws IOException {
     URL url = new URL(urlString);
     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -309,7 +309,7 @@ public void fetchBundleFrom() throws IOException {
             // ...
         }
     });
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Dart (Flutter)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Dart (Flutter)</strong></p> 
 <pre data-language="dart">// Get a bundle from a server
 final url = Uri.https('example.com', '/create-bundle');
 final response = await http.get(url);
@@ -327,7 +327,7 @@ final results = await FirebaseFirestore.instance.namedQueryGet(
     source: Source.cache,
   ),
 );
-</pre> </section> <section> <p class="_firebase-tab"><strong>C++</strong></p> 
+</pre> </section> <section> <p class="_code-tab"><strong>C++</strong></p> 
 <pre data-language="cpp">db-&gt;LoadBundle("bundle_name", [](const LoadBundleTaskProgress&amp; progress) {
   switch(progress.state()) {
     case LoadBundleTaskProgress::State::kError: {

@@ -1,5 +1,5 @@
 <h1>Link Multiple Auth Providers to an Account on Apple Platforms</h1>  <aside class="important"> <b>Important</b>: There is a <a href="https://github.com/firebase/firebase-js-sdk/issues/7675" class="external">known issue</a> that prevents <code translate="no" dir="ltr">linkWithCredentials()</code> from working correctly in some projects. See the issue report for a workaround and the status of a fix. </aside> <p>You can allow users to sign in to your app using multiple authentication providers by linking auth provider credentials to an existing user account. Users are identifiable by the same Firebase user ID regardless of the authentication provider they used to sign in. For example, a user who signed in with a password can link a Google account and sign in with either method in the future. Or, an anonymous user can link a Facebook account and then, later, sign in with Facebook to continue using your app.</p> <h2 id="before-you-begin">Before you begin</h2> <p>Add support for two or more authentication providers (possibly including anonymous authentication) to your app.</p> <h2 id="link-auth-provider-credentials-to-a-user-account">Link auth provider credentials to a user account</h2> <p>To link auth provider credentials to an existing user account:</p> <ol> <li>Sign in the user using any authentication provider or method.</li> <li>Complete the sign-in flow for the new authentication provider up to, but not including, calling one of the <a href="https://firebase.google.com/docs/reference/ios/firebaseauth/interface_f_i_r_auth"><code translate="no" dir="ltr">FIRAuth.signInWith</code></a> methods. For example, get the user's Google ID token, Facebook access token, or email and password. </li> <li>
-<p>Get a <code translate="no" dir="ltr">FIRAuthCredential</code> for the new authentication provider:</p> <h5 id="google-sign-in">Google Sign-In</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p>Get a <code translate="no" dir="ltr">FIRAuthCredential</code> for the new authentication provider:</p> <h5 id="google-sign-in">Google Sign-In</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">guard
   let authentication = user?.authentication,
   let idToken = authentication.idToken
@@ -8,27 +8,27 @@ else {
 }
 
 let credential = GoogleAuthProvider.credential(withIDToken: idToken,
-                                               accessToken: authentication.accessToken)</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+                                               accessToken: authentication.accessToken)</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">FIRAuthCredential *credential =
 [FIRGoogleAuthProvider credentialWithIDToken:result.user.idToken.tokenString
-                                 accessToken:result.user.accessToken.tokenString];</pre> </section> </div> <h5 id="facebook-login">Facebook Login</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+                                 accessToken:result.user.accessToken.tokenString];</pre> </section> </div> <h5 id="facebook-login">Facebook Login</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let credential = FacebookAuthProvider
-  .credential(withAccessToken: AccessToken.current!.tokenString)</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+  .credential(withAccessToken: AccessToken.current!.tokenString)</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">FIRAuthCredential *credential = [FIRFacebookAuthProvider
-    credentialWithAccessToken:[FBSDKAccessToken currentAccessToken].tokenString];</pre> </section> </div> <h5 id="email-password-sign-in">Email-password sign-in</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
-<pre data-language="swift">let credential = EmailAuthProvider.credential(withEmail: email, password: password)</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+    credentialWithAccessToken:[FBSDKAccessToken currentAccessToken].tokenString];</pre> </section> </div> <h5 id="email-password-sign-in">Email-password sign-in</h5> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
+<pre data-language="swift">let credential = EmailAuthProvider.credential(withEmail: email, password: password)</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">FIRAuthCredential *credential =
     [FIREmailAuthProvider credentialWithEmail:email
                                              password:password];</pre> </section> </div> </li> <li>
-<p>Pass the <code translate="no" dir="ltr">FIRAuthCredential</code> object to the signed-in user's <code translate="no" dir="ltr">linkWithCredential:completion:</code> method:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+<p>Pass the <code translate="no" dir="ltr">FIRAuthCredential</code> object to the signed-in user's <code translate="no" dir="ltr">linkWithCredential:completion:</code> method:</p> <div class="ds-selector-tabs" data-ds-scope="code-sample"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">    user.link(with: credential) { authResult, error in
   // ...
 }
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">    [[FIRAuth auth].currentUser linkWithCredential:credential
     completion:^(FIRAuthDataResult *result, NSError *_Nullable error) {
   // ...
-}];</pre> </section> </div> <p>The call to <code translate="no" dir="ltr">linkWithCredential:completion:</code> will fail if the credentials are already linked to another user account. In this situation, you must handle merging the accounts and associated data as appropriate for your app:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+}];</pre> </section> </div> <p>The call to <code translate="no" dir="ltr">linkWithCredential:completion:</code> will fail if the credentials are already linked to another user account. In this situation, you must handle merging the accounts and associated data as appropriate for your app:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">let prevUser = Auth.auth().currentUser
 Auth.auth().signIn(with: credential) { authResult, error in
     if let error = error {
@@ -95,7 +95,7 @@ Auth.auth().signIn(with: credential) { authResult, error in
 }
             // Merge prevUser and currentUser accounts and data
             // ...
-        }</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+        }</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">FIRUser *prevUser = [FIRAuth auth].currentUser;
 [[FIRAuth auth] signInWithCredential:credential
                           completion:^(FIRAuthDataResult * _Nullable authResult,
@@ -152,10 +152,10 @@ Auth.auth().signIn(with: credential) { authResult, error in
 }];
                                     // Merge prevUser and currentUser accounts and data
                                     // ...
-                                }];</pre> </section> </div> </li> </ol> <p>If the call to <code translate="no" dir="ltr">linkWithCredential:completion:</code> succeeds, the user can now sign in using any linked authentication provider and access the same Firebase data.</p> <h2 id="unlink-an-auth-provider-from-a-user-account">Unlink an auth provider from a user account</h2> <p>A single Firebase user account can have multiple authentication providers linked to it (for example, email/password, Google, Facebook), which lets the user sign in to the same Firebase account through different methods.</p> <p>If you unlink an authentication provider from a user's account, they can no longer sign in with that provider.</p> <aside class="important"> <b>Important:</b> If a user signs in again with the same provider after it has been unlinked, Firebase creates a new, separate user account instead of restoring link to the original account. </aside> <p>To unlink an auth provider from a user account, pass the provider ID to the <code translate="no" dir="ltr">unlink</code> method. You can get the provider IDs of the auth providers linked to a user from the <code translate="no" dir="ltr">providerData</code> property.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Swift</strong></p> 
+                                }];</pre> </section> </div> </li> </ol> <p>If the call to <code translate="no" dir="ltr">linkWithCredential:completion:</code> succeeds, the user can now sign in using any linked authentication provider and access the same Firebase data.</p> <h2 id="unlink-an-auth-provider-from-a-user-account">Unlink an auth provider from a user account</h2> <p>A single Firebase user account can have multiple authentication providers linked to it (for example, email/password, Google, Facebook), which lets the user sign in to the same Firebase account through different methods.</p> <p>If you unlink an authentication provider from a user's account, they can no longer sign in with that provider.</p> <aside class="important"> <b>Important:</b> If a user signs in again with the same provider after it has been unlinked, Firebase creates a new, separate user account instead of restoring link to the original account. </aside> <p>To unlink an auth provider from a user account, pass the provider ID to the <code translate="no" dir="ltr">unlink</code> method. You can get the provider IDs of the auth providers linked to a user from the <code translate="no" dir="ltr">providerData</code> property.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Swift</strong></p> 
 <pre data-language="swift">Auth.auth().currentUser?.unlink(fromProvider: providerID!) { user, error in
   // ...
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Objective-C</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Objective-C</strong></p> 
 <pre data-language="objectivec">[[FIRAuth auth].currentUser unlinkFromProvider:providerID
                                     completion:^(FIRUser *_Nullable user, NSError *_Nullable error) {
   // ...

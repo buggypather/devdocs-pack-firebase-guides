@@ -11,28 +11,28 @@
     // Add the dependency for the Firebase Authentication library
     // When NOT using the BoM, you must specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth:25.0.0")
-}</pre>  </li> <li> If you haven't yet connected your app to your Firebase project, do so from the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. </li> <li> Enable anonymous authentication: <ol> <li> In the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Anonymous</b> sign-in provider. </li> <li> <b>Optional</b>: If you've upgraded your project to <a href="../../auth#identity-platform">Firebase Authentication with Identity Platform</a>, you can enable automatic clean-up. When you enable this setting, anonymous accounts older than 30 days will be automatically deleted. In projects with automatic clean-up enabled, anonymous authentication will no longer count toward usage limits or billing quotas. See <a href="#auto-cleanup">Automatic clean-up</a>. </li> </ol> </li> </ol> <h2 id="authenticate-with-firebase-anonymously">Authenticate with Firebase anonymously</h2> <p>When a signed-out user uses an app feature that requires authentication with Firebase, sign in the user anonymously by completing the following steps:</p> <ol> <li>In your activity's <code translate="no" dir="ltr">onCreate</code> method, get the shared instance of the <code translate="no" dir="ltr">FirebaseAuth</code> object: <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre>  </li> <li> If you haven't yet connected your app to your Firebase project, do so from the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>. </li> <li> Enable anonymous authentication: <ol> <li> In the <a href="https://console.firebase.google.com/" class="link external gc-analytics-event" data-category="console" data-action="linkClick">Firebase console</a>, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Anonymous</b> sign-in provider. </li> <li> <b>Optional</b>: If you've upgraded your project to <a href="../../auth#identity-platform">Firebase Authentication with Identity Platform</a>, you can enable automatic clean-up. When you enable this setting, anonymous accounts older than 30 days will be automatically deleted. In projects with automatic clean-up enabled, anonymous authentication will no longer count toward usage limits or billing quotas. See <a href="#auto-cleanup">Automatic clean-up</a>. </li> </ol> </li> </ol> <h2 id="authenticate-with-firebase-anonymously">Authenticate with Firebase anonymously</h2> <p>When a signed-out user uses an app feature that requires authentication with Firebase, sign in the user anonymously by completing the following steps:</p> <ol> <li>In your activity's <code translate="no" dir="ltr">onCreate</code> method, get the shared instance of the <code translate="no" dir="ltr">FirebaseAuth</code> object: <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">private lateinit var auth: FirebaseAuth
 // ...
 // Initialize Firebase Auth
-auth = Firebase.auth</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+auth = Firebase.auth</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">private FirebaseAuth mAuth;
 // ...
 // Initialize Firebase Auth
-mAuth = FirebaseAuth.getInstance();</pre> </section> </div> </li> <li>When initializing your Activity, check to see if the user is currently signed in: <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+mAuth = FirebaseAuth.getInstance();</pre> </section> </div> </li> <li>When initializing your Activity, check to see if the user is currently signed in: <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">public override fun onStart() {
     super.onStart()
     // Check if user is signed in (non-null) and update UI accordingly.
     val currentUser = auth.currentUser
     updateUI(currentUser)
-}</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+}</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">@Override
 public void onStart() {
     super.onStart();
     // Check if user is signed in (non-null) and update UI accordingly.
     FirebaseUser currentUser = mAuth.getCurrentUser();
     updateUI(currentUser);
-}</pre> </section> </div> </li> <li>Finally, call <code translate="no" dir="ltr">signInAnonymously</code> to sign in as an anonymous user: <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+}</pre> </section> </div> </li> <li>Finally, call <code translate="no" dir="ltr">signInAnonymously</code> to sign in as an anonymous user: <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">auth.signInAnonymously()
     .addOnCompleteListener(this) { task -&gt;
         if (task.isSuccessful) {
@@ -50,7 +50,7 @@ public void onStart() {
             ).show()
             updateUI(null)
         }
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">mAuth.signInAnonymously()
         .addOnCompleteListener(this, new OnCompleteListener&lt;AuthResult&gt;() {
             @Override
@@ -69,14 +69,14 @@ public void onStart() {
                 }
             }
         });</pre> </section> </div> If sign-in succeeds you can use the <code translate="no" dir="ltr">getCurrentUser</code> method to get the user's account data. </li> </ol> <aside>To protect your project from abuse, Firebase limits the number of new email/password and anonymous sign-ups that your application can have from the same IP address in a short period of time. You can request and schedule temporary changes to this quota from the Firebase console (go to the <b>Security</b> &gt; <b>Authentication</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><b>Sign-in method</b> tab</a>). </aside> <h2 id="convert-an-anonymous-account-to-a-permanent-account">Convert an anonymous account to a permanent account</h2> <p>When an anonymous user signs up to your app, you might want to allow them to continue their work with their new account—for example, you might want to make the items the user added to their shopping cart before they signed up available in their new account's shopping cart. To do so, complete the following steps:</p> <ol> <li>When the user signs up, complete the sign-in flow for the user's authentication provider up to, but not including, calling one of the <code translate="no" dir="ltr">FirebaseAuth.signInWith</code> methods. For example, get the user's Google ID token, Facebook access token, or email address and password. </li> <li>
-<p>Get an <code translate="no" dir="ltr">AuthCredential</code> for the new authentication provider:</p> <h5 id="google-sign-in">Google Sign-In</h5> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
-<pre data-language="kotlin">val credential = GoogleAuthProvider.getCredential(googleIdToken, null)</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
-<pre data-language="java">AuthCredential credential = GoogleAuthProvider.getCredential(googleIdToken, null);</pre> </section> </div> <h5 id="facebook-login">Facebook Login</h5> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
-<pre data-language="kotlin">val credential = FacebookAuthProvider.getCredential(token.token)</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
-<pre data-language="java">AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());</pre> </section> </div> <h5 id="email-password-sign-in">Email-password sign-in</h5> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
-<pre data-language="kotlin">val credential = EmailAuthProvider.getCredential(email, password)</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+<p>Get an <code translate="no" dir="ltr">AuthCredential</code> for the new authentication provider:</p> <h5 id="google-sign-in">Google Sign-In</h5> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">val credential = GoogleAuthProvider.getCredential(googleIdToken, null)</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">AuthCredential credential = GoogleAuthProvider.getCredential(googleIdToken, null);</pre> </section> </div> <h5 id="facebook-login">Facebook Login</h5> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">val credential = FacebookAuthProvider.getCredential(token.token)</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
+<pre data-language="java">AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());</pre> </section> </div> <h5 id="email-password-sign-in">Email-password sign-in</h5> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">val credential = EmailAuthProvider.getCredential(email, password)</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">AuthCredential credential = EmailAuthProvider.getCredential(email, password);</pre> </section> </div> </li> <li>
-<p>Pass the <code translate="no" dir="ltr">AuthCredential</code> object to the sign-in user's <code translate="no" dir="ltr">linkWithCredential</code> method:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
+<p>Pass the <code translate="no" dir="ltr">AuthCredential</code> object to the sign-in user's <code translate="no" dir="ltr">linkWithCredential</code> method:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
 <pre data-language="kotlin">auth.currentUser!!.linkWithCredential(credential)
     .addOnCompleteListener(this) { task -&gt;
         if (task.isSuccessful) {
@@ -92,7 +92,7 @@ public void onStart() {
             ).show()
             updateUI(null)
         }
-    }</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+    }</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">mAuth.getCurrentUser().linkWithCredential(credential)
         .addOnCompleteListener(this, new OnCompleteListener&lt;AuthResult&gt;() {
             @Override

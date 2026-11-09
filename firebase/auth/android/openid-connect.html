@@ -1,30 +1,30 @@
 <h1>Authenticate Using OpenID Connect on Android</h1> <p>If you've upgraded to Firebase Authentication with Identity Platform, you can authenticate your users with Firebase using the OpenID Connect (OIDC) compliant provider of your choice. This makes it possible to use identity providers not natively supported by Firebase.</p> <h2 id="before_you_begin">Before you begin</h2> <p>To sign in users using an OIDC provider, you must first collect some information from the provider:</p> <ul> <li><p><strong>Client ID</strong>: A string unique to the provider that identifies your app. Your provider might assign you a different client ID for each platform you support. This is one of the values of the <code translate="no" dir="ltr">aud</code> claim in ID tokens issued by your provider.</p></li> <li><p><strong>Client secret</strong>: A secret string that the provider uses to confirm ownership of a client ID. For every client ID, you will need a matching client secret. (This value is required only if you're using the <em>auth code flow</em>, which is strongly recommended.)</p></li> <li><p><strong>Issuer</strong>: A string that identifies your provider. This value must be a URL that, when appended with <code translate="no" dir="ltr">/.well-known/openid-configuration</code>, is the location of the provider's OIDC discovery document. For example, if the issuer is <code translate="no" dir="ltr">https://auth.example.com</code>, the discovery document must be available at <code translate="no" dir="ltr">https://auth.example.com/.well-known/openid-configuration</code>.</p></li> </ul> <p>After you have the above information, enable OpenID Connect as a sign-in provider for your Firebase project:</p> <ol> <li><p><a href="../../android/setup">Add Firebase to your Android project</a>.</p></li> <li><p>If you haven't upgraded to Firebase Authentication with Identity Platform, do so. OpenID Connect authentication is only available in upgraded projects.</p></li> <li><p>In the Firebase console, go to <strong>Security</strong> &gt; <a href="https://console.firebase.google.com/project/_/authentication/providers" class="external"><strong>Authentication</strong></a>.</p></li> <li><p>In the <strong>Sign-in method</strong> tab, click <strong>Add new provider</strong>, and then click <strong>OpenID Connect</strong>.</p></li> <li>
 <p>Select whether you will be using the <em>authorization code flow</em> or the <em>implicit grant flow</em>.</p> <p><strong>You should use always the code flow if your provider supports it</strong>. The implicit flow is less secure and using it is strongly discouraged.</p>
 </li> <li><p>Give a name to this provider. Note the provider ID that's generated: something like <code translate="no" dir="ltr">oidc.example-provider</code>. You'll need this ID when you add sign-in code to your app.</p></li> <li><p>Specify your client ID and client secret, and your provider's issuer string. These values must exactly match the values your provider assigned to you.</p></li> <li><p>Save your changes.</p></li> </ol> <h2 id="handle_the_sign-in_flow_with_the_firebase_sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building an Android app, the easiest way to authenticate your users with Firebase using your OIDC provider is to handle the entire sign-in flow with the Firebase Android SDK.</p> <p>To handle the sign-in flow with the Firebase Android SDK, follow these steps:</p> <ol> <li>
-<p>Construct an instance of an <strong>OAuthProvider</strong> using its <strong>Builder</strong> with the provider's ID</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Construct an instance of an <strong>OAuthProvider</strong> using its <strong>Builder</strong> with the provider's ID</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
-<pre data-language="kotlin">val providerBuilder = OAuthProvider.newBuilder("oidc.example-provider")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+<pre data-language="kotlin">val providerBuilder = OAuthProvider.newBuilder("oidc.example-provider")</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">OAuthProvider.Builder providerBuilder = OAuthProvider.newBuilder("oidc.example-provider");</pre></section> </div>
 </li> <li>
-<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">// Target specific email with login hint.
-providerBuilder.addCustomParameter("login_hint", "user@example.com")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+providerBuilder.addCustomParameter("login_hint", "user@example.com")</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">// Target specific email with login hint.
 providerBuilder.addCustomParameter("login_hint", "user@example.com");</pre></section> </div> <p>Check with your OIDC provider for the parameters they support. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters()</code>. These parameters are <strong>client_id</strong>, <strong>response_type</strong>, <strong>redirect_uri</strong>, <strong>state</strong>, <strong>scope</strong> and <strong>response_mode</strong>.</p>
 </li> <li>
-<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond basic profile that you want to request from the authentication provider.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond basic profile that you want to request from the authentication provider.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">// Request read access to a user's email addresses.
 // This must be preconfigured in the app's API permissions.
-providerBuilder.scopes = listOf("mail.read", "calendars.read")</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+providerBuilder.scopes = listOf("mail.read", "calendars.read")</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">// Request read access to a user's email addresses.
@@ -38,7 +38,7 @@ List&lt;String&gt; scopes =
         };
 providerBuilder.setScopes(scopes);</pre></section> </div> <p>Check with your OIDC provider for the scopes they use. </p>
 </li> <li>
-<p>Authenticate with Firebase using the OAuth provider object. Note that unlike other FirebaseAuth operations, this will take control of your UI by popping up a <a href="https://developer.chrome.com/multidevice/android/customtabs">Custom Chrome Tab</a>. As a result, do not reference your Activity in the <code translate="no" dir="ltr">OnSuccessListener</code> and <code translate="no" dir="ltr">OnFailureListener</code> that you attach as they will immediately detach when the operation starts the UI.</p> <p>You should first check if you've already received a response. Signing in with this method puts your Activity in the background, which means that it can be reclaimed by the system during the sign in flow. In order to make sure that you don't make the user try again if this happens, you should check if a result is already present.</p> <p>To check if there is a pending result, call <code translate="no" dir="ltr">getPendingAuthResult</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>Authenticate with Firebase using the OAuth provider object. Note that unlike other FirebaseAuth operations, this will take control of your UI by popping up a <a href="https://developer.chrome.com/multidevice/android/customtabs">Custom Chrome Tab</a>. As a result, do not reference your Activity in the <code translate="no" dir="ltr">OnSuccessListener</code> and <code translate="no" dir="ltr">OnFailureListener</code> that you attach as they will immediately detach when the operation starts the UI.</p> <p>You should first check if you've already received a response. Signing in with this method puts your Activity in the background, which means that it can be reclaimed by the system during the sign in flow. In order to make sure that you don't make the user try again if this happens, you should check if a result is already present.</p> <p>To check if there is a pending result, call <code translate="no" dir="ltr">getPendingAuthResult</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">val pendingResultTask = firebaseAuth.pendingAuthResult
@@ -60,7 +60,7 @@ if (pendingResultTask != null) {
 } else {
     // There's no pending result so you need to start the sign-in flow.
     // See below.
-}</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+}</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">Task&lt;AuthResult&gt; pendingResultTask = firebaseAuth.getPendingAuthResult();
@@ -90,7 +90,7 @@ if (pendingResultTask != null) {
 } else {
     // There's no pending result so you need to start the sign-in flow.
     // See below.
-}</pre></section> </div> <p>To start the sign in flow, call <code translate="no" dir="ltr">startActivityForSignInWithProvider</code>:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+}</pre></section> </div> <p>To start the sign in flow, call <code translate="no" dir="ltr">startActivityForSignInWithProvider</code>:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">firebaseAuth
@@ -106,7 +106,7 @@ if (pendingResultTask != null) {
     }
     .addOnFailureListener {
         // Handle failure.
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">firebaseAuth
@@ -132,7 +132,7 @@ if (pendingResultTask != null) {
                     }
                 });</pre></section> </div>
 </li> <li>
-<p>While the above examples focus on sign-in flows, you also have the ability to link an OIDC provider to an existing user using <code translate="no" dir="ltr">startActivityForLinkWithProvider</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>While the above examples focus on sign-in flows, you also have the ability to link an OIDC provider to an existing user using <code translate="no" dir="ltr">startActivityForLinkWithProvider</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">// The user is already signed-in.
@@ -150,7 +150,7 @@ firebaseUser
     }
     .addOnFailureListener {
         // Handle failure.
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">// The user is already signed-in.
@@ -179,7 +179,7 @@ firebaseUser
                     }
                 });</pre></section> </div>
 </li> <li>
-<p>The same pattern can be used with <code translate="no" dir="ltr">startActivityForReauthenticateWithProvider</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+<p>The same pattern can be used with <code translate="no" dir="ltr">startActivityForReauthenticateWithProvider</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">// The user is already signed-in.
@@ -194,7 +194,7 @@ firebaseUser
     }
     .addOnFailureListener {
         // Handle failure.
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">// The user is already signed-in.
@@ -219,7 +219,7 @@ firebaseUser
                         // Handle failure.
                     }
                 });</pre></section> </div>
-</li> </ol> <h2 id="manual">Handle the sign-in flow manually</h2> <p>If you've already implemented the OpenID Connect sign-in flow in your app, you can use the ID token directly to authenticate with Firebase:</p> <div> <section><p class="_firebase-tab"><strong>Kotlin (Android)</strong></p>
+</li> </ol> <h2 id="manual">Handle the sign-in flow manually</h2> <p>If you've already implemented the OpenID Connect sign-in flow in your app, you can use the ID token directly to authenticate with Firebase:</p> <div> <section><p class="_code-tab"><strong>Kotlin (Android)</strong></p>
 
 
 <pre data-language="kotlin">val providerId = "oidc.example-provider" // As registered in Firebase console.
@@ -236,7 +236,7 @@ Firebase.auth
     }
     .addOnFailureListener { e -&gt;
         // Handle failure.
-    }</pre></section> <section><p class="_firebase-tab"><strong>Java (Android)</strong></p>
+    }</pre></section> <section><p class="_code-tab"><strong>Java (Android)</strong></p>
 
 
 <pre data-language="java">AuthCredential credential = OAuthProvider
@@ -259,8 +259,8 @@ FirebaseAuth.getInstance()
             public void onFailure(@NonNull Exception e) {
                 // Handle failure.
             }
-        });</pre></section> </div> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseUser"> <code translate="no" dir="ltr">FirebaseUser</code></a> object. See <a href="manage-users"> Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#signOut()"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs"> <section> <p class="_firebase-tab"><strong>Kotlin (Android)</strong></p> 
-<pre data-language="kotlin">Firebase.auth.signOut()</pre> </section> <section> <p class="_firebase-tab"><strong>Java (Android)</strong></p> 
+        });</pre></section> </div> <h2 id="next_steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, you can get the user's basic profile information from the <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseUser"> <code translate="no" dir="ltr">FirebaseUser</code></a> object. See <a href="manage-users"> Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/android/com/google/firebase/auth/FirebaseAuth#signOut()"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs"> <section> <p class="_code-tab"><strong>Kotlin (Android)</strong></p> 
+<pre data-language="kotlin">Firebase.auth.signOut()</pre> </section> <section> <p class="_code-tab"><strong>Java (Android)</strong></p> 
 <pre data-language="java">FirebaseAuth.getInstance().signOut();</pre> </section> </div><div class="_attribution">
   <p class="_attribution-p">
     &copy; Google LLC<br>Text licensed under the Creative Commons Attribution 4.0 License; code samples under the Apache License 2.0.<br>

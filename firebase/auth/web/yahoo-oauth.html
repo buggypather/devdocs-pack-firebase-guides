@@ -2,18 +2,18 @@
 <a href="../../web/setup">Add Firebase to your JavaScript project</a>. </li>
 <li> In the Firebase console, go to <b>Security</b> &gt; <a href="https://console.firebase.google.com/project/_/authentication/" class="external"><b>Authentication</b></a>. </li> <li> In the <b>Sign-in method</b> tab, enable the <b>Yahoo</b> sign-in provider. </li> <li> Add the <b>Client ID</b> and <b>Client Secret</b> from that provider's developer console to the provider configuration: <ol> <li> <p> To register a Yahoo OAuth client, follow the Yahoo developer documentation on <a href="https://developer.yahoo.com/oauth2/guide/openid_connect/getting_started.html" class="external">registering a web application with Yahoo</a>. </p> <p> Be sure to select the two OpenID Connect API permissions: <code translate="no" dir="ltr">profile</code> and <code translate="no" dir="ltr">email</code>. </p> </li>
 <li> When registering apps with these providers, be sure to register the <code translate="no" dir="ltr">*.firebaseapp.com</code> domain for your project as the redirect domain for your app. </li> </ol> </li> <li> Click <b>Save</b>. </li> </ol> <h2 id="handle-sign-in-flow-sdk">Handle the sign-in flow with the Firebase SDK</h2> <p>If you are building a web app, the easiest way to authenticate your users with Firebase using their Yahoo accounts is to handle the entire sign-in flow with the Firebase JavaScript SDK.</p> <p>To handle the sign-in flow with the Firebase JavaScript SDK, follow these steps:</p> <ol> <li>
-<p>Create an instance of an <strong>OAuthProvider</strong> using the provider ID <strong>yahoo.com</strong>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>Create an instance of an <strong>OAuthProvider</strong> using the provider ID <strong>yahoo.com</strong>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { OAuthProvider } from "firebase/auth";
 
-const provider = new OAuthProvider('yahoo.com');</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+const provider = new OAuthProvider('yahoo.com');</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">var provider = new firebase.auth.OAuthProvider('yahoo.com');</pre> </section> </div> </li> <li>
-<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p><strong>Optional</strong>: Specify additional custom OAuth parameters that you want to send with the OAuth request.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   // Prompt user to re-authenticate to Yahoo.
   prompt: 'login',
   // Localize to French.
   language: 'fr'
-});  </pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+});  </pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">provider.setCustomParameters({
   // Prompt user to re-authenticate to Yahoo.
   prompt: 'login',
@@ -21,12 +21,12 @@ const provider = new OAuthProvider('yahoo.com');</pre> </section> <section> <p c
   language: 'fr'
 });  </pre> </section> </div> <p>For the parameters Yahoo supports, see the <a href="https://developer.yahoo.com/oauth2/guide/openid_connect/getting_started.html">Yahoo OAuth documentation</a>. Note that you can't pass Firebase-required parameters with <code translate="no" dir="ltr">setCustomParameters()</code>. These parameters are <strong>client_id</strong>, <strong>redirect_uri</strong>, <strong>response_type</strong>, <strong>scope</strong> and <strong>state</strong>.</p>
 </li> <li>
-<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond <code translate="no" dir="ltr">profile</code> and <code translate="no" dir="ltr">email</code> that you want to request from the authentication provider. If your application requires access to private user data from Yahoo APIs, you'll need to request permissions to Yahoo APIs under <strong>API Permissions</strong> in the Yahoo developer console. Requested OAuth scopes must be exact matches to the preconfigured ones in the app's API permissions. For example if, read/write access is requested to user contacts and preconfigured in the app's API permissions, <code translate="no" dir="ltr">sdct-w</code> has to be passed instead of the readonly OAuth scope <code translate="no" dir="ltr">sdct-r</code>. Otherwise, the flow will fail and an error would be shown to the end user.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p><strong>Optional</strong>: Specify additional OAuth 2.0 scopes beyond <code translate="no" dir="ltr">profile</code> and <code translate="no" dir="ltr">email</code> that you want to request from the authentication provider. If your application requires access to private user data from Yahoo APIs, you'll need to request permissions to Yahoo APIs under <strong>API Permissions</strong> in the Yahoo developer console. Requested OAuth scopes must be exact matches to the preconfigured ones in the app's API permissions. For example if, read/write access is requested to user contacts and preconfigured in the app's API permissions, <code translate="no" dir="ltr">sdct-w</code> has to be passed instead of the readonly OAuth scope <code translate="no" dir="ltr">sdct-r</code>. Otherwise, the flow will fail and an error would be shown to the end user.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">// Request access to Yahoo Mail API.
 provider.addScope('mail-r');
 // Request read/write access to user contacts.
 // This must be preconfigured in the app's API permissions.
-provider.addScope('sdct-w');</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+provider.addScope('sdct-w');</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">// Request access to Yahoo Mail API.
 provider.addScope('mail-r');
 // Request read/write access to user contacts.
@@ -34,7 +34,7 @@ provider.addScope('mail-r');
 provider.addScope('sdct-w');</pre> </section> </div> <p>To learn more, refer to the <a href="https://developer.yahoo.com/oauth2/guide/yahoo_scopes/">Yahoo scopes documentation</a>.</p>
 </li> <li>
 <p>Authenticate with Firebase using the OAuth provider object. You can prompt your users to sign in with their Yahoo Accounts either by opening a pop-up window or by redirecting to the sign-in page. The redirect method is preferred on mobile devices.</p> <ul> <li>
-<p>To sign in with a pop-up window, call <code translate="no" dir="ltr">signInWithPopup</code>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>To sign in with a pop-up window, call <code translate="no" dir="ltr">signInWithPopup</code>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithPopup, OAuthProvider } from "firebase/auth";
 
 const auth = getAuth();
@@ -50,7 +50,7 @@ signInWithPopup(auth, provider)
   })
   .catch((error) =&gt; {
     // Handle error.
-  });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+  });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().signInWithPopup(provider)
   .then((result) =&gt; {
     // IdP data available in result.additionalUserInfo.profile
@@ -68,15 +68,15 @@ signInWithPopup(auth, provider)
   });</pre> </section> </div> </li> <li><p>To sign in by redirecting to the sign-in page, call <code translate="no" dir="ltr">signInWithRedirect</code>:</p></li> </ul> <p> Follow the <a href="redirect-best-practices">best practices</a> when using <code translate="no" dir="ltr">signInWithRedirect</code>, <code translate="no" dir="ltr">linkWithRedirect</code>, or <code translate="no" dir="ltr">reauthenticateWithRedirect</code>. </p> 
 
 <pre>  firebase.auth().signInWithRedirect(provider);
-  </pre> <p>After the user completes sign-in and returns to the page, you can obtain the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult</code>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+  </pre> <p>After the user completes sign-in and returns to the page, you can obtain the sign-in result by calling <code translate="no" dir="ltr">getRedirectResult</code>.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signInWithRedirect } from "firebase/auth";
 
 const auth = getAuth();
-signInWithRedirect(auth, provider);</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+signInWithRedirect(auth, provider);</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().signInWithRedirect(provider);</pre> </section> </div> <p>On successful completion, the OAuth ID token and access token associated with the provider can be retrieved from the <code translate="no" dir="ltr">firebase.auth.UserCredential</code> object returned.</p> <p>Using the OAuth access token, you can call the <a href="https://developer.yahoo.com/oauth2/guide/apirequests/">Yahoo API</a>.</p> <p>For example, to get the basic profile information, the following REST API can be called:</p> 
 <pre>curl -i -H "Authorization: Bearer ACCESS_TOKEN" https://social.yahooapis.com/v1/user/YAHOO_USER_UID/profile?format=json</pre> <p>Where <code translate="no" dir="ltr">YAHOO_USER_UID</code> is the Yahoo user's ID which can be retrieved from the <code translate="no" dir="ltr">firebase.auth().currentUser.providerData[0].uid</code> field or from <code translate="no" dir="ltr">result.additionalUserInfo.profile</code>.</p>
 </li> <li>
-<p>While the above examples focus on sign-in flows, you also have the ability to link a Yahoo provider to an existing user using <code translate="no" dir="ltr">linkWithPopup</code>/<code translate="no" dir="ltr">linkWithRedirect</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>While the above examples focus on sign-in flows, you also have the ability to link a Yahoo provider to an existing user using <code translate="no" dir="ltr">linkWithPopup</code>/<code translate="no" dir="ltr">linkWithRedirect</code>. For example, you can link multiple providers to the same user allowing them to sign in with either.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, linkWithPopup, OAuthProvider } from "firebase/auth";
 
 const provider = new OAuthProvider('yahoo.com');
@@ -93,7 +93,7 @@ linkWithPopup(auth.currentUser, provider)
     })
     .catch((error) =&gt; {
       // Handle error.
-    });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+    });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">var provider = new firebase.auth.OAuthProvider('yahoo.com');
 firebase.auth().currentUser.linkWithPopup(provider)
     .then((result) =&gt; {
@@ -107,7 +107,7 @@ firebase.auth().currentUser.linkWithPopup(provider)
     .catch((error) =&gt; {
       // Handle error.
     });</pre> </section> </div> </li> <li>
-<p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithPopup</code>/<code translate="no" dir="ltr">reauthenticateWithRedirect</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+<p>The same pattern can be used with <code translate="no" dir="ltr">reauthenticateWithPopup</code>/<code translate="no" dir="ltr">reauthenticateWithRedirect</code> which can be used to retrieve fresh credentials for sensitive operations that require recent login.</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, reauthenticateWithPopup, OAuthProvider } from "firebase/auth";
 
 const provider = new OAuthProvider('yahoo.com');
@@ -126,7 +126,7 @@ reauthenticateWithPopup(auth.currentUser, provider)
     })
     .catch((error) =&gt; {
       // Handle error.
-    });</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+    });</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">var provider = new firebase.auth.OAuthProvider('yahoo.com');
 firebase.auth().currentUser.reauthenticateWithPopup(provider)
     .then((result) =&gt; {
@@ -195,7 +195,7 @@ try {
   storageBucket: 'PROJECT_ID.firebasestorage.app',
   messagingSenderId: 'SENDER_ID'
 };
-firebase.initializeApp(config);</pre> </li> </ol> </section> <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_firebase-tab"><strong>Web (modular API)</strong></p> 
+firebase.initializeApp(config);</pre> </li> </ol> </section> <h2 id="next-steps">Next steps</h2> <p>After a user signs in for the first time, a new user account is created and linked to the credentials—that is, the user name and password, phone number, or auth provider information—the user signed in with. This new account is stored as part of your Firebase project, and can be used to identify a user across every app in your project, regardless of how the user signs in. </p> <ul> <li> <p>In your apps, the recommended way to know the auth status of your user is to set an observer on the <code translate="no" dir="ltr">Auth</code> object. You can then get the user's basic profile information from the <code translate="no" dir="ltr">User</code> object. See <a href="manage-users">Manage Users</a>.</p> </li> <li><p>In your Firebase Realtime Database and Cloud Storage <a href="../../database/security/user-security">Security Rules</a>, you can get the signed-in user's unique user ID from the <code translate="no" dir="ltr">auth</code> variable, and use it to control what data a user can access.</p></li> </ul> <p>You can allow users to sign in to your app using multiple authentication providers by <a href="account-linking">linking auth provider credentials to an existing user account.</a></p> <p>To sign out a user, call <a href="https://firebase.google.com/docs/reference/js/auth#signout"> <code translate="no" dir="ltr">signOut</code></a>:</p> <div class="ds-selector-tabs" data-ds-scope="lang"> <section> <p class="_code-tab"><strong>Web (modular API)</strong></p> 
 <pre data-language="javascript">import { getAuth, signOut } from "firebase/auth";
 
 const auth = getAuth();
@@ -203,7 +203,7 @@ signOut(auth).then(() =&gt; {
   // Sign-out successful.
 }).catch((error) =&gt; {
   // An error happened.
-});</pre> </section> <section> <p class="_firebase-tab"><strong>Web (namespaced API)</strong></p> 
+});</pre> </section> <section> <p class="_code-tab"><strong>Web (namespaced API)</strong></p> 
 <pre data-language="javascript">firebase.auth().signOut().then(() =&gt; {
   // Sign-out successful.
 }).catch((error) =&gt; {
